@@ -1,0 +1,9 @@
+fastapi[standard]
+python-multipart
+pandas
+numpy
+owlready2
+networkx
+pyvis
+rdflib[networkx,html,lxml,orjson]
+fastapi
