@@ -1,0 +1,894 @@
+relation
+ Person birthplace
+ Person enrolledIn
+ Person hasDisease
+ Person residence
+ Person birthYear
+ Person sex
+ Person Patient hasEthnicity
+ Person Patient hasKinship
+ Person Patient hasOccupation
+ Person Patient tested
+ Person Patient undergo
+ Person Patient MSInPaediatricAge
+ Person Patient alive
+ Person Patient deathCause
+ Person Patient deathDate
+ Person Patient dextricity
+ Person Patient educationLevel
+ Person Patient genomeSequencing
+ Person Patient maritalStatus
+ Person Patient menopauseStatus
+ Person Patient notes
+ Person Patient retiredAtDiagnosis
+ Person Nicola Ferro
+ Person Giorgio Maria Di Nunzio
+ Person Laura Menotti
+ Person Guglielmo Faggioli
+ Person Stefano Marchesin
+ Person Gianmaria Silvello
+ Activity activityEndYear
+ Activity acitivityStartYear
+ Activity Lifestyle alcoholUse
+ Activity Lifestyle diet
+ Activity Lifestyle sexuality
+ Activity Lifestyle sunExposure
+ Activity Physical Activity activityType
+ Activity Physical Activity intensity
+ Activity Physical Activity weeklyFrequency
+ Activity Smoking before20Years
+ Activity Smoking dailyCigarettes
+ Activity Smoking packYear
+ Administration administrationFrequency
+ Administration administrationRoute
+ Administration administrationUoM
+ Administration administrationDose
+ Adverse Drug Reaction Adverse Drug Event
+ Adverse Drug Reaction Administration of Ineffective Drug
+ Adverse Drug Reaction Drug Hypersensitivity AE
+ Adverse Drug Reaction Drug Intolerance AE
+ Anatomic Site Eye
+ Anatomic Site Head
+ Anatomic Site Limb
+ Anatomic Site Bone Marrow
+ Anatomic Site Brain
+ Anatomic Site Brain Stem
+ Anatomic Site Cerebellum
+ Anatomic Site Spinal Cord
+ Anatomic Site Supratentorial Brain
+ Anatomic Site Abdomen
+ Anatomic Site Upper Extremity
+ Anatomic Site Lower Extremity
+ Anatomic Site Pelvis
+ Anatomic Site Thorax
+ Anatomic Site Cervical Spinal Cord
+ Anatomic Site Thoracic Spinal Cord
+ Anatomic Site Vertebral Column
+ Anatomic Site Neck
+ Anatomic Site Sphincter
+ Anatomic Site Lumbosacral Region
+ Anatomic Site Cervical Spine
+ Anatomic Site Lumbar Spine
+ Anatomic Site Thoracic Spine
+ Clinical Trial conductedInClinic
+ Clinical Trial isAboutDisease
+ Clinical Trial clinicalTrialDescription
+ Clinical Trial Participation inClinicalTrial
+ Clinical Trial Participation endReason
+ Clinical Trial Participation participationEnd
+ Clinical Trial Participation participationStart
+ Clinics and Hospitals Institute of Molecular Medicine Joao Lobo Antunes
+ Clinics and Hospitals Hospital General Universitario Gregorio Marañón
+ Clinics and Hospitals Mondino Foundation
+ Clinics and Hospitals University of Padua
+ Clinics and Hospitals University of Turin
+ Conditon conditionEnd
+ Conditon conditionStart
+ Conditon Comorbidity determinedBy
+ Conditon Comorbidity comorbiditySeverity
+ Conditon Comorbidity comorbidityTreatment
+" Disease, Disorder or Finding Amenorrhea due to Pituitary Dysfunction"
+" Disease, Disorder or Finding Autoimmune Pancytopenia"
+" Disease, Disorder or Finding Bell's Palsy"
+" Disease, Disorder or Finding Prolapsed Lumbar Intervertebral Disc"
+" Disease, Disorder or Finding Lumbar Hernia"
+" Disease, Disorder or Finding Pulmonary Thromboembolism"
+" Disease, Disorder or Finding Atopic Dermatitis"
+" Disease, Disorder or Finding Neutropenic Disorder"
+" Disease, Disorder or Finding Motor Neuron Disease"
+" Disease, Disorder or Finding Allergic Asthma"
+" Disease, Disorder or Finding Closed Fracture of Tibia"
+" Disease, Disorder or Finding Intervertebral Disc Prolapse"
+" Disease, Disorder or Finding Pneumonia Caused By SARS-CoV-2"
+" Disease, Disorder or Finding Neck Trauma"
+" Disease, Disorder or Finding Herpes Simplex Keratitis"
+" Disease, Disorder or Finding Two Vessel Coronary Disease"
+" Disease, Disorder or Finding Sign or Symptom"
+" Disease, Disorder or Finding Spina Bifida"
+" Disease, Disorder or Finding Angioedema"
+" Disease, Disorder or Finding Blepharitits"
+" Disease, Disorder or Finding Drug Hypersensitivity Syndrome"
+" Disease, Disorder or Finding Molluscum Contagiosum Virus"
+" Disease, Disorder or Finding Tinea Versicolor"
+" Disease, Disorder or Finding Ureteral Stenosis"
+" Disease, Disorder or Finding Anosmia"
+" Disease, Disorder or Finding Ageusia"
+" Disease, Disorder or Finding Subdural Hematoma"
+" Disease, Disorder or Finding Cognitive Impariment"
+" Disease, Disorder or Finding Migraine With Aura"
+" Disease, Disorder or Finding Post-Herpetic Neuralgia"
+" Disease, Disorder or Finding Blepharospasm"
+" Disease, Disorder or Finding Dog Bite"
+" Disease, Disorder or Finding Acute Pyelonephritis"
+" Disease, Disorder or Finding Viral Pericarditis"
+" Disease, Disorder or Finding Acquired Hypothyroidism"
+" Disease, Disorder or Finding Herpes Simplex Virus Infection"
+" Disease, Disorder or Finding Basal Cell Carcinoma"
+" Disease, Disorder or Finding Opioid Use Disorder"
+" Disease, Disorder or Finding Pneumococcal Pneumonia"
+" Disease, Disorder or Finding COVID-19 Infection"
+" Disease, Disorder or Finding Thoracic Trauma"
+" Disease, Disorder or Finding Hepatic Toxicity"
+" Disease, Disorder or Finding Abdominal Pain"
+" Disease, Disorder or Finding Bacterial Pneumonia"
+" Disease, Disorder or Finding Celiac Disease"
+" Disease, Disorder or Finding Chalazion"
+" Disease, Disorder or Finding Type 2 Diabetes Mellitus"
+" Disease, Disorder or Finding Cranial Nerve VII Palsy"
+" Disease, Disorder or Finding Femur Fracture"
+" Disease, Disorder or Finding Gastritis"
+" Disease, Disorder or Finding Glaucoma"
+" Disease, Disorder or Finding Hypothyroidism"
+" Disease, Disorder or Finding Keratitis"
+" Disease, Disorder or Finding Keratoconus"
+" Disease, Disorder or Finding Progressive Multifocal Leukoencephalopathy"
+" Disease, Disorder or Finding Leukopenia"
+" Disease, Disorder or Finding Lymphopenia"
+" Disease, Disorder or Finding Parkinson's Disease"
+" Disease, Disorder or Finding Retinal Detachment"
+" Disease, Disorder or Finding Sjogren Syndrome"
+" Disease, Disorder or Finding Thyroid Gland Disorder"
+" Disease, Disorder or Finding Thyroiditis"
+" Disease, Disorder or Finding Vitiligo"
+" Disease, Disorder or Finding Fever Chills"
+" Disease, Disorder or Finding Acute Cystitis"
+" Disease, Disorder or Finding Alanine Aminotransferase Increased"
+" Disease, Disorder or Finding Trigeminal Nerve Disorder"
+" Disease, Disorder or Finding Ankle Fracture"
+" Disease, Disorder or Finding Interstitial Pneumonia"
+" Disease, Disorder or Finding Acute Respiratory Failure"
+" Disease, Disorder or Finding Obstructive Sleep Apnea Syndrome"
+" Disease, Disorder or Finding Hashimoto Thyroiditis"
+" Disease, Disorder or Finding Non-Neoplastic Central Nervous System Disorder"
+" Disease, Disorder or Finding Thromboembolism"
+" Disease, Disorder or Finding Asthma"
+" Disease, Disorder or Finding Adenocarcinoma"
+" Disease, Disorder or Finding Alzheimer's Disease"
+" Disease, Disorder or Finding Anemia"
+" Disease, Disorder or Finding Anorexia"
+" Disease, Disorder or Finding Anxiety Disorder"
+" Disease, Disorder or Finding Arrhythmia"
+" Disease, Disorder or Finding Arthritis"
+" Disease, Disorder or Finding Rheumatoid Arthritis"
+" Disease, Disorder or Finding Autoimmune Disease"
+" Disease, Disorder or Finding Psychiatric Disorder"
+" Disease, Disorder or Finding Vulvovaginal Candidiasis"
+" Disease, Disorder or Finding Carcinoma"
+" Disease, Disorder or Finding Malignant Skin Neoplasm"
+" Disease, Disorder or Finding Skin Basal Cell Carcinoma"
+" Disease, Disorder or Finding Skin Basosquamous Cell Carcinoma"
+" Disease, Disorder or Finding Cardiovascular Disorder"
+" Disease, Disorder or Finding Cyst"
+" Disease, Disorder or Finding Depression"
+" Disease, Disorder or Finding Diabetes Mellitus"
+" Disease, Disorder or Finding Type 1 Diabtes Mellitus"
+" Disease, Disorder or Finding Mumps"
+" Disease, Disorder or Finding Disease or Disorder"
+" Disease, Disorder or Finding Eczema"
+" Disease, Disorder or Finding Endometriosis"
+" Disease, Disorder or Finding Seizure Disorder"
+" Disease, Disorder or Finding Generalized Epilepsy"
+" Disease, Disorder or Finding Fibroma"
+" Disease, Disorder or Finding Cavernous Hemangioma"
+" Disease, Disorder or Finding Hepatitis"
+" Disease, Disorder or Finding Hepatitis A Infection"
+" Disease, Disorder or Finding Langerhans Cell Histiocytosis"
+" Disease, Disorder or Finding Hypersensitivity"
+" Disease, Disorder or Finding Hypertension"
+" Disease, Disorder or Finding Hypertensive Crisis"
+" Disease, Disorder or Finding Hyperthyroidism"
+" Disease, Disorder or Finding Epidermal Inclusion Cyst"
+" Disease, Disorder or Finding Multiple Sclerosis"
+" Disease, Disorder or Finding Fungal Infection"
+" Disease, Disorder or Finding Neoplasm"
+" Disease, Disorder or Finding Obesity"
+" Disease, Disorder or Finding Osteoporosis"
+" Disease, Disorder or Finding Pituitary Neuroendocrine Tumor"
+" Disease, Disorder or Finding Pleural Effusion"
+" Disease, Disorder or Finding Pneumonia"
+" Disease, Disorder or Finding Psoriasis"
+" Disease, Disorder or Finding Finding"
+" Disease, Disorder or Finding Stroke"
+" Disease, Disorder or Finding Thrombocytopenia"
+" Disease, Disorder or Finding Toxoplasmosis"
+" Disease, Disorder or Finding Uterine Corpus Leiomyoma"
+" Disease, Disorder or Finding Congenital Adrenal Hyperplasia"
+" Disease, Disorder or Finding Amyotrophic Lateral Sclerosis"
+" Disease, Disorder or Finding Hereditary Hemolytic Anemia"
+" Disease, Disorder or Finding Bipolar Disorder"
+" Disease, Disorder or Finding Closed Dislocation of Shoulder"
+" Disease, Disorder or Finding Common Bile Duct Stone"
+" Disease, Disorder or Finding Favism"
+" Disease, Disorder or Finding Gastroenteritits"
+" Disease, Disorder or Finding Head Trauma"
+" Disease, Disorder or Finding Headache"
+" Disease, Disorder or Finding Hernia"
+" Disease, Disorder or Finding Palmar Fibromatosis"
+" Disease, Disorder or Finding Inguinal Hernia"
+" Disease, Disorder or Finding Cold Sore"
+" Disease, Disorder or Finding Infectious Mononucleosis"
+" Disease, Disorder or Finding Intestinal Pseudo-Obstruction"
+" Disease, Disorder or Finding Iridocyclitis"
+" Disease, Disorder or Finding Essential Hypertension"
+" Disease, Disorder or Finding Long QT Syndrome"
+" Disease, Disorder or Finding Pancytopenia"
+" Disease, Disorder or Finding Penicillin Allergy"
+" Disease, Disorder or Finding Personality Disorder"
+" Disease, Disorder or Finding Aspiration Pneumonitis"
+" Disease, Disorder or Finding Baker Cyst"
+" Disease, Disorder or Finding Sarcoidosis"
+" Disease, Disorder or Finding Pulmonary Sarcoidosis"
+" Disease, Disorder or Finding Shoulder Dislocation"
+" Disease, Disorder or Finding Sinusitis"
+" Disease, Disorder or Finding Staphylococcal Infection"
+" Disease, Disorder or Finding Syncope"
+" Disease, Disorder or Finding Thalassemia"
+" Disease, Disorder or Finding Cutaneous Melanoma"
+" Disease, Disorder or Finding Vulvovaginitis"
+" Disease, Disorder or Finding Acute Myocardial Infarction"
+" Disease, Disorder or Finding Closed Fracture of Rib"
+" Disease, Disorder or Finding Tooth Abscess"
+" Disease, Disorder or Finding Monoclonal Gammopathy"
+" Disease, Disorder or Finding Head and Neck Finding"
+" Disease, Disorder or Finding Injury"
+" Disease, Disorder or Finding Bradycardia"
+" Disease, Disorder or Finding Hypercholesterolemia"
+" Disease, Disorder or Finding Proteinuria"
+" Disease, Disorder or Finding Vertigo"
+" Disease, Disorder or Finding Skin Cyst"
+" Disease, Disorder or Finding High Grade Cervical Squamous Intraepithelial Neoplasia"
+" Disease, Disorder or Finding Myeloproliferative Neoplasm"
+" Disease, Disorder or Finding Colon Adenocarcinoma"
+" Disease, Disorder or Finding Dementia"
+" Disease, Disorder or Finding Central Nervous System Degenerative Disorder"
+" Disease, Disorder or Finding Breast Carcinoma"
+" Disease, Disorder or Finding Symptom"
+" Disease, Disorder or Finding Skin Carcinoma"
+" Disease, Disorder or Finding Deep Vein Thrombosis"
+" Disease, Disorder or Finding Atrial Fibrillation"
+" Disease, Disorder or Finding Diabetic Ketoacidosis"
+" Disease, Disorder or Finding Heart Failure"
+" Disease, Disorder or Finding Lumbar Puncture Headache"
+" Disease, Disorder or Finding Neonatal Hearing Impairment"
+" Disease, Disorder or Finding Pulmonary Embolism"
+" Disease, Disorder or Finding Transient Ischemic Attack"
+" Disease, Disorder or Finding Atrial Flutter"
+" Disease, Disorder or Finding Sign"
+" Disease, Disorder or Finding Serum Glutamic Pyruvic Transaminase, CTCAE"
+" Disease, Disorder or Finding Anorectal Fistula"
+" Disease, Disorder or Finding Myasthenia Gravis"
+" Disease, Disorder or Finding Psoriatic Arthritis"
+" Disease, Disorder or Finding Amenorrhea"
+" Disease, Disorder or Finding Neurofibromatosis"
+" Disease, Disorder or Finding Serositis"
+" Disease, Disorder or Finding Herpes Zoster"
+" Disease, Disorder or Finding Chronic Atropic Gastritis"
+" Disease, Disorder or Finding Malignant Thyroid Gland Neoplasm"
+" Disease, Disorder or Finding Melanocytic Nevus"
+" Disease, Disorder or Finding Flu-Like Symptoms"
+" Disease, Disorder or Finding Renal Colic"
+" Disease, Disorder or Finding Allergic Rhinitis"
+" Disease, Disorder or Finding Extrapyramidal Disorder"
+" Disease, Disorder or Finding Monoclonal B_Cell Lymphocytosis"
+" Disease, Disorder or Finding Dyslipidemia"
+" Disease, Disorder or Finding Iron-Deficiency Anemia"
+" Disease, Disorder or Finding Brown-Sequard Syndrome"
+" Disease, Disorder or Finding Hereditary Factor XI Deficiency"
+" Disease, Disorder or Finding Frontotemporal Dementia"
+" Disease, Disorder or Finding Ichthyosis"
+" Disease, Disorder or Finding Ann Arbor Stage IV Mantle Cell Lymphoma"
+" Disease, Disorder or Finding Optic Neuritis"
+" Disease, Disorder or Finding Primary Progressive Aphasia"
+" Disease, Disorder or Finding Primary Neoplasm"
+" Disease, Disorder or Finding Spinal and Bulbar Muscular Atrophy, X-linked 1"
+" Disease, Disorder or Finding Ann Arbor Stage IV T-Cell Non-Hodgkin Lymphoma"
+" Disease, Disorder or Finding Cleft Palate"
+" Disease, Disorder or Finding Fibromyalgia"
+" Disease, Disorder or Finding Migraine"
+" Disease, Disorder or Finding Bowel Obstruction"
+" Disease, Disorder or Finding Mood Disorder"
+" Disease, Disorder or Finding Malignant Colon Neoplasm"
+" Disease, Disorder or Finding Gastroesophageal Reflux"
+" Disease, Disorder or Finding Alcohol Dependance"
+" Disease, Disorder or Finding Malignant Neoplasm"
+" Disease, Disorder or Finding Scarlet Fever"
+" Disease, Disorder or Finding Chicken Pox"
+" Disease, Disorder or Finding Acute Tonsillitis"
+" Disease, Disorder or Finding Chronic Lung Disorder"
+" Disease, Disorder or Finding Klippel-Feil Syndrome"
+" Disease, Disorder or Finding Radius Fracture"
+" Disease, Disorder or Finding Tibia Fracture"
+" Disease, Disorder or Finding Autoimmune Nervous System Disorder"
+" Disease, Disorder or Finding Behavioral Impairment"
+ End Therapy Reason adverseReaction
+ End Therapy Reason confirmedPregnancy
+ End Therapy Reason endTherapyReason
+ Event consists
+ Event hasRegisteredActivity
+ Event hasRegisteredCondition
+ Event pregnancy
+ Event relapse
+ Event trauma
+ Event eventEnd
+ Event eventStart
+ Event Before Onset onsetElapsedTime
+ Event Diagnosis diagnosticCriteria
+ Event Onset ageOnset
+ Event Onset axialOnset
+ Event Onset bulbarOnset
+ Event Onset generalizedOnset
+ Event Onset limbsOnset
+ Event Onset otherOnset
+ Gene C9orf72 Gene
+ Gene SQSTM1 Gene
+ Gene OPTN Gene
+ Gene DCTN1 Gene
+ Gene TBK1 Gene
+ Gene AR Gene
+ Gene SOD1 Gene
+ Gene TARDBP Gene
+ Gene FUS Gene
+ Genetic Testing onGene
+ Genetic Testing hasMutation
+ Genetic Testing mutationType
+ Group (social concept) Caucasian
+ Group (social concept) Black (ethnic group)
+ Group (social concept) Asian (ethnic group)
+ Group (social concept) Hispanic
+ Intervention or Procedure procedureEnd
+ Intervention or Procedure procedureStart
+ Intervention or Procedure Diagnostic Procedure CSF Analysis testedForOligoclonalBands
+ Intervention or Procedure Diagnostic Procedure CSF Analysis IgGIndexCSF
+ Intervention or Procedure Diagnostic Procedure CSF Analysis albuminCSF
+ Intervention or Procedure Diagnostic Procedure CSF Analysis alterationCSF
+ Intervention or Procedure Diagnostic Procedure CSF Analysis glucoseCSF
+ Intervention or Procedure Diagnostic Procedure CSF Analysis granulocytesCSF
+ Intervention or Procedure Diagnostic Procedure CSF Analysis immunoglobulinGCSF
+ Intervention or Procedure Diagnostic Procedure CSF Analysis leukocytesCountCSF
+ Intervention or Procedure Diagnostic Procedure CSF Analysis lymphocytesCSF
+ Intervention or Procedure Diagnostic Procedure CSF Analysis pathologicalJCCSF
+ Intervention or Procedure Diagnostic Procedure CSF Analysis proteinsCSF
+ Intervention or Procedure Diagnostic Procedure CSF Analysis quotientAlbuminCSF
+ Intervention or Procedure Diagnostic Procedure CSF Analysis virusJCTestedCSF
+ Intervention or Procedure Diagnostic Procedure Clinical Evaluation bodyMassIndex
+ Intervention or Procedure Diagnostic Procedure Clinical Evaluation height
+ Intervention or Procedure Diagnostic Procedure Clinical Evaluation moreThan10PercentWeightloss
+ Intervention or Procedure Diagnostic Procedure Clinical Evaluation multipleSclerosisType
+ Intervention or Procedure Diagnostic Procedure Clinical Evaluation predominantLimbsImpairment
+ Intervention or Procedure Diagnostic Procedure Clinical Evaluation predominantLimbsSide
+ Intervention or Procedure Diagnostic Procedure Clinical Evaluation predominantMotorNeuron
+ Intervention or Procedure Diagnostic Procedure Clinical Evaluation weight
+ Intervention or Procedure Diagnostic Procedure Diagnostic Imaging Magnetic Resonance Imaging (MRI) brainAtrophyMRI
+ Intervention or Procedure Diagnostic Procedure Diagnostic Imaging Magnetic Resonance Imaging (MRI) contiguousLesionsMRI
+ Intervention or Procedure Diagnostic Procedure Diagnostic Imaging Magnetic Resonance Imaging (MRI) gadoliniumLesionsT1MRI
+ Intervention or Procedure Diagnostic Procedure Diagnostic Imaging Magnetic Resonance Imaging (MRI) gadoliniumLesionsT1MRINumber
+ Intervention or Procedure Diagnostic Procedure Diagnostic Imaging Magnetic Resonance Imaging (MRI) lesionsT1MRI
+ Intervention or Procedure Diagnostic Procedure Diagnostic Imaging Magnetic Resonance Imaging (MRI) newOrEnlargedLesionsT2MRI
+ Intervention or Procedure Diagnostic Procedure Diagnostic Imaging Magnetic Resonance Imaging (MRI) newOrEnlargedLesionsT2MRINumber
+ Intervention or Procedure Diagnostic Procedure Diagnostic Imaging Magnetic Resonance Imaging (MRI) totalLesionsT2MRI
+ Intervention or Procedure Diagnostic Procedure Expanded Disability Status Scale (EDSS) ambulationEDSS
+ Intervention or Procedure Diagnostic Procedure Expanded Disability Status Scale (EDSS) bowelAndBladderEDSS
+ Intervention or Procedure Diagnostic Procedure Expanded Disability Status Scale (EDSS) brainstemEDSS
+ Intervention or Procedure Diagnostic Procedure Expanded Disability Status Scale (EDSS) cerebellarEDSS
+ Intervention or Procedure Diagnostic Procedure Expanded Disability Status Scale (EDSS) cerebralEDSS
+ Intervention or Procedure Diagnostic Procedure Expanded Disability Status Scale (EDSS) clinicallyEvaluatedEDSS
+ Intervention or Procedure Diagnostic Procedure Expanded Disability Status Scale (EDSS) pyramidalEDSS
+ Intervention or Procedure Diagnostic Procedure Expanded Disability Status Scale (EDSS) sensoryEDSS
+ Intervention or Procedure Diagnostic Procedure Expanded Disability Status Scale (EDSS) visualEDSS
+ Intervention or Procedure Diagnostic Procedure Evoked Potentials evokedPotentialsLocation
+ Intervention or Procedure Diagnostic Procedure Evoked Potentials evokedPotentialsResponse
+ Intervention or Procedure Diagnostic Procedure Evoked Potentials evokedPotentialsType
+ Intervention or Procedure Diagnostic Procedure Evoked Potentials visualEvokedPotentialAmplitude
+ Intervention or Procedure Diagnostic Procedure Evoked Potentials visualEvokedPotentialLatency
+ Intervention or Procedure Diagnostic Procedure Hematology Test observedResult
+ Intervention or Procedure Diagnostic Procedure Pulmonary Function Test pulmonaryAOPAbs
+ Intervention or Procedure Diagnostic Procedure Pulmonary Function Test pulmonaryFEV6
+ Intervention or Procedure Diagnostic Procedure Pulmonary Function Test pulmonaryFVCRel
+ Intervention or Procedure Diagnostic Procedure Pulmonary Function Test pulmonaryMEPAbs
+ Intervention or Procedure Diagnostic Procedure Pulmonary Function Test pulmonaryMIPAbs
+ Intervention or Procedure Diagnostic Procedure Pulmonary Function Test pulmonaryPCO2
+ Intervention or Procedure Diagnostic Procedure Pulmonary Function Test pulmonaryPO2
+ Intervention or Procedure Diagnostic Procedure Pulmonary Function Test pulmonaryVCAbs
+ Intervention or Procedure Diagnostic Procedure Questionnaire Amyotrophic Lateral Sclerosis Functional Rating Scale (ALSFRS) alsfrs1
+ Intervention or Procedure Diagnostic Procedure Questionnaire Amyotrophic Lateral Sclerosis Functional Rating Scale (ALSFRS) alsfrs10
+ Intervention or Procedure Diagnostic Procedure Questionnaire Amyotrophic Lateral Sclerosis Functional Rating Scale (ALSFRS) alsfrs11
+ Intervention or Procedure Diagnostic Procedure Questionnaire Amyotrophic Lateral Sclerosis Functional Rating Scale (ALSFRS) alsfrs12
+ Intervention or Procedure Diagnostic Procedure Questionnaire Amyotrophic Lateral Sclerosis Functional Rating Scale (ALSFRS) alsfrs2
+ Intervention or Procedure Diagnostic Procedure Questionnaire Amyotrophic Lateral Sclerosis Functional Rating Scale (ALSFRS) alsfrs3
+ Intervention or Procedure Diagnostic Procedure Questionnaire Amyotrophic Lateral Sclerosis Functional Rating Scale (ALSFRS) alsfrs4
+ Intervention or Procedure Diagnostic Procedure Questionnaire Amyotrophic Lateral Sclerosis Functional Rating Scale (ALSFRS) alsfrs5
+ Intervention or Procedure Diagnostic Procedure Questionnaire Amyotrophic Lateral Sclerosis Functional Rating Scale (ALSFRS) alsfrs6
+ Intervention or Procedure Diagnostic Procedure Questionnaire Amyotrophic Lateral Sclerosis Functional Rating Scale (ALSFRS) alsfrs7
+ Intervention or Procedure Diagnostic Procedure Questionnaire Amyotrophic Lateral Sclerosis Functional Rating Scale (ALSFRS) alsfrs8
+ Intervention or Procedure Diagnostic Procedure Questionnaire Amyotrophic Lateral Sclerosis Functional Rating Scale (ALSFRS) alsfrs9
+ Intervention or Procedure Diagnostic Procedure Questionnaire Amyotrophic Lateral Sclerosis Functional Rating Scale (ALSFRS) alsfrsOriginal10
+ Intervention or Procedure Diagnostic Procedure Questionnaire Amyotrophic Lateral Sclerosis Functional Rating Scale (ALSFRS) bulbarSubscore
+ Intervention or Procedure Diagnostic Procedure Questionnaire Amyotrophic Lateral Sclerosis Functional Rating Scale (ALSFRS) motorSubscore
+ Intervention or Procedure Diagnostic Procedure Questionnaire Amyotrophic Lateral Sclerosis Functional Rating Scale (ALSFRS) originalALSFRS
+ Intervention or Procedure Diagnostic Procedure Questionnaire Amyotrophic Lateral Sclerosis Functional Rating Scale (ALSFRS) respiratorySubscore
+ Intervention or Procedure Diagnostic Procedure Questionnaire Amyotrophic Lateral Sclerosis Functional Rating Scale (ALSFRS) revisedALSFRS
+ Intervention or Procedure Diagnostic Procedure Questionnaire King's Clinical Staging Method kingsValue
+ Intervention or Procedure Diagnostic Procedure Questionnaire Milano-Torino Functional Staging System (MiToS) mitosValue
+ Intervention or Procedure Surgical Procedure surgicalType
+ Intervention or Procedure Therapeutic Procedure performedTreatment
+ Kinship hasKinshipType
+ Kinship inKinshipWith
+ KinshipType Third Degree Relative
+ KinshipType Brother
+ KinshipType Sister
+ KinshipType Second Degree Relative
+ KinshipType First Degree Relative
+ KinshipType Daughter
+ KinshipType Father
+ KinshipType Mother
+ KinshipType Son
+ KinshipType Grandson
+ KinshipType Granddaughter
+ KinshipType Niece
+ KinshipType Nephew
+ KinshipType Cousin
+ KinshipType First Cousin
+ KinshipType Aunt
+ KinshipType Grandfather
+ KinshipType Grandmother
+ KinshipType Maternal Aunt
+ KinshipType Maternal Uncle
+ KinshipType Paternal Aunt
+ KinshipType Paternal Uncle
+ KinshipType Uncle
+ Laboratory Test Result componentName
+ Laboratory Test Result measuredLevel
+ Laboratory Test Result normalLevel
+ Laboratory Test Result positivityResult
+ Laboratory Test Result unitOfMeasure
+ Occupation Armed forces occupations
+ Occupation Commissioned armed forces officers
+ Occupation Non-commissioned armed forces officers
+" Occupation Armed forces occupations, other ranks"
+ Occupation Managers
+" Occupation Chief executives, senior officials and legislators"
+ Occupation Administrative and commercial managers
+ Occupation Production and specialised services managers
+" Occupation Hospitality, retail and other services managers"
+ Occupation Professionals
+ Occupation Science and engineering professionals
+ Occupation Health professionals
+ Occupation Teaching professionals
+ Occupation Business and administration professionals
+ Occupation Information and communications technology professionals
+" Occupation Legal, social and cultural professionals"
+ Occupation Technicians and associate professionals
+ Occupation Science and engineering associate professionals
+ Occupation Health associate professionals
+ Occupation Business and administration associate professionals
+" Occupation Legal, social, cultural and related associate professionals"
+ Occupation Information and communications technicians
+ Occupation Clerical support workers
+ Occupation General and keyboard clerks
+ Occupation Customer services clerks
+ Occupation Numerical and material recording clerks
+ Occupation Other clerical support workers
+ Occupation Service and sales workers
+ Occupation Personal service workers
+ Occupation Sales workers
+ Occupation Personal care workers
+ Occupation Protective services workers
+" Occupation Skilled agricultural, forestry and fishery workers"
+ Occupation Market-oriented skilled agricultural workers
+" Occupation Market-oriented skilled forestry, fishery and hunting workers"
+" Occupation Subsistence farmers, fishers, hunters and gatherers"
+ Occupation Craft and related trades workers
+" Occupation Building and related trades workers, excluding electricians"
+" Occupation Metal, machinery and related trades workers"
+ Occupation Handicraft and printing workers
+ Occupation Electrical and electronic trades workers
+" Occupation Food processing, wood working, garment and other craft and related trades workers"
+ Occupation Plant and machine operators and assemblers
+ Occupation Stationary plant and machine operators
+ Occupation Assemblers
+ Occupation Drivers and mobile plant operators
+ Occupation Elementary occupations
+ Occupation Cleaners and helpers
+" Occupation Agricultural, forestry and fishery labourers"
+" Occupation Labourers in mining, construction, manufacturing and transport"
+ Occupation Food preparation assistants
+ Occupation Street and related sales and service workers
+ Occupation Refuse workers and other elementary workers
+ Oligoclonal Bands oligoclonalBandsNumber
+ Oligoclonal Bands oligoclonalBandsPresence
+ Oligoclonal Bands oligoclonalBandsType
+ PharmacologicSubstance Alimentary Tract and Metabolism
+ PharmacologicSubstance Stomatological Preparations
+ PharmacologicSubstance Drugs for Acid Related Disorders
+ PharmacologicSubstance Malgradate
+ PharmacologicSubstance Pantoprazole
+ PharmacologicSubstance Esomeprazole
+ PharmacologicSubstance Proglumide
+ PharmacologicSubstance Drugs for Functional Gastrointestinal Disorders
+ PharmacologicSubstance Domperidone
+ PharmacologicSubstance Antiemetics and Antinauseants
+ PharmacologicSubstance Bile and Liver Therapy Drugs
+ PharmacologicSubstance Bile Therapy
+ PharmacologicSubstance Ursodeoxycholic Acid
+" PharmacologicSubstance Liver Therapy, Lipotropics"
+ PharmacologicSubstance Drugs for Bile Therapy and Lipotropics in Combination
+ PharmacologicSubstance Drugs for Constipation
+ PharmacologicSubstance Lactulose
+" PharmacologicSubstance Antidiarrheals, Intestinal Antiinflammatory/Antiinfective Agents"
+ PharmacologicSubstance Sulfasalazine
+ PharmacologicSubstance Mesalazine
+" PharmacologicSubstance Antiobesity Preparations, excl  Diet Products"
+" PharmacologicSubstance Digestives, incl  Enzymes"
+ PharmacologicSubstance Drugs Used in Diabetes
+ PharmacologicSubstance Insulins and Analogues
+ PharmacologicSubstance Insulin Lispro
+ PharmacologicSubstance Insulin Glargine
+ PharmacologicSubstance Metformin
+ PharmacologicSubstance Gliclazide
+ PharmacologicSubstance Glimepiride
+ PharmacologicSubstance Sitagliptin
+ PharmacologicSubstance Vitamins
+ PharmacologicSubstance Colecalciferol
+ PharmacologicSubstance Calcifediol
+ PharmacologicSubstance Biotin
+ PharmacologicSubstance Mineral Supplements
+" PharmacologicSubstance Calcium, Combinations with Vitamin D and/or Other Drugs"
+ PharmacologicSubstance Tonics
+ PharmacologicSubstance Anabolic Agents for Systemic Use
+ PharmacologicSubstance Appetite Stimulants
+ PharmacologicSubstance Other Alimentary Tract and Metabolism
+ PharmacologicSubstance Ademetionine
+ PharmacologicSubstance Blood and Blood Forming Organs
+ PharmacologicSubstance Antithrombotic Agents
+ PharmacologicSubstance Warfarin
+ PharmacologicSubstance Clopidogrel
+ PharmacologicSubstance Ticlopidine
+ PharmacologicSubstance Prasugrel
+ PharmacologicSubstance Rivaroxaban
+ PharmacologicSubstance Antihemorrhagics
+ PharmacologicSubstance Antianemic Preparations
+ PharmacologicSubstance Cyanocobalamin
+ PharmacologicSubstance Blood Substitutes and Perfusion Solutions
+ PharmacologicSubstance Other Hematological Agents
+ PharmacologicSubstance Cardiovascular System
+ PharmacologicSubstance Cardiac Therapy
+ PharmacologicSubstance Amiodarone
+ PharmacologicSubstance Antihypertensives
+ PharmacologicSubstance Diuretics
+ PharmacologicSubstance Furosemide
+ PharmacologicSubstance Peripheral Vasodilators
+ PharmacologicSubstance Nicergoline
+ PharmacologicSubstance Vasoprotectives
+ PharmacologicSubstance Beta Blocking Agents
+ PharmacologicSubstance Propanolol
+ PharmacologicSubstance Atenolol
+ PharmacologicSubstance Bisoprolol
+ PharmacologicSubstance Nebivolol
+ PharmacologicSubstance Atenolol and Other Diuretics
+ PharmacologicSubstance Calcium Channel Blockers
+ PharmacologicSubstance Amlodipine
+ PharmacologicSubstance Barnidipine
+ PharmacologicSubstance Lercanidipine
+ PharmacologicSubstance Verapamil
+ PharmacologicSubstance Agents Acting on the Renin-Angiotensin System
+" PharmacologicSubstance ACE Inhibitors, Plain"
+ PharmacologicSubstance Enalapril
+ PharmacologicSubstance Ramipril
+ PharmacologicSubstance Perindopril and Amlodipine
+ PharmacologicSubstance Losartan
+ PharmacologicSubstance Telmisartan
+ PharmacologicSubstance Olmesartan Medoxomil
+ PharmacologicSubstance Lipid Modifying Agents
+ PharmacologicSubstance Simvastatin
+ PharmacologicSubstance Atrovastatin
+ PharmacologicSubstance Dermatologicals
+ PharmacologicSubstance Antifungals for Dermatological Use
+ PharmacologicSubstance Emollients and Protectives
+ PharmacologicSubstance Preparations for Treatment of Wounds and Ulcers
+" PharmacologicSubstance Antipruritics, incl  Antihistamines, Anesthetics, etc "
+ PharmacologicSubstance Antipsoriatics
+ PharmacologicSubstance Antibiotics and Chemotherapeutics for Dermatological Use
+" PharmacologicSubstance Corticosteroids, Dermatological Preparations"
+ PharmacologicSubstance Hydrocortisone
+ PharmacologicSubstance Antispetic and Disinfectants
+ PharmacologicSubstance Medicated Dressings
+ PharmacologicSubstance Anti-Acne Preparations
+ PharmacologicSubstance Other Dermatological Preparations
+ PharmacologicSubstance Genito Urinary System and Sex Hormones
+ PharmacologicSubstance Gynecological Antiinfectives and Antiseptics
+ PharmacologicSubstance Other Gynecologicals
+ PharmacologicSubstance Sex Hormones and Modulators of the Genital System
+ PharmacologicSubstance Desogestrel and Ethinylestradiol
+ PharmacologicSubstance Drospirenone and Ethinylestradiol
+" PharmacologicSubstance Progestogens and Estrogens Systemic Contraceptives, Sequential Preparations"
+ PharmacologicSubstance Urologicals
+ PharmacologicSubstance Oxybutynin
+ PharmacologicSubstance Tolterodine
+ PharmacologicSubstance Trospium
+ PharmacologicSubstance Sildenafil
+ PharmacologicSubstance Tamsulosin
+" PharmacologicSubstance Systemic Hormonal Preparations, excl  Sex Hormones and Insulins"
+ PharmacologicSubstance Pituitary and Hypothalamic Hormones and Analogues
+ PharmacologicSubstance Corticotropin
+ PharmacologicSubstance Tetracosactide
+ PharmacologicSubstance Corticosteroids for Systemic Use
+" PharmacologicSubstance Glucocorticoids, Systemic"
+ PharmacologicSubstance Betamethasone
+ PharmacologicSubstance Dexamethasone
+ PharmacologicSubstance Methylprednisolone
+ PharmacologicSubstance Prednisolone
+ PharmacologicSubstance Prednisone
+ PharmacologicSubstance Hydrocortisone
+ PharmacologicSubstance Deflazacort
+ PharmacologicSubstance Thyroid Therapy
+ PharmacologicSubstance Levothyroxine Sodium
+ PharmacologicSubstance Thiamazole
+ PharmacologicSubstance Pancreatic Hormones
+ PharmacologicSubstance Calcium Homeostasis
+ PharmacologicSubstance Antiinfectives for Systemic Use
+ PharmacologicSubstance Antibacterials for Systemic Use
+ PharmacologicSubstance Amoxicillin and Beta-Lactamase Inhibitor
+ PharmacologicSubstance Ceftriaxone
+ PharmacologicSubstance Antimycotics for Systemic Use
+ PharmacologicSubstance Antimycobacterials
+ PharmacologicSubstance Rifampicin
+ PharmacologicSubstance Antivirals for Systemic Use
+ PharmacologicSubstance Aciclovir
+ PharmacologicSubstance Valaciclovir
+ PharmacologicSubstance Immune Sera and Immunoglobulins
+" PharmacologicSubstance Immunoglobulins, Normal Human, for Intravascular Adm "
+ PharmacologicSubstance Tetanus Immunoglobulin
+ PharmacologicSubstance Vaccines
+ PharmacologicSubstance Diphtheria Vaccines
+" PharmacologicSubstance Hepatitis B, Purified Antigen"
+" PharmacologicSubstance Poliomyelitis, Trivalent, Inactivated, Whole Virus"
+ PharmacologicSubstance Other Vaccines
+ PharmacologicSubstance Antineoplastic and Immunomodulating Agents
+ PharmacologicSubstance Antineoplastic Agents
+ PharmacologicSubstance Cyclophosphamide
+ PharmacologicSubstance Methotrexate
+ PharmacologicSubstance Cladribine
+ PharmacologicSubstance Mitoxantrone
+ PharmacologicSubstance Alectinib
+ PharmacologicSubstance Rituximab
+ PharmacologicSubstance Trastuzumab
+ PharmacologicSubstance Endocrine Therapy
+ PharmacologicSubstance Tamoxifen
+ PharmacologicSubstance Immunostimulants
+ PharmacologicSubstance Interferon Beta Natural
+ PharmacologicSubstance Interferon Beta-1a
+ PharmacologicSubstance Interferon Beta-1b
+ PharmacologicSubstance Peginterferon Alfa-2b
+ PharmacologicSubstance Peginterferon Beta-1a
+ PharmacologicSubstance BCG Vaccine
+ PharmacologicSubstance Glatiramer Acetate
+ PharmacologicSubstance Immunosuppressants
+ PharmacologicSubstance Natalizumab
+ PharmacologicSubstance Fingolimod
+ PharmacologicSubstance Teriflunomide
+ PharmacologicSubstance Alemtuzumab
+ PharmacologicSubstance Ocrelizumab
+ PharmacologicSubstance Cladribine
+ PharmacologicSubstance Siponimod
+ PharmacologicSubstance Daclizumab
+ PharmacologicSubstance Ustekinumab
+ PharmacologicSubstance Tocilizumab
+ PharmacologicSubstance Secukinumab
+ PharmacologicSubstance Azathioprine
+ PharmacologicSubstance Methotrexate
+ PharmacologicSubstance Dimethyl Fumarate
+ PharmacologicSubstance Musculo-Skeletal System
+ PharmacologicSubstance Antiinflammatory and Antirheumatic Products
+ PharmacologicSubstance Indometacin
+ PharmacologicSubstance Ketorolac
+ PharmacologicSubstance Ibuprofen
+ PharmacologicSubstance Etoricoxib
+ PharmacologicSubstance Topical Products for Joint and Muscular Pain
+ PharmacologicSubstance Muscle Relaxants
+ PharmacologicSubstance Botulinum Toxin
+ PharmacologicSubstance Baclofen
+ PharmacologicSubstance Tizanidine
+ PharmacologicSubstance Dantrolene
+ PharmacologicSubstance Antigout Preparations
+ PharmacologicSubstance Drugs for Treatment of Bone Diseases
+ PharmacologicSubstance Denosumab
+ PharmacologicSubstance Other Drugs for Disorders of the Musculo-Skeletal System
+ PharmacologicSubstance Nervous System
+ PharmacologicSubstance Anesthetics
+ PharmacologicSubstance Analgesics
+" PharmacologicSubstance Codeine, Combinations excl  Psycholeptics"
+" PharmacologicSubstance Acetylsalicylic Acid, Combinations excl  Psycholeptics"
+ PharmacologicSubstance Paracetamol
+ PharmacologicSubstance Cannabinoids
+ PharmacologicSubstance Zolmitriptan
+ PharmacologicSubstance Antiepileptics
+ PharmacologicSubstance Phenobarbital
+ PharmacologicSubstance Barbexaclone
+ PharmacologicSubstance Phenytoin
+ PharmacologicSubstance Clonazepam
+ PharmacologicSubstance Carbamazepine
+ PharmacologicSubstance Oxcarbazepine
+ PharmacologicSubstance Valproic Acid
+ PharmacologicSubstance Vigabatrin
+ PharmacologicSubstance Lamotrigine
+ PharmacologicSubstance Topiramate
+ PharmacologicSubstance Gabapentin
+ PharmacologicSubstance Levetiracetam
+ PharmacologicSubstance Pregabalin
+ PharmacologicSubstance Anti-Parkinson Drugs
+ PharmacologicSubstance Levodopa and Decarboxylase Inhibitor
+ PharmacologicSubstance Amantadine
+ PharmacologicSubstance Ropinirole
+ PharmacologicSubstance Pramipexole
+ PharmacologicSubstance Cabergoline
+ PharmacologicSubstance Psycholeptics
+ PharmacologicSubstance Zuclopenthixol
+ PharmacologicSubstance Olanzapine
+ PharmacologicSubstance Quetiapine
+ PharmacologicSubstance Paliperidone
+ PharmacologicSubstance Diazepam
+ PharmacologicSubstance Bromazepam
+ PharmacologicSubstance Clobazam
+ PharmacologicSubstance Prazepam
+ PharmacologicSubstance Alprazolam
+ PharmacologicSubstance Etizolam
+ PharmacologicSubstance Hypnotics and Sedatives
+ PharmacologicSubstance Flurazepam
+ PharmacologicSubstance Triazolam
+ PharmacologicSubstance Brotizolam
+ PharmacologicSubstance Zolpidem
+ PharmacologicSubstance Melatonin
+ PharmacologicSubstance Psychoanaleptics
+ PharmacologicSubstance Amitriptyline
+ PharmacologicSubstance Fluoxetine
+ PharmacologicSubstance Citalopram
+ PharmacologicSubstance Paroxetine
+ PharmacologicSubstance Sertraline
+ PharmacologicSubstance Escitalopram
+ PharmacologicSubstance Trazodone
+ PharmacologicSubstance Mitrazapine
+ PharmacologicSubstance Venlafaxine
+ PharmacologicSubstance Reboxetine
+ PharmacologicSubstance Modafinil
+ PharmacologicSubstance Acetylcarnitine
+ PharmacologicSubstance Amitriptyline and Psycholeptics
+ PharmacologicSubstance Rivastigmine
+ PharmacologicSubstance Other Nervous System Drugs
+ PharmacologicSubstance Naltrexone
+ PharmacologicSubstance Betahistine
+ PharmacologicSubstance Cinnarizine
+ PharmacologicSubstance Flunarizine
+" PharmacologicSubstance Cinnarizine, Combinations"
+ PharmacologicSubstance Riluzole
+ PharmacologicSubstance Fampridine
+" PharmacologicSubstance Antiparastic Products, Insecticides and Repllents"
+ PharmacologicSubstance Antiprotozoals
+ PharmacologicSubstance Hydroxychloroquine
+ PharmacologicSubstance Anthelmintics
+" PharmacologicSubstance Ectoparasiticides, incl  Scabicides, Insecticides and Repellents"
+ PharmacologicSubstance Respiratory System
+ PharmacologicSubstance Nasal Preparations
+ PharmacologicSubstance Throat Preparations
+ PharmacologicSubstance Drugs for Obstructive Airway Diseases
+ PharmacologicSubstance Cough and Cold Preparations
+ PharmacologicSubstance Antihistamines for Systemic Use
+ PharmacologicSubstance Chlorphenamine
+ PharmacologicSubstance Thiethylperazine
+ PharmacologicSubstance Cetirizine
+ PharmacologicSubstance Other Respiratory System Products
+ PharmacologicSubstance Sensory Organs
+ PharmacologicSubstance Ophthalmologicals
+ PharmacologicSubstance Otologicals
+ PharmacologicSubstance Ophthalmologicals and Otologicals Products
+ PharmacologicSubstance Various
+ PharmacologicSubstance Allergens
+ PharmacologicSubstance All Other Therapeutic Products
+ PharmacologicSubstance Calcium Folinate
+ PharmacologicSubstance Diagnostic Agents
+ PharmacologicSubstance General Nutrients
+ PharmacologicSubstance All Other Non-Therapeutic Products
+ PharmacologicSubstance Contrast Media
+ PharmacologicSubstance Diagnostic Radiopharmaceuticals
+ PharmacologicSubstance Therapeutic Radiopharmaceuticals
+ PharmacologicSubstance Surgical Dressings
+ PharmacologicSubstance Dietary Supplement
+ PharmacologicSubstance Alpha-Lipoic Acid
+ PharmacologicSubstance Covid-19 Vaccines
+ PharmacologicSubstance BG-12
+ PharmacologicSubstance Ecunerv
+ Place placeArea
+ Place zipCode
+ Place zipHashed
+ Pregnancy pregnancyComplications
+ Pregnancy pregnancyEnd
+ Pregnancy pregnancyEndEvent
+ Pregnancy pregnancyStart
+ Relapse coexistingPregnancy
+ Relapse requiredMRI
+ Relapse bowelAndBladderRelapse
+ Relapse brainstemRelapse
+ Relapse cerebellarRelapse
+ Relapse cognitiveRelapse
+ Relapse otherRelapse
+ Relapse pyramidalRelapse
+ Relapse relapseClinicalTherapy
+ Relapse relapseCortisoneTherapy
+ Relapse relapseDuration
+ Relapse relapseEnd
+ Relapse relapseHospitalAdmission
+ Relapse relapseImpactOnADL
+ Relapse relapseRecovery
+ Relapse relapseSequela
+ Relapse relapseSeverity
+ Relapse relapseStart
+ Relapse sensoryRelapse
+ Relapse visualRelapse
+ Residence placeLocation
+ Residence residenceEnd
+ Residence residenceStart
+ Surgical Procedure Type Operative Procedure on Upper Extremity
+ Surgical Procedure Type Surgical Procedure on Lower Extremity
+ Surgical Procedure Type Cone Biopsy
+ Surgical Procedure Type Partial Cystectomy
+ Surgical Procedure Type Excision of Benign Neoplasm
+ Surgical Procedure Type Thyroid Gland Excision
+ Surgical Procedure Type Abdominoplasty
+ Surgical Procedure Type Operation on Abdominal Region
+ Surgical Procedure Type Coronary Artery Bypass Graft
+ Surgical Procedure Type Percutaneous Endoscopic Gastrostomy (PEG)
+ Surgical Procedure Type Drainage of Bartholin's Abscess
+ Surgical Procedure Type Hysterectomy
+ Surgical Procedure Type Cardioversion
+ Surgical Procedure Type Removal of Acoustic Neuroma
+ Surgical Procedure Type Excision of Basal Cell Carcinoma
+ Surgical Procedure Type Head and Neck Approaches
+ Surgical Procedure Type Excision of Neoplasm
+ Surgical Procedure Type Cholecystectomy
+ Surgical Procedure Type Surgical Procedure on Thorax
+ Surgical Procedure Type Excision of Cyst
+ Surgical Procedure Type Operative Procedure on Lumbosacral Spinal Structure
+ Surgical Procedure Type Surgical Procedure on Cervical Spine
+ Surgical Procedure Type Operative Procedure on Thoracic Spinal Structure
+ Surgical Procedure Type Gastryc Bypass
+ Surgical Procedure Type Insertion of Implantable Intrathecal Access System
+ Surgical Procedure Type Emergency Tracheostomy
+ Surgical Procedure Type Procedure on Pelvic Region of Trunk
+ Surgical Procedure Type Excision of dermatofibroma
+ Surgical Procedure Type Repair of Bladder
+ Surgical Procedure Type Appendectomy
+ Surgical Procedure Type Transurethral Prostatectomy
+ Surgical Procedure Type Gastroplasty
+ Surgical Procedure Type Head and Neck Surgery
+ Therapeutic Procedure Type Plasmapheresis
+ Therapeutic Procedure Type Non-Invasive Mechanical Ventilation (NIV)
+ Therapeutic Procedure Type Anticonvulsant Agent
+ Therapeutic Procedure Type Cortisone Therapy for Relapse
+ Therapeutic Procedure Type Drugs for MS Symptomatic Therapy
+ Therapeutic Procedure Type Drugs for MS Therapy Side Effects
+ Therapeutic Procedure Type Drugs for Other Diseases
+ Therapeutic Procedure Type Immunoactive Drugs
+ Therapeutic Treatment administration
+ Therapeutic Treatment pharmacologicSubstance
+ Therapeutic Treatment therapyType
+ Trauma traumaDate
+ Trauma traumaDescription

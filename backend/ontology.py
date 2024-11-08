@@ -3,6 +3,7 @@ from rdflib import Graph, URIRef, Literal
 from .model import Subject
 import pandas as pd
 from rdflib.plugins.sparql import prepareQuery
+import numpy as np
 
 
 class Prefix(BaseModel):
@@ -47,6 +48,7 @@ class OntologyConfig(BaseModel):
         title="Sub Class Query",
         description="Query to get the sub classes",
     )
+    property_types: list[str] = Field(["ObjectProperty", "DatatypeProperty"])
 
 
 class OntologyManager:
@@ -62,9 +64,10 @@ class OntologyManager:
         #             print(t.n3(onto.namespace_manager))
         #         else:
         #             print(t)
-        return pd.DataFrame(results).applymap(
-            lambda x: x.n3(self.onto.namespace_manager) if hasattr(x, "n3") else x
-        )
+        # return pd.DataFrame(results).map(
+        #     lambda x: x.n3(self.onto.namespace_manager) if hasattr(x, "n3") else x
+        # )
+        return pd.DataFrame(results)
 
     def df_to_labels(self, df: pd.DataFrame):
         labeled_df = df.copy()
@@ -78,13 +81,16 @@ class OntologyManager:
                 labeled_df.at[i, j] = data[0][0] if data else col
         return labeled_df
 
-    def get_root_classes(self) -> list[Subject]:
+    def get_root_classes(self, load_properties=False) -> list[Subject]:
         classes = self.q_to_df(self.config.parent_class_query)
         classes_list = classes[0].tolist()
-        onto_classes: list[Subject] = self.enrich_subjects(classes_list)
+        onto_classes: list[Subject] = [
+            self.enrich_subject(cls, load_properties=load_properties)
+            for cls in classes_list
+        ]
         return onto_classes
 
-    def get_class(self, cls: str) -> list[Subject]:
+    def get_classes(self, cls: str, load_properties=False) -> list[Subject]:
         query = prepareQuery(
             queryString=self.config.sub_class_query,
             initNs={
@@ -94,10 +100,13 @@ class OntologyManager:
         classes = list(
             self.onto.query(
                 self.config.sub_class_query.replace("?cls", cls),
-                initBindings={"cls": self.onto.namespace_manager.absolutize(cls)},
+                initBindings={"cls": cls},
             )
         )
-        onto_classes: list[Subject] = self.enrich_subjects([cls[0] for cls in classes])
+        onto_classes: list[Subject] = [
+            self.enrich_subject(cls[0], load_properties=load_properties)
+            for cls in classes
+        ]
         return onto_classes
 
     def get_named_individuals(self, cls: str) -> list[Subject]:
@@ -111,14 +120,16 @@ class OntologyManager:
                     }}
                     """
         individuals = list(
-            self.brainteaser_graph.query(
+            self.onto.query(
                 query,
-                # initBindings={"cls": self.brainteaser_graph.namespace_manager.absolutize(cls)},
+                # initBindings={"cls": cls},
             )
         )
-        onto_classes: list[Subject] = self.enrich_subjects(
-            [ind[0] for ind in individuals], subject_type="individual"
-        )
+        onto_classes: list[Subject] = [
+            self.enrich_subject(ind[0], subject_type="individual")
+            for ind in individuals
+        ]
+
         return onto_classes
 
     def label_for(self, subject: str):
@@ -181,52 +192,83 @@ class OntologyManager:
             print(e)
             return 0
 
-    def enrich_subjects(
-        self, classes: list[str], subject_type="class"
+    def properties_for(
+        self, cls: str, property_type: str = "ObjectProperty"
     ) -> list[Subject]:
-        onto_classes: list[Subject] = []
-        for col in classes:
-            col_ref = col.n3(self.onto.namespace_manager) if hasattr(col, "n3") else col
-
-            outgoing_edges = self.outgoing_edges_for(col_ref)
-            # refs = self.refcount(col_ref)
-            onto_classes.append(
-                Subject(
-                    subject_id=col_ref,
-                    label=outgoing_edges.get("rdfs:label", [col_ref])[0],
-                    spos=outgoing_edges,
-                    subject_type=subject_type,
-                    # refcount=refs,
+        try:
+            properties = list(
+                self.onto.query(
+                    f"""
+                PREFIX owl: <http://www.w3.org/2002/07/owl#>
+                PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+                PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+                SELECT ?prop WHERE {{ 
+                ?prop rdf:type owl:{property_type}.
+                ?prop rdfs:domain {cls}.
+                }}"""
                 )
             )
-        return onto_classes
+            props_mapped: list[Subject] = [
+                self.enrich_subject(prop[0], subject_type="individual")
+                for prop in properties
+            ]
 
-    def load_full_graph(self) -> list[Subject]:
-        roots = self.get_root_classes()
+            return props_mapped
+        except Exception as e:
+            print(e)
+            return {}
 
-        def enrich_descendants(cls: Subject):
+    def enrich_subject(self, cls: str, subject_type="class", load_properties=False):
+
+        col_ref = cls.n3(self.onto.namespace_manager) if hasattr(cls, "n3") else cls
+
+        outgoing_edges = self.outgoing_edges_for(col_ref)
+        subject = Subject(
+            subject_id=col_ref,
+            label=outgoing_edges.get("rdfs:label", [col_ref])[0],
+            spos=outgoing_edges,
+            subject_type=subject_type,
+            # refcount=refs,
+        )
+        if load_properties:
+            subject.properties = {
+                prop_type: self.properties_for(col_ref, property_type=prop_type)
+                for prop_type in self.config.property_types
+            }
+        return subject
+        # refs = self.refcount(col_ref)
+
+    def load_full_graph(self, depth=5) -> list[Subject]:
+        roots = self.get_root_classes(load_properties=True)[1:]
+
+        def enrich_descendants(cls: Subject, d=depth):
             print("enriching", cls.subject_id)
+            cls.total_descendants = 1  # self
+            if d <= 0:
+                return cls.total_descendants
             try:
-                subclasses = self.get_class(cls.subject_id)
-                cls.descendants["subClass"] = subclasses
-                for subcls in subclasses:
-                    enrich_descendants(subcls)
+                subclasses = self.get_classes(cls.subject_id, load_properties=True)
+                cls.descendants["subClass"] = [
+                    enrich_descendants(subcls, d=d - 1) for subcls in subclasses
+                ]
             except Exception as e:
                 print(e)
             try:
                 named_ind = self.get_named_individuals(cls.subject_id)
-                cls.descendants["namedIndividual"] = named_ind
-                for ind in named_ind:
-                    enrich_descendants(ind)
+                cls.descendants["namedIndividual"] = [
+                    enrich_descendants(ni, d=d - 1) for ni in named_ind
+                ]
             except Exception as e:
                 print(e)
 
-        for root in roots:
-            enrich_descendants(root)
+            return cls
+
+        roots = [enrich_descendants(cls) for cls in roots]
         self.roots_cache = roots
         return roots
 
     def get_full_classes(self) -> list[Subject]:
         if hasattr(self, "roots_cache"):
             return self.roots_cache
-        return self.roots_cache
+        graph = self.load_full_graph()
+        return graph

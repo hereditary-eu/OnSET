@@ -7,3 +7,4 @@ networkx
 pyvis
 rdflib[networkx,html,lxml,orjson]
 fastapi
+sentence-transformers

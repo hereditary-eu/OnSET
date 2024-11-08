@@ -42,6 +42,16 @@ export interface Subject {
    * @default 0
    */
   refcount?: number;
+  /**
+   * Descendants
+   * @default {}
+   */
+  descendants?: Record<string, Subject[]>;
+  /**
+   * Total Descendants
+   * @default 0
+   */
+  total_descendants?: number;
 }
 
 /** ValidationError */
@@ -227,6 +237,21 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       }),
   };
   classes = {
+    /**
+     * No description
+     *
+     * @name GetFullClassesClassesFullGet
+     * @summary Get Full Classes
+     * @request GET:/classes/full
+     */
+    getFullClassesClassesFullGet: (params: RequestParams = {}) =>
+      this.request<Subject[], any>({
+        path: `/classes/full`,
+        method: "GET",
+        format: "json",
+        ...params,
+      }),
+
     /**
      * No description
      *

@@ -26,8 +26,10 @@ onto_path = base_path + "/brainteaser-ontology/bto.ttl"
 brainteaser_graph = Graph().parse(onto_path, format="turtle")
 brainteaser_graph.bind("bto", "http://www.semanticweb.org/ontologies/2020/3/bto#")
 
-ontology_manager = OntologyManager(OntologyConfig(), brainteaser_graph)
+config = OntologyConfig()
 
+ontology_manager = OntologyManager(config, brainteaser_graph)
+# ontology_manager.load_full_graph()
 
 source_classes = ontology_manager.q_to_df(
     f"""
@@ -53,12 +55,12 @@ app.add_middleware(
 )
 
 
+
+
 @app.get("/")
 def read_root():
     return "Welcome to the Ontology Provenance API"
 
-
-config = OntologyConfig()
 
 
 @app.post("/management/ontology")
@@ -71,85 +73,22 @@ def load_ontology(
     return {"ontology": ontology.filename, "prefixes": config}
 
 
-
 @app.get("/classes/full")
 def get_full_classes() -> list[Subject]:
-    roots = get_root_classes()
-
-    def enrich_descendants(cls: Subject):
-        print("enriching", cls.subject_id)
-        try:
-            subclasses = get_class(cls.subject_id)
-            cls.descendants["subClass"] = subclasses
-            for subcls in subclasses:
-                enrich_descendants(subcls)
-        except Exception as e:
-            print(e)
-        try:
-            named_ind = get_named_individuals(cls.subject_id)
-            cls.descendants["namedIndividual"] = named_ind
-            for ind in named_ind:
-                enrich_descendants(ind)
-        except Exception as e:
-            print(e)
-
-    for root in roots:
-        enrich_descendants(root)
+    roots = ontology_manager.get_full_classes()
     return roots
 
 
 @app.get("/classes/roots")
 def get_root_classes() -> list[Subject]:
-    classes = q_to_df(config.parent_class_query)
-    classes_list = classes[0].tolist()
-    onto_classes: list[Subject] = enrich_subjects(classes_list)
-    return onto_classes
+    return ontology_manager.get_root_classes()
 
 
 @app.get("/classes/subclasses")
 def get_class(cls: str = Query()) -> list[Subject]:
-    query = prepareQuery(
-        queryString="""
-                PREFIX owl: <http://www.w3.org/2002/07/owl#>
-                PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-                SELECT ?scls
-                WHERE {
-                     ?scls rdf:type owl:Class.
-                     ?scls rdfs:subClassOf ?cls.
-                }
-                """,
-        initNs={prefix.ttl_prefix: prefix.uri for prefix in config.ttl_prefixes},
-    )
-    # print(cls, query.algebra, query._original_args, query.prologue)
-    classes = list(
-        brainteaser_graph.query(
-            config.sub_class_query.replace("?cls", cls),
-            initBindings={"cls": brainteaser_graph.namespace_manager.absolutize(cls)},
-        )
-    )
-    onto_classes: list[Subject] = enrich_subjects([cls[0] for cls in classes])
-    return onto_classes
+    return ontology_manager.get_classes(cls)
 
 
 @app.get("/classes/named-individuals")
 def get_named_individuals(cls: str = Query()) -> list[Subject]:
-    query = f"""
-                PREFIX owl: <http://www.w3.org/2002/07/owl#>
-                PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-                SELECT ?ind
-                WHERE {{
-                     ?ind rdf:type owl:NamedIndividual.
-                     ?ind rdf:type {cls}.
-                }}
-                """
-    # print(cls, query.algebra, query._original_args, query.prologue)
-    individuals = list(
-        brainteaser_graph.query(
-            query,
-            # initBindings={"cls": brainteaser_graph.namespace_manager.absolutize(cls)},
-        )
-    )
-    onto_classes: list[Subject] = enrich_subjects(
-        [ind[0] for ind in individuals], subject_type="individual"
-    )
-    return onto_classes
+    return ontology_manager.get_named_individuals(cls)
