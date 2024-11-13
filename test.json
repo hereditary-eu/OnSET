@@ -1,0 +1,3692 @@
+{
+    "source": {
+        "id": 469,
+        "path": [
+            "Occupation",
+            "Armed forces occupations"
+        ],
+        "subject_id": "<http://data.europa.eu/esco/isco/C0>",
+        "text": "Occupation Armed forces occupations",
+        "matches": [
+            {
+                "colname": "occupation_Commissioned_armed_forces_officers",
+                "idx": "1-124",
+                "score": 0.42015379667282104,
+                "rank": 0
+            }
+        ]
+    },
+    "targets": [
+        {
+            "target": {
+                "id": 379,
+                "path": [
+                    "Intervention or Procedure",
+                    "Diagnostic Procedure",
+                    "Clinical Evaluation",
+                    "height"
+                ],
+                "subject_id": "<https://w3id.org/brainteaser/ontology/schema/height>",
+                "text": "Intervention or Procedure Diagnostic Procedure Clinical Evaluation height",
+                "matches": [
+                    {
+                        "colname": "height",
+                        "idx": "1-3",
+                        "score": 0.3909410834312439,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 14,
+            "instances": [
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xd0e71a1c656557fd7856d9e3c6b15faf",
+                "0x3810943e96e8b2d62fe539b8bd123704",
+                "0x6734883f99325a6ebc3f5aae3a1cf07b",
+                "0x96e1eb34654a6f94ebcf0f61ae2e3434",
+                "0xd0e71a1c656557fd7856d9e3c6b15faf",
+                "0x3810943e96e8b2d62fe539b8bd123704",
+                "0x6734883f99325a6ebc3f5aae3a1cf07b",
+                "0x96e1eb34654a6f94ebcf0f61ae2e3434",
+                "0xca23e24556475bbc742f37df9b4dacfc"
+            ]
+        },
+        {
+            "target": {
+                "id": 385,
+                "path": [
+                    "Intervention or Procedure",
+                    "Diagnostic Procedure",
+                    "Clinical Evaluation",
+                    "weight"
+                ],
+                "subject_id": "<https://w3id.org/brainteaser/ontology/schema/weight>",
+                "text": "Intervention or Procedure Diagnostic Procedure Clinical Evaluation weight",
+                "matches": [
+                    {
+                        "colname": "weight_before_onset",
+                        "idx": "1-4",
+                        "score": 0.3933265209197998,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 10,
+            "instances": [
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xd0e71a1c656557fd7856d9e3c6b15faf",
+                "0x3810943e96e8b2d62fe539b8bd123704",
+                "0xd0e71a1c656557fd7856d9e3c6b15faf",
+                "0x3810943e96e8b2d62fe539b8bd123704",
+                "0xca23e24556475bbc742f37df9b4dacfc"
+            ]
+        },
+        {
+            "target": {
+                "id": 568,
+                "path": [
+                    "PharmacologicSubstance",
+                    "Warfarin"
+                ],
+                "subject_id": "<http://purl.bioontology.org/ontology/UATC/B01AA03>",
+                "text": "PharmacologicSubstance Warfarin",
+                "matches": [
+                    {
+                        "colname": "weight_before_onset",
+                        "idx": "1-4",
+                        "score": 0.12440688163042068,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 10,
+            "instances": [
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xd0e71a1c656557fd7856d9e3c6b15faf",
+                "0x3810943e96e8b2d62fe539b8bd123704",
+                "0xd0e71a1c656557fd7856d9e3c6b15faf",
+                "0x3810943e96e8b2d62fe539b8bd123704",
+                "0xca23e24556475bbc742f37df9b4dacfc"
+            ]
+        },
+        {
+            "target": {
+                "id": 829,
+                "path": [
+                    "Pregnancy",
+                    "pregnancyEndEvent"
+                ],
+                "subject_id": "<https://w3id.org/brainteaser/ontology/schema/pregnancyEndEvent>",
+                "text": "Pregnancy pregnancyEndEvent",
+                "matches": [
+                    {
+                        "colname": "weight_before_onset",
+                        "idx": "1-4",
+                        "score": 0.058283478021621704,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 10,
+            "instances": [
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xd0e71a1c656557fd7856d9e3c6b15faf",
+                "0x3810943e96e8b2d62fe539b8bd123704",
+                "0xd0e71a1c656557fd7856d9e3c6b15faf",
+                "0x3810943e96e8b2d62fe539b8bd123704",
+                "0xca23e24556475bbc742f37df9b4dacfc"
+            ]
+        },
+        {
+            "target": {
+                "id": 563,
+                "path": [
+                    "PharmacologicSubstance",
+                    "Appetite Stimulants"
+                ],
+                "subject_id": "<http://purl.bioontology.org/ontology/UATC/A15>",
+                "text": "PharmacologicSubstance Appetite Stimulants",
+                "matches": [
+                    {
+                        "colname": "weight",
+                        "idx": "1-5",
+                        "score": 0.10483205318450928,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 14,
+            "instances": [
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xd0e71a1c656557fd7856d9e3c6b15faf",
+                "0x3810943e96e8b2d62fe539b8bd123704",
+                "0x6734883f99325a6ebc3f5aae3a1cf07b",
+                "0x96e1eb34654a6f94ebcf0f61ae2e3434",
+                "0xd0e71a1c656557fd7856d9e3c6b15faf",
+                "0x3810943e96e8b2d62fe539b8bd123704",
+                "0x6734883f99325a6ebc3f5aae3a1cf07b",
+                "0x96e1eb34654a6f94ebcf0f61ae2e3434",
+                "0xca23e24556475bbc742f37df9b4dacfc"
+            ]
+        },
+        {
+            "target": {
+                "id": 341,
+                "path": [
+                    "Event",
+                    "Onset",
+                    "ageOnset"
+                ],
+                "subject_id": "<https://w3id.org/brainteaser/ontology/schema/ageOnset>",
+                "text": "Event Onset ageOnset",
+                "matches": [
+                    {
+                        "colname": "age_onset",
+                        "idx": "1-6",
+                        "score": 0.38109320402145386,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 14,
+            "instances": [
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xd0e71a1c656557fd7856d9e3c6b15faf",
+                "0x3810943e96e8b2d62fe539b8bd123704",
+                "0x6734883f99325a6ebc3f5aae3a1cf07b",
+                "0x96e1eb34654a6f94ebcf0f61ae2e3434",
+                "0xd0e71a1c656557fd7856d9e3c6b15faf",
+                "0x3810943e96e8b2d62fe539b8bd123704",
+                "0x6734883f99325a6ebc3f5aae3a1cf07b",
+                "0x96e1eb34654a6f94ebcf0f61ae2e3434",
+                "0xca23e24556475bbc742f37df9b4dacfc"
+            ]
+        },
+        {
+            "target": {
+                "id": 175,
+                "path": [
+                    "Disease, Disorder or Finding",
+                    "Arrhythmia"
+                ],
+                "subject_id": "<http://purl.obolibrary.org/obo/NCIT_C2881>",
+                "text": "Disease, Disorder or Finding Arrhythmia",
+                "matches": [
+                    {
+                        "colname": "onset_bulbar",
+                        "idx": "1-7",
+                        "score": 0.3611477017402649,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 7,
+            "instances": [
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xd0e71a1c656557fd7856d9e3c6b15faf",
+                "0x3810943e96e8b2d62fe539b8bd123704",
+                "0xd0e71a1c656557fd7856d9e3c6b15faf",
+                "0x3810943e96e8b2d62fe539b8bd123704",
+                "0xca23e24556475bbc742f37df9b4dacfc"
+            ]
+        },
+        {
+            "target": {
+                "id": 104,
+                "path": [
+                    "Disease, Disorder or Finding",
+                    "Allergic Asthma"
+                ],
+                "subject_id": "<http://purl.bioontology.org/ontology/SNOMEDCT/389145006>",
+                "text": "Disease, Disorder or Finding Allergic Asthma",
+                "matches": [
+                    {
+                        "colname": "onset_bulbar",
+                        "idx": "1-7",
+                        "score": 0.18203547596931458,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 7,
+            "instances": [
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xd0e71a1c656557fd7856d9e3c6b15faf",
+                "0x3810943e96e8b2d62fe539b8bd123704",
+                "0xd0e71a1c656557fd7856d9e3c6b15faf",
+                "0x3810943e96e8b2d62fe539b8bd123704",
+                "0xca23e24556475bbc742f37df9b4dacfc"
+            ]
+        },
+        {
+            "target": {
+                "id": 714,
+                "path": [
+                    "PharmacologicSubstance",
+                    "Baclofen"
+                ],
+                "subject_id": "<http://purl.bioontology.org/ontology/UATC/M03BX01>",
+                "text": "PharmacologicSubstance Baclofen",
+                "matches": [
+                    {
+                        "colname": "onset_bulbar",
+                        "idx": "1-7",
+                        "score": 0.10643240809440613,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 7,
+            "instances": [
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xd0e71a1c656557fd7856d9e3c6b15faf",
+                "0x3810943e96e8b2d62fe539b8bd123704",
+                "0xd0e71a1c656557fd7856d9e3c6b15faf",
+                "0x3810943e96e8b2d62fe539b8bd123704",
+                "0xca23e24556475bbc742f37df9b4dacfc"
+            ]
+        },
+        {
+            "target": {
+                "id": 691,
+                "path": [
+                    "PharmacologicSubstance",
+                    "Natalizumab"
+                ],
+                "subject_id": "<http://purl.bioontology.org/ontology/UATC/L04AA23>",
+                "text": "PharmacologicSubstance Natalizumab",
+                "matches": [
+                    {
+                        "colname": "onset_bulbar",
+                        "idx": "1-7",
+                        "score": 0.06284330040216446,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 7,
+            "instances": [
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xd0e71a1c656557fd7856d9e3c6b15faf",
+                "0x3810943e96e8b2d62fe539b8bd123704",
+                "0xd0e71a1c656557fd7856d9e3c6b15faf",
+                "0x3810943e96e8b2d62fe539b8bd123704",
+                "0xca23e24556475bbc742f37df9b4dacfc"
+            ]
+        },
+        {
+            "target": {
+                "id": 550,
+                "path": [
+                    "PharmacologicSubstance",
+                    "Insulin Glargine"
+                ],
+                "subject_id": "<http://purl.bioontology.org/ontology/UATC/A10AE04>",
+                "text": "PharmacologicSubstance Insulin Glargine",
+                "matches": [
+                    {
+                        "colname": "onset_bulbar",
+                        "idx": "1-7",
+                        "score": 0.04772535711526871,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 7,
+            "instances": [
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xd0e71a1c656557fd7856d9e3c6b15faf",
+                "0x3810943e96e8b2d62fe539b8bd123704",
+                "0xd0e71a1c656557fd7856d9e3c6b15faf",
+                "0x3810943e96e8b2d62fe539b8bd123704",
+                "0xca23e24556475bbc742f37df9b4dacfc"
+            ]
+        },
+        {
+            "target": {
+                "id": 754,
+                "path": [
+                    "PharmacologicSubstance",
+                    "Diazepam"
+                ],
+                "subject_id": "<http://purl.bioontology.org/ontology/UATC/N05BA01>",
+                "text": "PharmacologicSubstance Diazepam",
+                "matches": [
+                    {
+                        "colname": "onset_bulbar",
+                        "idx": "1-7",
+                        "score": 0.02766384370625019,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 7,
+            "instances": [
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xd0e71a1c656557fd7856d9e3c6b15faf",
+                "0x3810943e96e8b2d62fe539b8bd123704",
+                "0xd0e71a1c656557fd7856d9e3c6b15faf",
+                "0x3810943e96e8b2d62fe539b8bd123704",
+                "0xca23e24556475bbc742f37df9b4dacfc"
+            ]
+        },
+        {
+            "target": {
+                "id": 342,
+                "path": [
+                    "Event",
+                    "Onset",
+                    "axialOnset"
+                ],
+                "subject_id": "<https://w3id.org/brainteaser/ontology/schema/axialOnset>",
+                "text": "Event Onset axialOnset",
+                "matches": [
+                    {
+                        "colname": "onset_axial",
+                        "idx": "1-8",
+                        "score": 0.4153817296028137,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 2,
+            "instances": [
+                "0x6734883f99325a6ebc3f5aae3a1cf07b",
+                "0x6734883f99325a6ebc3f5aae3a1cf07b"
+            ]
+        },
+        {
+            "target": {
+                "id": 26,
+                "path": [
+                    "Person",
+                    "Patient",
+                    "menopauseStatus"
+                ],
+                "subject_id": "<https://w3id.org/brainteaser/ontology/schema/menopauseStatus>",
+                "text": "Person Patient menopauseStatus",
+                "matches": [
+                    {
+                        "colname": "onset_axial",
+                        "idx": "1-8",
+                        "score": 0.2339501529932022,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 2,
+            "instances": [
+                "0x6734883f99325a6ebc3f5aae3a1cf07b",
+                "0x6734883f99325a6ebc3f5aae3a1cf07b"
+            ]
+        },
+        {
+            "target": {
+                "id": 131,
+                "path": [
+                    "Disease, Disorder or Finding",
+                    "Basal Cell Carcinoma"
+                ],
+                "subject_id": "<http://purl.obolibrary.org/obo/NCIT_C156767>",
+                "text": "Disease, Disorder or Finding Basal Cell Carcinoma",
+                "matches": [
+                    {
+                        "colname": "onset_axial",
+                        "idx": "1-8",
+                        "score": 0.16275271773338318,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 2,
+            "instances": [
+                "0x6734883f99325a6ebc3f5aae3a1cf07b",
+                "0x6734883f99325a6ebc3f5aae3a1cf07b"
+            ]
+        },
+        {
+            "target": {
+                "id": 133,
+                "path": [
+                    "Disease, Disorder or Finding",
+                    "Pneumococcal Pneumonia"
+                ],
+                "subject_id": "<http://purl.obolibrary.org/obo/NCIT_C157959>",
+                "text": "Disease, Disorder or Finding Pneumococcal Pneumonia",
+                "matches": [
+                    {
+                        "colname": "onset_axial",
+                        "idx": "1-8",
+                        "score": 0.15845754742622375,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 2,
+            "instances": [
+                "0x6734883f99325a6ebc3f5aae3a1cf07b",
+                "0x6734883f99325a6ebc3f5aae3a1cf07b"
+            ]
+        },
+        {
+            "target": {
+                "id": 840,
+                "path": [
+                    "Relapse",
+                    "relapseCortisoneTherapy"
+                ],
+                "subject_id": "<https://w3id.org/brainteaser/ontology/schema/relapseCortisoneTherapy>",
+                "text": "Relapse relapseCortisoneTherapy",
+                "matches": [
+                    {
+                        "colname": "onset_axial",
+                        "idx": "1-8",
+                        "score": 0.08182542026042938,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 2,
+            "instances": [
+                "0x6734883f99325a6ebc3f5aae3a1cf07b",
+                "0x6734883f99325a6ebc3f5aae3a1cf07b"
+            ]
+        },
+        {
+            "target": {
+                "id": 795,
+                "path": [
+                    "PharmacologicSubstance",
+                    "Nasal Preparations"
+                ],
+                "subject_id": "<http://purl.bioontology.org/ontology/UATC/R01>",
+                "text": "PharmacologicSubstance Nasal Preparations",
+                "matches": [
+                    {
+                        "colname": "onset_axial",
+                        "idx": "1-8",
+                        "score": 0.02840287983417511,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 2,
+            "instances": [
+                "0x6734883f99325a6ebc3f5aae3a1cf07b",
+                "0x6734883f99325a6ebc3f5aae3a1cf07b"
+            ]
+        },
+        {
+            "target": {
+                "id": 270,
+                "path": [
+                    "Disease, Disorder or Finding",
+                    "Symptom"
+                ],
+                "subject_id": "<http://purl.obolibrary.org/obo/NCIT_C4876>",
+                "text": "Disease, Disorder or Finding Symptom",
+                "matches": [
+                    {
+                        "colname": "onset_limbs",
+                        "idx": "1-10",
+                        "score": 0.34209370613098145,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 5,
+            "instances": [
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x96e1eb34654a6f94ebcf0f61ae2e3434",
+                "0x96e1eb34654a6f94ebcf0f61ae2e3434"
+            ]
+        },
+        {
+            "target": {
+                "id": 206,
+                "path": [
+                    "Disease, Disorder or Finding",
+                    "Multiple Sclerosis"
+                ],
+                "subject_id": "<http://purl.obolibrary.org/obo/NCIT_C3243>",
+                "text": "Disease, Disorder or Finding Multiple Sclerosis",
+                "matches": [
+                    {
+                        "colname": "onset_limbs",
+                        "idx": "1-10",
+                        "score": 0.28300154209136963,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 5,
+            "instances": [
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x96e1eb34654a6f94ebcf0f61ae2e3434",
+                "0x96e1eb34654a6f94ebcf0f61ae2e3434"
+            ]
+        },
+        {
+            "target": {
+                "id": 566,
+                "path": [
+                    "PharmacologicSubstance",
+                    "Blood and Blood Forming Organs"
+                ],
+                "subject_id": "<http://purl.bioontology.org/ontology/UATC/B>",
+                "text": "PharmacologicSubstance Blood and Blood Forming Organs",
+                "matches": [
+                    {
+                        "colname": "onset_limbs",
+                        "idx": "1-10",
+                        "score": 0.18552923202514648,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 5,
+            "instances": [
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x96e1eb34654a6f94ebcf0f61ae2e3434",
+                "0x96e1eb34654a6f94ebcf0f61ae2e3434"
+            ]
+        },
+        {
+            "target": {
+                "id": 598,
+                "path": [
+                    "PharmacologicSubstance",
+                    "Agents Acting on the Renin-Angiotensin System"
+                ],
+                "subject_id": "<http://purl.bioontology.org/ontology/UATC/C09>",
+                "text": "PharmacologicSubstance Agents Acting on the Renin-Angiotensin System",
+                "matches": [
+                    {
+                        "colname": "onset_limbs",
+                        "idx": "1-10",
+                        "score": 0.10586528480052948,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 5,
+            "instances": [
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x96e1eb34654a6f94ebcf0f61ae2e3434",
+                "0x96e1eb34654a6f94ebcf0f61ae2e3434"
+            ]
+        },
+        {
+            "target": {
+                "id": 465,
+                "path": [
+                    "Laboratory Test Result",
+                    "measuredLevel"
+                ],
+                "subject_id": "<https://w3id.org/brainteaser/ontology/schema/measuredLevel>",
+                "text": "Laboratory Test Result measuredLevel",
+                "matches": [
+                    {
+                        "colname": "slope",
+                        "idx": "1-69",
+                        "score": 0.2808595895767212,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 14,
+            "instances": [
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xd0e71a1c656557fd7856d9e3c6b15faf",
+                "0x3810943e96e8b2d62fe539b8bd123704",
+                "0x6734883f99325a6ebc3f5aae3a1cf07b",
+                "0x96e1eb34654a6f94ebcf0f61ae2e3434",
+                "0xd0e71a1c656557fd7856d9e3c6b15faf",
+                "0x3810943e96e8b2d62fe539b8bd123704",
+                "0x6734883f99325a6ebc3f5aae3a1cf07b",
+                "0x96e1eb34654a6f94ebcf0f61ae2e3434",
+                "0xca23e24556475bbc742f37df9b4dacfc"
+            ]
+        },
+        {
+            "target": {
+                "id": 199,
+                "path": [
+                    "Disease, Disorder or Finding",
+                    "Hepatitis A Infection"
+                ],
+                "subject_id": "<http://purl.obolibrary.org/obo/NCIT_C3096>",
+                "text": "Disease, Disorder or Finding Hepatitis A Infection",
+                "matches": [
+                    {
+                        "colname": "sex_Male",
+                        "idx": "1-71",
+                        "score": 0.3121797442436218,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 14,
+            "instances": [
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xd0e71a1c656557fd7856d9e3c6b15faf",
+                "0x3810943e96e8b2d62fe539b8bd123704",
+                "0x6734883f99325a6ebc3f5aae3a1cf07b",
+                "0x96e1eb34654a6f94ebcf0f61ae2e3434",
+                "0xd0e71a1c656557fd7856d9e3c6b15faf",
+                "0x3810943e96e8b2d62fe539b8bd123704",
+                "0x6734883f99325a6ebc3f5aae3a1cf07b",
+                "0x96e1eb34654a6f94ebcf0f61ae2e3434",
+                "0xca23e24556475bbc742f37df9b4dacfc"
+            ]
+        },
+        {
+            "target": {
+                "id": 134,
+                "path": [
+                    "Disease, Disorder or Finding",
+                    "COVID-19 Infection"
+                ],
+                "subject_id": "<http://purl.obolibrary.org/obo/NCIT_C171133>",
+                "text": "Disease, Disorder or Finding COVID-19 Infection",
+                "matches": [
+                    {
+                        "colname": "sex_Male",
+                        "idx": "1-71",
+                        "score": 0.2853393852710724,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 14,
+            "instances": [
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xd0e71a1c656557fd7856d9e3c6b15faf",
+                "0x3810943e96e8b2d62fe539b8bd123704",
+                "0x6734883f99325a6ebc3f5aae3a1cf07b",
+                "0x96e1eb34654a6f94ebcf0f61ae2e3434",
+                "0xd0e71a1c656557fd7856d9e3c6b15faf",
+                "0x3810943e96e8b2d62fe539b8bd123704",
+                "0x6734883f99325a6ebc3f5aae3a1cf07b",
+                "0x96e1eb34654a6f94ebcf0f61ae2e3434",
+                "0xca23e24556475bbc742f37df9b4dacfc"
+            ]
+        },
+        {
+            "target": {
+                "id": 462,
+                "path": [
+                    "KinshipType",
+                    "Paternal Uncle"
+                ],
+                "subject_id": "<http://purl.obolibrary.org/obo/NCIT_C96585>",
+                "text": "KinshipType Paternal Uncle",
+                "matches": [
+                    {
+                        "colname": "sex_Male",
+                        "idx": "1-71",
+                        "score": 0.07661845535039902,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 14,
+            "instances": [
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xd0e71a1c656557fd7856d9e3c6b15faf",
+                "0x3810943e96e8b2d62fe539b8bd123704",
+                "0x6734883f99325a6ebc3f5aae3a1cf07b",
+                "0x96e1eb34654a6f94ebcf0f61ae2e3434",
+                "0xd0e71a1c656557fd7856d9e3c6b15faf",
+                "0x3810943e96e8b2d62fe539b8bd123704",
+                "0x6734883f99325a6ebc3f5aae3a1cf07b",
+                "0x96e1eb34654a6f94ebcf0f61ae2e3434",
+                "0xca23e24556475bbc742f37df9b4dacfc"
+            ]
+        },
+        {
+            "target": {
+                "id": 359,
+                "path": [
+                    "Group (social concept)",
+                    "Caucasian"
+                ],
+                "subject_id": "<http://purl.bioontology.org/ontology/SNOMEDCT/14045001>",
+                "text": "Group (social concept) Caucasian",
+                "matches": [
+                    {
+                        "colname": "ethnicity_Caucasian",
+                        "idx": "1-74",
+                        "score": 0.43231552839279175,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 14,
+            "instances": [
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xd0e71a1c656557fd7856d9e3c6b15faf",
+                "0x3810943e96e8b2d62fe539b8bd123704",
+                "0x6734883f99325a6ebc3f5aae3a1cf07b",
+                "0x96e1eb34654a6f94ebcf0f61ae2e3434",
+                "0xd0e71a1c656557fd7856d9e3c6b15faf",
+                "0x3810943e96e8b2d62fe539b8bd123704",
+                "0x6734883f99325a6ebc3f5aae3a1cf07b",
+                "0x96e1eb34654a6f94ebcf0f61ae2e3434",
+                "0xca23e24556475bbc742f37df9b4dacfc"
+            ]
+        },
+        {
+            "target": {
+                "id": 209,
+                "path": [
+                    "Disease, Disorder or Finding",
+                    "Obesity"
+                ],
+                "subject_id": "<http://purl.obolibrary.org/obo/NCIT_C3283>",
+                "text": "Disease, Disorder or Finding Obesity",
+                "matches": [
+                    {
+                        "colname": "moreThan10PercentWeightloss_False",
+                        "idx": "1-75",
+                        "score": 0.3157016634941101,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 8,
+            "instances": [
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0x3810943e96e8b2d62fe539b8bd123704",
+                "0x3810943e96e8b2d62fe539b8bd123704",
+                "0xca23e24556475bbc742f37df9b4dacfc"
+            ]
+        },
+        {
+            "target": {
+                "id": 681,
+                "path": [
+                    "PharmacologicSubstance",
+                    "Tamoxifen"
+                ],
+                "subject_id": "<http://purl.bioontology.org/ontology/UATC/L02BA01>",
+                "text": "PharmacologicSubstance Tamoxifen",
+                "matches": [
+                    {
+                        "colname": "moreThan10PercentWeightloss_False",
+                        "idx": "1-75",
+                        "score": 0.07161630690097809,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 8,
+            "instances": [
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0x3810943e96e8b2d62fe539b8bd123704",
+                "0x3810943e96e8b2d62fe539b8bd123704",
+                "0xca23e24556475bbc742f37df9b4dacfc"
+            ]
+        },
+        {
+            "target": {
+                "id": 811,
+                "path": [
+                    "PharmacologicSubstance",
+                    "Calcium Folinate"
+                ],
+                "subject_id": "<http://purl.bioontology.org/ontology/UATC/V03AF03>",
+                "text": "PharmacologicSubstance Calcium Folinate",
+                "matches": [
+                    {
+                        "colname": "moreThan10PercentWeightloss_False",
+                        "idx": "1-75",
+                        "score": 0.0661255344748497,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 8,
+            "instances": [
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0x3810943e96e8b2d62fe539b8bd123704",
+                "0x3810943e96e8b2d62fe539b8bd123704",
+                "0xca23e24556475bbc742f37df9b4dacfc"
+            ]
+        },
+        {
+            "target": {
+                "id": 380,
+                "path": [
+                    "Intervention or Procedure",
+                    "Diagnostic Procedure",
+                    "Clinical Evaluation",
+                    "moreThan10PercentWeightloss"
+                ],
+                "subject_id": "<https://w3id.org/brainteaser/ontology/schema/moreThan10PercentWeightloss>",
+                "text": "Intervention or Procedure Diagnostic Procedure Clinical Evaluation moreThan10PercentWeightloss",
+                "matches": [
+                    {
+                        "colname": "moreThan10PercentWeightloss_True",
+                        "idx": "1-76",
+                        "score": 0.4499477446079254,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 2,
+            "instances": [
+                "0xd0e71a1c656557fd7856d9e3c6b15faf",
+                "0xd0e71a1c656557fd7856d9e3c6b15faf"
+            ]
+        },
+        {
+            "target": {
+                "id": 267,
+                "path": [
+                    "Disease, Disorder or Finding",
+                    "Dementia"
+                ],
+                "subject_id": "<http://purl.obolibrary.org/obo/NCIT_C4786>",
+                "text": "Disease, Disorder or Finding Dementia",
+                "matches": [
+                    {
+                        "colname": "ALS_familiar_history_False",
+                        "idx": "1-77",
+                        "score": 0.23433923721313477,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 12,
+            "instances": [
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xd0e71a1c656557fd7856d9e3c6b15faf",
+                "0x6734883f99325a6ebc3f5aae3a1cf07b",
+                "0x96e1eb34654a6f94ebcf0f61ae2e3434",
+                "0xd0e71a1c656557fd7856d9e3c6b15faf",
+                "0x6734883f99325a6ebc3f5aae3a1cf07b",
+                "0x96e1eb34654a6f94ebcf0f61ae2e3434",
+                "0xca23e24556475bbc742f37df9b4dacfc"
+            ]
+        },
+        {
+            "target": {
+                "id": 348,
+                "path": [
+                    "Gene",
+                    "SQSTM1 Gene"
+                ],
+                "subject_id": "<http://purl.obolibrary.org/obo/NCIT_C101491>",
+                "text": "Gene SQSTM1 Gene",
+                "matches": [
+                    {
+                        "colname": "ALS_familiar_history_False",
+                        "idx": "1-77",
+                        "score": 0.17228038609027863,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 12,
+            "instances": [
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xd0e71a1c656557fd7856d9e3c6b15faf",
+                "0x6734883f99325a6ebc3f5aae3a1cf07b",
+                "0x96e1eb34654a6f94ebcf0f61ae2e3434",
+                "0xd0e71a1c656557fd7856d9e3c6b15faf",
+                "0x6734883f99325a6ebc3f5aae3a1cf07b",
+                "0x96e1eb34654a6f94ebcf0f61ae2e3434",
+                "0xca23e24556475bbc742f37df9b4dacfc"
+            ]
+        },
+        {
+            "target": {
+                "id": 448,
+                "path": [
+                    "KinshipType",
+                    "Mother"
+                ],
+                "subject_id": "<http://purl.obolibrary.org/obo/NCIT_C25189>",
+                "text": "KinshipType Mother",
+                "matches": [
+                    {
+                        "colname": "ALS_familiar_history_False",
+                        "idx": "1-77",
+                        "score": 0.09798754006624222,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 12,
+            "instances": [
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xd0e71a1c656557fd7856d9e3c6b15faf",
+                "0x6734883f99325a6ebc3f5aae3a1cf07b",
+                "0x96e1eb34654a6f94ebcf0f61ae2e3434",
+                "0xd0e71a1c656557fd7856d9e3c6b15faf",
+                "0x6734883f99325a6ebc3f5aae3a1cf07b",
+                "0x96e1eb34654a6f94ebcf0f61ae2e3434",
+                "0xca23e24556475bbc742f37df9b4dacfc"
+            ]
+        },
+        {
+            "target": {
+                "id": 457,
+                "path": [
+                    "KinshipType",
+                    "Grandfather"
+                ],
+                "subject_id": "<http://purl.obolibrary.org/obo/NCIT_C96573>",
+                "text": "KinshipType Grandfather",
+                "matches": [
+                    {
+                        "colname": "ALS_familiar_history_True",
+                        "idx": "1-78",
+                        "score": 0.14333274960517883,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 2,
+            "instances": [
+                "0x3810943e96e8b2d62fe539b8bd123704",
+                "0x3810943e96e8b2d62fe539b8bd123704"
+            ]
+        },
+        {
+            "target": {
+                "id": 226,
+                "path": [
+                    "Disease, Disorder or Finding",
+                    "Favism"
+                ],
+                "subject_id": "<http://purl.obolibrary.org/obo/NCIT_C34607>",
+                "text": "Disease, Disorder or Finding Favism",
+                "matches": [
+                    {
+                        "colname": "prevalentLMN_False",
+                        "idx": "1-79",
+                        "score": 0.35903576016426086,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 6,
+            "instances": [
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xca23e24556475bbc742f37df9b4dacfc"
+            ]
+        },
+        {
+            "target": {
+                "id": 787,
+                "path": [
+                    "PharmacologicSubstance",
+                    "Riluzole"
+                ],
+                "subject_id": "<http://purl.bioontology.org/ontology/UATC/N07XX02>",
+                "text": "PharmacologicSubstance Riluzole",
+                "matches": [
+                    {
+                        "colname": "prevalentLMN_False",
+                        "idx": "1-79",
+                        "score": 0.04895433783531189,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 6,
+            "instances": [
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xca23e24556475bbc742f37df9b4dacfc"
+            ]
+        },
+        {
+            "target": {
+                "id": 13,
+                "path": [
+                    "Person",
+                    "Patient",
+                    "hasEthnicity"
+                ],
+                "subject_id": "<https://w3id.org/brainteaser/ontology/schema/hasEthnicity>",
+                "text": "Person Patient hasEthnicity",
+                "matches": [
+                    {
+                        "colname": "prevalentLMN_True",
+                        "idx": "1-80",
+                        "score": 0.3185076415538788,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 2,
+            "instances": [
+                "0x6734883f99325a6ebc3f5aae3a1cf07b",
+                "0x6734883f99325a6ebc3f5aae3a1cf07b"
+            ]
+        },
+        {
+            "target": {
+                "id": 349,
+                "path": [
+                    "Gene",
+                    "OPTN Gene"
+                ],
+                "subject_id": "<http://purl.obolibrary.org/obo/NCIT_C119640>",
+                "text": "Gene OPTN Gene",
+                "matches": [
+                    {
+                        "colname": "prevalentLMN_True",
+                        "idx": "1-80",
+                        "score": 0.17016366124153137,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 2,
+            "instances": [
+                "0x6734883f99325a6ebc3f5aae3a1cf07b",
+                "0x6734883f99325a6ebc3f5aae3a1cf07b"
+            ]
+        },
+        {
+            "target": {
+                "id": 445,
+                "path": [
+                    "KinshipType",
+                    "First Degree Relative"
+                ],
+                "subject_id": "<http://purl.obolibrary.org/obo/NCIT_C21481>",
+                "text": "KinshipType First Degree Relative",
+                "matches": [
+                    {
+                        "colname": "prevalentLMN_True",
+                        "idx": "1-80",
+                        "score": 0.14355146884918213,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 2,
+            "instances": [
+                "0x6734883f99325a6ebc3f5aae3a1cf07b",
+                "0x6734883f99325a6ebc3f5aae3a1cf07b"
+            ]
+        },
+        {
+            "target": {
+                "id": 93,
+                "path": [
+                    "Conditon",
+                    "Comorbidity",
+                    "comorbiditySeverity"
+                ],
+                "subject_id": "<https://w3id.org/brainteaser/ontology/schema/comorbiditySeverity>",
+                "text": "Conditon Comorbidity comorbiditySeverity",
+                "matches": [
+                    {
+                        "colname": "prevalentUMN_False",
+                        "idx": "1-81",
+                        "score": 0.24797913432121277,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 5,
+            "instances": [
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x6734883f99325a6ebc3f5aae3a1cf07b",
+                "0x6734883f99325a6ebc3f5aae3a1cf07b"
+            ]
+        },
+        {
+            "target": {
+                "id": 94,
+                "path": [
+                    "Conditon",
+                    "Comorbidity",
+                    "comorbidityTreatment"
+                ],
+                "subject_id": "<https://w3id.org/brainteaser/ontology/schema/comorbidityTreatment>",
+                "text": "Conditon Comorbidity comorbidityTreatment",
+                "matches": [
+                    {
+                        "colname": "prevalentUMN_False",
+                        "idx": "1-81",
+                        "score": 0.24066908657550812,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 5,
+            "instances": [
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x6734883f99325a6ebc3f5aae3a1cf07b",
+                "0x6734883f99325a6ebc3f5aae3a1cf07b"
+            ]
+        },
+        {
+            "target": {
+                "id": 634,
+                "path": [
+                    "PharmacologicSubstance",
+                    "Tamsulosin"
+                ],
+                "subject_id": "<http://purl.bioontology.org/ontology/UATC/G04CA02>",
+                "text": "PharmacologicSubstance Tamsulosin",
+                "matches": [
+                    {
+                        "colname": "prevalentUMN_False",
+                        "idx": "1-81",
+                        "score": 0.09570178389549255,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 5,
+            "instances": [
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x6734883f99325a6ebc3f5aae3a1cf07b",
+                "0x6734883f99325a6ebc3f5aae3a1cf07b"
+            ]
+        },
+        {
+            "target": {
+                "id": 459,
+                "path": [
+                    "KinshipType",
+                    "Maternal Aunt"
+                ],
+                "subject_id": "<http://purl.obolibrary.org/obo/NCIT_C96575>",
+                "text": "KinshipType Maternal Aunt",
+                "matches": [
+                    {
+                        "colname": "prevalentUMN_False",
+                        "idx": "1-81",
+                        "score": 0.09256014227867126,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 5,
+            "instances": [
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x6734883f99325a6ebc3f5aae3a1cf07b",
+                "0x6734883f99325a6ebc3f5aae3a1cf07b"
+            ]
+        },
+        {
+            "target": {
+                "id": 700,
+                "path": [
+                    "PharmacologicSubstance",
+                    "Tocilizumab"
+                ],
+                "subject_id": "<http://purl.bioontology.org/ontology/UATC/L04AC07>",
+                "text": "PharmacologicSubstance Tocilizumab",
+                "matches": [
+                    {
+                        "colname": "prevalentUMN_False",
+                        "idx": "1-81",
+                        "score": 0.08842078596353531,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 5,
+            "instances": [
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x6734883f99325a6ebc3f5aae3a1cf07b",
+                "0x6734883f99325a6ebc3f5aae3a1cf07b"
+            ]
+        },
+        {
+            "target": {
+                "id": 439,
+                "path": [
+                    "Kinship",
+                    "hasKinshipType"
+                ],
+                "subject_id": "<https://w3id.org/brainteaser/ontology/schema/hasKinshipType>",
+                "text": "Kinship hasKinshipType",
+                "matches": [
+                    {
+                        "colname": "prevalentUMN_True",
+                        "idx": "1-82",
+                        "score": 0.1293725222349167,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 3,
+            "instances": [
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xca23e24556475bbc742f37df9b4dacfc"
+            ]
+        },
+        {
+            "target": {
+                "id": 392,
+                "path": [
+                    "Intervention or Procedure",
+                    "Diagnostic Procedure",
+                    "Diagnostic Imaging",
+                    "Magnetic Resonance Imaging (MRI)",
+                    "newOrEnlargedLesionsT2MRINumber"
+                ],
+                "subject_id": "<https://w3id.org/brainteaser/ontology/schema/newOrEnlargedLesionsT2MRINumber>",
+                "text": "Intervention or Procedure Diagnostic Procedure Diagnostic Imaging Magnetic Resonance Imaging (MRI) newOrEnlargedLesionsT2MRINumber",
+                "matches": [
+                    {
+                        "colname": "mixedMN_False",
+                        "idx": "1-83",
+                        "score": 0.25665727257728577,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 5,
+            "instances": [
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0x6734883f99325a6ebc3f5aae3a1cf07b",
+                "0x6734883f99325a6ebc3f5aae3a1cf07b",
+                "0xca23e24556475bbc742f37df9b4dacfc"
+            ]
+        },
+        {
+            "target": {
+                "id": 53,
+                "path": [
+                    "Adverse Drug Reaction",
+                    "Drug Hypersensitivity AE"
+                ],
+                "subject_id": "<http://purl.obolibrary.org/obo/OAE_0000890>",
+                "text": "Adverse Drug Reaction Drug Hypersensitivity AE",
+                "matches": [
+                    {
+                        "colname": "mixedMN_True",
+                        "idx": "1-84",
+                        "score": 0.162388414144516,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 3,
+            "instances": [
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5"
+            ]
+        },
+        {
+            "target": {
+                "id": 314,
+                "path": [
+                    "Disease, Disorder or Finding",
+                    "Mood Disorder"
+                ],
+                "subject_id": "<http://purl.obolibrary.org/obo/NCIT_C92200>",
+                "text": "Disease, Disorder or Finding Mood Disorder",
+                "matches": [
+                    {
+                        "colname": "onset_limb_type_lower-right-limb",
+                        "idx": "1-99",
+                        "score": 0.30002641677856445,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 2,
+            "instances": [
+                "0x96e1eb34654a6f94ebcf0f61ae2e3434",
+                "0x96e1eb34654a6f94ebcf0f61ae2e3434"
+            ]
+        },
+        {
+            "target": {
+                "id": 272,
+                "path": [
+                    "Disease, Disorder or Finding",
+                    "Deep Vein Thrombosis"
+                ],
+                "subject_id": "<http://purl.obolibrary.org/obo/NCIT_C49343>",
+                "text": "Disease, Disorder or Finding Deep Vein Thrombosis",
+                "matches": [
+                    {
+                        "colname": "onset_limb_type_lower-right-limb",
+                        "idx": "1-99",
+                        "score": 0.2559918165206909,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 2,
+            "instances": [
+                "0x96e1eb34654a6f94ebcf0f61ae2e3434",
+                "0x96e1eb34654a6f94ebcf0f61ae2e3434"
+            ]
+        },
+        {
+            "target": {
+                "id": 705,
+                "path": [
+                    "PharmacologicSubstance",
+                    "Musculo-Skeletal System"
+                ],
+                "subject_id": "<http://purl.bioontology.org/ontology/UATC/M>",
+                "text": "PharmacologicSubstance Musculo-Skeletal System",
+                "matches": [
+                    {
+                        "colname": "onset_limb_type_lower-right-limb",
+                        "idx": "1-99",
+                        "score": 0.2451918125152588,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 2,
+            "instances": [
+                "0x96e1eb34654a6f94ebcf0f61ae2e3434",
+                "0x96e1eb34654a6f94ebcf0f61ae2e3434"
+            ]
+        },
+        {
+            "target": {
+                "id": 679,
+                "path": [
+                    "PharmacologicSubstance",
+                    "Trastuzumab"
+                ],
+                "subject_id": "<http://purl.bioontology.org/ontology/UATC/L01XC03>",
+                "text": "PharmacologicSubstance Trastuzumab",
+                "matches": [
+                    {
+                        "colname": "onset_limb_type_lower-right-limb",
+                        "idx": "1-99",
+                        "score": 0.09645966440439224,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 2,
+            "instances": [
+                "0x96e1eb34654a6f94ebcf0f61ae2e3434",
+                "0x96e1eb34654a6f94ebcf0f61ae2e3434"
+            ]
+        },
+        {
+            "target": {
+                "id": 744,
+                "path": [
+                    "PharmacologicSubstance",
+                    "Levodopa and Decarboxylase Inhibitor"
+                ],
+                "subject_id": "<http://purl.bioontology.org/ontology/UATC/N04BA02>",
+                "text": "PharmacologicSubstance Levodopa and Decarboxylase Inhibitor",
+                "matches": [
+                    {
+                        "colname": "onset_limb_type_lower-right-limb",
+                        "idx": "1-99",
+                        "score": 0.03136477619409561,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 2,
+            "instances": [
+                "0x96e1eb34654a6f94ebcf0f61ae2e3434",
+                "0x96e1eb34654a6f94ebcf0f61ae2e3434"
+            ]
+        },
+        {
+            "target": {
+                "id": 346,
+                "path": [
+                    "Event",
+                    "Onset",
+                    "otherOnset"
+                ],
+                "subject_id": "<https://w3id.org/brainteaser/ontology/schema/otherOnset>",
+                "text": "Event Onset otherOnset",
+                "matches": [
+                    {
+                        "colname": "onset_limb_type_upper-distal-right-limb",
+                        "idx": "1-104",
+                        "score": 0.28885549306869507,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 3,
+            "instances": [
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5"
+            ]
+        },
+        {
+            "target": {
+                "id": 418,
+                "path": [
+                    "Intervention or Procedure",
+                    "Diagnostic Procedure",
+                    "Questionnaire",
+                    "Amyotrophic Lateral Sclerosis Functional Rating Scale (ALSFRS)",
+                    "alsfrs10"
+                ],
+                "subject_id": "<https://w3id.org/brainteaser/ontology/schema/alsfrs10>",
+                "text": "Intervention or Procedure Diagnostic Procedure Questionnaire Amyotrophic Lateral Sclerosis Functional Rating Scale (ALSFRS) alsfrs10",
+                "matches": [
+                    {
+                        "colname": "onset_limb_type_upper-distal-right-limb",
+                        "idx": "1-104",
+                        "score": 0.2548789381980896,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 3,
+            "instances": [
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5"
+            ]
+        },
+        {
+            "target": {
+                "id": 427,
+                "path": [
+                    "Intervention or Procedure",
+                    "Diagnostic Procedure",
+                    "Questionnaire",
+                    "Amyotrophic Lateral Sclerosis Functional Rating Scale (ALSFRS)",
+                    "alsfrs8"
+                ],
+                "subject_id": "<https://w3id.org/brainteaser/ontology/schema/alsfrs8>",
+                "text": "Intervention or Procedure Diagnostic Procedure Questionnaire Amyotrophic Lateral Sclerosis Functional Rating Scale (ALSFRS) alsfrs8",
+                "matches": [
+                    {
+                        "colname": "onset_limb_type_upper-distal-right-limb",
+                        "idx": "1-104",
+                        "score": 0.2505224943161011,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 3,
+            "instances": [
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5"
+            ]
+        },
+        {
+            "target": {
+                "id": 588,
+                "path": [
+                    "PharmacologicSubstance",
+                    "Propanolol"
+                ],
+                "subject_id": "<http://purl.bioontology.org/ontology/UATC/C07AA05>",
+                "text": "PharmacologicSubstance Propanolol",
+                "matches": [
+                    {
+                        "colname": "onset_limb_type_upper-distal-right-limb",
+                        "idx": "1-104",
+                        "score": 0.13358286023139954,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 3,
+            "instances": [
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5"
+            ]
+        },
+        {
+            "target": {
+                "id": 730,
+                "path": [
+                    "PharmacologicSubstance",
+                    "Phenobarbital"
+                ],
+                "subject_id": "<http://purl.bioontology.org/ontology/UATC/N03AA02>",
+                "text": "PharmacologicSubstance Phenobarbital",
+                "matches": [
+                    {
+                        "colname": "onset_limb_type_upper-distal-right-limb",
+                        "idx": "1-104",
+                        "score": 0.13050860166549683,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 3,
+            "instances": [
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5"
+            ]
+        },
+        {
+            "target": {
+                "id": 693,
+                "path": [
+                    "PharmacologicSubstance",
+                    "Teriflunomide"
+                ],
+                "subject_id": "<http://purl.bioontology.org/ontology/UATC/L04AA31>",
+                "text": "PharmacologicSubstance Teriflunomide",
+                "matches": [
+                    {
+                        "colname": "onset_limb_type_upper-distal-right-limb",
+                        "idx": "1-104",
+                        "score": 0.12049786746501923,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 3,
+            "instances": [
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5"
+            ]
+        },
+        {
+            "target": {
+                "id": 709,
+                "path": [
+                    "PharmacologicSubstance",
+                    "Ibuprofen"
+                ],
+                "subject_id": "<http://purl.bioontology.org/ontology/UATC/M01AE01>",
+                "text": "PharmacologicSubstance Ibuprofen",
+                "matches": [
+                    {
+                        "colname": "onset_limb_type_upper-distal-right-limb",
+                        "idx": "1-104",
+                        "score": 0.036757033318281174,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 3,
+            "instances": [
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5"
+            ]
+        },
+        {
+            "target": {
+                "id": 28,
+                "path": [
+                    "Person",
+                    "Patient",
+                    "retiredAtDiagnosis"
+                ],
+                "subject_id": "<https://w3id.org/brainteaser/ontology/schema/retiredAtDiagnosis>",
+                "text": "Person Patient retiredAtDiagnosis",
+                "matches": [
+                    {
+                        "colname": "retired_at_diagnosis_True",
+                        "idx": "1-159",
+                        "score": 0.39599835872650146,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 11,
+            "instances": [
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xd0e71a1c656557fd7856d9e3c6b15faf",
+                "0x3810943e96e8b2d62fe539b8bd123704",
+                "0x6734883f99325a6ebc3f5aae3a1cf07b",
+                "0x96e1eb34654a6f94ebcf0f61ae2e3434",
+                "0xd0e71a1c656557fd7856d9e3c6b15faf",
+                "0x3810943e96e8b2d62fe539b8bd123704",
+                "0x6734883f99325a6ebc3f5aae3a1cf07b",
+                "0x96e1eb34654a6f94ebcf0f61ae2e3434",
+                "0xca23e24556475bbc742f37df9b4dacfc"
+            ]
+        },
+        {
+            "target": {
+                "id": 198,
+                "path": [
+                    "Disease, Disorder or Finding",
+                    "Hepatitis"
+                ],
+                "subject_id": "<http://purl.obolibrary.org/obo/NCIT_C3095>",
+                "text": "Disease, Disorder or Finding Hepatitis",
+                "matches": [
+                    {
+                        "colname": "retired_at_diagnosis_True",
+                        "idx": "1-159",
+                        "score": 0.32389554381370544,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 11,
+            "instances": [
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xd0e71a1c656557fd7856d9e3c6b15faf",
+                "0x3810943e96e8b2d62fe539b8bd123704",
+                "0x6734883f99325a6ebc3f5aae3a1cf07b",
+                "0x96e1eb34654a6f94ebcf0f61ae2e3434",
+                "0xd0e71a1c656557fd7856d9e3c6b15faf",
+                "0x3810943e96e8b2d62fe539b8bd123704",
+                "0x6734883f99325a6ebc3f5aae3a1cf07b",
+                "0x96e1eb34654a6f94ebcf0f61ae2e3434",
+                "0xca23e24556475bbc742f37df9b4dacfc"
+            ]
+        },
+        {
+            "target": {
+                "id": 313,
+                "path": [
+                    "Disease, Disorder or Finding",
+                    "Bowel Obstruction"
+                ],
+                "subject_id": "<http://purl.obolibrary.org/obo/NCIT_C9175>",
+                "text": "Disease, Disorder or Finding Bowel Obstruction",
+                "matches": [
+                    {
+                        "colname": "retired_at_diagnosis_True",
+                        "idx": "1-159",
+                        "score": 0.19538572430610657,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 11,
+            "instances": [
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xd0e71a1c656557fd7856d9e3c6b15faf",
+                "0x3810943e96e8b2d62fe539b8bd123704",
+                "0x6734883f99325a6ebc3f5aae3a1cf07b",
+                "0x96e1eb34654a6f94ebcf0f61ae2e3434",
+                "0xd0e71a1c656557fd7856d9e3c6b15faf",
+                "0x3810943e96e8b2d62fe539b8bd123704",
+                "0x6734883f99325a6ebc3f5aae3a1cf07b",
+                "0x96e1eb34654a6f94ebcf0f61ae2e3434",
+                "0xca23e24556475bbc742f37df9b4dacfc"
+            ]
+        },
+        {
+            "target": {
+                "id": 290,
+                "path": [
+                    "Disease, Disorder or Finding",
+                    "Chronic Atropic Gastritis"
+                ],
+                "subject_id": "<http://purl.obolibrary.org/obo/NCIT_C7405>",
+                "text": "Disease, Disorder or Finding Chronic Atropic Gastritis",
+                "matches": [
+                    {
+                        "colname": "retired_at_diagnosis_True",
+                        "idx": "1-159",
+                        "score": 0.19166898727416992,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 11,
+            "instances": [
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xd0e71a1c656557fd7856d9e3c6b15faf",
+                "0x3810943e96e8b2d62fe539b8bd123704",
+                "0x6734883f99325a6ebc3f5aae3a1cf07b",
+                "0x96e1eb34654a6f94ebcf0f61ae2e3434",
+                "0xd0e71a1c656557fd7856d9e3c6b15faf",
+                "0x3810943e96e8b2d62fe539b8bd123704",
+                "0x6734883f99325a6ebc3f5aae3a1cf07b",
+                "0x96e1eb34654a6f94ebcf0f61ae2e3434",
+                "0xca23e24556475bbc742f37df9b4dacfc"
+            ]
+        },
+        {
+            "target": {
+                "id": 90,
+                "path": [
+                    "Conditon",
+                    "conditionEnd"
+                ],
+                "subject_id": "<https://w3id.org/brainteaser/ontology/schema/conditionEnd>",
+                "text": "Conditon conditionEnd",
+                "matches": [
+                    {
+                        "colname": "retired_at_diagnosis_True",
+                        "idx": "1-159",
+                        "score": 0.06738846004009247,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 11,
+            "instances": [
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xd0e71a1c656557fd7856d9e3c6b15faf",
+                "0x3810943e96e8b2d62fe539b8bd123704",
+                "0x6734883f99325a6ebc3f5aae3a1cf07b",
+                "0x96e1eb34654a6f94ebcf0f61ae2e3434",
+                "0xd0e71a1c656557fd7856d9e3c6b15faf",
+                "0x3810943e96e8b2d62fe539b8bd123704",
+                "0x6734883f99325a6ebc3f5aae3a1cf07b",
+                "0x96e1eb34654a6f94ebcf0f61ae2e3434",
+                "0xca23e24556475bbc742f37df9b4dacfc"
+            ]
+        },
+        {
+            "target": {
+                "id": 467,
+                "path": [
+                    "Laboratory Test Result",
+                    "positivityResult"
+                ],
+                "subject_id": "<https://w3id.org/brainteaser/ontology/schema/positivityResult>",
+                "text": "Laboratory Test Result positivityResult",
+                "matches": [
+                    {
+                        "colname": "smoking_False",
+                        "idx": "1-160",
+                        "score": 0.34510987997055054,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 3,
+            "instances": [
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xca23e24556475bbc742f37df9b4dacfc"
+            ]
+        },
+        {
+            "target": {
+                "id": 248,
+                "path": [
+                    "Disease, Disorder or Finding",
+                    "Staphylococcal Infection"
+                ],
+                "subject_id": "<http://purl.obolibrary.org/obo/NCIT_C35038>",
+                "text": "Disease, Disorder or Finding Staphylococcal Infection",
+                "matches": [
+                    {
+                        "colname": "smoking_False",
+                        "idx": "1-160",
+                        "score": 0.2521486282348633,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 3,
+            "instances": [
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xca23e24556475bbc742f37df9b4dacfc"
+            ]
+        },
+        {
+            "target": {
+                "id": 688,
+                "path": [
+                    "PharmacologicSubstance",
+                    "BCG Vaccine"
+                ],
+                "subject_id": "<http://purl.bioontology.org/ontology/UATC/L03AX03>",
+                "text": "PharmacologicSubstance BCG Vaccine",
+                "matches": [
+                    {
+                        "colname": "smoking_False",
+                        "idx": "1-160",
+                        "score": 0.14461015164852142,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 3,
+            "instances": [
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xca23e24556475bbc742f37df9b4dacfc"
+            ]
+        },
+        {
+            "target": {
+                "id": 322,
+                "path": [
+                    "Disease, Disorder or Finding",
+                    "Chronic Lung Disorder"
+                ],
+                "subject_id": "<http://purl.obolibrary.org/obo/NCIT_C98541>",
+                "text": "Disease, Disorder or Finding Chronic Lung Disorder",
+                "matches": [
+                    {
+                        "colname": "smoking_True",
+                        "idx": "1-161",
+                        "score": 0.2799936532974243,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 4,
+            "instances": [
+                "0xd0e71a1c656557fd7856d9e3c6b15faf",
+                "0x3810943e96e8b2d62fe539b8bd123704",
+                "0xd0e71a1c656557fd7856d9e3c6b15faf",
+                "0x3810943e96e8b2d62fe539b8bd123704"
+            ]
+        },
+        {
+            "target": {
+                "id": 704,
+                "path": [
+                    "PharmacologicSubstance",
+                    "Dimethyl Fumarate"
+                ],
+                "subject_id": "<http://purl.bioontology.org/ontology/UATC/L04AX07>",
+                "text": "PharmacologicSubstance Dimethyl Fumarate",
+                "matches": [
+                    {
+                        "colname": "smoking_True",
+                        "idx": "1-161",
+                        "score": 0.1127767264842987,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 4,
+            "instances": [
+                "0xd0e71a1c656557fd7856d9e3c6b15faf",
+                "0x3810943e96e8b2d62fe539b8bd123704",
+                "0xd0e71a1c656557fd7856d9e3c6b15faf",
+                "0x3810943e96e8b2d62fe539b8bd123704"
+            ]
+        },
+        {
+            "target": {
+                "id": 778,
+                "path": [
+                    "PharmacologicSubstance",
+                    "Acetylcarnitine"
+                ],
+                "subject_id": "<http://purl.bioontology.org/ontology/UATC/N06BX12>",
+                "text": "PharmacologicSubstance Acetylcarnitine",
+                "matches": [
+                    {
+                        "colname": "smoking_True",
+                        "idx": "1-161",
+                        "score": 0.10794553905725479,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 4,
+            "instances": [
+                "0xd0e71a1c656557fd7856d9e3c6b15faf",
+                "0x3810943e96e8b2d62fe539b8bd123704",
+                "0xd0e71a1c656557fd7856d9e3c6b15faf",
+                "0x3810943e96e8b2d62fe539b8bd123704"
+            ]
+        },
+        {
+            "target": {
+                "id": 663,
+                "path": [
+                    "PharmacologicSubstance",
+                    "Immune Sera and Immunoglobulins"
+                ],
+                "subject_id": "<http://purl.bioontology.org/ontology/UATC/J06>",
+                "text": "PharmacologicSubstance Immune Sera and Immunoglobulins",
+                "matches": [
+                    {
+                        "colname": "smoking_True",
+                        "idx": "1-161",
+                        "score": 0.07488979399204254,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 4,
+            "instances": [
+                "0xd0e71a1c656557fd7856d9e3c6b15faf",
+                "0x3810943e96e8b2d62fe539b8bd123704",
+                "0xd0e71a1c656557fd7856d9e3c6b15faf",
+                "0x3810943e96e8b2d62fe539b8bd123704"
+            ]
+        },
+        {
+            "target": {
+                "id": 376,
+                "path": [
+                    "Intervention or Procedure",
+                    "Diagnostic Procedure",
+                    "CSF Analysis",
+                    "quotientAlbuminCSF"
+                ],
+                "subject_id": "<https://w3id.org/brainteaser/ontology/schema/quotientAlbuminCSF>",
+                "text": "Intervention or Procedure Diagnostic Procedure CSF Analysis quotientAlbuminCSF",
+                "matches": [
+                    {
+                        "colname": "C9orf72_normal",
+                        "idx": "1-163",
+                        "score": 0.4486970603466034,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 3,
+            "instances": [
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5"
+            ]
+        },
+        {
+            "target": {
+                "id": 356,
+                "path": [
+                    "Genetic Testing",
+                    "onGene"
+                ],
+                "subject_id": "<https://w3id.org/brainteaser/ontology/schema/onGene>",
+                "text": "Genetic Testing onGene",
+                "matches": [
+                    {
+                        "colname": "SOD1 mutation_False",
+                        "idx": "1-164",
+                        "score": 0.38411906361579895,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 3,
+            "instances": [
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5"
+            ]
+        },
+        {
+            "target": {
+                "id": 261,
+                "path": [
+                    "Disease, Disorder or Finding",
+                    "Proteinuria"
+                ],
+                "subject_id": "<http://purl.obolibrary.org/obo/NCIT_C38012>",
+                "text": "Disease, Disorder or Finding Proteinuria",
+                "matches": [
+                    {
+                        "colname": "TARDBP mutation_False",
+                        "idx": "1-171",
+                        "score": 0.2642706334590912,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 3,
+            "instances": [
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5"
+            ]
+        },
+        {
+            "target": {
+                "id": 251,
+                "path": [
+                    "Disease, Disorder or Finding",
+                    "Cutaneous Melanoma"
+                ],
+                "subject_id": "<http://purl.obolibrary.org/obo/NCIT_C3510>",
+                "text": "Disease, Disorder or Finding Cutaneous Melanoma",
+                "matches": [
+                    {
+                        "colname": "TARDBP mutation_False",
+                        "idx": "1-171",
+                        "score": 0.20518487691879272,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 3,
+            "instances": [
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5"
+            ]
+        },
+        {
+            "target": {
+                "id": 618,
+                "path": [
+                    "PharmacologicSubstance",
+                    "Antispetic and Disinfectants"
+                ],
+                "subject_id": "<http://purl.bioontology.org/ontology/UATC/D08>",
+                "text": "PharmacologicSubstance Antispetic and Disinfectants",
+                "matches": [
+                    {
+                        "colname": "TARDBP mutation_False",
+                        "idx": "1-171",
+                        "score": 0.11472319811582565,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 3,
+            "instances": [
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5"
+            ]
+        },
+        {
+            "target": {
+                "id": 355,
+                "path": [
+                    "Gene",
+                    "FUS Gene"
+                ],
+                "subject_id": "<http://purl.obolibrary.org/obo/NCIT_C91852>",
+                "text": "Gene FUS Gene",
+                "matches": [
+                    {
+                        "colname": "FUS mutation_False",
+                        "idx": "1-177",
+                        "score": 0.3667343258857727,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 3,
+            "instances": [
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5"
+            ]
+        },
+        {
+            "target": {
+                "id": 158,
+                "path": [
+                    "Disease, Disorder or Finding",
+                    "Fever Chills"
+                ],
+                "subject_id": "<http://purl.obolibrary.org/obo/NCIT_C26921>",
+                "text": "Disease, Disorder or Finding Fever Chills",
+                "matches": [
+                    {
+                        "colname": "FUS mutation_False",
+                        "idx": "1-177",
+                        "score": 0.2790514826774597,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 3,
+            "instances": [
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5"
+            ]
+        },
+        {
+            "target": {
+                "id": 136,
+                "path": [
+                    "Disease, Disorder or Finding",
+                    "Hepatic Toxicity"
+                ],
+                "subject_id": "<http://purl.obolibrary.org/obo/NCIT_C185645>",
+                "text": "Disease, Disorder or Finding Hepatic Toxicity",
+                "matches": [
+                    {
+                        "colname": "FUS mutation_False",
+                        "idx": "1-177",
+                        "score": 0.20730160176753998,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 3,
+            "instances": [
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5"
+            ]
+        },
+        {
+            "target": {
+                "id": 271,
+                "path": [
+                    "Disease, Disorder or Finding",
+                    "Skin Carcinoma"
+                ],
+                "subject_id": "<http://purl.obolibrary.org/obo/NCIT_C4914>",
+                "text": "Disease, Disorder or Finding Skin Carcinoma",
+                "matches": [
+                    {
+                        "colname": "FUS mutation_False",
+                        "idx": "1-177",
+                        "score": 0.20463570952415466,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 3,
+            "instances": [
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5"
+            ]
+        },
+        {
+            "target": {
+                "id": 647,
+                "path": [
+                    "PharmacologicSubstance",
+                    "Deflazacort"
+                ],
+                "subject_id": "<http://purl.bioontology.org/ontology/UATC/H02AB13>",
+                "text": "PharmacologicSubstance Deflazacort",
+                "matches": [
+                    {
+                        "colname": "FUS mutation_False",
+                        "idx": "1-177",
+                        "score": 0.13051457703113556,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 3,
+            "instances": [
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5"
+            ]
+        },
+        {
+            "target": {
+                "id": 202,
+                "path": [
+                    "Disease, Disorder or Finding",
+                    "Hypertension"
+                ],
+                "subject_id": "<http://purl.obolibrary.org/obo/NCIT_C3117>",
+                "text": "Disease, Disorder or Finding Hypertension",
+                "matches": [
+                    {
+                        "colname": "hypertension_False",
+                        "idx": "1-183",
+                        "score": 0.5186503529548645,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 3,
+            "instances": [
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5"
+            ]
+        },
+        {
+            "target": {
+                "id": 578,
+                "path": [
+                    "PharmacologicSubstance",
+                    "Cardiovascular System"
+                ],
+                "subject_id": "<http://purl.bioontology.org/ontology/UATC/C>",
+                "text": "PharmacologicSubstance Cardiovascular System",
+                "matches": [
+                    {
+                        "colname": "hypertension_False",
+                        "idx": "1-183",
+                        "score": 0.23507630825042725,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 3,
+            "instances": [
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5"
+            ]
+        },
+        {
+            "target": {
+                "id": 533,
+                "path": [
+                    "PharmacologicSubstance",
+                    "Domperidone"
+                ],
+                "subject_id": "<http://purl.bioontology.org/ontology/UATC/A03FA03>",
+                "text": "PharmacologicSubstance Domperidone",
+                "matches": [
+                    {
+                        "colname": "hypertension_False",
+                        "idx": "1-183",
+                        "score": 0.0957542210817337,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 3,
+            "instances": [
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5"
+            ]
+        },
+        {
+            "target": {
+                "id": 530,
+                "path": [
+                    "PharmacologicSubstance",
+                    "Esomeprazole"
+                ],
+                "subject_id": "<http://purl.bioontology.org/ontology/UATC/A02BC05>",
+                "text": "PharmacologicSubstance Esomeprazole",
+                "matches": [
+                    {
+                        "colname": "hypertension_False",
+                        "idx": "1-183",
+                        "score": 0.04191751778125763,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 3,
+            "instances": [
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5"
+            ]
+        },
+        {
+            "target": {
+                "id": 203,
+                "path": [
+                    "Disease, Disorder or Finding",
+                    "Hypertensive Crisis"
+                ],
+                "subject_id": "<http://purl.obolibrary.org/obo/NCIT_C3122>",
+                "text": "Disease, Disorder or Finding Hypertensive Crisis",
+                "matches": [
+                    {
+                        "colname": "hypertension_True",
+                        "idx": "1-184",
+                        "score": 0.49636411666870117,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 3,
+            "instances": [
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xca23e24556475bbc742f37df9b4dacfc"
+            ]
+        },
+        {
+            "target": {
+                "id": 712,
+                "path": [
+                    "PharmacologicSubstance",
+                    "Muscle Relaxants"
+                ],
+                "subject_id": "<http://purl.bioontology.org/ontology/UATC/M03>",
+                "text": "PharmacologicSubstance Muscle Relaxants",
+                "matches": [
+                    {
+                        "colname": "hypertension_True",
+                        "idx": "1-184",
+                        "score": 0.17298468947410583,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 3,
+            "instances": [
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xca23e24556475bbc742f37df9b4dacfc"
+            ]
+        },
+        {
+            "target": {
+                "id": 637,
+                "path": [
+                    "PharmacologicSubstance",
+                    "Corticotropin"
+                ],
+                "subject_id": "<http://purl.bioontology.org/ontology/UATC/H01AA01>",
+                "text": "PharmacologicSubstance Corticotropin",
+                "matches": [
+                    {
+                        "colname": "hypertension_True",
+                        "idx": "1-184",
+                        "score": 0.07934747636318207,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 3,
+            "instances": [
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xca23e24556475bbc742f37df9b4dacfc"
+            ]
+        },
+        {
+            "target": {
+                "id": 558,
+                "path": [
+                    "PharmacologicSubstance",
+                    "Biotin"
+                ],
+                "subject_id": "<http://purl.bioontology.org/ontology/UATC/A11HA05>",
+                "text": "PharmacologicSubstance Biotin",
+                "matches": [
+                    {
+                        "colname": "hypertension_True",
+                        "idx": "1-184",
+                        "score": 0.04652601480484009,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 3,
+            "instances": [
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xca23e24556475bbc742f37df9b4dacfc"
+            ]
+        },
+        {
+            "target": {
+                "id": 369,
+                "path": [
+                    "Intervention or Procedure",
+                    "Diagnostic Procedure",
+                    "CSF Analysis",
+                    "glucoseCSF"
+                ],
+                "subject_id": "<https://w3id.org/brainteaser/ontology/schema/glucoseCSF>",
+                "text": "Intervention or Procedure Diagnostic Procedure CSF Analysis glucoseCSF",
+                "matches": [
+                    {
+                        "colname": "diabetes_False",
+                        "idx": "1-185",
+                        "score": 0.4321548044681549,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 3,
+            "instances": [
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5"
+            ]
+        },
+        {
+            "target": {
+                "id": 188,
+                "path": [
+                    "Disease, Disorder or Finding",
+                    "Diabetes Mellitus"
+                ],
+                "subject_id": "<http://purl.obolibrary.org/obo/NCIT_C2985>",
+                "text": "Disease, Disorder or Finding Diabetes Mellitus",
+                "matches": [
+                    {
+                        "colname": "diabetes_True",
+                        "idx": "1-186",
+                        "score": 0.4652858376502991,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 3,
+            "instances": [
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xca23e24556475bbc742f37df9b4dacfc"
+            ]
+        },
+        {
+            "target": {
+                "id": 571,
+                "path": [
+                    "PharmacologicSubstance",
+                    "Prasugrel"
+                ],
+                "subject_id": "<http://purl.bioontology.org/ontology/UATC/B01AC22>",
+                "text": "PharmacologicSubstance Prasugrel",
+                "matches": [
+                    {
+                        "colname": "diabetes_True",
+                        "idx": "1-186",
+                        "score": 0.13081978261470795,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 3,
+            "instances": [
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xca23e24556475bbc742f37df9b4dacfc"
+            ]
+        },
+        {
+            "target": {
+                "id": 821,
+                "path": [
+                    "PharmacologicSubstance",
+                    "Covid-19 Vaccines"
+                ],
+                "subject_id": "<https://w3id.org/brainteaser/ontology/schema/J07BX03>",
+                "text": "PharmacologicSubstance Covid-19 Vaccines",
+                "matches": [
+                    {
+                        "colname": "diabetes_True",
+                        "idx": "1-186",
+                        "score": 0.10477536916732788,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 3,
+            "instances": [
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xca23e24556475bbc742f37df9b4dacfc"
+            ]
+        },
+        {
+            "target": {
+                "id": 706,
+                "path": [
+                    "PharmacologicSubstance",
+                    "Antiinflammatory and Antirheumatic Products"
+                ],
+                "subject_id": "<http://purl.bioontology.org/ontology/UATC/M01>",
+                "text": "PharmacologicSubstance Antiinflammatory and Antirheumatic Products",
+                "matches": [
+                    {
+                        "colname": "diabetes_True",
+                        "idx": "1-186",
+                        "score": 0.027279730886220932,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 3,
+            "instances": [
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xca23e24556475bbc742f37df9b4dacfc"
+            ]
+        },
+        {
+            "target": {
+                "id": 298,
+                "path": [
+                    "Disease, Disorder or Finding",
+                    "Dyslipidemia"
+                ],
+                "subject_id": "<http://purl.obolibrary.org/obo/NCIT_C80385>",
+                "text": "Disease, Disorder or Finding Dyslipidemia",
+                "matches": [
+                    {
+                        "colname": "dyslipidemia_False",
+                        "idx": "1-187",
+                        "score": 0.5633866786956787,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 6,
+            "instances": [
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xca23e24556475bbc742f37df9b4dacfc"
+            ]
+        },
+        {
+            "target": {
+                "id": 187,
+                "path": [
+                    "Disease, Disorder or Finding",
+                    "Depression"
+                ],
+                "subject_id": "<http://purl.obolibrary.org/obo/NCIT_C2982>",
+                "text": "Disease, Disorder or Finding Depression",
+                "matches": [
+                    {
+                        "colname": "dyslipidemia_False",
+                        "idx": "1-187",
+                        "score": 0.24303892254829407,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 6,
+            "instances": [
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xca23e24556475bbc742f37df9b4dacfc"
+            ]
+        },
+        {
+            "target": {
+                "id": 163,
+                "path": [
+                    "Disease, Disorder or Finding",
+                    "Interstitial Pneumonia"
+                ],
+                "subject_id": "<http://purl.obolibrary.org/obo/NCIT_C27006>",
+                "text": "Disease, Disorder or Finding Interstitial Pneumonia",
+                "matches": [
+                    {
+                        "colname": "dyslipidemia_False",
+                        "idx": "1-187",
+                        "score": 0.18873879313468933,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 6,
+            "instances": [
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xca23e24556475bbc742f37df9b4dacfc"
+            ]
+        },
+        {
+            "target": {
+                "id": 580,
+                "path": [
+                    "PharmacologicSubstance",
+                    "Amiodarone"
+                ],
+                "subject_id": "<http://purl.bioontology.org/ontology/UATC/C01BD01>",
+                "text": "PharmacologicSubstance Amiodarone",
+                "matches": [
+                    {
+                        "colname": "dyslipidemia_False",
+                        "idx": "1-187",
+                        "score": 0.1117459163069725,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 6,
+            "instances": [
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xca23e24556475bbc742f37df9b4dacfc"
+            ]
+        },
+        {
+            "target": {
+                "id": 553,
+                "path": [
+                    "PharmacologicSubstance",
+                    "Glimepiride"
+                ],
+                "subject_id": "<http://purl.bioontology.org/ontology/UATC/A10BB12>",
+                "text": "PharmacologicSubstance Glimepiride",
+                "matches": [
+                    {
+                        "colname": "dyslipidemia_False",
+                        "idx": "1-187",
+                        "score": 0.09054073691368103,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 6,
+            "instances": [
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xca23e24556475bbc742f37df9b4dacfc"
+            ]
+        },
+        {
+            "target": {
+                "id": 156,
+                "path": [
+                    "Disease, Disorder or Finding",
+                    "Thyroiditis"
+                ],
+                "subject_id": "<http://purl.obolibrary.org/obo/NCIT_C26894>",
+                "text": "Disease, Disorder or Finding Thyroiditis",
+                "matches": [
+                    {
+                        "colname": "thyroid_disorder_False",
+                        "idx": "1-189",
+                        "score": 0.5578818917274475,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 6,
+            "instances": [
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xca23e24556475bbc742f37df9b4dacfc"
+            ]
+        },
+        {
+            "target": {
+                "id": 386,
+                "path": [
+                    "Intervention or Procedure",
+                    "Diagnostic Procedure",
+                    "Diagnostic Imaging",
+                    "Magnetic Resonance Imaging (MRI)",
+                    "brainAtrophyMRI"
+                ],
+                "subject_id": "<https://w3id.org/brainteaser/ontology/schema/brainAtrophyMRI>",
+                "text": "Intervention or Procedure Diagnostic Procedure Diagnostic Imaging Magnetic Resonance Imaging (MRI) brainAtrophyMRI",
+                "matches": [
+                    {
+                        "colname": "thyroid_disorder_False",
+                        "idx": "1-189",
+                        "score": 0.2697582542896271,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 6,
+            "instances": [
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xca23e24556475bbc742f37df9b4dacfc"
+            ]
+        },
+        {
+            "target": {
+                "id": 799,
+                "path": [
+                    "PharmacologicSubstance",
+                    "Antihistamines for Systemic Use"
+                ],
+                "subject_id": "<http://purl.bioontology.org/ontology/UATC/R06>",
+                "text": "PharmacologicSubstance Antihistamines for Systemic Use",
+                "matches": [
+                    {
+                        "colname": "thyroid_disorder_False",
+                        "idx": "1-189",
+                        "score": 0.0137933399528265,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 6,
+            "instances": [
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xca23e24556475bbc742f37df9b4dacfc"
+            ]
+        },
+        {
+            "target": {
+                "id": 178,
+                "path": [
+                    "Disease, Disorder or Finding",
+                    "Autoimmune Disease"
+                ],
+                "subject_id": "<http://purl.obolibrary.org/obo/NCIT_C2889>",
+                "text": "Disease, Disorder or Finding Autoimmune Disease",
+                "matches": [
+                    {
+                        "colname": "autoimmune_disease_False",
+                        "idx": "1-191",
+                        "score": 0.6009628176689148,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 6,
+            "instances": [
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xca23e24556475bbc742f37df9b4dacfc"
+            ]
+        },
+        {
+            "target": {
+                "id": 327,
+                "path": [
+                    "Disease, Disorder or Finding",
+                    "Behavioral Impairment"
+                ],
+                "subject_id": "<https://w3id.org/brainteaser/ontology/schema/BehavioralImpairment>",
+                "text": "Disease, Disorder or Finding Behavioral Impairment",
+                "matches": [
+                    {
+                        "colname": "autoimmune_disease_False",
+                        "idx": "1-191",
+                        "score": 0.2967546582221985,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 6,
+            "instances": [
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xca23e24556475bbc742f37df9b4dacfc"
+            ]
+        },
+        {
+            "target": {
+                "id": 165,
+                "path": [
+                    "Disease, Disorder or Finding",
+                    "Obstructive Sleep Apnea Syndrome"
+                ],
+                "subject_id": "<http://purl.obolibrary.org/obo/NCIT_C27168>",
+                "text": "Disease, Disorder or Finding Obstructive Sleep Apnea Syndrome",
+                "matches": [
+                    {
+                        "colname": "autoimmune_disease_False",
+                        "idx": "1-191",
+                        "score": 0.18927069008350372,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 6,
+            "instances": [
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xca23e24556475bbc742f37df9b4dacfc"
+            ]
+        },
+        {
+            "target": {
+                "id": 567,
+                "path": [
+                    "PharmacologicSubstance",
+                    "Antithrombotic Agents"
+                ],
+                "subject_id": "<http://purl.bioontology.org/ontology/UATC/B01>",
+                "text": "PharmacologicSubstance Antithrombotic Agents",
+                "matches": [
+                    {
+                        "colname": "autoimmune_disease_False",
+                        "idx": "1-191",
+                        "score": 0.10111517459154129,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 6,
+            "instances": [
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xca23e24556475bbc742f37df9b4dacfc"
+            ]
+        },
+        {
+            "target": {
+                "id": 695,
+                "path": [
+                    "PharmacologicSubstance",
+                    "Ocrelizumab"
+                ],
+                "subject_id": "<http://purl.bioontology.org/ontology/UATC/L04AA36>",
+                "text": "PharmacologicSubstance Ocrelizumab",
+                "matches": [
+                    {
+                        "colname": "autoimmune_disease_False",
+                        "idx": "1-191",
+                        "score": 0.08757428079843521,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 6,
+            "instances": [
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xca23e24556475bbc742f37df9b4dacfc"
+            ]
+        },
+        {
+            "target": {
+                "id": 532,
+                "path": [
+                    "PharmacologicSubstance",
+                    "Drugs for Functional Gastrointestinal Disorders"
+                ],
+                "subject_id": "<http://purl.bioontology.org/ontology/UATC/A03>",
+                "text": "PharmacologicSubstance Drugs for Functional Gastrointestinal Disorders",
+                "matches": [
+                    {
+                        "colname": "autoimmune_disease_False",
+                        "idx": "1-191",
+                        "score": 0.07196386158466339,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 6,
+            "instances": [
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xca23e24556475bbc742f37df9b4dacfc"
+            ]
+        },
+        {
+            "target": {
+                "id": 552,
+                "path": [
+                    "PharmacologicSubstance",
+                    "Gliclazide"
+                ],
+                "subject_id": "<http://purl.bioontology.org/ontology/UATC/A10BB09>",
+                "text": "PharmacologicSubstance Gliclazide",
+                "matches": [
+                    {
+                        "colname": "autoimmune_disease_False",
+                        "idx": "1-191",
+                        "score": 0.058067161589860916,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 6,
+            "instances": [
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xca23e24556475bbc742f37df9b4dacfc"
+            ]
+        },
+        {
+            "target": {
+                "id": 674,
+                "path": [
+                    "PharmacologicSubstance",
+                    "Methotrexate"
+                ],
+                "subject_id": "<http://purl.bioontology.org/ontology/UATC/L01BA01>",
+                "text": "PharmacologicSubstance Methotrexate",
+                "matches": [
+                    {
+                        "colname": "autoimmune_disease_False",
+                        "idx": "1-191",
+                        "score": 0.013851352035999298,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 6,
+            "instances": [
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xca23e24556475bbc742f37df9b4dacfc"
+            ]
+        },
+        {
+            "target": {
+                "id": 703,
+                "path": [
+                    "PharmacologicSubstance",
+                    "Methotrexate"
+                ],
+                "subject_id": "<http://purl.bioontology.org/ontology/UATC/L04AX03>",
+                "text": "PharmacologicSubstance Methotrexate",
+                "matches": [
+                    {
+                        "colname": "autoimmune_disease_False",
+                        "idx": "1-191",
+                        "score": 0.013851352035999298,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 6,
+            "instances": [
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xca23e24556475bbc742f37df9b4dacfc"
+            ]
+        },
+        {
+            "target": {
+                "id": 216,
+                "path": [
+                    "Disease, Disorder or Finding",
+                    "Stroke"
+                ],
+                "subject_id": "<http://purl.obolibrary.org/obo/NCIT_C3390>",
+                "text": "Disease, Disorder or Finding Stroke",
+                "matches": [
+                    {
+                        "colname": "stroke_False",
+                        "idx": "1-193",
+                        "score": 0.46481695771217346,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 6,
+            "instances": [
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xca23e24556475bbc742f37df9b4dacfc"
+            ]
+        },
+        {
+            "target": {
+                "id": 259,
+                "path": [
+                    "Disease, Disorder or Finding",
+                    "Bradycardia"
+                ],
+                "subject_id": "<http://purl.obolibrary.org/obo/NCIT_C37920>",
+                "text": "Disease, Disorder or Finding Bradycardia",
+                "matches": [
+                    {
+                        "colname": "cardiac_disease_False",
+                        "idx": "1-195",
+                        "score": 0.4284534454345703,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 6,
+            "instances": [
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xca23e24556475bbc742f37df9b4dacfc"
+            ]
+        },
+        {
+            "target": {
+                "id": 174,
+                "path": [
+                    "Disease, Disorder or Finding",
+                    "Anxiety Disorder"
+                ],
+                "subject_id": "<http://purl.obolibrary.org/obo/NCIT_C2878>",
+                "text": "Disease, Disorder or Finding Anxiety Disorder",
+                "matches": [
+                    {
+                        "colname": "cardiac_disease_False",
+                        "idx": "1-195",
+                        "score": 0.2585291564464569,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 6,
+            "instances": [
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xca23e24556475bbc742f37df9b4dacfc"
+            ]
+        },
+        {
+            "target": {
+                "id": 411,
+                "path": [
+                    "Intervention or Procedure",
+                    "Diagnostic Procedure",
+                    "Pulmonary Function Test",
+                    "pulmonaryFVCRel"
+                ],
+                "subject_id": "<https://w3id.org/brainteaser/ontology/schema/pulmonaryFVCRel>",
+                "text": "Intervention or Procedure Diagnostic Procedure Pulmonary Function Test pulmonaryFVCRel",
+                "matches": [
+                    {
+                        "colname": "cardiac_disease_False",
+                        "idx": "1-195",
+                        "score": 0.18889424204826355,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 6,
+            "instances": [
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xca23e24556475bbc742f37df9b4dacfc"
+            ]
+        },
+        {
+            "target": {
+                "id": 307,
+                "path": [
+                    "Disease, Disorder or Finding",
+                    "Primary Neoplasm"
+                ],
+                "subject_id": "<http://purl.obolibrary.org/obo/NCIT_C8509>",
+                "text": "Disease, Disorder or Finding Primary Neoplasm",
+                "matches": [
+                    {
+                        "colname": "primary_neoplasm_False",
+                        "idx": "1-197",
+                        "score": 0.5136807560920715,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 3,
+            "instances": [
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5"
+            ]
+        },
+        {
+            "target": {
+                "id": 333,
+                "path": [
+                    "Event",
+                    "hasRegisteredCondition"
+                ],
+                "subject_id": "<https://w3id.org/brainteaser/ontology/schema/hasRegisteredCondition>",
+                "text": "Event hasRegisteredCondition",
+                "matches": [
+                    {
+                        "colname": "primary_neoplasm_False",
+                        "idx": "1-197",
+                        "score": 0.07477649301290512,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 3,
+            "instances": [
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5"
+            ]
+        },
+        {
+            "target": {
+                "id": 628,
+                "path": [
+                    "PharmacologicSubstance",
+                    "Progestogens and Estrogens Systemic Contraceptives, Sequential Preparations"
+                ],
+                "subject_id": "<http://purl.bioontology.org/ontology/UATC/G03AB>",
+                "text": "PharmacologicSubstance Progestogens and Estrogens Systemic Contraceptives, Sequential Preparations",
+                "matches": [
+                    {
+                        "colname": "primary_neoplasm_False",
+                        "idx": "1-197",
+                        "score": 0.06866488605737686,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 3,
+            "instances": [
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5"
+            ]
+        },
+        {
+            "target": {
+                "id": 842,
+                "path": [
+                    "Relapse",
+                    "relapseEnd"
+                ],
+                "subject_id": "<https://w3id.org/brainteaser/ontology/schema/relapseEnd>",
+                "text": "Relapse relapseEnd",
+                "matches": [
+                    {
+                        "colname": "primary_neoplasm_False",
+                        "idx": "1-197",
+                        "score": 0.051105983555316925,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 3,
+            "instances": [
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5",
+                "0x8b5b7f5ed13c832295419e7dafdefdd5"
+            ]
+        },
+        {
+            "target": {
+                "id": 208,
+                "path": [
+                    "Disease, Disorder or Finding",
+                    "Neoplasm"
+                ],
+                "subject_id": "<http://purl.obolibrary.org/obo/NCIT_C3262>",
+                "text": "Disease, Disorder or Finding Neoplasm",
+                "matches": [
+                    {
+                        "colname": "primary_neoplasm_True",
+                        "idx": "1-198",
+                        "score": 0.4211050271987915,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 3,
+            "instances": [
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xca23e24556475bbc742f37df9b4dacfc"
+            ]
+        },
+        {
+            "target": {
+                "id": 102,
+                "path": [
+                    "Disease, Disorder or Finding",
+                    "Neutropenic Disorder"
+                ],
+                "subject_id": "<http://purl.bioontology.org/ontology/SNOMEDCT/303011007>",
+                "text": "Disease, Disorder or Finding Neutropenic Disorder",
+                "matches": [
+                    {
+                        "colname": "primary_neoplasm_True",
+                        "idx": "1-198",
+                        "score": 0.2446383237838745,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 3,
+            "instances": [
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xca23e24556475bbc742f37df9b4dacfc"
+            ]
+        },
+        {
+            "target": {
+                "id": 107,
+                "path": [
+                    "Disease, Disorder or Finding",
+                    "Pneumonia Caused By SARS-CoV-2"
+                ],
+                "subject_id": "<http://purl.bioontology.org/ontology/SNOMEDCT/882784691000119100>",
+                "text": "Disease, Disorder or Finding Pneumonia Caused By SARS-CoV-2",
+                "matches": [
+                    {
+                        "colname": "primary_neoplasm_True",
+                        "idx": "1-198",
+                        "score": 0.22739866375923157,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 3,
+            "instances": [
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xca23e24556475bbc742f37df9b4dacfc"
+            ]
+        },
+        {
+            "target": {
+                "id": 78,
+                "path": [
+                    "Clinical Trial",
+                    "conductedInClinic"
+                ],
+                "subject_id": "<https://w3id.org/brainteaser/ontology/schema/conductedInClinic>",
+                "text": "Clinical Trial conductedInClinic",
+                "matches": [
+                    {
+                        "colname": "primary_neoplasm_True",
+                        "idx": "1-198",
+                        "score": 0.20430362224578857,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 3,
+            "instances": [
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xca23e24556475bbc742f37df9b4dacfc"
+            ]
+        },
+        {
+            "target": {
+                "id": 885,
+                "path": [
+                    "Surgical Procedure Type",
+                    "Gastroplasty"
+                ],
+                "subject_id": "<http://purl.bioontology.org/ontology/SNOMEDCT/9429009>",
+                "text": "Surgical Procedure Type Gastroplasty",
+                "matches": [
+                    {
+                        "colname": "primary_neoplasm_True",
+                        "idx": "1-198",
+                        "score": 0.09975109249353409,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 3,
+            "instances": [
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xca23e24556475bbc742f37df9b4dacfc"
+            ]
+        },
+        {
+            "target": {
+                "id": 899,
+                "path": [
+                    "Trauma",
+                    "traumaDescription"
+                ],
+                "subject_id": "<https://w3id.org/brainteaser/ontology/schema/traumaDescription>",
+                "text": "Trauma traumaDescription",
+                "matches": [
+                    {
+                        "colname": "major_trauma_before_onset_False",
+                        "idx": "1-199",
+                        "score": 0.494088739156723,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 3,
+            "instances": [
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xca23e24556475bbc742f37df9b4dacfc"
+            ]
+        },
+        {
+            "target": {
+                "id": 317,
+                "path": [
+                    "Disease, Disorder or Finding",
+                    "Alcohol Dependance"
+                ],
+                "subject_id": "<http://purl.obolibrary.org/obo/NCIT_C93040>",
+                "text": "Disease, Disorder or Finding Alcohol Dependance",
+                "matches": [
+                    {
+                        "colname": "major_trauma_before_onset_False",
+                        "idx": "1-199",
+                        "score": 0.26050618290901184,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 3,
+            "instances": [
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xca23e24556475bbc742f37df9b4dacfc"
+            ]
+        },
+        {
+            "target": {
+                "id": 116,
+                "path": [
+                    "Disease, Disorder or Finding",
+                    "Molluscum Contagiosum Virus"
+                ],
+                "subject_id": "<http://purl.obolibrary.org/obo/NCIT_C112357>",
+                "text": "Disease, Disorder or Finding Molluscum Contagiosum Virus",
+                "matches": [
+                    {
+                        "colname": "major_trauma_before_onset_False",
+                        "idx": "1-199",
+                        "score": 0.1403975933790207,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 3,
+            "instances": [
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xca23e24556475bbc742f37df9b4dacfc",
+                "0xca23e24556475bbc742f37df9b4dacfc"
+            ]
+        },
+        {
+            "target": {
+                "id": 898,
+                "path": [
+                    "Trauma",
+                    "traumaDate"
+                ],
+                "subject_id": "<https://w3id.org/brainteaser/ontology/schema/traumaDate>",
+                "text": "Trauma traumaDate",
+                "matches": [
+                    {
+                        "colname": "major_trauma_before_onset_True",
+                        "idx": "1-200",
+                        "score": 0.5233994722366333,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 2,
+            "instances": [
+                "0xd0e71a1c656557fd7856d9e3c6b15faf",
+                "0xd0e71a1c656557fd7856d9e3c6b15faf"
+            ]
+        },
+        {
+            "target": {
+                "id": 435,
+                "path": [
+                    "Intervention or Procedure",
+                    "Diagnostic Procedure",
+                    "Questionnaire",
+                    "King's Clinical Staging Method",
+                    "kingsValue"
+                ],
+                "subject_id": "<https://w3id.org/brainteaser/ontology/schema/kingsValue>",
+                "text": "Intervention or Procedure Diagnostic Procedure Questionnaire King's Clinical Staging Method kingsValue",
+                "matches": [
+                    {
+                        "colname": "surgical_interventions_before_onset_True",
+                        "idx": "1-202",
+                        "score": 0.40397554636001587,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 2,
+            "instances": [
+                "0xd0e71a1c656557fd7856d9e3c6b15faf",
+                "0xd0e71a1c656557fd7856d9e3c6b15faf"
+            ]
+        },
+        {
+            "target": {
+                "id": 321,
+                "path": [
+                    "Disease, Disorder or Finding",
+                    "Acute Tonsillitis"
+                ],
+                "subject_id": "<http://purl.obolibrary.org/obo/NCIT_C97142>",
+                "text": "Disease, Disorder or Finding Acute Tonsillitis",
+                "matches": [
+                    {
+                        "colname": "surgical_interventions_before_onset_True",
+                        "idx": "1-202",
+                        "score": 0.20663581788539886,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 2,
+            "instances": [
+                "0xd0e71a1c656557fd7856d9e3c6b15faf",
+                "0xd0e71a1c656557fd7856d9e3c6b15faf"
+            ]
+        },
+        {
+            "target": {
+                "id": 798,
+                "path": [
+                    "PharmacologicSubstance",
+                    "Cough and Cold Preparations"
+                ],
+                "subject_id": "<http://purl.bioontology.org/ontology/UATC/R05>",
+                "text": "PharmacologicSubstance Cough and Cold Preparations",
+                "matches": [
+                    {
+                        "colname": "surgical_interventions_before_onset_True",
+                        "idx": "1-202",
+                        "score": 0.0890505239367485,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 2,
+            "instances": [
+                "0xd0e71a1c656557fd7856d9e3c6b15faf",
+                "0xd0e71a1c656557fd7856d9e3c6b15faf"
+            ]
+        },
+        {
+            "target": {
+                "id": 330,
+                "path": [
+                    "End Therapy Reason",
+                    "endTherapyReason"
+                ],
+                "subject_id": "<https://w3id.org/brainteaser/ontology/schema/endTherapyReason>",
+                "text": "End Therapy Reason endTherapyReason",
+                "matches": [
+                    {
+                        "colname": "surgical_interventions_before_onset_True",
+                        "idx": "1-202",
+                        "score": 0.08398927748203278,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 2,
+            "instances": [
+                "0xd0e71a1c656557fd7856d9e3c6b15faf",
+                "0xd0e71a1c656557fd7856d9e3c6b15faf"
+            ]
+        },
+        {
+            "target": {
+                "id": 657,
+                "path": [
+                    "PharmacologicSubstance",
+                    "Antimycotics for Systemic Use"
+                ],
+                "subject_id": "<http://purl.bioontology.org/ontology/UATC/J02>",
+                "text": "PharmacologicSubstance Antimycotics for Systemic Use",
+                "matches": [
+                    {
+                        "colname": "surgical_interventions_before_onset_True",
+                        "idx": "1-202",
+                        "score": 0.004820417612791061,
+                        "rank": 0
+                    }
+                ]
+            },
+            "count": 2,
+            "instances": [
+                "0xd0e71a1c656557fd7856d9e3c6b15faf",
+                "0xd0e71a1c656557fd7856d9e3c6b15faf"
+            ]
+        }
+    ]
+}

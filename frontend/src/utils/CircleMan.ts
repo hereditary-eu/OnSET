@@ -33,6 +33,9 @@ export class CircleMan {
     clicked_node: (NodeType) => void = null
 
     nodes_g_d3: d3.Selection<any, any, any, any> = null
+    root: d3.HierarchyCircularNode<SubjectInCircle> = null
+    focus: d3.HierarchyCircularNode<SubjectInCircle> = null
+    hierarchy: d3.HierarchyNode<SubjectInCircle> = null
     private node_counter = 0
     constructor() {
 
@@ -64,60 +67,8 @@ export class CircleMan {
     }
     restartPackedCircles() {
 
-        // this.node_d3 = this.nodes_g_d3
-        //     .selectAll("g")
-        //     .data(this.nodes)
-        //     .join("g")
-        //     .attr('class', 'node_g')
-        //     .attr('id', (d) => 'node_g' + d.id)
-
-        // this.node_d3
-        //     .append("rect")
-        //     .attr('id', (d) => 'node_rect' + d.id)
-
-        // this.node_d3
-        //     .append("text")
-        //     .attr('stroke-width', '0')
-        //     .attr('font-size', d => `${5 + Math.log(d.refcount + 1)}px`)
-        //     .attr('font-weight', '0')
-        //     .attr('stroke', '#111')
-        //     .attr('text-anchor', 'middle')
-        //     .attr('alignment-baseline', 'middle')
-        //     .attr('cursor', 'grab')
-        //     .attr('id', (d) => 'node_text' + d.id)
-        //     .text(d => d.label)
-        //     .on('click', (evt, d) => {
-        //         console.log('clicked', d)
-        //         if (this.clicked_node) {
-        //             this.clicked_node(d)
-        //         }
-
-        //     })
-        // const node_h = 15
-        // this.node_d3
-        //     .selectAll("rect")
-        //     .attr("stroke", "#fff")
-        //     .attr("stroke-width", 1.5)
-        //     .attr('width', (d: any) => (document.getElementById('node_text' + d.id) as unknown as SVGGraphicsElement).getBBox().width + 10)
-        //     .attr("height", (d) => node_h)
-        //     .attr("x", (d: any) => { return (-(document.getElementById('node_text' + d.id) as unknown as SVGGraphicsElement).getBBox().width) / 2 - 5 })
-        //     .attr("y", (d) => -node_h / 2)
-        //     .attr("fill", (d: any) => this.color(d.subject_type))
-        //     .attr('cursor', 'grab')
-        //     .on('click', (evt, d) => {
-        //         console.log('clicked', d)
-        //         if (this.clicked_node) {
-        //             this.clicked_node(d)
-        //         }
-        //     })
-
-        // this.node_d3.append("title")
-        //     .text(d => d.label);
-
-
-        // Compute the layout
         const mapped_nodes: SubjectInCircle[] = this.nodes.map(this.mapNodesToChildren.bind(this))
-        mapped_nodes.forEach(child => child.n_id = this.node_counter++) 
+        mapped_nodes.forEach(child => child.n_id = this.node_counter++)
 
         console.log('restarting graph', this.nodes, mapped_nodes)
         const data: SubjectInCircle = {
@@ -131,40 +82,49 @@ export class CircleMan {
             children: mapped_nodes,
             n_id: this.node_counter++
         }
-        const hierarchy = d3.hierarchy(data, (d) => d.children)
+        this.hierarchy = d3.hierarchy(data, (d) => d.children)
             .sum(d => d.children?.length || 0)
             .sort((a, b) => b.value - a.value)
-        const root = d3.pack<SubjectInCircle>()
+        this.root = d3.pack<SubjectInCircle>()
             .size([this.width, this.height])
             .radius(d => Math.sqrt(d.data.total_descendants) || 0)
 
-            .padding(d => d.data.children ? 0.5 : 1)(hierarchy);
-        console.log('root', root)
+            .padding(d => d.data.children ? 0.5 : 1)(this.hierarchy);
+        console.log('root', this.root)
 
         // Create the SVG container.
         const svg = this.svg_d3
         // Append the nodes.
         const node = svg.append("g")
             .selectAll("circle")
-            .data(root.descendants().slice(1))
+            .data(this.root.descendants().slice(1))
             .join("circle")
             .attr("fill", d => d.children ? this.color(d.depth) : d3.color(this.color_type(d.data.subject_type)).brighter(0.5).toString())
             // .attr("pointer-events", d => !d.children ? "none" : null)
             .on("mouseover", function (this, e, d) {
-                console.log('mouseover', e, d)
+                // console.log('mouseover', e, d)
                 d3.select(this).attr("stroke", "#000");
                 d3.select(`#label_${d.data.n_id}`)
                     .style("display", "inline")
                     .style("fill-opacity", 1);
             })
-            .on("mouseout", function (this, e, d) {
-                d3.select(this).attr("stroke", null);
+            .on("mouseout", (e, d) => {
+                d3.select(e.currentTarget).attr("stroke", null);
                 d3.select(`#label_${d.data.n_id}`)
-                    .style("display", d.parent === focus ? "inline" : "none")
-                    .style("fill-opacity", d.parent === focus ? 1 : 0);
+                    .style("display", d.parent === this.focus ? "inline" : "none")
+                    .style("fill-opacity", d.parent === this.focus ? 1 : 0);
 
             })
-            .on("click", (event, d) => focus !== d && (zoom(event, d), event.stopPropagation()));
+            .on("click", (event, d) => {
+                if (!d.children && this.clicked_node) {
+                    event.stopPropagation()
+                    this.clicked_node(d.data)
+                    return
+                }
+                if (this.focus !== d) zoom(event, d), event.stopPropagation()
+
+
+            });
 
         // Append the text labels.
         const label = svg.append("g")
@@ -172,16 +132,16 @@ export class CircleMan {
             .attr("pointer-events", "none")
             .attr("text-anchor", "middle")
             .selectAll("text")
-            .data(root.descendants())
+            .data(this.root.descendants())
             .join("text")
             .attr('id', d => `label_${d.data.n_id}`)
-            .style("fill-opacity", d => d.parent === root ? 1 : 0)
-            .style("display", d => d.parent === root ? "inline" : "none")
+            .style("fill-opacity", d => d.parent === this.root ? 1 : 0)
+            .style("display", d => d.parent === this.root ? "inline" : "none")
             .text(d => d.data.label);
 
         // Create the zoom behavior and zoom immediately in to the initial focus node.
-        svg.on("click", (event) => zoom(event, root));
-        let focus = root;
+        svg.on("click", (event) => zoom(event, this.root));
+        this.focus = this.root;
         let view;
 
         let zoomTo = (v) => {
@@ -193,20 +153,20 @@ export class CircleMan {
             node.attr("transform", d => `translate(${(d.x - v[0]) * k},${(d.y - v[1]) * k})`);
             node.attr("r", d => d.r * k);
         }
-        zoomTo([focus.x, focus.y, focus.r * 2]);
+        zoomTo([this.focus.x, this.focus.y, this.focus.r * 2]);
 
         let zoom = (event, d) => {
             const focus0 = focus;
 
-            focus = d;
+            this.focus = d;
 
             const transition = svg.transition()
                 .duration(event.altKey ? 7500 : 750)
                 .tween("zoom", d => {
-                    const i = d3.interpolateZoom(view, [focus.x, focus.y, focus.r * 2]);
+                    const i = d3.interpolateZoom(view, [this.focus.x, this.focus.y, this.focus.r * 2]);
                     return t => zoomTo(i(t));
                 });
-            let selector = (d: d3.HierarchyCircularNode<SubjectInCircle>) => (d.parent === focus || (d === focus && !d.children));
+            let selector = (d: d3.HierarchyCircularNode<SubjectInCircle>) => (d.parent === this.focus || (d === this.focus && !d.children));
             label
                 .filter(function (d) { return selector(d) || (this as any).style.display === "inline"; })
                 .transition(transition)
@@ -240,5 +200,81 @@ export class CircleMan {
         // stop naturally, but it’s a good practice.)
         // invalidation.then(() => simulation.stop());
         //TODO!
+    }
+    addLink(from: string, to: string, count: number) {
+        let find_in_descendants = (node: d3.HierarchyNode<SubjectInCircle>, subject_id: string): d3.HierarchyNode<SubjectInCircle> => {
+            if (node.data.subject_id === subject_id) {
+                return node
+            }
+            if (!node.children) {
+                return null
+            }
+            for (let child of node.children) {
+                let found = find_in_descendants(child, subject_id)
+                if (found) {
+                    return found
+                }
+            }
+            return null
+        }
+
+        let source_node_d3 = find_in_descendants(this.root, from)
+        let target_node_d3 = find_in_descendants(this.root, to)
+
+        if (!source_node_d3 || !target_node_d3) {
+            console.error('could not find source or target data node')
+            return
+        }
+        console.log('adding link', source_node_d3, target_node_d3)
+        const k = this.width / (this.focus.r * 2)
+        const path_color = "rgb(128 128 128 / 40%)"
+        const link_element = this.svg_d3.append("g")
+            .attr("id", `link_${from}_${to}`)
+            .attr("class", "link")
+
+        const add_text = (nd: d3.HierarchyNode<SubjectInCircle>) => {
+            return link_element
+                .append("g")
+                .attr("id", `label_${nd.data.n_id}`)
+                .attr("transform", `translate(${(nd.x - this.focus.x) * k},${(nd.y - this.focus.y) * k})`)
+                .append("text")
+                .text(nd.data.label)
+                .attr("fill", "black")
+                .attr("font-size", "10px")
+                .attr("text-anchor", "middle")
+                .style("display", "none")
+                .style("fill-opacity", 0)
+        }
+        const source_label = add_text(source_node_d3)
+        const target_label = add_text(target_node_d3)
+
+        link_element.append("path")
+            .attr("d", `M${(source_node_d3.x - this.focus.x) * k},${(source_node_d3.y - this.focus.y) * k}
+                        C 0 0 0 0 ${(target_node_d3.x - this.focus.x) * k},${(target_node_d3.y - this.focus.y) * k}`)
+
+            .attr("stroke-width", Math.log10(count + 1) * 2)
+            .style("stroke", path_color)
+            .attr("fill", "none")
+            .on("mouseover", (e, d) => {
+                // console.log('mouseover', e, d)
+                d3.select(e.currentTarget).attr("stroke", "rgb(128 128 128 / 80%)")
+                source_label.style("display", "inline")
+                    .style("fill-opacity", 1)
+                target_label.style("display", "inline")
+                    .style("fill-opacity", 1)
+
+            })
+            .on("mouseout", (e, d) => {
+                d3.select(e.currentTarget).attr("stroke", path_color);
+                source_label.style("display", "none")
+                    .style("fill-opacity", 0)
+                target_label.style("display", "none")
+                    .style("fill-opacity", 0)
+            })
+
+
+    }
+    removeLinks() {
+        this.svg_d3.selectAll('.link').remove()
     }
 }

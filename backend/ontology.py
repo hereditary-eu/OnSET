@@ -4,6 +4,12 @@ from .model import Subject
 import pandas as pd
 from rdflib.plugins.sparql import prepareQuery
 import numpy as np
+from tqdm import tqdm
+
+
+from sqlalchemy import ForeignKey, String, create_engine, select
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship, Session
+
 
 
 class Prefix(BaseModel):
@@ -242,7 +248,7 @@ class OntologyManager:
         roots = self.get_root_classes(load_properties=True)[1:]
 
         def enrich_descendants(cls: Subject, d=depth):
-            print("enriching", cls.subject_id)
+            # print("enriching", cls.subject_id)
             cls.total_descendants = 1  # self
             if d <= 0:
                 return cls.total_descendants
@@ -263,7 +269,7 @@ class OntologyManager:
 
             return cls
 
-        roots = [enrich_descendants(cls) for cls in roots]
+        roots = [enrich_descendants(cls) for cls in tqdm(roots)]
         self.roots_cache = roots
         return roots
 

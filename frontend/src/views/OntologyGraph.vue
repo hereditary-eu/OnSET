@@ -133,6 +133,6 @@ onMounted(() => {
     align-items: center;
     height: 70vh;
     width: 80;
-    background-color: #f0f0f0;
+    background-color: #ffffff;
 }
 </style>

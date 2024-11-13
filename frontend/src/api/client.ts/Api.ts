@@ -24,6 +24,76 @@ export interface HTTPValidationError {
   detail?: ValidationError[];
 }
 
+/** Match */
+export interface Match {
+  /**
+   * Colname
+   * @default ""
+   */
+  colname?: string;
+  /**
+   * Idx
+   * @default ""
+   */
+  idx?: string;
+  /**
+   * Score
+   * @default -1
+   */
+  score?: number;
+  /**
+   * Rank
+   * @default -1
+   */
+  rank?: number;
+}
+
+/** OutLink */
+export interface OutLink {
+  /**
+   * Target
+   * @default {"id":0,"path":[],"subject_id":"","text":"","matches":[]}
+   */
+  target?: RelationsFound;
+  /**
+   * Count
+   * @default 0
+   */
+  count?: number;
+  /** Instances */
+  instances?: string[];
+}
+
+/** RelationsFound */
+export interface RelationsFound {
+  /**
+   * Id
+   * @default 0
+   */
+  id?: number;
+  /** Path */
+  path?: string[];
+  /**
+   * Subject Id
+   * @default ""
+   */
+  subject_id?: string;
+  /**
+   * Text
+   * @default ""
+   */
+  text?: string;
+  /** Matches */
+  matches?: Match[];
+}
+
+/** SparseOutLinks */
+export interface SparseOutLinks {
+  source?: RelationsFound;
+  /** Targets */
+  targets?: OutLink[];
+}
+
 /** Subject */
 export interface Subject {
   /** Subject Id */
@@ -52,6 +122,11 @@ export interface Subject {
    * @default 0
    */
   total_descendants?: number;
+  /**
+   * Properties
+   * @default {}
+   */
+  properties?: Record<string, Subject[]>;
 }
 
 /** ValidationError */
@@ -305,6 +380,28 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
     ) =>
       this.request<Subject[], HTTPValidationError>({
         path: `/classes/named-individuals`,
+        method: "GET",
+        query: query,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @name GetLinksClassesLinksGet
+     * @summary Get Links
+     * @request GET:/classes/links
+     */
+    getLinksClassesLinksGet: (
+      query: {
+        /** Subject Id */
+        subject_id: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<SparseOutLinks, HTTPValidationError>({
+        path: `/classes/links`,
         method: "GET",
         query: query,
         format: "json",

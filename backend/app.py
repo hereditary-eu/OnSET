@@ -17,10 +17,10 @@ import requests as req
 import os
 from .model import *
 from .ontology import *
-
+from .datasetmatcher import *
 
 base_path = "data"
-onto_path = base_path + "/brainteaser-ontology/bto.ttl"
+onto_path = base_path + "/hero-ontology/hereditary_clinical.ttl"
 
 
 brainteaser_graph = Graph().parse(onto_path, format="turtle")
@@ -29,6 +29,9 @@ brainteaser_graph.bind("bto", "http://www.semanticweb.org/ontologies/2020/3/bto#
 config = OntologyConfig()
 
 ontology_manager = OntologyManager(config, brainteaser_graph)
+dataset_manager = DatasetManager(ontology_manager)
+dataset_manager.initialise(glob_path="data/datasets/ALS/**/*.csv")
+
 # ontology_manager.load_full_graph()
 
 source_classes = ontology_manager.q_to_df(
@@ -55,12 +58,9 @@ app.add_middleware(
 )
 
 
-
-
 @app.get("/")
 def read_root():
     return "Welcome to the Ontology Provenance API"
-
 
 
 @app.post("/management/ontology")
@@ -92,3 +92,8 @@ def get_class(cls: str = Query()) -> list[Subject]:
 @app.get("/classes/named-individuals")
 def get_named_individuals(cls: str = Query()) -> list[Subject]:
     return ontology_manager.get_named_individuals(cls)
+
+
+@app.get("/classes/links")
+def get_links(subject_id: str = Query()) -> SparseOutLinks:
+    return dataset_manager.target_outlinks(subject_id)

@@ -1,0 +1,900 @@
+path,subject_id,text,best_match_colname,best_match_score,best_match_idx
+"['<http://ontology.eil.utoronto.ca/GCI/Environment/Pollution.owl#Air_pollution_concentration>', 'is produced by']",<http://purl.oclc.org/NET/ssnx/ssn#isProducedBy>,<http://ontology.eil.utoronto.ca/GCI/Environment/Pollution.owl#Air_pollution_concentration> is produced by,param_PM25,0.18637818,27-10
+"['<http://ontology.eil.utoronto.ca/GCI/Environment/Pollution.owl#Air_pollution_concentration>', '<http://www.wurvoc.org/vocabularies/om-1.8/unit_of_measure>']",<http://www.wurvoc.org/vocabularies/om-1.8/unit_of_measure>,<http://ontology.eil.utoronto.ca/GCI/Environment/Pollution.owl#Air_pollution_concentration> <http://www.wurvoc.org/vocabularies/om-1.8/unit_of_measure>,humidity_mean,0.2822415,0-22
+"['<http://ontology.eil.utoronto.ca/GCI/Environment/Pollution.owl#Air_pollution_concentration>', 'APConcentrationTime']",<https://w3id.org/brainteaser/ontology/schema/APConcentrationTime>,<http://ontology.eil.utoronto.ca/GCI/Environment/Pollution.owl#Air_pollution_concentration> APConcentrationTime,timestamp,0.22729546,27-0
+"['<http://ontology.eil.utoronto.ca/GCI/Environment/Pollution.owl#Air_pollution_concentration>', 'concentrationMeasurement']",<https://w3id.org/brainteaser/ontology/schema/concentrationMeasurement>,<http://ontology.eil.utoronto.ca/GCI/Environment/Pollution.owl#Air_pollution_concentration> concentrationMeasurement,humidity_num,0.24139625,0-21
+"['<http://ontology.eil.utoronto.ca/GCI/Environment/Pollution.owl#Air_pollution_concentration>', 'measurementCalibrated']",<https://w3id.org/brainteaser/ontology/schema/measurementCalibrated>,<http://ontology.eil.utoronto.ca/GCI/Environment/Pollution.owl#Air_pollution_concentration> measurementCalibrated,measurement,0.2509893,27-1
+"['<http://purl.oclc.org/NET/ssnx/ssn#SensingDevice>', 'coveredPlace']",<https://w3id.org/brainteaser/ontology/schema/coveredPlace>,<http://purl.oclc.org/NET/ssnx/ssn#SensingDevice> coveredPlace,beat_to_beat_SDNNa,0.32133335,6-17
+"['Person', 'birthplace']",<https://w3id.org/brainteaser/ontology/schema/birthplace>,Person birthplace,,,
+"['Person', 'enrolledIn']",<https://w3id.org/brainteaser/ontology/schema/enrolledIn>,Person enrolledIn,bulbar_subscore,0.2778499,26-4
+"['Person', 'hasDisease']",<https://w3id.org/brainteaser/ontology/schema/hasDisease>,Person hasDisease,onset_limb_type_upper-left-limb,0.17916474,25-105
+"['Person', 'residence']",<https://w3id.org/brainteaser/ontology/schema/residence>,Person residence,residence_classification_Cities,0.22481868,12-10
+"['Person', 'birthYear']",<https://w3id.org/brainteaser/ontology/schema/birthYear>,Person birthYear,packYear,0.2093454,25-14
+"['Person', 'sex']",<https://w3id.org/brainteaser/ontology/schema/sex>,Person sex,sex_male,0.25338727,3-9
+"['Person', 'Patient', 'hasEthnicity']",<https://w3id.org/brainteaser/ontology/schema/hasEthnicity>,Person Patient hasEthnicity,occupation_Legal_social_and_cultural_professionals,0.3296744,17-139
+"['Person', 'Patient', 'hasKinship']",<https://w3id.org/brainteaser/ontology/schema/hasKinship>,Person Patient hasKinship,Type_PEG,0.30110803,24-5
+"['Person', 'Patient', 'hasOccupation']",<https://w3id.org/brainteaser/ontology/schema/hasOccupation>,Person Patient hasOccupation,centre_T,0.20509976,26-20
+"['Person', 'Patient', 'tested']",<https://w3id.org/brainteaser/ontology/schema/tested>,Person Patient tested,Type_NIV,0.45383525,24-3
+"['Person', 'Patient', 'undergo']",<https://w3id.org/brainteaser/ontology/schema/undergo>,Person Patient undergo,pelvic_surgery_more_than_5_years,0.31933218,17-66
+"['Person', 'Patient', 'MSInPaediatricAge']",<https://w3id.org/brainteaser/ontology/schema/MSInPaediatricAge>,Person Patient MSInPaediatricAge,ms_in_pediatric_age,0.45074785,3-0
+"['Person', 'Patient', 'alive']",<https://w3id.org/brainteaser/ontology/schema/alive>,Person Patient alive,alive,0.39641067,25-2
+"['Person', 'Patient', 'deathCause']",<https://w3id.org/brainteaser/ontology/schema/deathCause>,Person Patient deathCause,Type_DEATH,0.53666764,24-2
+"['Person', 'Patient', 'deathDate']",<https://w3id.org/brainteaser/ontology/schema/deathDate>,Person Patient deathDate,Type_DEATH,0.46113926,16-2
+"['Person', 'Patient', 'dextricity']",<https://w3id.org/brainteaser/ontology/schema/dextricity>,Person Patient dextricity,onset_limb_type_lower-distal-proximal-right-limb,0.33964276,25-91
+"['Person', 'Patient', 'educationLevel']",<https://w3id.org/brainteaser/ontology/schema/educationLevel>,Person Patient educationLevel,occupation_Teaching_professionals,0.42705142,25-157
+"['Person', 'Patient', 'genomeSequencing']",<https://w3id.org/brainteaser/ontology/schema/genomeSequencing>,Person Patient genomeSequencing,TARDBP mutation_True,0.41339657,17-173
+"['Person', 'Patient', 'maritalStatus']",<https://w3id.org/brainteaser/ontology/schema/maritalStatus>,Person Patient maritalStatus,occupation_Legal_social_and_cultural_professionals,0.3737561,25-139
+"['Person', 'Patient', 'menopauseStatus']",<https://w3id.org/brainteaser/ontology/schema/menopauseStatus>,Person Patient menopauseStatus,sex_Female,0.2834068,25-70
+"['Person', 'Patient', 'notes']",<https://w3id.org/brainteaser/ontology/schema/notes>,Person Patient notes,occupation_Numerical_and_material_recording_clerks,0.42121124,17-145
+"['Person', 'Patient', 'retiredAtDiagnosis']",<https://w3id.org/brainteaser/ontology/schema/retiredAtDiagnosis>,Person Patient retiredAtDiagnosis,retired_at_diagnosis_True,0.39599836,25-159
+"['Person', 'Nicola Ferro']",<https://orcid.org/0000-0001-9219-6239>,Person Nicola Ferro,,,
+"['Person', 'Giorgio Maria Di Nunzio']",<https://orcid.org/0000-0001-9709-6392>,Person Giorgio Maria Di Nunzio,,,
+"['Person', 'Laura Menotti']",<https://orcid.org/0000-0002-0676-682X>,Person Laura Menotti,,,
+"['Person', 'Guglielmo Faggioli']",<https://orcid.org/0000-0002-5070-2049>,Person Guglielmo Faggioli,,,
+"['Person', 'Stefano Marchesin']",<https://orcid.org/0000-0003-0362-5893>,Person Stefano Marchesin,,,
+"['Person', 'Gianmaria Silvello']",<https://orcid.org/0000-0003-4970-4554>,Person Gianmaria Silvello,,,
+"['Activity', 'activityEndYear']",<https://w3id.org/brainteaser/ontology/schema/activityEndYear>,Activity activityEndYear,date_spiro,0.25303763,18-0
+"['Activity', 'acitivityStartYear']",<https://w3id.org/brainteaser/ontology/schema/activityStartYear>,Activity acitivityStartYear,delta_observation_time0,0.25763026,10-0
+"['Activity', 'Lifestyle', 'alcoholUse']",<https://w3id.org/brainteaser/ontology/schema/alcoholUse>,Activity Lifestyle alcoholUse,occupation_Food_processing_wood_working_garment_and_other_craft_and_related_trades_workers,0.25897273,17-130
+"['Activity', 'Lifestyle', 'diet']",<https://w3id.org/brainteaser/ontology/schema/diet>,Activity Lifestyle diet,basal_calories,0.28970253,6-2
+"['Activity', 'Lifestyle', 'sexuality']",<https://w3id.org/brainteaser/ontology/schema/sexuality>,Activity Lifestyle sexuality,sex_Male,0.1728275,17-71
+"['Activity', 'Lifestyle', 'sunExposure']",<https://w3id.org/brainteaser/ontology/schema/sunExposure>,Activity Lifestyle sunExposure,max_temperature_num,0.18070918,0-33
+"['Activity', 'Physical Activity', 'activityType']",<https://w3id.org/brainteaser/ontology/schema/activityType>,Activity Physical Activity activityType,onset_limb_type_lower-proximal-limb,0.3861364,25-97
+"['Activity', 'Physical Activity', 'intensity']",<https://w3id.org/brainteaser/ontology/schema/intensity>,Activity Physical Activity intensity,active_calories,0.3366583,6-1
+"['Activity', 'Physical Activity', 'weeklyFrequency']",<https://w3id.org/brainteaser/ontology/schema/weeklyFrequency>,Activity Physical Activity weeklyFrequency,week_from_baseline,0.35641047,0-0
+"['Activity', 'Smoking', 'before20Years']",<https://w3id.org/brainteaser/ontology/schema/before20Years>,Activity Smoking before20Years,smoking_startYear,0.4001277,17-11
+"['Activity', 'Smoking', 'dailyCigarettes']",<https://w3id.org/brainteaser/ontology/schema/dailyCigarettes>,Activity Smoking dailyCigarettes,smoking_False,0.33828753,17-160
+"['Activity', 'Smoking', 'packYear']",<https://w3id.org/brainteaser/ontology/schema/packYear>,Activity Smoking packYear,smoking_endYear,0.3705316,17-12
+"['Administration', 'administrationFrequency']",<https://w3id.org/brainteaser/ontology/schema/administrationFrequency>,Administration administrationFrequency,occupation_Business_and_administration_professionals,0.19441542,17-121
+"['Administration', 'administrationRoute']",<https://w3id.org/brainteaser/ontology/schema/administrationRoute>,Administration administrationRoute,,,
+"['Administration', 'administrationUoM']",<https://w3id.org/brainteaser/ontology/schema/administrationUoM>,Administration administrationUoM,occupation_Administrative_and_commercial_managers,0.3010364,17-116
+"['Administration', 'administrationDose']",<https://w3id.org/brainteaser/ontology/schema/adminstrationDose>,Administration administrationDose,occupation_Chief_executives_senior_officials_and_legislators,0.27151445,17-122
+"['Adverse Drug Reaction', 'Adverse Drug Event']",<http://purl.obolibrary.org/obo/OAE_0000005>,Adverse Drug Reaction Adverse Drug Event,date_alsfrs_r,0.18084662,26-2
+"['Adverse Drug Reaction', 'Administration of Ineffective Drug']",<http://purl.obolibrary.org/obo/OAE_0000220>,Adverse Drug Reaction Administration of Ineffective Drug,,,
+"['Adverse Drug Reaction', 'Drug Hypersensitivity AE']",<http://purl.obolibrary.org/obo/OAE_0000890>,Adverse Drug Reaction Drug Hypersensitivity AE,mixedMN_False,0.18737596,25-83
+"['Adverse Drug Reaction', 'Drug Intolerance AE']",<http://purl.obolibrary.org/obo/OAE_0000891>,Adverse Drug Reaction Drug Intolerance AE,,,
+"['Anatomic Site', 'Eye']",<http://purl.obolibrary.org/obo/NCIT_C12401>,Anatomic Site Eye,,,
+"['Anatomic Site', 'Head']",<http://purl.obolibrary.org/obo/NCIT_C12419>,Anatomic Site Head,head_neck_surgery_last_5_years,0.28956544,17-67
+"['Anatomic Site', 'Limb']",<http://purl.obolibrary.org/obo/NCIT_C12429>,Anatomic Site Limb,onset_limb_type_upper-lower-distal-proximal-left-right-limb,0.4197895,25-109
+"['Anatomic Site', 'Bone Marrow']",<http://purl.obolibrary.org/obo/NCIT_C12431>,Anatomic Site Bone Marrow,upper_limb_surgery_last_5_years,0.1991397,25-57
+"['Anatomic Site', 'Brain']",<http://purl.obolibrary.org/obo/NCIT_C12439>,Anatomic Site Brain,location_upper left,0.32865414,14-10
+"['Anatomic Site', 'Brain Stem']",<http://purl.obolibrary.org/obo/NCIT_C12441>,Anatomic Site Brain Stem,mri_area_label_Brain Stem,0.42300522,15-3
+"['Anatomic Site', 'Cerebellum']",<http://purl.obolibrary.org/obo/NCIT_C12445>,Anatomic Site Cerebellum,centre_turin,0.2754954,15-20
+"['Anatomic Site', 'Spinal Cord']",<http://purl.obolibrary.org/obo/NCIT_C12464>,Anatomic Site Spinal Cord,mri_area_label_Spinal Cord,0.39415526,15-5
+"['Anatomic Site', 'Supratentorial Brain']",<http://purl.obolibrary.org/obo/NCIT_C12512>,Anatomic Site Supratentorial Brain,onset_limb_type_upper-lower-distal-proximal-left-right-limb,0.33194053,17-109
+"['Anatomic Site', 'Abdomen']",<http://purl.obolibrary.org/obo/NCIT_C12664>,Anatomic Site Abdomen,,,
+"['Anatomic Site', 'Upper Extremity']",<http://purl.obolibrary.org/obo/NCIT_C12671>,Anatomic Site Upper Extremity,onset_limb_type_upper-proximal-left-limb,0.31417337,25-111
+"['Anatomic Site', 'Lower Extremity']",<http://purl.obolibrary.org/obo/NCIT_C12742>,Anatomic Site Lower Extremity,lower_limb_surgery_more_than_5_years,0.30772567,25-60
+"['Anatomic Site', 'Pelvis']",<http://purl.obolibrary.org/obo/NCIT_C12767>,Anatomic Site Pelvis,pelvic_surgery_last_5_years,0.19943896,25-65
+"['Anatomic Site', 'Thorax']",<http://purl.obolibrary.org/obo/NCIT_C12799>,Anatomic Site Thorax,thoracic_trauma_last_5_years,0.31344128,25-47
+"['Anatomic Site', 'Cervical Spinal Cord']",<http://purl.obolibrary.org/obo/NCIT_C12892>,Anatomic Site Cervical Spinal Cord,mri_area_label_Cervical Spinal Cord,0.41951114,15-4
+"['Anatomic Site', 'Thoracic Spinal Cord']",<http://purl.obolibrary.org/obo/NCIT_C12894>,Anatomic Site Thoracic Spinal Cord,mri_area_label_Thoracic Spinal Cord,0.4383743,15-6
+"['Anatomic Site', 'Vertebral Column']",<http://purl.obolibrary.org/obo/NCIT_C12998>,Anatomic Site Vertebral Column,lumbo_sacral_spine_surgery_last_5_years,0.3717883,25-55
+"['Anatomic Site', 'Neck']",<http://purl.obolibrary.org/obo/NCIT_C13063>,Anatomic Site Neck,neck_trauma_last_5_years,0.32847807,17-43
+"['Anatomic Site', 'Sphincter']",<http://purl.obolibrary.org/obo/NCIT_C28381>,Anatomic Site Sphincter,,,
+"['Anatomic Site', 'Lumbosacral Region']",<http://purl.obolibrary.org/obo/NCIT_C48824>,Anatomic Site Lumbosacral Region,lumbo_sacral_trauma_last_5_years,0.31349978,17-49
+"['Anatomic Site', 'Cervical Spine']",<http://purl.obolibrary.org/obo/NCIT_C69313>,Anatomic Site Cervical Spine,cervical_spine_surgery_more_than_5_years,0.4274279,17-52
+"['Anatomic Site', 'Lumbar Spine']",<http://purl.obolibrary.org/obo/NCIT_C69314>,Anatomic Site Lumbar Spine,lumbo_sacral_spine_surgery_more_than_5_years,0.43880147,17-56
+"['Anatomic Site', 'Thoracic Spine']",<http://purl.obolibrary.org/obo/NCIT_C69315>,Anatomic Site Thoracic Spine,thoracic_spine_surgery_last_5_years,0.42541665,17-53
+"['Clinical Trial', 'conductedInClinic']",<https://w3id.org/brainteaser/ontology/schema/conductedInClinic>,Clinical Trial conductedInClinic,centre_turin,0.28509218,9-2
+"['Clinical Trial', 'isAboutDisease']",<https://w3id.org/brainteaser/ontology/schema/isAboutDisease>,Clinical Trial isAboutDisease,respiration_alpha1_ExpRange,0.22385463,6-66
+"['Clinical Trial', 'clinicalTrialDescription']",<https://w3id.org/brainteaser/ontology/schema/clinicalTrialDescription>,Clinical Trial clinicalTrialDescription,Time,0.29942608,16-1
+"['Clinical Trial Participation', 'inClinicalTrial']",<https://w3id.org/brainteaser/ontology/schema/inClinicalTrial>,Clinical Trial Participation inClinicalTrial,sex_male,0.2995428,12-9
+"['Clinical Trial Participation', 'endReason']",<https://w3id.org/brainteaser/ontology/schema/endReason>,Clinical Trial Participation endReason,outcome_occurred,0.39350978,13-0
+"['Clinical Trial Participation', 'participationEnd']",<https://w3id.org/brainteaser/ontology/schema/participationEnd>,Clinical Trial Participation participationEnd,outcome_time,0.35841227,13-1
+"['Clinical Trial Participation', 'participationStart']",<https://w3id.org/brainteaser/ontology/schema/participationStart>,Clinical Trial Participation participationStart,week_from_baseline,0.3143383,1-0
+"['Clinics and Hospitals', 'Institute of Molecular Medicine Joao Lobo Antunes']",<https://imm.medicina.ulisboa.pt/>,Clinics and Hospitals Institute of Molecular Medicine Joao Lobo Antunes,"TARDBP mutation_c.1144G>A, p.(Ala382Thr)",0.29843032,25-175
+"['Clinics and Hospitals', 'Hospital General Universitario Gregorio Marañón']",<https://www.comunidad.madrid/hospital/gregoriomaranon/>,Clinics and Hospitals Hospital General Universitario Gregorio Marañón,centre_U,0.27452296,24-8
+"['Clinics and Hospitals', 'Mondino Foundation']",<https://www.mondino.it/>,Clinics and Hospitals Mondino Foundation,centre_L,0.2613086,26-19
+"['Clinics and Hospitals', 'University of Padua']",<https://www.unipd.it/>,Clinics and Hospitals University of Padua,centre_U,0.31552017,26-21
+"['Clinics and Hospitals', 'University of Turin']",<https://www.unito.it/>,Clinics and Hospitals University of Turin,centre_turin,0.3649747,11-3
+"['Conditon', 'conditionEnd']",<https://w3id.org/brainteaser/ontology/schema/conditionEnd>,Conditon conditionEnd,,,
+"['Conditon', 'conditionStart']",<https://w3id.org/brainteaser/ontology/schema/conditionStart>,Conditon conditionStart,other_symptoms_RM+,0.16026354,12-17
+"['Conditon', 'Comorbidity', 'determinedBy']",<https://w3id.org/brainteaser/ontology/schema/determinedBy>,Conditon Comorbidity determinedBy,supratentorial_symptom,0.3707224,12-6
+"['Conditon', 'Comorbidity', 'comorbiditySeverity']",<https://w3id.org/brainteaser/ontology/schema/comorbiditySeverity>,Conditon Comorbidity comorbiditySeverity,Creatinine_level,0.25917062,17-21
+"['Conditon', 'Comorbidity', 'comorbidityTreatment']",<https://w3id.org/brainteaser/ontology/schema/comorbidityTreatment>,Conditon Comorbidity comorbidityTreatment,occupation_Hospitality_retail_and_other_services_managers,0.25598535,17-135
+"['Disease, Disorder or Finding', 'Amenorrhea due to Pituitary Dysfunction']",<http://purl.bioontology.org/ontology/SNOMEDCT/1144987003>,"Disease, Disorder or Finding Amenorrhea due to Pituitary Dysfunction",onset_limb_type_limb,0.20220742,25-85
+"['Disease, Disorder or Finding', 'Autoimmune Pancytopenia']",<http://purl.bioontology.org/ontology/SNOMEDCT/183005>,"Disease, Disorder or Finding Autoimmune Pancytopenia",autoimmune_disease_True,0.44332486,25-192
+"['Disease, Disorder or Finding', ""Bell's Palsy""]",<http://purl.bioontology.org/ontology/SNOMEDCT/193093009>,"Disease, Disorder or Finding Bell's Palsy",onset_limb_type_lower-distal-proximal-left-limb,0.3239529,17-89
+"['Disease, Disorder or Finding', 'Prolapsed Lumbar Intervertebral Disc']",<http://purl.bioontology.org/ontology/SNOMEDCT/202708005>,"Disease, Disorder or Finding Prolapsed Lumbar Intervertebral Disc",lumbo_sacral_spine_surgery_last_5_years,0.46366376,17-55
+"['Disease, Disorder or Finding', 'Lumbar Hernia']",<http://purl.bioontology.org/ontology/SNOMEDCT/23344004>,"Disease, Disorder or Finding Lumbar Hernia",thoracic_spine_surgery_more_than_5_years,0.32851675,17-54
+"['Disease, Disorder or Finding', 'Pulmonary Thromboembolism']",<http://purl.bioontology.org/ontology/SNOMEDCT/233935004>,"Disease, Disorder or Finding Pulmonary Thromboembolism",LDL_Cholesterol_upper_range,0.24800912,17-35
+"['Disease, Disorder or Finding', 'Atopic Dermatitis']",<http://purl.bioontology.org/ontology/SNOMEDCT/24079001>,"Disease, Disorder or Finding Atopic Dermatitis",head_trauma_more_than_5_years,0.20417339,25-42
+"['Disease, Disorder or Finding', 'Neutropenic Disorder']",<http://purl.bioontology.org/ontology/SNOMEDCT/303011007>,"Disease, Disorder or Finding Neutropenic Disorder",onset_limb_type_upper-proximal-right-limb,0.26125255,17-114
+"['Disease, Disorder or Finding', 'Motor Neuron Disease']",<http://purl.bioontology.org/ontology/SNOMEDCT/37340000>,"Disease, Disorder or Finding Motor Neuron Disease",altered_potential_Motor,0.47580898,14-3
+"['Disease, Disorder or Finding', 'Allergic Asthma']",<http://purl.bioontology.org/ontology/SNOMEDCT/389145006>,"Disease, Disorder or Finding Allergic Asthma",param_PM10,0.20110238,27-9
+"['Disease, Disorder or Finding', 'Closed Fracture of Tibia']",<http://purl.bioontology.org/ontology/SNOMEDCT/447139008>,"Disease, Disorder or Finding Closed Fracture of Tibia",onset_limb_type_upper-proximal-left-right-limb,0.34669507,25-112
+"['Disease, Disorder or Finding', 'Intervertebral Disc Prolapse']",<http://purl.bioontology.org/ontology/SNOMEDCT/73589001>,"Disease, Disorder or Finding Intervertebral Disc Prolapse",number_of_total_lesions_T2_0,0.3807097,15-15
+"['Disease, Disorder or Finding', 'Pneumonia Caused By SARS-CoV-2']",<http://purl.bioontology.org/ontology/SNOMEDCT/882784691000119100>,"Disease, Disorder or Finding Pneumonia Caused By SARS-CoV-2",thoracic_trauma_last_5_years,0.2990848,17-47
+"['Disease, Disorder or Finding', 'Neck Trauma']",<http://purl.bioontology.org/ontology/SNOMEDCT/90460009>,"Disease, Disorder or Finding Neck Trauma",neck_trauma_more_than_5_years,0.566926,25-44
+"['Disease, Disorder or Finding', 'Herpes Simplex Keratitis']",<http://purl.bioontology.org/ontology/SNOMEDCT/9389005>,"Disease, Disorder or Finding Herpes Simplex Keratitis",head_trauma_last_5_years,0.20320109,25-41
+"['Disease, Disorder or Finding', 'Two Vessel Coronary Disease']",<http://purl.obolibrary.org/obo/NCIT_C100023>,"Disease, Disorder or Finding Two Vessel Coronary Disease",cardiac_disease_True,0.4053741,17-198
+"['Disease, Disorder or Finding', 'Sign or Symptom']",<http://purl.obolibrary.org/obo/NCIT_C100104>,"Disease, Disorder or Finding Sign or Symptom",other_symptoms_RM+,0.37671852,12-17
+"['Disease, Disorder or Finding', 'Spina Bifida']",<http://purl.obolibrary.org/obo/NCIT_C101214>,"Disease, Disorder or Finding Spina Bifida",SOD1 mutation_False,0.32817194,17-164
+"['Disease, Disorder or Finding', 'Angioedema']",<http://purl.obolibrary.org/obo/NCIT_C112175>,"Disease, Disorder or Finding Angioedema",onset_limb_type_lower-distal-left-right-limb,0.26024592,17-87
+"['Disease, Disorder or Finding', 'Blepharitits']",<http://purl.obolibrary.org/obo/NCIT_C112183>,"Disease, Disorder or Finding Blepharitits",PM10_who,0.2814752,0-6
+"['Disease, Disorder or Finding', 'Drug Hypersensitivity Syndrome']",<http://purl.obolibrary.org/obo/NCIT_C112208>,"Disease, Disorder or Finding Drug Hypersensitivity Syndrome",onset_limb_type_lower-limb,0.25954035,25-94
+"['Disease, Disorder or Finding', 'Molluscum Contagiosum Virus']",<http://purl.obolibrary.org/obo/NCIT_C112357>,"Disease, Disorder or Finding Molluscum Contagiosum Virus",TARDBP mutation_True,0.161485,17-176
+"['Disease, Disorder or Finding', 'Tinea Versicolor']",<http://purl.obolibrary.org/obo/NCIT_C112833>,"Disease, Disorder or Finding Tinea Versicolor",TARDBP mutation_False,0.17994848,17-172
+"['Disease, Disorder or Finding', 'Ureteral Stenosis']",<http://purl.obolibrary.org/obo/NCIT_C115958>,"Disease, Disorder or Finding Ureteral Stenosis",onset_limb_type_lower-proximal-right-limb,0.28624818,25-98
+"['Disease, Disorder or Finding', 'Anosmia']",<http://purl.obolibrary.org/obo/NCIT_C116369>,"Disease, Disorder or Finding Anosmia",other_symptoms_epilepsy,0.25231645,12-18
+"['Disease, Disorder or Finding', 'Ageusia']",<http://purl.obolibrary.org/obo/NCIT_C116374>,"Disease, Disorder or Finding Ageusia",age_at_onset,0.3852911,3-1
+"['Disease, Disorder or Finding', 'Subdural Hematoma']",<http://purl.obolibrary.org/obo/NCIT_C116585>,"Disease, Disorder or Finding Subdural Hematoma",number_of_total_lesions_T2_>=3,0.31447715,15-17
+"['Disease, Disorder or Finding', 'Cognitive Impariment']",<http://purl.obolibrary.org/obo/NCIT_C116921>,"Disease, Disorder or Finding Cognitive Impariment",brainstem_symptom,0.3555806,3-5
+"['Disease, Disorder or Finding', 'Migraine With Aura']",<http://purl.obolibrary.org/obo/NCIT_C117005>,"Disease, Disorder or Finding Migraine With Aura",location_lower left,0.2566444,14-7
+"['Disease, Disorder or Finding', 'Post-Herpetic Neuralgia']",<http://purl.obolibrary.org/obo/NCIT_C117084>,"Disease, Disorder or Finding Post-Herpetic Neuralgia",onset_limb_type_lower-proximal-right-limb,0.2773648,17-98
+"['Disease, Disorder or Finding', 'Blepharospasm']",<http://purl.obolibrary.org/obo/NCIT_C118723>,"Disease, Disorder or Finding Blepharospasm",PM10_mean,0.24913181,0-5
+"['Disease, Disorder or Finding', 'Dog Bite']",<http://purl.obolibrary.org/obo/NCIT_C122419>,"Disease, Disorder or Finding Dog Bite",onset_limb_type_upper-distal-limb,0.29547283,17-102
+"['Disease, Disorder or Finding', 'Acute Pyelonephritis']",<http://purl.obolibrary.org/obo/NCIT_C123215>,"Disease, Disorder or Finding Acute Pyelonephritis",onset_limb_type_upper-distal-right-limb,0.22189781,25-104
+"['Disease, Disorder or Finding', 'Viral Pericarditis']",<http://purl.obolibrary.org/obo/NCIT_C128405>,"Disease, Disorder or Finding Viral Pericarditis",onset_limb_type_lower-proximal-right-limb,0.23936486,25-98
+"['Disease, Disorder or Finding', 'Acquired Hypothyroidism']",<http://purl.obolibrary.org/obo/NCIT_C129644>,"Disease, Disorder or Finding Acquired Hypothyroidism",onset_limb_type_lower-right-limb,0.24855652,25-99
+"['Disease, Disorder or Finding', 'Herpes Simplex Virus Infection']",<http://purl.obolibrary.org/obo/NCIT_C155871>,"Disease, Disorder or Finding Herpes Simplex Virus Infection",onset_limbs,0.24198394,25-10
+"['Disease, Disorder or Finding', 'Basal Cell Carcinoma']",<http://purl.obolibrary.org/obo/NCIT_C156767>,"Disease, Disorder or Finding Basal Cell Carcinoma",SOD1 mutation_True,0.17447677,17-165
+"['Disease, Disorder or Finding', 'Opioid Use Disorder']",<http://purl.obolibrary.org/obo/NCIT_C157942>,"Disease, Disorder or Finding Opioid Use Disorder",motor_subscore,0.22855935,26-5
+"['Disease, Disorder or Finding', 'Pneumococcal Pneumonia']",<http://purl.obolibrary.org/obo/NCIT_C157959>,"Disease, Disorder or Finding Pneumococcal Pneumonia",centre_pavia,0.20012555,11-2
+"['Disease, Disorder or Finding', 'COVID-19 Infection']",<http://purl.obolibrary.org/obo/NCIT_C171133>,"Disease, Disorder or Finding COVID-19 Infection",SOD1 mutation_p.Ala152Pro (GCC>CCC).,0.3182771,17-171
+"['Disease, Disorder or Finding', 'Thoracic Trauma']",<http://purl.obolibrary.org/obo/NCIT_C171204>,"Disease, Disorder or Finding Thoracic Trauma",thoracic_trauma_more_than_5_years,0.55881864,25-48
+"['Disease, Disorder or Finding', 'Hepatic Toxicity']",<http://purl.obolibrary.org/obo/NCIT_C185645>,"Disease, Disorder or Finding Hepatic Toxicity",LDL_Cholesterol_upper_range,0.21975997,25-35
+"['Disease, Disorder or Finding', 'Abdominal Pain']",<http://purl.obolibrary.org/obo/NCIT_C26682>,"Disease, Disorder or Finding Abdominal Pain",abdominal_surgery_more_than_5_years,0.3102295,25-62
+"['Disease, Disorder or Finding', 'Bacterial Pneumonia']",<http://purl.obolibrary.org/obo/NCIT_C26704>,"Disease, Disorder or Finding Bacterial Pneumonia",brainstem_symptom,0.23030835,3-5
+"['Disease, Disorder or Finding', 'Celiac Disease']",<http://purl.obolibrary.org/obo/NCIT_C26714>,"Disease, Disorder or Finding Celiac Disease",LDL_Cholesterol_unit,0.17025939,25-36
+"['Disease, Disorder or Finding', 'Chalazion']",<http://purl.obolibrary.org/obo/NCIT_C26717>,"Disease, Disorder or Finding Chalazion",lumbo_sacral_trauma_last_5_years,0.24341567,25-49
+"['Disease, Disorder or Finding', 'Type 2 Diabetes Mellitus']",<http://purl.obolibrary.org/obo/NCIT_C26747>,"Disease, Disorder or Finding Type 2 Diabetes Mellitus",diabetes_True,0.39630735,17-188
+"['Disease, Disorder or Finding', 'Cranial Nerve VII Palsy']",<http://purl.obolibrary.org/obo/NCIT_C26769>,"Disease, Disorder or Finding Cranial Nerve VII Palsy",onset_limb_type_lower-distal-proximal-left-right-limb,0.34378898,17-90
+"['Disease, Disorder or Finding', 'Femur Fracture']",<http://purl.obolibrary.org/obo/NCIT_C26774>,"Disease, Disorder or Finding Femur Fracture",onset_limb_type_upper-distal-proximal-left-limb,0.3374239,25-103
+"['Disease, Disorder or Finding', 'Gastritis']",<http://purl.obolibrary.org/obo/NCIT_C26780>,"Disease, Disorder or Finding Gastritis",onset_limb_type_lower-proximal-left-right-limb,0.16143662,25-96
+"['Disease, Disorder or Finding', 'Glaucoma']",<http://purl.obolibrary.org/obo/NCIT_C26782>,"Disease, Disorder or Finding Glaucoma",onset_limb_type_lower-distal-left-limb,0.22736591,25-86
+"['Disease, Disorder or Finding', 'Hypothyroidism']",<http://purl.obolibrary.org/obo/NCIT_C26800>,"Disease, Disorder or Finding Hypothyroidism",thyroid_disorder_True,0.42510688,17-192
+"['Disease, Disorder or Finding', 'Keratitis']",<http://purl.obolibrary.org/obo/NCIT_C26805>,"Disease, Disorder or Finding Keratitis",onset_limb_type_lower-proximal-left-limb,0.15781468,25-95
+"['Disease, Disorder or Finding', 'Keratoconus']",<http://purl.obolibrary.org/obo/NCIT_C26806>,"Disease, Disorder or Finding Keratoconus",autoimmune_disease_True,0.17482887,25-192
+"['Disease, Disorder or Finding', 'Progressive Multifocal Leukoencephalopathy']",<http://purl.obolibrary.org/obo/NCIT_C26815>,"Disease, Disorder or Finding Progressive Multifocal Leukoencephalopathy",diagnosis_criteria_Neuromyelitis optica,0.37173584,3-27
+"['Disease, Disorder or Finding', 'Leukopenia']",<http://purl.obolibrary.org/obo/NCIT_C26816>,"Disease, Disorder or Finding Leukopenia",cervical_trauma_last_5_years,0.30675727,17-45
+"['Disease, Disorder or Finding', 'Lymphopenia']",<http://purl.obolibrary.org/obo/NCIT_C26823>,"Disease, Disorder or Finding Lymphopenia",onset_limb_type_lower-distal-left-limb,0.23518346,17-86
+"['Disease, Disorder or Finding', ""Parkinson's Disease""]",<http://purl.obolibrary.org/obo/NCIT_C26845>,"Disease, Disorder or Finding Parkinson's Disease",lesions_T2_True,0.3904441,15-14
+"['Disease, Disorder or Finding', 'Retinal Detachment']",<http://purl.obolibrary.org/obo/NCIT_C26874>,"Disease, Disorder or Finding Retinal Detachment",onset_limb_type_lower-distal-proximal-left-limb,0.15750779,25-89
+"['Disease, Disorder or Finding', 'Sjogren Syndrome']",<http://purl.obolibrary.org/obo/NCIT_C26883>,"Disease, Disorder or Finding Sjogren Syndrome",onset_limb_type_lower-distal-right-limb,0.23739342,17-92
+"['Disease, Disorder or Finding', 'Thyroid Gland Disorder']",<http://purl.obolibrary.org/obo/NCIT_C26893>,"Disease, Disorder or Finding Thyroid Gland Disorder",thyroid_disorder_True,0.5664718,25-190
+"['Disease, Disorder or Finding', 'Thyroiditis']",<http://purl.obolibrary.org/obo/NCIT_C26894>,"Disease, Disorder or Finding Thyroiditis",thyroid_disorder_False,0.5578819,25-189
+"['Disease, Disorder or Finding', 'Vitiligo']",<http://purl.obolibrary.org/obo/NCIT_C26915>,"Disease, Disorder or Finding Vitiligo",FUS mutation_False,0.24147913,17-179
+"['Disease, Disorder or Finding', 'Fever Chills']",<http://purl.obolibrary.org/obo/NCIT_C26921>,"Disease, Disorder or Finding Fever Chills",average_temperature_mean,0.38241035,0-30
+"['Disease, Disorder or Finding', 'Acute Cystitis']",<http://purl.obolibrary.org/obo/NCIT_C26934>,"Disease, Disorder or Finding Acute Cystitis",,,
+"['Disease, Disorder or Finding', 'Alanine Aminotransferase Increased']",<http://purl.obolibrary.org/obo/NCIT_C26948>,"Disease, Disorder or Finding Alanine Aminotransferase Increased",Creatinine_level,0.21214119,25-21
+"['Disease, Disorder or Finding', 'Trigeminal Nerve Disorder']",<http://purl.obolibrary.org/obo/NCIT_C26952>,"Disease, Disorder or Finding Trigeminal Nerve Disorder",onset_limb_type_upper-distal-left-right-limb,0.2971865,17-101
+"['Disease, Disorder or Finding', 'Ankle Fracture']",<http://purl.obolibrary.org/obo/NCIT_C26989>,"Disease, Disorder or Finding Ankle Fracture",onset_limb_type_lower-distal-proximal-left-right-limb,0.37992418,25-90
+"['Disease, Disorder or Finding', 'Interstitial Pneumonia']",<http://purl.obolibrary.org/obo/NCIT_C27006>,"Disease, Disorder or Finding Interstitial Pneumonia",PM10_num,0.2423614,0-4
+"['Disease, Disorder or Finding', 'Acute Respiratory Failure']",<http://purl.obolibrary.org/obo/NCIT_C27043>,"Disease, Disorder or Finding Acute Respiratory Failure",respiratory_subscore,0.44939274,26-6
+"['Disease, Disorder or Finding', 'Obstructive Sleep Apnea Syndrome']",<http://purl.obolibrary.org/obo/NCIT_C27168>,"Disease, Disorder or Finding Obstructive Sleep Apnea Syndrome",respiration_alpha2_DimMean,0.22049388,6-67
+"['Disease, Disorder or Finding', 'Hashimoto Thyroiditis']",<http://purl.obolibrary.org/obo/NCIT_C27191>,"Disease, Disorder or Finding Hashimoto Thyroiditis",thyroid_disorder_False,0.4479209,17-191
+"['Disease, Disorder or Finding', 'Non-Neoplastic Central Nervous System Disorder']",<http://purl.obolibrary.org/obo/NCIT_C27586>,"Disease, Disorder or Finding Non-Neoplastic Central Nervous System Disorder",lesions_T1_True,0.4076692,15-8
+"['Disease, Disorder or Finding', 'Thromboembolism']",<http://purl.obolibrary.org/obo/NCIT_C28195>,"Disease, Disorder or Finding Thromboembolism",dyslipidemia_True,0.3335777,17-190
+"['Disease, Disorder or Finding', 'Asthma']",<http://purl.obolibrary.org/obo/NCIT_C28397>,"Disease, Disorder or Finding Asthma",wind_speed_num,0.27618855,0-19
+"['Disease, Disorder or Finding', 'Adenocarcinoma']",<http://purl.obolibrary.org/obo/NCIT_C2852>,"Disease, Disorder or Finding Adenocarcinoma","TARDBP mutation_c.1144G>A, p.(Ala382Thr)",0.19982581,25-175
+"['Disease, Disorder or Finding', ""Alzheimer's Disease""]",<http://purl.obolibrary.org/obo/NCIT_C2866>,"Disease, Disorder or Finding Alzheimer's Disease",Occured,0.3703413,16-0
+"['Disease, Disorder or Finding', 'Anemia']",<http://purl.obolibrary.org/obo/NCIT_C2869>,"Disease, Disorder or Finding Anemia",diabetes_False,0.29277483,17-187
+"['Disease, Disorder or Finding', 'Anorexia']",<http://purl.obolibrary.org/obo/NCIT_C2875>,"Disease, Disorder or Finding Anorexia",weight,0.18433674,17-5
+"['Disease, Disorder or Finding', 'Anxiety Disorder']",<http://purl.obolibrary.org/obo/NCIT_C2878>,"Disease, Disorder or Finding Anxiety Disorder",prevalentLMN_False,0.31826222,17-79
+"['Disease, Disorder or Finding', 'Arrhythmia']",<http://purl.obolibrary.org/obo/NCIT_C2881>,"Disease, Disorder or Finding Arrhythmia",heart_rate_quadratic_trend,0.40431568,6-50
+"['Disease, Disorder or Finding', 'Arthritis']",<http://purl.obolibrary.org/obo/NCIT_C2883>,"Disease, Disorder or Finding Arthritis",onset_limb_type_lower-distal-proximal-left-limb,0.33801955,25-89
+"['Disease, Disorder or Finding', 'Rheumatoid Arthritis']",<http://purl.obolibrary.org/obo/NCIT_C2884>,"Disease, Disorder or Finding Rheumatoid Arthritis",onset_limb_type_lower-distal-left-right-limb,0.27355886,25-87
+"['Disease, Disorder or Finding', 'Autoimmune Disease']",<http://purl.obolibrary.org/obo/NCIT_C2889>,"Disease, Disorder or Finding Autoimmune Disease",autoimmune_disease_False,0.6009628,25-191
+"['Disease, Disorder or Finding', 'Psychiatric Disorder']",<http://purl.obolibrary.org/obo/NCIT_C2893>,"Disease, Disorder or Finding Psychiatric Disorder",motor_subscore,0.27736735,18-5
+"['Disease, Disorder or Finding', 'Vulvovaginal Candidiasis']",<http://purl.obolibrary.org/obo/NCIT_C2914>,"Disease, Disorder or Finding Vulvovaginal Candidiasis",sex_female,0.18957144,12-8
+"['Disease, Disorder or Finding', 'Carcinoma']",<http://purl.obolibrary.org/obo/NCIT_C2916>,"Disease, Disorder or Finding Carcinoma",primary_neoplasm_True,0.30448434,17-200
+"['Disease, Disorder or Finding', 'Malignant Skin Neoplasm']",<http://purl.obolibrary.org/obo/NCIT_C2920>,"Disease, Disorder or Finding Malignant Skin Neoplasm",thyroid_disorder_True,0.16371441,17-192
+"['Disease, Disorder or Finding', 'Skin Basal Cell Carcinoma']",<http://purl.obolibrary.org/obo/NCIT_C2921>,"Disease, Disorder or Finding Skin Basal Cell Carcinoma",onset_limb_type_lower-proximal-right-limb,0.15281868,25-98
+"['Disease, Disorder or Finding', 'Skin Basosquamous Cell Carcinoma']",<http://purl.obolibrary.org/obo/NCIT_C2922>,"Disease, Disorder or Finding Skin Basosquamous Cell Carcinoma",number_of_total_lesions_T2_>=9,0.15507923,15-18
+"['Disease, Disorder or Finding', 'Cardiovascular Disorder']",<http://purl.obolibrary.org/obo/NCIT_C2931>,"Disease, Disorder or Finding Cardiovascular Disorder",cardiac_disease_True,0.46503395,25-196
+"['Disease, Disorder or Finding', 'Cyst']",<http://purl.obolibrary.org/obo/NCIT_C2978>,"Disease, Disorder or Finding Cyst",multiple_sclerosis_type_SP,0.1672239,10-4
+"['Disease, Disorder or Finding', 'Depression']",<http://purl.obolibrary.org/obo/NCIT_C2982>,"Disease, Disorder or Finding Depression",time_since_onset,0.27824026,12-7
+"['Disease, Disorder or Finding', 'Diabetes Mellitus']",<http://purl.obolibrary.org/obo/NCIT_C2985>,"Disease, Disorder or Finding Diabetes Mellitus",diabetes_True,0.46528584,25-186
+"['Disease, Disorder or Finding', 'Type 1 Diabtes Mellitus']",<http://purl.obolibrary.org/obo/NCIT_C2986>,"Disease, Disorder or Finding Type 1 Diabtes Mellitus",SOD1 mutation_Ala140Ala,0.38791487,25-166
+"['Disease, Disorder or Finding', 'Mumps']",<http://purl.obolibrary.org/obo/NCIT_C29888>,"Disease, Disorder or Finding Mumps",dyslipidemia_False,0.35717428,17-189
+"['Disease, Disorder or Finding', 'Disease or Disorder']",<http://purl.obolibrary.org/obo/NCIT_C2991>,"Disease, Disorder or Finding Disease or Disorder",SOD1 mutation_False,0.3287509,17-167
+"['Disease, Disorder or Finding', 'Eczema']",<http://purl.obolibrary.org/obo/NCIT_C3001>,"Disease, Disorder or Finding Eczema",lesions_T2_True,0.16515459,15-14
+"['Disease, Disorder or Finding', 'Endometriosis']",<http://purl.obolibrary.org/obo/NCIT_C3014>,"Disease, Disorder or Finding Endometriosis",sex_female,0.2774455,3-8
+"['Disease, Disorder or Finding', 'Seizure Disorder']",<http://purl.obolibrary.org/obo/NCIT_C3020>,"Disease, Disorder or Finding Seizure Disorder",other_symptoms_epilepsy,0.479016,12-18
+"['Disease, Disorder or Finding', 'Generalized Epilepsy']",<http://purl.obolibrary.org/obo/NCIT_C3021>,"Disease, Disorder or Finding Generalized Epilepsy",other_symptoms_epilepsy,0.55842817,3-22
+"['Disease, Disorder or Finding', 'Fibroma']",<http://purl.obolibrary.org/obo/NCIT_C3041>,"Disease, Disorder or Finding Fibroma",major_trauma_before_onset_True,0.19232324,17-202
+"['Disease, Disorder or Finding', 'Cavernous Hemangioma']",<http://purl.obolibrary.org/obo/NCIT_C3086>,"Disease, Disorder or Finding Cavernous Hemangioma",onset_limb_type_upper-lower-distal-left-limb,0.18709248,17-108
+"['Disease, Disorder or Finding', 'Hepatitis']",<http://purl.obolibrary.org/obo/NCIT_C3095>,"Disease, Disorder or Finding Hepatitis",SOD1 mutation_p.Ala152Pro (GCC>CCC).,0.3364541,25-170
+"['Disease, Disorder or Finding', 'Hepatitis A Infection']",<http://purl.obolibrary.org/obo/NCIT_C3096>,"Disease, Disorder or Finding Hepatitis A Infection",retired_at_diagnosis_False,0.32436374,25-158
+"['Disease, Disorder or Finding', 'Langerhans Cell Histiocytosis']",<http://purl.obolibrary.org/obo/NCIT_C3107>,"Disease, Disorder or Finding Langerhans Cell Histiocytosis",centre_turin,0.16608334,11-3
+"['Disease, Disorder or Finding', 'Hypersensitivity']",<http://purl.obolibrary.org/obo/NCIT_C3114>,"Disease, Disorder or Finding Hypersensitivity",onset_limb_type_upper-proximal-limb,0.32159173,25-113
+"['Disease, Disorder or Finding', 'Hypertension']",<http://purl.obolibrary.org/obo/NCIT_C3117>,"Disease, Disorder or Finding Hypertension",hypertension_False,0.51865035,25-183
+"['Disease, Disorder or Finding', 'Hypertensive Crisis']",<http://purl.obolibrary.org/obo/NCIT_C3122>,"Disease, Disorder or Finding Hypertensive Crisis",hypertension_False,0.5016185,17-185
+"['Disease, Disorder or Finding', 'Hyperthyroidism']",<http://purl.obolibrary.org/obo/NCIT_C3123>,"Disease, Disorder or Finding Hyperthyroidism",onset_limb_type_lower-left-limb,0.27160636,25-93
+"['Disease, Disorder or Finding', 'Epidermal Inclusion Cyst']",<http://purl.obolibrary.org/obo/NCIT_C3134>,"Disease, Disorder or Finding Epidermal Inclusion Cyst",onset_limb_type_upper-distal-left-right-limb,0.17045735,17-101
+"['Disease, Disorder or Finding', 'Multiple Sclerosis']",<http://purl.obolibrary.org/obo/NCIT_C3243>,"Disease, Disorder or Finding Multiple Sclerosis",multiple_sclerosis_type_RR,0.5945151,10-3
+"['Disease, Disorder or Finding', 'Fungal Infection']",<http://purl.obolibrary.org/obo/NCIT_C3245>,"Disease, Disorder or Finding Fungal Infection",SOD1 mutation_False,0.21103734,17-164
+"['Disease, Disorder or Finding', 'Neoplasm']",<http://purl.obolibrary.org/obo/NCIT_C3262>,"Disease, Disorder or Finding Neoplasm",primary_neoplasm_False,0.45353466,17-199
+"['Disease, Disorder or Finding', 'Obesity']",<http://purl.obolibrary.org/obo/NCIT_C3283>,"Disease, Disorder or Finding Obesity",weight_before_onset,0.34710371,25-4
+"['Disease, Disorder or Finding', 'Osteoporosis']",<http://purl.obolibrary.org/obo/NCIT_C3298>,"Disease, Disorder or Finding Osteoporosis",onset_limb_type_lower-distal-right-limb,0.3154254,25-92
+"['Disease, Disorder or Finding', 'Pituitary Neuroendocrine Tumor']",<http://purl.obolibrary.org/obo/NCIT_C3329>,"Disease, Disorder or Finding Pituitary Neuroendocrine Tumor",autoimmune_disease_False,0.16606474,25-191
+"['Disease, Disorder or Finding', 'Pleural Effusion']",<http://purl.obolibrary.org/obo/NCIT_C3331>,"Disease, Disorder or Finding Pleural Effusion",head_trauma_last_5_years,0.24217868,17-41
+"['Disease, Disorder or Finding', 'Pneumonia']",<http://purl.obolibrary.org/obo/NCIT_C3333>,"Disease, Disorder or Finding Pneumonia",wind_speed_mean,0.25288832,0-20
+"['Disease, Disorder or Finding', 'Psoriasis']",<http://purl.obolibrary.org/obo/NCIT_C3346>,"Disease, Disorder or Finding Psoriasis",sex_male,0.16086948,3-9
+"['Disease, Disorder or Finding', 'Finding']",<http://purl.obolibrary.org/obo/NCIT_C3367>,"Disease, Disorder or Finding Finding",SOD1 mutation_Ala140Ala,0.34870538,17-166
+"['Disease, Disorder or Finding', 'Stroke']",<http://purl.obolibrary.org/obo/NCIT_C3390>,"Disease, Disorder or Finding Stroke",stroke_False,0.5061486,17-195
+"['Disease, Disorder or Finding', 'Thrombocytopenia']",<http://purl.obolibrary.org/obo/NCIT_C3408>,"Disease, Disorder or Finding Thrombocytopenia","TARDBP mutation_c.1144G>A, p.(Ala382Thr)",0.23376794,17-177
+"['Disease, Disorder or Finding', 'Toxoplasmosis']",<http://purl.obolibrary.org/obo/NCIT_C3418>,"Disease, Disorder or Finding Toxoplasmosis",thyroid_disorder_False,0.15990148,25-189
+"['Disease, Disorder or Finding', 'Uterine Corpus Leiomyoma']",<http://purl.obolibrary.org/obo/NCIT_C3434>,"Disease, Disorder or Finding Uterine Corpus Leiomyoma",number_of_lesions_T1_gadolinium,0.15137383,15-0
+"['Disease, Disorder or Finding', 'Congenital Adrenal Hyperplasia']",<http://purl.obolibrary.org/obo/NCIT_C34360>,"Disease, Disorder or Finding Congenital Adrenal Hyperplasia",TARDBP mutation_False,0.22166173,25-173
+"['Disease, Disorder or Finding', 'Amyotrophic Lateral Sclerosis']",<http://purl.obolibrary.org/obo/NCIT_C34373>,"Disease, Disorder or Finding Amyotrophic Lateral Sclerosis",spinal_cord_symptom,0.44643015,3-4
+"['Disease, Disorder or Finding', 'Hereditary Hemolytic Anemia']",<http://purl.obolibrary.org/obo/NCIT_C34379>,"Disease, Disorder or Finding Hereditary Hemolytic Anemia",FUS mutation_True,0.191042,17-180
+"['Disease, Disorder or Finding', 'Bipolar Disorder']",<http://purl.obolibrary.org/obo/NCIT_C34423>,"Disease, Disorder or Finding Bipolar Disorder",onset_limb_type_upper-proximal-left-right-limb,0.25251383,17-112
+"['Disease, Disorder or Finding', 'Closed Dislocation of Shoulder']",<http://purl.obolibrary.org/obo/NCIT_C34486>,"Disease, Disorder or Finding Closed Dislocation of Shoulder",onset_limb_type_upper-proximal-right-limb,0.2970249,25-114
+"['Disease, Disorder or Finding', 'Common Bile Duct Stone']",<http://purl.obolibrary.org/obo/NCIT_C34499>,"Disease, Disorder or Finding Common Bile Duct Stone",HDL_Cholesterol_level,0.18635134,25-29
+"['Disease, Disorder or Finding', 'Favism']",<http://purl.obolibrary.org/obo/NCIT_C34607>,"Disease, Disorder or Finding Favism",prevalentLMN_False,0.35903576,25-79
+"['Disease, Disorder or Finding', 'Gastroenteritits']",<http://purl.obolibrary.org/obo/NCIT_C34632>,"Disease, Disorder or Finding Gastroenteritits",FUS mutation_False,0.23070927,17-179
+"['Disease, Disorder or Finding', 'Head Trauma']",<http://purl.obolibrary.org/obo/NCIT_C34660>,"Disease, Disorder or Finding Head Trauma",head_trauma_more_than_5_years,0.5264543,17-42
+"['Disease, Disorder or Finding', 'Headache']",<http://purl.obolibrary.org/obo/NCIT_C34661>,"Disease, Disorder or Finding Headache",head_trauma_last_5_years,0.30048144,17-41
+"['Disease, Disorder or Finding', 'Hernia']",<http://purl.obolibrary.org/obo/NCIT_C34685>,"Disease, Disorder or Finding Hernia",abdominal_surgery_more_than_5_years,0.27930683,17-62
+"['Disease, Disorder or Finding', 'Palmar Fibromatosis']",<http://purl.obolibrary.org/obo/NCIT_C3469>,"Disease, Disorder or Finding Palmar Fibromatosis",FVC,0.16881022,7-2
+"['Disease, Disorder or Finding', 'Inguinal Hernia']",<http://purl.obolibrary.org/obo/NCIT_C34690>,"Disease, Disorder or Finding Inguinal Hernia",abdominal_surgery_last_5_years,0.23880725,17-61
+"['Disease, Disorder or Finding', 'Cold Sore']",<http://purl.obolibrary.org/obo/NCIT_C34695>,"Disease, Disorder or Finding Cold Sore",min_temperature_mean,0.24305832,0-32
+"['Disease, Disorder or Finding', 'Infectious Mononucleosis']",<http://purl.obolibrary.org/obo/NCIT_C34726>,"Disease, Disorder or Finding Infectious Mononucleosis",number_of_total_lesions_T2_0,0.24816254,15-15
+"['Disease, Disorder or Finding', 'Intestinal Pseudo-Obstruction']",<http://purl.obolibrary.org/obo/NCIT_C34733>,"Disease, Disorder or Finding Intestinal Pseudo-Obstruction",cardiac_disease_True,0.1676586,17-198
+"['Disease, Disorder or Finding', 'Iridocyclitis']",<http://purl.obolibrary.org/obo/NCIT_C34736>,"Disease, Disorder or Finding Iridocyclitis",onset_limb_type_upper-proximal-right-limb,0.20476371,25-114
+"['Disease, Disorder or Finding', 'Essential Hypertension']",<http://purl.obolibrary.org/obo/NCIT_C3478>,"Disease, Disorder or Finding Essential Hypertension",hypertension_True,0.4881207,25-184
+"['Disease, Disorder or Finding', 'Long QT Syndrome']",<http://purl.obolibrary.org/obo/NCIT_C34786>,"Disease, Disorder or Finding Long QT Syndrome",Q2,0.32642776,8-2
+"['Disease, Disorder or Finding', 'Pancytopenia']",<http://purl.obolibrary.org/obo/NCIT_C34889>,"Disease, Disorder or Finding Pancytopenia",centre_pavia,0.2652675,9-1
+"['Disease, Disorder or Finding', 'Penicillin Allergy']",<http://purl.obolibrary.org/obo/NCIT_C34911>,"Disease, Disorder or Finding Penicillin Allergy",,,
+"['Disease, Disorder or Finding', 'Personality Disorder']",<http://purl.obolibrary.org/obo/NCIT_C34922>,"Disease, Disorder or Finding Personality Disorder",SOD1 mutation_True,0.3084634,17-165
+"['Disease, Disorder or Finding', 'Aspiration Pneumonitis']",<http://purl.obolibrary.org/obo/NCIT_C34932>,"Disease, Disorder or Finding Aspiration Pneumonitis",respiration_SDSD,0.17599228,6-61
+"['Disease, Disorder or Finding', 'Baker Cyst']",<http://purl.obolibrary.org/obo/NCIT_C34935>,"Disease, Disorder or Finding Baker Cyst",,,
+"['Disease, Disorder or Finding', 'Sarcoidosis']",<http://purl.obolibrary.org/obo/NCIT_C34995>,"Disease, Disorder or Finding Sarcoidosis",centre_turin,0.2184332,15-20
+"['Disease, Disorder or Finding', 'Pulmonary Sarcoidosis']",<http://purl.obolibrary.org/obo/NCIT_C34997>,"Disease, Disorder or Finding Pulmonary Sarcoidosis",respiration_DFA_alpha1,0.22784403,6-54
+"['Disease, Disorder or Finding', 'Shoulder Dislocation']",<http://purl.obolibrary.org/obo/NCIT_C35020>,"Disease, Disorder or Finding Shoulder Dislocation",onset_limb_type_upper-distal-left-right-limb,0.30128056,25-101
+"['Disease, Disorder or Finding', 'Sinusitis']",<http://purl.obolibrary.org/obo/NCIT_C35024>,"Disease, Disorder or Finding Sinusitis",age_at_diagnosis,0.2919526,7-1
+"['Disease, Disorder or Finding', 'Staphylococcal Infection']",<http://purl.obolibrary.org/obo/NCIT_C35038>,"Disease, Disorder or Finding Staphylococcal Infection",multiple_sclerosis_type_SP,0.2736809,10-4
+"['Disease, Disorder or Finding', 'Syncope']",<http://purl.obolibrary.org/obo/NCIT_C35053>,"Disease, Disorder or Finding Syncope",onset_limb_type_lower-proximal-left-limb,0.37839845,17-95
+"['Disease, Disorder or Finding', 'Thalassemia']",<http://purl.obolibrary.org/obo/NCIT_C35069>,"Disease, Disorder or Finding Thalassemia",TARDBP mutation_False,0.25961092,17-174
+"['Disease, Disorder or Finding', 'Cutaneous Melanoma']",<http://purl.obolibrary.org/obo/NCIT_C3510>,"Disease, Disorder or Finding Cutaneous Melanoma",onset_limb_type_upper-lower-distal-left-limb,0.21166596,25-108
+"['Disease, Disorder or Finding', 'Vulvovaginitis']",<http://purl.obolibrary.org/obo/NCIT_C35131>,"Disease, Disorder or Finding Vulvovaginitis",cervical_trauma_more_than_5_years,0.30155793,17-46
+"['Disease, Disorder or Finding', 'Acute Myocardial Infarction']",<http://purl.obolibrary.org/obo/NCIT_C35204>,"Disease, Disorder or Finding Acute Myocardial Infarction",dyslipidemia_True,0.34420267,25-188
+"['Disease, Disorder or Finding', 'Closed Fracture of Rib']",<http://purl.obolibrary.org/obo/NCIT_C35350>,"Disease, Disorder or Finding Closed Fracture of Rib",onset_limb_type_upper-distal-left-limb,0.21589892,25-100
+"['Disease, Disorder or Finding', 'Tooth Abscess']",<http://purl.obolibrary.org/obo/NCIT_C35475>,"Disease, Disorder or Finding Tooth Abscess",other_symptoms_sensory,0.17138141,12-19
+"['Disease, Disorder or Finding', 'Monoclonal Gammopathy']",<http://purl.obolibrary.org/obo/NCIT_C35548>,"Disease, Disorder or Finding Monoclonal Gammopathy",onset_axial,0.29719272,17-8
+"['Disease, Disorder or Finding', 'Head and Neck Finding']",<http://purl.obolibrary.org/obo/NCIT_C36282>,"Disease, Disorder or Finding Head and Neck Finding",neck_trauma_more_than_5_years,0.46738952,17-44
+"['Disease, Disorder or Finding', 'Injury']",<http://purl.obolibrary.org/obo/NCIT_C3671>,"Disease, Disorder or Finding Injury",major_trauma_before_onset_True,0.43501586,17-202
+"['Disease, Disorder or Finding', 'Bradycardia']",<http://purl.obolibrary.org/obo/NCIT_C37920>,"Disease, Disorder or Finding Bradycardia",cardiac_disease_False,0.42845345,25-195
+"['Disease, Disorder or Finding', 'Hypercholesterolemia']",<http://purl.obolibrary.org/obo/NCIT_C37967>,"Disease, Disorder or Finding Hypercholesterolemia",LDL_Cholesterol_level,0.49887997,25-33
+"['Disease, Disorder or Finding', 'Proteinuria']",<http://purl.obolibrary.org/obo/NCIT_C38012>,"Disease, Disorder or Finding Proteinuria",TARDBP mutation_Ile383Val ,0.27449688,25-174
+"['Disease, Disorder or Finding', 'Vertigo']",<http://purl.obolibrary.org/obo/NCIT_C38057>,"Disease, Disorder or Finding Vertigo",onset_limb_type_lower-proximal-left-right-limb,0.3164795,17-96
+"['Disease, Disorder or Finding', 'Skin Cyst']",<http://purl.obolibrary.org/obo/NCIT_C3884>,"Disease, Disorder or Finding Skin Cyst",,,
+"['Disease, Disorder or Finding', 'High Grade Cervical Squamous Intraepithelial Neoplasia']",<http://purl.obolibrary.org/obo/NCIT_C40197>,"Disease, Disorder or Finding High Grade Cervical Squamous Intraepithelial Neoplasia",cervical_trauma_more_than_5_years,0.3444144,25-46
+"['Disease, Disorder or Finding', 'Myeloproliferative Neoplasm']",<http://purl.obolibrary.org/obo/NCIT_C4345>,"Disease, Disorder or Finding Myeloproliferative Neoplasm",PM25_who,0.23015068,0-3
+"['Disease, Disorder or Finding', 'Colon Adenocarcinoma']",<http://purl.obolibrary.org/obo/NCIT_C4349>,"Disease, Disorder or Finding Colon Adenocarcinoma",prevalentUMN_False,0.1966565,25-81
+"['Disease, Disorder or Finding', 'Dementia']",<http://purl.obolibrary.org/obo/NCIT_C4786>,"Disease, Disorder or Finding Dementia",retired_at_diagnosis_False,0.33697894,17-158
+"['Disease, Disorder or Finding', 'Central Nervous System Degenerative Disorder']",<http://purl.obolibrary.org/obo/NCIT_C4802>,"Disease, Disorder or Finding Central Nervous System Degenerative Disorder",multiple_sclerosis_type_PR,0.39464128,10-2
+"['Disease, Disorder or Finding', 'Breast Carcinoma']",<http://purl.obolibrary.org/obo/NCIT_C4872>,"Disease, Disorder or Finding Breast Carcinoma",TARDBP mutation_False,0.23424095,25-171
+"['Disease, Disorder or Finding', 'Symptom']",<http://purl.obolibrary.org/obo/NCIT_C4876>,"Disease, Disorder or Finding Symptom",other_symptoms_sensory,0.43332696,3-23
+"['Disease, Disorder or Finding', 'Skin Carcinoma']",<http://purl.obolibrary.org/obo/NCIT_C4914>,"Disease, Disorder or Finding Skin Carcinoma",other_symptoms_False,0.18570279,12-16
+"['Disease, Disorder or Finding', 'Deep Vein Thrombosis']",<http://purl.obolibrary.org/obo/NCIT_C49343>,"Disease, Disorder or Finding Deep Vein Thrombosis",stroke_False,0.26932842,25-193
+"['Disease, Disorder or Finding', 'Atrial Fibrillation']",<http://purl.obolibrary.org/obo/NCIT_C50466>,"Disease, Disorder or Finding Atrial Fibrillation",onset_limb_type_lower-proximal-limb,0.29782665,17-97
+"['Disease, Disorder or Finding', 'Diabetic Ketoacidosis']",<http://purl.obolibrary.org/obo/NCIT_C50530>,"Disease, Disorder or Finding Diabetic Ketoacidosis",Triglycerides_level,0.23729438,25-37
+"['Disease, Disorder or Finding', 'Heart Failure']",<http://purl.obolibrary.org/obo/NCIT_C50577>,"Disease, Disorder or Finding Heart Failure",cardiac_disease_False,0.42530876,17-197
+"['Disease, Disorder or Finding', 'Lumbar Puncture Headache']",<http://purl.obolibrary.org/obo/NCIT_C50643>,"Disease, Disorder or Finding Lumbar Puncture Headache",supratentorial_symptom,0.35203183,3-7
+"['Disease, Disorder or Finding', 'Neonatal Hearing Impairment']",<http://purl.obolibrary.org/obo/NCIT_C50667>,"Disease, Disorder or Finding Neonatal Hearing Impairment",altered_potential_Auditory,0.3685244,14-2
+"['Disease, Disorder or Finding', 'Pulmonary Embolism']",<http://purl.obolibrary.org/obo/NCIT_C50713>,"Disease, Disorder or Finding Pulmonary Embolism",thoracic_trauma_more_than_5_years,0.29371643,17-48
+"['Disease, Disorder or Finding', 'Transient Ischemic Attack']",<http://purl.obolibrary.org/obo/NCIT_C50781>,"Disease, Disorder or Finding Transient Ischemic Attack",SOD1 mutation_c.72+19G>A,0.2774752,17-170
+"['Disease, Disorder or Finding', 'Atrial Flutter']",<http://purl.obolibrary.org/obo/NCIT_C51224>,"Disease, Disorder or Finding Atrial Flutter",onset_limb_type_lower-proximal-left-limb,0.3228206,25-95
+"['Disease, Disorder or Finding', 'Sign']",<http://purl.obolibrary.org/obo/NCIT_C53458>,"Disease, Disorder or Finding Sign",onset_limb_type_lower-proximal-left-right-limb,0.35007045,25-96
+"['Disease, Disorder or Finding', 'Serum Glutamic Pyruvic Transaminase, CTCAE']",<http://purl.obolibrary.org/obo/NCIT_C55098>,"Disease, Disorder or Finding Serum Glutamic Pyruvic Transaminase, CTCAE","TARDBP mutation_c.1154G>T, p.(TRP385Leu)",0.28810233,17-178
+"['Disease, Disorder or Finding', 'Anorectal Fistula']",<http://purl.obolibrary.org/obo/NCIT_C60785>,"Disease, Disorder or Finding Anorectal Fistula",onset_limb_type_upper-distal-left-limb,0.22600177,17-100
+"['Disease, Disorder or Finding', 'Myasthenia Gravis']",<http://purl.obolibrary.org/obo/NCIT_C60989>,"Disease, Disorder or Finding Myasthenia Gravis",onset_limb_type_upper-left-right-limb,0.24350904,25-106
+"['Disease, Disorder or Finding', 'Psoriatic Arthritis']",<http://purl.obolibrary.org/obo/NCIT_C61277>,"Disease, Disorder or Finding Psoriatic Arthritis",onset_limb_type_lower-proximal-left-limb,0.18879016,25-95
+"['Disease, Disorder or Finding', 'Amenorrhea']",<http://purl.obolibrary.org/obo/NCIT_C61443>,"Disease, Disorder or Finding Amenorrhea",cervical_trauma_last_5_years,0.28232506,25-45
+"['Disease, Disorder or Finding', 'Neurofibromatosis']",<http://purl.obolibrary.org/obo/NCIT_C6727>,"Disease, Disorder or Finding Neurofibromatosis",number_of_total_lesions_T2_>=9,0.34888914,15-18
+"['Disease, Disorder or Finding', 'Serositis']",<http://purl.obolibrary.org/obo/NCIT_C70428>,"Disease, Disorder or Finding Serositis",multiple_sclerosis_type_RR,0.24166135,10-3
+"['Disease, Disorder or Finding', 'Herpes Zoster']",<http://purl.obolibrary.org/obo/NCIT_C71079>,"Disease, Disorder or Finding Herpes Zoster",TARDBP mutation_Ile383Val ,0.25291115,17-175
+"['Disease, Disorder or Finding', 'Chronic Atropic Gastritis']",<http://purl.obolibrary.org/obo/NCIT_C7405>,"Disease, Disorder or Finding Chronic Atropic Gastritis",lesions_T1_True,0.19060713,15-8
+"['Disease, Disorder or Finding', 'Malignant Thyroid Gland Neoplasm']",<http://purl.obolibrary.org/obo/NCIT_C7510>,"Disease, Disorder or Finding Malignant Thyroid Gland Neoplasm",TARDBP mutation_True,0.20150727,25-172
+"['Disease, Disorder or Finding', 'Melanocytic Nevus']",<http://purl.obolibrary.org/obo/NCIT_C7570>,"Disease, Disorder or Finding Melanocytic Nevus",ethnicity_Black_African,0.24549556,3-13
+"['Disease, Disorder or Finding', 'Flu-Like Symptoms']",<http://purl.obolibrary.org/obo/NCIT_C78302>,"Disease, Disorder or Finding Flu-Like Symptoms",precipitation_num,0.26864675,0-27
+"['Disease, Disorder or Finding', 'Renal Colic']",<http://purl.obolibrary.org/obo/NCIT_C78593>,"Disease, Disorder or Finding Renal Colic",moreThan10PercentWeightloss_False,0.18891491,25-75
+"['Disease, Disorder or Finding', 'Allergic Rhinitis']",<http://purl.obolibrary.org/obo/NCIT_C79532>,"Disease, Disorder or Finding Allergic Rhinitis",,,
+"['Disease, Disorder or Finding', 'Extrapyramidal Disorder']",<http://purl.obolibrary.org/obo/NCIT_C79593>,"Disease, Disorder or Finding Extrapyramidal Disorder",onset_limb_type_upper-proximal-left-limb,0.28274307,17-111
+"['Disease, Disorder or Finding', 'Monoclonal B_Cell Lymphocytosis']",<http://purl.obolibrary.org/obo/NCIT_C80310>,"Disease, Disorder or Finding Monoclonal B_Cell Lymphocytosis",bmi,0.17682761,7-4
+"['Disease, Disorder or Finding', 'Dyslipidemia']",<http://purl.obolibrary.org/obo/NCIT_C80385>,"Disease, Disorder or Finding Dyslipidemia",dyslipidemia_False,0.5633867,25-187
+"['Disease, Disorder or Finding', 'Iron-Deficiency Anemia']",<http://purl.obolibrary.org/obo/NCIT_C84484>,"Disease, Disorder or Finding Iron-Deficiency Anemia",Occured,0.27436292,24-0
+"['Disease, Disorder or Finding', 'Brown-Sequard Syndrome']",<http://purl.obolibrary.org/obo/NCIT_C84601>,"Disease, Disorder or Finding Brown-Sequard Syndrome",lesions_T2_False,0.36130306,15-13
+"['Disease, Disorder or Finding', 'Hereditary Factor XI Deficiency']",<http://purl.obolibrary.org/obo/NCIT_C84705>,"Disease, Disorder or Finding Hereditary Factor XI Deficiency",SOD1 mutation_True,0.26950094,17-168
+"['Disease, Disorder or Finding', 'Frontotemporal Dementia']",<http://purl.obolibrary.org/obo/NCIT_C84719>,"Disease, Disorder or Finding Frontotemporal Dementia",onset_limb_type_upper-distal-proximal-left-limb,0.30638224,17-103
+"['Disease, Disorder or Finding', 'Ichthyosis']",<http://purl.obolibrary.org/obo/NCIT_C84776>,"Disease, Disorder or Finding Ichthyosis",onset_limb_type_lower-distal-limb,0.25008863,25-88
+"['Disease, Disorder or Finding', 'Ann Arbor Stage IV Mantle Cell Lymphoma']",<http://purl.obolibrary.org/obo/NCIT_C8486>,"Disease, Disorder or Finding Ann Arbor Stage IV Mantle Cell Lymphoma",,,
+"['Disease, Disorder or Finding', 'Optic Neuritis']",<http://purl.obolibrary.org/obo/NCIT_C84950>,"Disease, Disorder or Finding Optic Neuritis",diagnosis_criteria_detail_Neuromyelitis optica,0.5054954,3-20
+"['Disease, Disorder or Finding', 'Primary Progressive Aphasia']",<http://purl.obolibrary.org/obo/NCIT_C85024>,"Disease, Disorder or Finding Primary Progressive Aphasia",centre_pavia,0.29447982,15-19
+"['Disease, Disorder or Finding', 'Primary Neoplasm']",<http://purl.obolibrary.org/obo/NCIT_C8509>,"Disease, Disorder or Finding Primary Neoplasm",primary_neoplasm_False,0.51368076,25-197
+"['Disease, Disorder or Finding', 'Spinal and Bulbar Muscular Atrophy, X-linked 1']",<http://purl.obolibrary.org/obo/NCIT_C85233>,"Disease, Disorder or Finding Spinal and Bulbar Muscular Atrophy, X-linked 1",spinal_cord_symptom,0.42567527,12-3
+"['Disease, Disorder or Finding', 'Ann Arbor Stage IV T-Cell Non-Hodgkin Lymphoma']",<http://purl.obolibrary.org/obo/NCIT_C8668>,"Disease, Disorder or Finding Ann Arbor Stage IV T-Cell Non-Hodgkin Lymphoma",other_symptoms_False,0.15309843,12-16
+"['Disease, Disorder or Finding', 'Cleft Palate']",<http://purl.obolibrary.org/obo/NCIT_C87069>,"Disease, Disorder or Finding Cleft Palate",onset_limb_type_lower-proximal-limb,0.22086765,25-97
+"['Disease, Disorder or Finding', 'Fibromyalgia']",<http://purl.obolibrary.org/obo/NCIT_C87497>,"Disease, Disorder or Finding Fibromyalgia",onset_limb_type_upper-proximal-limb,0.24862933,17-113
+"['Disease, Disorder or Finding', 'Migraine']",<http://purl.obolibrary.org/obo/NCIT_C89715>,"Disease, Disorder or Finding Migraine",eye_symptom,0.3615089,12-5
+"['Disease, Disorder or Finding', 'Bowel Obstruction']",<http://purl.obolibrary.org/obo/NCIT_C9175>,"Disease, Disorder or Finding Bowel Obstruction",bowel_and_bladder,0.38684502,2-4
+"['Disease, Disorder or Finding', 'Mood Disorder']",<http://purl.obolibrary.org/obo/NCIT_C92200>,"Disease, Disorder or Finding Mood Disorder",brainstem_symptom,0.35415772,12-4
+"['Disease, Disorder or Finding', 'Malignant Colon Neoplasm']",<http://purl.obolibrary.org/obo/NCIT_C9242>,"Disease, Disorder or Finding Malignant Colon Neoplasm",pelvic_surgery_more_than_5_years,0.17218885,25-66
+"['Disease, Disorder or Finding', 'Gastroesophageal Reflux']",<http://purl.obolibrary.org/obo/NCIT_C92560>,"Disease, Disorder or Finding Gastroesophageal Reflux",Triglycerides_level,0.2459393,17-37
+"['Disease, Disorder or Finding', 'Alcohol Dependance']",<http://purl.obolibrary.org/obo/NCIT_C93040>,"Disease, Disorder or Finding Alcohol Dependance",smoking_True,0.3007214,17-161
+"['Disease, Disorder or Finding', 'Malignant Neoplasm']",<http://purl.obolibrary.org/obo/NCIT_C9305>,"Disease, Disorder or Finding Malignant Neoplasm",primary_neoplasm_True,0.4063989,25-198
+"['Disease, Disorder or Finding', 'Scarlet Fever']",<http://purl.obolibrary.org/obo/NCIT_C94575>,"Disease, Disorder or Finding Scarlet Fever",eye_symptom,0.20709032,12-5
+"['Disease, Disorder or Finding', 'Chicken Pox']",<http://purl.obolibrary.org/obo/NCIT_C97132>,"Disease, Disorder or Finding Chicken Pox",SOD1 mutation_Ala140Ala,0.2315959,25-166
+"['Disease, Disorder or Finding', 'Acute Tonsillitis']",<http://purl.obolibrary.org/obo/NCIT_C97142>,"Disease, Disorder or Finding Acute Tonsillitis",neck_trauma_last_5_years,0.28781438,25-43
+"['Disease, Disorder or Finding', 'Chronic Lung Disorder']",<http://purl.obolibrary.org/obo/NCIT_C98541>,"Disease, Disorder or Finding Chronic Lung Disorder",respiratory_subscore,0.3574174,18-6
+"['Disease, Disorder or Finding', 'Klippel-Feil Syndrome']",<http://purl.obolibrary.org/obo/NCIT_C98967>,"Disease, Disorder or Finding Klippel-Feil Syndrome",onset_limb_type_lower-distal-proximal-right-limb,0.25348353,17-91
+"['Disease, Disorder or Finding', 'Radius Fracture']",<http://purl.obolibrary.org/obo/NCIT_C99039>,"Disease, Disorder or Finding Radius Fracture",lumbo_sacral_trauma_more_than_5_years,0.27416617,25-50
+"['Disease, Disorder or Finding', 'Tibia Fracture']",<http://purl.obolibrary.org/obo/NCIT_C99083>,"Disease, Disorder or Finding Tibia Fracture",onset_limb_type_upper-lower-proximal-left-right-limb,0.35444987,25-110
+"['Disease, Disorder or Finding', 'Autoimmune Nervous System Disorder']",<http://purl.obolibrary.org/obo/NCIT_C99383>,"Disease, Disorder or Finding Autoimmune Nervous System Disorder",autoimmune_disease_False,0.5403476,17-193
+"['Disease, Disorder or Finding', 'Behavioral Impairment']",<https://w3id.org/brainteaser/ontology/schema/BehavioralImpairment>,"Disease, Disorder or Finding Behavioral Impairment",onset_generalized,0.37354243,17-9
+"['End Therapy Reason', 'adverseReaction']",<https://w3id.org/brainteaser/ontology/schema/adverseReaction>,End Therapy Reason adverseReaction,onset_limb_type_upper-lower-distal-left-limb,0.1700254,17-108
+"['End Therapy Reason', 'confirmedPregnancy']",<https://w3id.org/brainteaser/ontology/schema/confirmedPregnancy>,End Therapy Reason confirmedPregnancy,,,
+"['End Therapy Reason', 'endTherapyReason']",<https://w3id.org/brainteaser/ontology/schema/endTherapyReason>,End Therapy Reason endTherapyReason,,,
+"['Event', 'consists']",<https://w3id.org/brainteaser/ontology/schema/consists>,Event consists,delta_edss_time0,0.16395813,11-1
+"['Event', 'hasRegisteredActivity']",<https://w3id.org/brainteaser/ontology/schema/hasRegisteredActivity>,Event hasRegisteredActivity,,,
+"['Event', 'hasRegisteredCondition']",<https://w3id.org/brainteaser/ontology/schema/hasRegisteredCondition>,Event hasRegisteredCondition,,,
+"['Event', 'pregnancy']",<https://w3id.org/brainteaser/ontology/schema/pregnancy>,Event pregnancy,,,
+"['Event', 'relapse']",<https://w3id.org/brainteaser/ontology/schema/relapse>,Event relapse,,,
+"['Event', 'trauma']",<https://w3id.org/brainteaser/ontology/schema/trauma>,Event trauma,major_trauma_before_onset_False,0.44508755,17-201
+"['Event', 'eventEnd']",<https://w3id.org/brainteaser/ontology/schema/eventEnd>,Event eventEnd,,,
+"['Event', 'eventStart']",<https://w3id.org/brainteaser/ontology/schema/eventStart>,Event eventStart,centre_turin,0.1763807,12-21
+"['Event', 'Before Onset', 'onsetElapsedTime']",<https://w3id.org/brainteaser/ontology/schema/onsetElapsedTime>,Event Before Onset onsetElapsedTime,onsetDate,0.28063804,17-0
+"['Event', 'Diagnosis', 'diagnosticCriteria']",<https://w3id.org/brainteaser/ontology/schema/diagnosticCriteria>,Event Diagnosis diagnosticCriteria,diagnosisDate,0.41680753,25-1
+"['Event', 'Onset', 'ageOnset']",<https://w3id.org/brainteaser/ontology/schema/ageOnset>,Event Onset ageOnset,age_at_onset,0.42089665,12-1
+"['Event', 'Onset', 'axialOnset']",<https://w3id.org/brainteaser/ontology/schema/axialOnset>,Event Onset axialOnset,onset_axial,0.41538173,25-8
+"['Event', 'Onset', 'bulbarOnset']",<https://w3id.org/brainteaser/ontology/schema/bulbarOnset>,Event Onset bulbarOnset,onset_bulbar,0.29612747,25-7
+"['Event', 'Onset', 'generalizedOnset']",<https://w3id.org/brainteaser/ontology/schema/generalizedOnset>,Event Onset generalizedOnset,onset_generalized,0.32431582,25-9
+"['Event', 'Onset', 'limbsOnset']",<https://w3id.org/brainteaser/ontology/schema/limbsOnset>,Event Onset limbsOnset,onset_limb_type_upper-distal-limb,0.56334186,25-102
+"['Event', 'Onset', 'otherOnset']",<https://w3id.org/brainteaser/ontology/schema/otherOnset>,Event Onset otherOnset,onset_bulbar,0.33620405,17-7
+"['Gene', 'C9orf72 Gene']",<http://purl.obolibrary.org/obo/NCIT_C101398>,Gene C9orf72 Gene,svType_SNP,0.3076162,21-18
+"['Gene', 'SQSTM1 Gene']",<http://purl.obolibrary.org/obo/NCIT_C101491>,Gene SQSTM1 Gene,SOD1 mutation_False,0.319247,25-167
+"['Gene', 'OPTN Gene']",<http://purl.obolibrary.org/obo/NCIT_C119640>,Gene OPTN Gene,svType_INS:ME,0.23343548,21-16
+"['Gene', 'DCTN1 Gene']",<http://purl.obolibrary.org/obo/NCIT_C122875>,Gene DCTN1 Gene,svType_CNV,0.3327941,21-12
+"['Gene', 'TBK1 Gene']",<http://purl.obolibrary.org/obo/NCIT_C24845>,Gene TBK1 Gene,SOD1 mutation_False,0.39597815,25-164
+"['Gene', 'AR Gene']",<http://purl.obolibrary.org/obo/NCIT_C28539>,Gene AR Gene,SOD1 mutation_c.281G>T (p.(Gly94Val)) ,0.3482972,25-168
+"['Gene', 'SOD1 Gene']",<http://purl.obolibrary.org/obo/NCIT_C54578>,Gene SOD1 Gene,SOD1 mutation_c.72+19G>A,0.5440328,25-169
+"['Gene', 'TARDBP Gene']",<http://purl.obolibrary.org/obo/NCIT_C80020>,Gene TARDBP Gene,"TARDBP mutation_c.1154G>T, p.(TRP385Leu)",0.57012725,25-176
+"['Gene', 'FUS Gene']",<http://purl.obolibrary.org/obo/NCIT_C91852>,Gene FUS Gene,FUS mutation_False,0.36673433,25-177
+"['Genetic Testing', 'onGene']",<https://w3id.org/brainteaser/ontology/schema/onGene>,Genetic Testing onGene,chromosome,0.41157034,21-0
+"['Genetic Testing', 'hasMutation']",<https://w3id.org/brainteaser/ontology/schema/hasMutation>,Genetic Testing hasMutation,SOD1 mutation_True,0.3944745,25-165
+"['Genetic Testing', 'mutationType']",<https://w3id.org/brainteaser/ontology/schema/mutationType>,Genetic Testing mutationType,FUS mutation_True,0.5321183,25-178
+"['Group (social concept)', 'Caucasian']",<http://purl.bioontology.org/ontology/SNOMEDCT/14045001>,Group (social concept) Caucasian,ethnicity_Caucasian,0.43231553,25-74
+"['Group (social concept)', 'Black (ethnic group)']",<http://purl.bioontology.org/ontology/SNOMEDCT/315240009>,Group (social concept) Black (ethnic group),ethnicity_Black_African,0.39629033,25-73
+"['Group (social concept)', 'Asian (ethnic group)']",<http://purl.bioontology.org/ontology/SNOMEDCT/315280000>,Group (social concept) Asian (ethnic group),ethnicity_Asian_ethnic_group,0.43318075,25-72
+"['Group (social concept)', 'Hispanic']",<http://purl.bioontology.org/ontology/SNOMEDCT/414408004>,Group (social concept) Hispanic,ethnicity_Hispanic,0.43277568,12-15
+"['Intervention or Procedure', 'procedureEnd']",<https://w3id.org/brainteaser/ontology/schema/procedureEnd>,Intervention or Procedure procedureEnd,surgical_interventions_before_onset_True,0.32181072,25-202
+"['Intervention or Procedure', 'procedureStart']",<https://w3id.org/brainteaser/ontology/schema/procedureStart>,Intervention or Procedure procedureStart,surgical_interventions_before_onset_True,0.374117,17-204
+"['Intervention or Procedure', 'Diagnostic Procedure', 'CSF Analysis', 'testedForOligoclonalBands']",<https://w3id.org/brainteaser/ontology/schema/testedForOligoclonalBands>,Intervention or Procedure Diagnostic Procedure CSF Analysis testedForOligoclonalBands,global_radiation_mean,0.41116756,0-26
+"['Intervention or Procedure', 'Diagnostic Procedure', 'CSF Analysis', 'IgGIndexCSF']",<https://w3id.org/brainteaser/ontology/schema/IgGIndexCSF>,Intervention or Procedure Diagnostic Procedure CSF Analysis IgGIndexCSF,eye_symptom,0.41353875,3-6
+"['Intervention or Procedure', 'Diagnostic Procedure', 'CSF Analysis', 'albuminCSF']",<https://w3id.org/brainteaser/ontology/schema/albuminCSF>,Intervention or Procedure Diagnostic Procedure CSF Analysis albuminCSF,Albumin_level,0.5195511,17-18
+"['Intervention or Procedure', 'Diagnostic Procedure', 'CSF Analysis', 'alterationCSF']",<https://w3id.org/brainteaser/ontology/schema/alterationCSF>,Intervention or Procedure Diagnostic Procedure CSF Analysis alterationCSF,other_symptoms_False,0.46617436,12-16
+"['Intervention or Procedure', 'Diagnostic Procedure', 'CSF Analysis', 'glucoseCSF']",<https://w3id.org/brainteaser/ontology/schema/glucoseCSF>,Intervention or Procedure Diagnostic Procedure CSF Analysis glucoseCSF,diabetes_False,0.4321548,25-185
+"['Intervention or Procedure', 'Diagnostic Procedure', 'CSF Analysis', 'granulocytesCSF']",<https://w3id.org/brainteaser/ontology/schema/granulocytesCSF>,Intervention or Procedure Diagnostic Procedure CSF Analysis granulocytesCSF,diagnosis_criteria_Diagnosed MS,0.35289463,3-26
+"['Intervention or Procedure', 'Diagnostic Procedure', 'CSF Analysis', 'immunoglobulinGCSF']",<https://w3id.org/brainteaser/ontology/schema/immunoglobulinGCSF>,Intervention or Procedure Diagnostic Procedure CSF Analysis immunoglobulinGCSF,autoimmune_disease_True,0.46129364,17-194
+"['Intervention or Procedure', 'Diagnostic Procedure', 'CSF Analysis', 'leukocytesCountCSF']",<https://w3id.org/brainteaser/ontology/schema/leukocytesCountCSF>,Intervention or Procedure Diagnostic Procedure CSF Analysis leukocytesCountCSF,centre_turin,0.39465767,3-25
+"['Intervention or Procedure', 'Diagnostic Procedure', 'CSF Analysis', 'lymphocytesCSF']",<https://w3id.org/brainteaser/ontology/schema/lymphocytesCSF>,Intervention or Procedure Diagnostic Procedure CSF Analysis lymphocytesCSF,global_radiation_num,0.33829337,0-25
+"['Intervention or Procedure', 'Diagnostic Procedure', 'CSF Analysis', 'pathologicalJCCSF']",<https://w3id.org/brainteaser/ontology/schema/pathologicalJCCSF>,Intervention or Procedure Diagnostic Procedure CSF Analysis pathologicalJCCSF,other_symptoms_False,0.5035879,3-21
+"['Intervention or Procedure', 'Diagnostic Procedure', 'CSF Analysis', 'proteinsCSF']",<https://w3id.org/brainteaser/ontology/schema/proteinsCSF>,Intervention or Procedure Diagnostic Procedure CSF Analysis proteinsCSF,3_AC=1;AF=0.000199681;AN=5008;NS=2504;DP=9632;EAS_AF=0;AMR_AF=0;AFR_AF=0.0008;EUR_AF=0;SAS_AF=0;AA=.|||;VT=SNP,0.40900904,20-6
+"['Intervention or Procedure', 'Diagnostic Procedure', 'CSF Analysis', 'quotientAlbuminCSF']",<https://w3id.org/brainteaser/ontology/schema/quotientAlbuminCSF>,Intervention or Procedure Diagnostic Procedure CSF Analysis quotientAlbuminCSF,diagnosis_criteria_detail_MS Diagnosis,0.48542094,3-16
+"['Intervention or Procedure', 'Diagnostic Procedure', 'CSF Analysis', 'virusJCTestedCSF']",<https://w3id.org/brainteaser/ontology/schema/virusJCTestedCSF>,Intervention or Procedure Diagnostic Procedure CSF Analysis virusJCTestedCSF,precipitation_mean,0.43179244,0-28
+"['Intervention or Procedure', 'Diagnostic Procedure', 'Clinical Evaluation', 'bodyMassIndex']",<https://w3id.org/brainteaser/ontology/schema/bodyMassIndex>,Intervention or Procedure Diagnostic Procedure Clinical Evaluation bodyMassIndex,head_neck_surgery_last_5_years,0.25557858,25-67
+"['Intervention or Procedure', 'Diagnostic Procedure', 'Clinical Evaluation', 'height']",<https://w3id.org/brainteaser/ontology/schema/height>,Intervention or Procedure Diagnostic Procedure Clinical Evaluation height,height,0.39094108,25-3
+"['Intervention or Procedure', 'Diagnostic Procedure', 'Clinical Evaluation', 'moreThan10PercentWeightloss']",<https://w3id.org/brainteaser/ontology/schema/moreThan10PercentWeightloss>,Intervention or Procedure Diagnostic Procedure Clinical Evaluation moreThan10PercentWeightloss,moreThan10PercentWeightloss_True,0.44994774,25-76
+"['Intervention or Procedure', 'Diagnostic Procedure', 'Clinical Evaluation', 'multipleSclerosisType']",<https://w3id.org/brainteaser/ontology/schema/multipleSclerosisType>,Intervention or Procedure Diagnostic Procedure Clinical Evaluation multipleSclerosisType,multiple_sclerosis_type_CIS,0.54817057,10-1
+"['Intervention or Procedure', 'Diagnostic Procedure', 'Clinical Evaluation', 'predominantLimbsImpairment']",<https://w3id.org/brainteaser/ontology/schema/predominantLimbsImpairment>,Intervention or Procedure Diagnostic Procedure Clinical Evaluation predominantLimbsImpairment,surgical_interventions_before_onset_False,0.3974654,25-201
+"['Intervention or Procedure', 'Diagnostic Procedure', 'Clinical Evaluation', 'predominantLimbsSide']",<https://w3id.org/brainteaser/ontology/schema/predominantLimbsSide>,Intervention or Procedure Diagnostic Procedure Clinical Evaluation predominantLimbsSide,diagnosis_criteria_detail_MS according to McDonald 2010,0.3598048,3-18
+"['Intervention or Procedure', 'Diagnostic Procedure', 'Clinical Evaluation', 'predominantMotorNeuron']",<https://w3id.org/brainteaser/ontology/schema/predominantMotorNeuron>,Intervention or Procedure Diagnostic Procedure Clinical Evaluation predominantMotorNeuron,onset_limb_type_upper-lower-proximal-left-right-limb,0.43433338,17-110
+"['Intervention or Procedure', 'Diagnostic Procedure', 'Clinical Evaluation', 'weight']",<https://w3id.org/brainteaser/ontology/schema/weight>,Intervention or Procedure Diagnostic Procedure Clinical Evaluation weight,weight_before_onset,0.3991459,17-4
+"['Intervention or Procedure', 'Diagnostic Procedure', 'Diagnostic Imaging', 'Magnetic Resonance Imaging (MRI)', 'brainAtrophyMRI']",<https://w3id.org/brainteaser/ontology/schema/brainAtrophyMRI>,Intervention or Procedure Diagnostic Procedure Diagnostic Imaging Magnetic Resonance Imaging (MRI) brainAtrophyMRI,new_or_enlarged_lesions_T2_False,0.5369196,15-11
+"['Intervention or Procedure', 'Diagnostic Procedure', 'Diagnostic Imaging', 'Magnetic Resonance Imaging (MRI)', 'contiguousLesionsMRI']",<https://w3id.org/brainteaser/ontology/schema/contiguousLesionsMRI>,Intervention or Procedure Diagnostic Procedure Diagnostic Imaging Magnetic Resonance Imaging (MRI) contiguousLesionsMRI,number_of_lesions_T1_gadolinium,0.46185413,15-0
+"['Intervention or Procedure', 'Diagnostic Procedure', 'Diagnostic Imaging', 'Magnetic Resonance Imaging (MRI)', 'gadoliniumLesionsT1MRI']",<https://w3id.org/brainteaser/ontology/schema/gadoliniumLesionsT1MRI>,Intervention or Procedure Diagnostic Procedure Diagnostic Imaging Magnetic Resonance Imaging (MRI) gadoliniumLesionsT1MRI,lesions_T1_gadolinium_False,0.61452925,15-9
+"['Intervention or Procedure', 'Diagnostic Procedure', 'Diagnostic Imaging', 'Magnetic Resonance Imaging (MRI)', 'gadoliniumLesionsT1MRINumber']",<https://w3id.org/brainteaser/ontology/schema/gadoliniumLesionsT1MRINumber>,Intervention or Procedure Diagnostic Procedure Diagnostic Imaging Magnetic Resonance Imaging (MRI) gadoliniumLesionsT1MRINumber,lesions_T1_gadolinium_True,0.5750548,15-10
+"['Intervention or Procedure', 'Diagnostic Procedure', 'Diagnostic Imaging', 'Magnetic Resonance Imaging (MRI)', 'lesionsT1MRI']",<https://w3id.org/brainteaser/ontology/schema/lesionsT1MRI>,Intervention or Procedure Diagnostic Procedure Diagnostic Imaging Magnetic Resonance Imaging (MRI) lesionsT1MRI,lesions_T1_False,0.5476484,15-7
+"['Intervention or Procedure', 'Diagnostic Procedure', 'Diagnostic Imaging', 'Magnetic Resonance Imaging (MRI)', 'newOrEnlargedLesionsT2MRI']",<https://w3id.org/brainteaser/ontology/schema/newOrEnlargedLesionsT2MRI>,Intervention or Procedure Diagnostic Procedure Diagnostic Imaging Magnetic Resonance Imaging (MRI) newOrEnlargedLesionsT2MRI,new_or_enlarged_lesions_T2_True,0.4730581,15-12
+"['Intervention or Procedure', 'Diagnostic Procedure', 'Diagnostic Imaging', 'Magnetic Resonance Imaging (MRI)', 'newOrEnlargedLesionsT2MRINumber']",<https://w3id.org/brainteaser/ontology/schema/newOrEnlargedLesionsT2MRINumber>,Intervention or Procedure Diagnostic Procedure Diagnostic Imaging Magnetic Resonance Imaging (MRI) newOrEnlargedLesionsT2MRINumber,number_of_new_or_enlarged_lesions_T2,0.4631008,15-1
+"['Intervention or Procedure', 'Diagnostic Procedure', 'Diagnostic Imaging', 'Magnetic Resonance Imaging (MRI)', 'totalLesionsT2MRI']",<https://w3id.org/brainteaser/ontology/schema/totalLesionsT2MRI>,Intervention or Procedure Diagnostic Procedure Diagnostic Imaging Magnetic Resonance Imaging (MRI) totalLesionsT2MRI,number_of_total_lesions_T2_1-2,0.46384686,15-16
+"['Intervention or Procedure', 'Diagnostic Procedure', 'Expanded Disability Status Scale (EDSS)', 'ambulationEDSS']",<https://w3id.org/brainteaser/ontology/schema/ambulationEDSS>,Intervention or Procedure Diagnostic Procedure Expanded Disability Status Scale (EDSS) ambulationEDSS,ambulation,0.35656893,2-7
+"['Intervention or Procedure', 'Diagnostic Procedure', 'Expanded Disability Status Scale (EDSS)', 'bowelAndBladderEDSS']",<https://w3id.org/brainteaser/ontology/schema/bowelAndBladderEDSS>,Intervention or Procedure Diagnostic Procedure Expanded Disability Status Scale (EDSS) bowelAndBladderEDSS,thoracic_surgery_more_than_5_years,0.3014637,25-64
+"['Intervention or Procedure', 'Diagnostic Procedure', 'Expanded Disability Status Scale (EDSS)', 'brainstemEDSS']",<https://w3id.org/brainteaser/ontology/schema/brainstemEDSS>,Intervention or Procedure Diagnostic Procedure Expanded Disability Status Scale (EDSS) brainstemEDSS,edss_as_evaluated_by_clinician,0.5311033,2-8
+"['Intervention or Procedure', 'Diagnostic Procedure', 'Expanded Disability Status Scale (EDSS)', 'cerebellarEDSS']",<https://w3id.org/brainteaser/ontology/schema/cerebellarEDSS>,Intervention or Procedure Diagnostic Procedure Expanded Disability Status Scale (EDSS) cerebellarEDSS,cerebellar,0.5658847,2-1
+"['Intervention or Procedure', 'Diagnostic Procedure', 'Expanded Disability Status Scale (EDSS)', 'cerebralEDSS']",<https://w3id.org/brainteaser/ontology/schema/cerebralEDSS>,Intervention or Procedure Diagnostic Procedure Expanded Disability Status Scale (EDSS) cerebralEDSS,cerebral_functions,0.53763574,2-6
+"['Intervention or Procedure', 'Diagnostic Procedure', 'Expanded Disability Status Scale (EDSS)', 'clinicallyEvaluatedEDSS']",<https://w3id.org/brainteaser/ontology/schema/clinicallyEvaluatedEDSS>,Intervention or Procedure Diagnostic Procedure Expanded Disability Status Scale (EDSS) clinicallyEvaluatedEDSS,edss_as_evaluated_by_clinician,0.49336943,11-0
+"['Intervention or Procedure', 'Diagnostic Procedure', 'Expanded Disability Status Scale (EDSS)', 'pyramidalEDSS']",<https://w3id.org/brainteaser/ontology/schema/pyramidalEDSS>,Intervention or Procedure Diagnostic Procedure Expanded Disability Status Scale (EDSS) pyramidalEDSS,pyramidal,0.40314674,2-0
+"['Intervention or Procedure', 'Diagnostic Procedure', 'Expanded Disability Status Scale (EDSS)', 'sensoryEDSS']",<https://w3id.org/brainteaser/ontology/schema/sensoryEDSS>,Intervention or Procedure Diagnostic Procedure Expanded Disability Status Scale (EDSS) sensoryEDSS,other_symptoms_sensory,0.47125512,12-19
+"['Intervention or Procedure', 'Diagnostic Procedure', 'Expanded Disability Status Scale (EDSS)', 'visualEDSS']",<https://w3id.org/brainteaser/ontology/schema/visualEDSS>,Intervention or Procedure Diagnostic Procedure Expanded Disability Status Scale (EDSS) visualEDSS,visual_function,0.47078598,2-5
+"['Intervention or Procedure', 'Diagnostic Procedure', 'Evoked Potentials', 'evokedPotentialsLocation']",<https://w3id.org/brainteaser/ontology/schema/evokedPotentialsLocation>,Intervention or Procedure Diagnostic Procedure Evoked Potentials evokedPotentialsLocation,location_upper right,0.42966548,14-11
+"['Intervention or Procedure', 'Diagnostic Procedure', 'Evoked Potentials', 'evokedPotentialsResponse']",<https://w3id.org/brainteaser/ontology/schema/evokedPotentialsResponse>,Intervention or Procedure Diagnostic Procedure Evoked Potentials evokedPotentialsResponse,delta_evoked_potential_time0,0.5764208,14-1
+"['Intervention or Procedure', 'Diagnostic Procedure', 'Evoked Potentials', 'evokedPotentialsType']",<https://w3id.org/brainteaser/ontology/schema/evokedPotentialsType>,Intervention or Procedure Diagnostic Procedure Evoked Potentials evokedPotentialsType,altered_potential_Somatosensory,0.5902338,14-4
+"['Intervention or Procedure', 'Diagnostic Procedure', 'Evoked Potentials', 'visualEvokedPotentialAmplitude']",<https://w3id.org/brainteaser/ontology/schema/visualEvokedPotentialAmplitude>,Intervention or Procedure Diagnostic Procedure Evoked Potentials visualEvokedPotentialAmplitude,centre_turin,0.5254197,14-13
+"['Intervention or Procedure', 'Diagnostic Procedure', 'Evoked Potentials', 'visualEvokedPotentialLatency']",<https://w3id.org/brainteaser/ontology/schema/visualEvokedPotentialLatency>,Intervention or Procedure Diagnostic Procedure Evoked Potentials visualEvokedPotentialLatency,altered_potential_Visual,0.6057805,14-5
+"['Intervention or Procedure', 'Diagnostic Procedure', 'Hematology Test', 'observedResult']",<https://w3id.org/brainteaser/ontology/schema/observedResult>,Intervention or Procedure Diagnostic Procedure Hematology Test observedResult,diagnostic_delay,0.31219995,3-3
+"['Intervention or Procedure', 'Diagnostic Procedure', 'Pulmonary Function Test', 'pulmonaryAOPAbs']",<https://w3id.org/brainteaser/ontology/schema/pulmonaryAOPAbs>,Intervention or Procedure Diagnostic Procedure Pulmonary Function Test pulmonaryAOPAbs,respiration_alpha2_ExpRange,0.22483346,6-70
+"['Intervention or Procedure', 'Diagnostic Procedure', 'Pulmonary Function Test', 'pulmonaryFEV6']",<https://w3id.org/brainteaser/ontology/schema/pulmonaryFEV6>,Intervention or Procedure Diagnostic Procedure Pulmonary Function Test pulmonaryFEV6,Q6,0.30055007,5-5
+"['Intervention or Procedure', 'Diagnostic Procedure', 'Pulmonary Function Test', 'pulmonaryFVCRel']",<https://w3id.org/brainteaser/ontology/schema/pulmonaryFVCRel>,Intervention or Procedure Diagnostic Procedure Pulmonary Function Test pulmonaryFVCRel,fvcValue,0.23376036,18-1
+"['Intervention or Procedure', 'Diagnostic Procedure', 'Pulmonary Function Test', 'pulmonaryMEPAbs']",<https://w3id.org/brainteaser/ontology/schema/pulmonaryMEPAbs>,Intervention or Procedure Diagnostic Procedure Pulmonary Function Test pulmonaryMEPAbs,respiration_SDBB,0.2253421,6-60
+"['Intervention or Procedure', 'Diagnostic Procedure', 'Pulmonary Function Test', 'pulmonaryMIPAbs']",<https://w3id.org/brainteaser/ontology/schema/pulmonaryMIPAbs>,Intervention or Procedure Diagnostic Procedure Pulmonary Function Test pulmonaryMIPAbs,respiration_alpha1_DimMean,0.21483237,6-63
+"['Intervention or Procedure', 'Diagnostic Procedure', 'Pulmonary Function Test', 'pulmonaryPCO2']",<https://w3id.org/brainteaser/ontology/schema/pulmonaryPCO2>,Intervention or Procedure Diagnostic Procedure Pulmonary Function Test pulmonaryPCO2,spo2_CT,0.25374943,6-75
+"['Intervention or Procedure', 'Diagnostic Procedure', 'Pulmonary Function Test', 'pulmonaryPO2']",<https://w3id.org/brainteaser/ontology/schema/pulmonaryPO2>,Intervention or Procedure Diagnostic Procedure Pulmonary Function Test pulmonaryPO2,respiration_alpha2_ExpMean,0.25789335,6-69
+"['Intervention or Procedure', 'Diagnostic Procedure', 'Pulmonary Function Test', 'pulmonaryVCAbs']",<https://w3id.org/brainteaser/ontology/schema/pulmonaryVCAbs>,Intervention or Procedure Diagnostic Procedure Pulmonary Function Test pulmonaryVCAbs,sealevel_pressure_num,0.26897603,0-23
+"['Intervention or Procedure', 'Diagnostic Procedure', 'Questionnaire', 'Amyotrophic Lateral Sclerosis Functional Rating Scale (ALSFRS)', 'alsfrs1']",<https://w3id.org/brainteaser/ontology/schema/alsfrs1>,Intervention or Procedure Diagnostic Procedure Questionnaire Amyotrophic Lateral Sclerosis Functional Rating Scale (ALSFRS) alsfrs1,first_alsfrs_days_from_diagnosis,0.56842023,4-12
+"['Intervention or Procedure', 'Diagnostic Procedure', 'Questionnaire', 'Amyotrophic Lateral Sclerosis Functional Rating Scale (ALSFRS)', 'alsfrs10']",<https://w3id.org/brainteaser/ontology/schema/alsfrs10>,Intervention or Procedure Diagnostic Procedure Questionnaire Amyotrophic Lateral Sclerosis Functional Rating Scale (ALSFRS) alsfrs10,Q10,0.5094363,4-9
+"['Intervention or Procedure', 'Diagnostic Procedure', 'Questionnaire', 'Amyotrophic Lateral Sclerosis Functional Rating Scale (ALSFRS)', 'alsfrs11']",<https://w3id.org/brainteaser/ontology/schema/alsfrs11>,Intervention or Procedure Diagnostic Procedure Questionnaire Amyotrophic Lateral Sclerosis Functional Rating Scale (ALSFRS) alsfrs11,Q11,0.49658415,4-10
+"['Intervention or Procedure', 'Diagnostic Procedure', 'Questionnaire', 'Amyotrophic Lateral Sclerosis Functional Rating Scale (ALSFRS)', 'alsfrs12']",<https://w3id.org/brainteaser/ontology/schema/alsfrs12>,Intervention or Procedure Diagnostic Procedure Questionnaire Amyotrophic Lateral Sclerosis Functional Rating Scale (ALSFRS) alsfrs12,Q12,0.49369824,4-11
+"['Intervention or Procedure', 'Diagnostic Procedure', 'Questionnaire', 'Amyotrophic Lateral Sclerosis Functional Rating Scale (ALSFRS)', 'alsfrs2']",<https://w3id.org/brainteaser/ontology/schema/alsfrs2>,Intervention or Procedure Diagnostic Procedure Questionnaire Amyotrophic Lateral Sclerosis Functional Rating Scale (ALSFRS) alsfrs2,Q2,0.4730501,4-1
+"['Intervention or Procedure', 'Diagnostic Procedure', 'Questionnaire', 'Amyotrophic Lateral Sclerosis Functional Rating Scale (ALSFRS)', 'alsfrs3']",<https://w3id.org/brainteaser/ontology/schema/alsfrs3>,Intervention or Procedure Diagnostic Procedure Questionnaire Amyotrophic Lateral Sclerosis Functional Rating Scale (ALSFRS) alsfrs3,Q3,0.47859436,4-2
+"['Intervention or Procedure', 'Diagnostic Procedure', 'Questionnaire', 'Amyotrophic Lateral Sclerosis Functional Rating Scale (ALSFRS)', 'alsfrs4']",<https://w3id.org/brainteaser/ontology/schema/alsfrs4>,Intervention or Procedure Diagnostic Procedure Questionnaire Amyotrophic Lateral Sclerosis Functional Rating Scale (ALSFRS) alsfrs4,Q4,0.4942631,4-3
+"['Intervention or Procedure', 'Diagnostic Procedure', 'Questionnaire', 'Amyotrophic Lateral Sclerosis Functional Rating Scale (ALSFRS)', 'alsfrs5']",<https://w3id.org/brainteaser/ontology/schema/alsfrs5>,Intervention or Procedure Diagnostic Procedure Questionnaire Amyotrophic Lateral Sclerosis Functional Rating Scale (ALSFRS) alsfrs5,Q5,0.4982991,4-4
+"['Intervention or Procedure', 'Diagnostic Procedure', 'Questionnaire', 'Amyotrophic Lateral Sclerosis Functional Rating Scale (ALSFRS)', 'alsfrs6']",<https://w3id.org/brainteaser/ontology/schema/alsfrs6>,Intervention or Procedure Diagnostic Procedure Questionnaire Amyotrophic Lateral Sclerosis Functional Rating Scale (ALSFRS) alsfrs6,target_alsfrs_days_from_diagnosis,0.507082,4-13
+"['Intervention or Procedure', 'Diagnostic Procedure', 'Questionnaire', 'Amyotrophic Lateral Sclerosis Functional Rating Scale (ALSFRS)', 'alsfrs7']",<https://w3id.org/brainteaser/ontology/schema/alsfrs7>,Intervention or Procedure Diagnostic Procedure Questionnaire Amyotrophic Lateral Sclerosis Functional Rating Scale (ALSFRS) alsfrs7,Q7,0.49255568,4-6
+"['Intervention or Procedure', 'Diagnostic Procedure', 'Questionnaire', 'Amyotrophic Lateral Sclerosis Functional Rating Scale (ALSFRS)', 'alsfrs8']",<https://w3id.org/brainteaser/ontology/schema/alsfrs8>,Intervention or Procedure Diagnostic Procedure Questionnaire Amyotrophic Lateral Sclerosis Functional Rating Scale (ALSFRS) alsfrs8,Q8,0.5203675,4-7
+"['Intervention or Procedure', 'Diagnostic Procedure', 'Questionnaire', 'Amyotrophic Lateral Sclerosis Functional Rating Scale (ALSFRS)', 'alsfrs9']",<https://w3id.org/brainteaser/ontology/schema/alsfrs9>,Intervention or Procedure Diagnostic Procedure Questionnaire Amyotrophic Lateral Sclerosis Functional Rating Scale (ALSFRS) alsfrs9,Q9,0.51719224,4-8
+"['Intervention or Procedure', 'Diagnostic Procedure', 'Questionnaire', 'Amyotrophic Lateral Sclerosis Functional Rating Scale (ALSFRS)', 'alsfrsOriginal10']",<https://w3id.org/brainteaser/ontology/schema/alsfrsOriginal10>,Intervention or Procedure Diagnostic Procedure Questionnaire Amyotrophic Lateral Sclerosis Functional Rating Scale (ALSFRS) alsfrsOriginal10,Q6,0.47581968,4-5
+"['Intervention or Procedure', 'Diagnostic Procedure', 'Questionnaire', 'Amyotrophic Lateral Sclerosis Functional Rating Scale (ALSFRS)', 'bulbarSubscore']",<https://w3id.org/brainteaser/ontology/schema/bulbarSubscore>,Intervention or Procedure Diagnostic Procedure Questionnaire Amyotrophic Lateral Sclerosis Functional Rating Scale (ALSFRS) bulbarSubscore,days_from_diagnosis,0.46932134,8-0
+"['Intervention or Procedure', 'Diagnostic Procedure', 'Questionnaire', 'Amyotrophic Lateral Sclerosis Functional Rating Scale (ALSFRS)', 'motorSubscore']",<https://w3id.org/brainteaser/ontology/schema/motorSubscore>,Intervention or Procedure Diagnostic Procedure Questionnaire Amyotrophic Lateral Sclerosis Functional Rating Scale (ALSFRS) motorSubscore,Q10,0.44314817,8-10
+"['Intervention or Procedure', 'Diagnostic Procedure', 'Questionnaire', 'Amyotrophic Lateral Sclerosis Functional Rating Scale (ALSFRS)', 'originalALSFRS']",<https://w3id.org/brainteaser/ontology/schema/originalALSFRS>,Intervention or Procedure Diagnostic Procedure Questionnaire Amyotrophic Lateral Sclerosis Functional Rating Scale (ALSFRS) originalALSFRS,Q9,0.45772508,8-9
+"['Intervention or Procedure', 'Diagnostic Procedure', 'Questionnaire', 'Amyotrophic Lateral Sclerosis Functional Rating Scale (ALSFRS)', 'respiratorySubscore']",<https://w3id.org/brainteaser/ontology/schema/respiratorySubscore>,Intervention or Procedure Diagnostic Procedure Questionnaire Amyotrophic Lateral Sclerosis Functional Rating Scale (ALSFRS) respiratorySubscore,respiration_RMSSD,0.48292097,6-56
+"['Intervention or Procedure', 'Diagnostic Procedure', 'Questionnaire', 'Amyotrophic Lateral Sclerosis Functional Rating Scale (ALSFRS)', 'revisedALSFRS']",<https://w3id.org/brainteaser/ontology/schema/revisedALSFRS>,Intervention or Procedure Diagnostic Procedure Questionnaire Amyotrophic Lateral Sclerosis Functional Rating Scale (ALSFRS) revisedALSFRS,Q1,0.4858158,4-0
+"['Intervention or Procedure', 'Diagnostic Procedure', 'Questionnaire', ""King's Clinical Staging Method"", 'kingsValue']",<https://w3id.org/brainteaser/ontology/schema/kingsValue>,Intervention or Procedure Diagnostic Procedure Questionnaire King's Clinical Staging Method kingsValue,surgical_interventions_before_onset_False,0.4250508,17-203
+"['Intervention or Procedure', 'Diagnostic Procedure', 'Questionnaire', 'Milano-Torino Functional Staging System (MiToS)', 'mitosValue']",<https://w3id.org/brainteaser/ontology/schema/mitosValue>,Intervention or Procedure Diagnostic Procedure Questionnaire Milano-Torino Functional Staging System (MiToS) mitosValue,upper_limb_surgery_more_than_5_years,0.24326783,17-58
+"['Intervention or Procedure', 'Surgical Procedure', 'surgicalType']",<https://w3id.org/brainteaser/ontology/schema/surgicalType>,Intervention or Procedure Surgical Procedure surgicalType,pelvic_surgery_last_5_years,0.22861975,17-65
+"['Intervention or Procedure', 'Therapeutic Procedure', 'performedTreatment']",<https://w3id.org/brainteaser/ontology/schema/performedTreatment>,Intervention or Procedure Therapeutic Procedure performedTreatment,lumbo_sacral_trauma_more_than_5_years,0.24267973,17-50
+"['Kinship', 'hasKinshipType']",<https://w3id.org/brainteaser/ontology/schema/hasKinshipType>,Kinship hasKinshipType,ethnicity_Black_African,0.16404122,12-13
+"['Kinship', 'inKinshipWith']",<https://w3id.org/brainteaser/ontology/schema/inKinshipWith>,Kinship inKinshipWith,,,
+"['KinshipType', 'Third Degree Relative']",<http://purl.obolibrary.org/obo/NCIT_C100808>,KinshipType Third Degree Relative,svType_DEL,0.21852395,21-13
+"['KinshipType', 'Brother']",<http://purl.obolibrary.org/obo/NCIT_C111201>,KinshipType Brother,position,0.18536443,21-1
+"['KinshipType', 'Sister']",<http://purl.obolibrary.org/obo/NCIT_C111202>,KinshipType Sister,,,
+"['KinshipType', 'Second Degree Relative']",<http://purl.obolibrary.org/obo/NCIT_C19811>,KinshipType Second Degree Relative,svType_INS,0.2050281,21-15
+"['KinshipType', 'First Degree Relative']",<http://purl.obolibrary.org/obo/NCIT_C21481>,KinshipType First Degree Relative,svType_INV,0.21063542,21-17
+"['KinshipType', 'Daughter']",<http://purl.obolibrary.org/obo/NCIT_C25165>,KinshipType Daughter,CHILD_FAKE_id_father,0.35062718,23-2
+"['KinshipType', 'Father']",<http://purl.obolibrary.org/obo/NCIT_C25174>,KinshipType Father,,,
+"['KinshipType', 'Mother']",<http://purl.obolibrary.org/obo/NCIT_C25189>,KinshipType Mother,,,
+"['KinshipType', 'Son']",<http://purl.obolibrary.org/obo/NCIT_C25205>,KinshipType Son,CHILD_FAKE_id_child_correlated,0.3076327,23-0
+"['KinshipType', 'Grandson']",<http://purl.obolibrary.org/obo/NCIT_C71398>,KinshipType Grandson,CHILD_FAKE_id,0.26252037,22-0
+"['KinshipType', 'Granddaughter']",<http://purl.obolibrary.org/obo/NCIT_C71399>,KinshipType Granddaughter,CHILD_FAKE_id_mother,0.32190582,23-1
+"['KinshipType', 'Niece']",<http://purl.obolibrary.org/obo/NCIT_C71408>,KinshipType Niece,variantCount,0.25114566,21-7
+"['KinshipType', 'Nephew']",<http://purl.obolibrary.org/obo/NCIT_C71409>,KinshipType Nephew,variantId,0.25780374,21-2
+"['KinshipType', 'Cousin']",<http://purl.obolibrary.org/obo/NCIT_C71410>,KinshipType Cousin,end,0.20950371,21-5
+"['KinshipType', 'First Cousin']",<http://purl.obolibrary.org/obo/NCIT_C71411>,KinshipType First Cousin,sampleMatchingCount,0.19882926,21-11
+"['KinshipType', 'Aunt']",<http://purl.obolibrary.org/obo/NCIT_C96569>,KinshipType Aunt,ethnicity_Black_African,0.15475948,17-73
+"['KinshipType', 'Grandfather']",<http://purl.obolibrary.org/obo/NCIT_C96573>,KinshipType Grandfather,svLength,0.18858463,21-6
+"['KinshipType', 'Grandmother']",<http://purl.obolibrary.org/obo/NCIT_C96574>,KinshipType Grandmother,,,
+"['KinshipType', 'Maternal Aunt']",<http://purl.obolibrary.org/obo/NCIT_C96575>,KinshipType Maternal Aunt,,,
+"['KinshipType', 'Maternal Uncle']",<http://purl.obolibrary.org/obo/NCIT_C96579>,KinshipType Maternal Uncle,,,
+"['KinshipType', 'Paternal Aunt']",<http://purl.obolibrary.org/obo/NCIT_C96581>,KinshipType Paternal Aunt,,,
+"['KinshipType', 'Paternal Uncle']",<http://purl.obolibrary.org/obo/NCIT_C96585>,KinshipType Paternal Uncle,,,
+"['KinshipType', 'Uncle']",<http://purl.obolibrary.org/obo/NCIT_C96587>,KinshipType Uncle,,,
+"['Laboratory Test Result', 'componentName']",<https://w3id.org/brainteaser/ontology/schema/componentName>,Laboratory Test Result componentName,SOD1 mutation_c.281G>T (p.(Gly94Val)) ,0.3603325,17-169
+"['Laboratory Test Result', 'measuredLevel']",<https://w3id.org/brainteaser/ontology/schema/measuredLevel>,Laboratory Test Result measuredLevel,respiration_alpha1_ExpMean,0.29071397,6-65
+"['Laboratory Test Result', 'normalLevel']",<https://w3id.org/brainteaser/ontology/schema/normalLevel>,Laboratory Test Result normalLevel,C9orf72_normal,0.32665217,25-163
+"['Laboratory Test Result', 'positivityResult']",<https://w3id.org/brainteaser/ontology/schema/positivityResult>,Laboratory Test Result positivityResult,smoking_False,0.34510988,25-160
+"['Laboratory Test Result', 'unitOfMeasure']",<https://w3id.org/brainteaser/ontology/schema/unitOfMeasure>,Laboratory Test Result unitOfMeasure,sealevel_pressure_mean,0.34593904,0-24
+"['Occupation', 'Armed forces occupations']",<http://data.europa.eu/esco/isco/C0>,Occupation Armed forces occupations,occupation_Armed_forces_occupations_other_ranks,0.43870828,17-118
+"['Occupation', 'Commissioned armed forces officers']",<http://data.europa.eu/esco/isco/C01>,Occupation Commissioned armed forces officers,occupation_Non-commissioned_armed_forces_officers,0.45885158,25-144
+"['Occupation', 'Non-commissioned armed forces officers']",<http://data.europa.eu/esco/isco/C02>,Occupation Non-commissioned armed forces officers,occupation_Commissioned_armed_forces_officers,0.40569732,25-124
+"['Occupation', 'Armed forces occupations, other ranks']",<http://data.europa.eu/esco/isco/C03>,"Occupation Armed forces occupations, other ranks",occupation_Armed_forces_occupations_other_ranks,0.6141024,25-118
+"['Occupation', 'Managers']",<http://data.europa.eu/esco/isco/C1>,Occupation Managers,occupation_Production_and_specialised_services_managers,0.37294182,17-149
+"['Occupation', 'Chief executives, senior officials and legislators']",<http://data.europa.eu/esco/isco/C11>,"Occupation Chief executives, senior officials and legislators",occupation_Chief_executives_senior_officials_and_legislators,0.4510676,25-122
+"['Occupation', 'Administrative and commercial managers']",<http://data.europa.eu/esco/isco/C12>,Occupation Administrative and commercial managers,occupation_Administrative_and_commercial_managers,0.4477276,25-116
+"['Occupation', 'Production and specialised services managers']",<http://data.europa.eu/esco/isco/C13>,Occupation Production and specialised services managers,occupation_Production_and_specialised_services_managers,0.48826444,25-149
+"['Occupation', 'Hospitality, retail and other services managers']",<http://data.europa.eu/esco/isco/C14>,"Occupation Hospitality, retail and other services managers",occupation_Hospitality_retail_and_other_services_managers,0.5202478,25-135
+"['Occupation', 'Professionals']",<http://data.europa.eu/esco/isco/C2>,Occupation Professionals,occupation_Elementary_occupations,0.43422568,17-128
+"['Occupation', 'Science and engineering professionals']",<http://data.europa.eu/esco/isco/C21>,Occupation Science and engineering professionals,occupation_Science_and_engineering_professionals,0.39365408,25-154
+"['Occupation', 'Health professionals']",<http://data.europa.eu/esco/isco/C22>,Occupation Health professionals,occupation_Building_and_related_trades_workers_excluding_electricians,0.507602,17-119
+"['Occupation', 'Teaching professionals']",<http://data.europa.eu/esco/isco/C23>,Occupation Teaching professionals,occupation_Teaching_professionals,0.37720418,17-157
+"['Occupation', 'Business and administration professionals']",<http://data.europa.eu/esco/isco/C24>,Occupation Business and administration professionals,occupation_Business_and_administration_professionals,0.4269173,25-121
+"['Occupation', 'Information and communications technology professionals']",<http://data.europa.eu/esco/isco/C25>,Occupation Information and communications technology professionals,occupation_Information_and_communications_technology_professionals,0.43989813,25-137
+"['Occupation', 'Legal, social and cultural professionals']",<http://data.europa.eu/esco/isco/C26>,"Occupation Legal, social and cultural professionals",occupation_Legal_social_cultural_and_related_associate_professionals,0.56554115,25-140
+"['Occupation', 'Technicians and associate professionals']",<http://data.europa.eu/esco/isco/C3>,Occupation Technicians and associate professionals,occupation_Elementary_occupations,0.4161842,25-128
+"['Occupation', 'Science and engineering associate professionals']",<http://data.europa.eu/esco/isco/C31>,Occupation Science and engineering associate professionals,occupation_Science_and_engineering_associate_professionals,0.4369951,25-153
+"['Occupation', 'Health associate professionals']",<http://data.europa.eu/esco/isco/C32>,Occupation Health associate professionals,occupation_Health_associate_professionals,0.50574744,25-133
+"['Occupation', 'Business and administration associate professionals']",<http://data.europa.eu/esco/isco/C33>,Occupation Business and administration associate professionals,occupation_Business_and_administration_associate_professionals,0.44973063,25-120
+"['Occupation', 'Legal, social, cultural and related associate professionals']",<http://data.europa.eu/esco/isco/C34>,"Occupation Legal, social, cultural and related associate professionals",occupation_Legal_social_cultural_and_related_associate_professionals,0.5095168,17-140
+"['Occupation', 'Information and communications technicians']",<http://data.europa.eu/esco/isco/C35>,Occupation Information and communications technicians,occupation_Information_and_communications_technicians,0.49717826,25-136
+"['Occupation', 'Clerical support workers']",<http://data.europa.eu/esco/isco/C4>,Occupation Clerical support workers,occupation_Other_clerical_support_workers,0.5486592,25-146
+"['Occupation', 'General and keyboard clerks']",<http://data.europa.eu/esco/isco/C41>,Occupation General and keyboard clerks,occupation_General_and_keyboard_clerks,0.5411141,25-131
+"['Occupation', 'Customer services clerks']",<http://data.europa.eu/esco/isco/C42>,Occupation Customer services clerks,occupation_Customer_services_clerks,0.5302494,25-125
+"['Occupation', 'Numerical and material recording clerks']",<http://data.europa.eu/esco/isco/C43>,Occupation Numerical and material recording clerks,occupation_Numerical_and_material_recording_clerks,0.59240466,25-145
+"['Occupation', 'Other clerical support workers']",<http://data.europa.eu/esco/isco/C44>,Occupation Other clerical support workers,occupation_Other_clerical_support_workers,0.4934284,17-146
+"['Occupation', 'Service and sales workers']",<http://data.europa.eu/esco/isco/C5>,Occupation Service and sales workers,occupation_Street_and_related_sales_and_service_workers,0.52216685,25-156
+"['Occupation', 'Personal service workers']",<http://data.europa.eu/esco/isco/C51>,Occupation Personal service workers,occupation_Personal_service_workers,0.53583664,25-148
+"['Occupation', 'Sales workers']",<http://data.europa.eu/esco/isco/C52>,Occupation Sales workers,occupation_Sales_workers,0.47496656,25-152
+"['Occupation', 'Personal care workers']",<http://data.europa.eu/esco/isco/C53>,Occupation Personal care workers,occupation_Personal_care_workers,0.5153432,25-147
+"['Occupation', 'Protective services workers']",<http://data.europa.eu/esco/isco/C54>,Occupation Protective services workers,occupation_Protective_services_workers,0.53646284,25-150
+"['Occupation', 'Skilled agricultural, forestry and fishery workers']",<http://data.europa.eu/esco/isco/C6>,"Occupation Skilled agricultural, forestry and fishery workers",occupation_Market-oriented_skilled_forestry_fishery_and_hunting_workers,0.61783826,17-142
+"['Occupation', 'Market-oriented skilled agricultural workers']",<http://data.europa.eu/esco/isco/C61>,Occupation Market-oriented skilled agricultural workers,occupation_Market-oriented_skilled_agricultural_workers,0.59832907,25-141
+"['Occupation', 'Market-oriented skilled forestry, fishery and hunting workers']",<http://data.europa.eu/esco/isco/C62>,"Occupation Market-oriented skilled forestry, fishery and hunting workers",occupation_Market-oriented_skilled_forestry_fishery_and_hunting_workers,0.6798148,25-142
+"['Occupation', 'Subsistence farmers, fishers, hunters and gatherers']",<http://data.europa.eu/esco/isco/C63>,"Occupation Subsistence farmers, fishers, hunters and gatherers",occupation_Agricultural_forestry_and_fishery_labourers,0.36841643,17-117
+"['Occupation', 'Craft and related trades workers']",<http://data.europa.eu/esco/isco/C7>,Occupation Craft and related trades workers,occupation_Labourers_in_mining_construction_manufacturing_and_transport,0.52030015,17-138
+"['Occupation', 'Building and related trades workers, excluding electricians']",<http://data.europa.eu/esco/isco/C71>,"Occupation Building and related trades workers, excluding electricians",occupation_Building_and_related_trades_workers_excluding_electricians,0.5947888,25-119
+"['Occupation', 'Metal, machinery and related trades workers']",<http://data.europa.eu/esco/isco/C72>,"Occupation Metal, machinery and related trades workers",occupation_Metal_machinery_and_related_trades_workers,0.59592646,25-143
+"['Occupation', 'Handicraft and printing workers']",<http://data.europa.eu/esco/isco/C73>,Occupation Handicraft and printing workers,occupation_Handicraft_and_printing_workers,0.49978596,25-132
+"['Occupation', 'Electrical and electronic trades workers']",<http://data.europa.eu/esco/isco/C74>,Occupation Electrical and electronic trades workers,occupation_Electrical_and_electronic_trades_workers,0.58936524,25-127
+"['Occupation', 'Food processing, wood working, garment and other craft and related trades workers']",<http://data.europa.eu/esco/isco/C75>,"Occupation Food processing, wood working, garment and other craft and related trades workers",occupation_Food_processing_wood_working_garment_and_other_craft_and_related_trades_workers,0.6583868,25-130
+"['Occupation', 'Plant and machine operators and assemblers']",<http://data.europa.eu/esco/isco/C8>,Occupation Plant and machine operators and assemblers,occupation_Stationary_plant_and_machine_operators,0.3627267,17-155
+"['Occupation', 'Stationary plant and machine operators']",<http://data.europa.eu/esco/isco/C81>,Occupation Stationary plant and machine operators,occupation_Stationary_plant_and_machine_operators,0.47185427,25-155
+"['Occupation', 'Assemblers']",<http://data.europa.eu/esco/isco/C82>,Occupation Assemblers,occupation_Handicraft_and_printing_workers,0.371926,17-132
+"['Occupation', 'Drivers and mobile plant operators']",<http://data.europa.eu/esco/isco/C83>,Occupation Drivers and mobile plant operators,occupation_Drivers_and_mobile_plant_operators,0.5352486,25-126
+"['Occupation', 'Elementary occupations']",<http://data.europa.eu/esco/isco/C9>,Occupation Elementary occupations,occupation_Refuse_workers_and_other_elementary_workers,0.35390747,17-151
+"['Occupation', 'Cleaners and helpers']",<http://data.europa.eu/esco/isco/C91>,Occupation Cleaners and helpers,occupation_Cleaners_and_helpers,0.43898565,25-123
+"['Occupation', 'Agricultural, forestry and fishery labourers']",<http://data.europa.eu/esco/isco/C92>,"Occupation Agricultural, forestry and fishery labourers",occupation_Agricultural_forestry_and_fishery_labourers,0.6327048,25-117
+"['Occupation', 'Labourers in mining, construction, manufacturing and transport']",<http://data.europa.eu/esco/isco/C93>,"Occupation Labourers in mining, construction, manufacturing and transport",occupation_Labourers_in_mining_construction_manufacturing_and_transport,0.6411129,25-138
+"['Occupation', 'Food preparation assistants']",<http://data.europa.eu/esco/isco/C94>,Occupation Food preparation assistants,occupation_Food_preparation_assistants,0.5433085,25-129
+"['Occupation', 'Street and related sales and service workers']",<http://data.europa.eu/esco/isco/C95>,Occupation Street and related sales and service workers,occupation_Street_and_related_sales_and_service_workers,0.46441305,17-156
+"['Occupation', 'Refuse workers and other elementary workers']",<http://data.europa.eu/esco/isco/C96>,Occupation Refuse workers and other elementary workers,occupation_Refuse_workers_and_other_elementary_workers,0.55045414,25-151
+"['Oligoclonal Bands', 'oligoclonalBandsNumber']",<https://w3id.org/brainteaser/ontology/schema/oligoclonalBandsNumber>,Oligoclonal Bands oligoclonalBandsNumber,Albumin_unit_g/dL,0.18956384,25-181
+"['Oligoclonal Bands', 'oligoclonalBandsPresence']",<https://w3id.org/brainteaser/ontology/schema/oligoclonalBandsPresence>,Oligoclonal Bands oligoclonalBandsPresence,,,
+"['Oligoclonal Bands', 'oligoclonalBandsType']",<https://w3id.org/brainteaser/ontology/schema/oligoclonalBandsType>,Oligoclonal Bands oligoclonalBandsType,,,
+"['PharmacologicSubstance', 'Alimentary Tract and Metabolism']",<http://purl.bioontology.org/ontology/UATC/A>,PharmacologicSubstance Alimentary Tract and Metabolism,,,
+"['PharmacologicSubstance', 'Stomatological Preparations']",<http://purl.bioontology.org/ontology/UATC/A01>,PharmacologicSubstance Stomatological Preparations,,,
+"['PharmacologicSubstance', 'Drugs for Acid Related Disorders']",<http://purl.bioontology.org/ontology/UATC/A02>,PharmacologicSubstance Drugs for Acid Related Disorders,Triglycerides_lower_range,0.20139092,17-38
+"['PharmacologicSubstance', 'Malgradate']",<http://purl.bioontology.org/ontology/UATC/A02AD02>,PharmacologicSubstance Malgradate,,,
+"['PharmacologicSubstance', 'Pantoprazole']",<http://purl.bioontology.org/ontology/UATC/A02BC02>,PharmacologicSubstance Pantoprazole,,,
+"['PharmacologicSubstance', 'Esomeprazole']",<http://purl.bioontology.org/ontology/UATC/A02BC05>,PharmacologicSubstance Esomeprazole,,,
+"['PharmacologicSubstance', 'Proglumide']",<http://purl.bioontology.org/ontology/UATC/A02BX06>,PharmacologicSubstance Proglumide,,,
+"['PharmacologicSubstance', 'Drugs for Functional Gastrointestinal Disorders']",<http://purl.bioontology.org/ontology/UATC/A03>,PharmacologicSubstance Drugs for Functional Gastrointestinal Disorders,,,
+"['PharmacologicSubstance', 'Domperidone']",<http://purl.bioontology.org/ontology/UATC/A03FA03>,PharmacologicSubstance Domperidone,,,
+"['PharmacologicSubstance', 'Antiemetics and Antinauseants']",<http://purl.bioontology.org/ontology/UATC/A04>,PharmacologicSubstance Antiemetics and Antinauseants,,,
+"['PharmacologicSubstance', 'Bile and Liver Therapy Drugs']",<http://purl.bioontology.org/ontology/UATC/A05>,PharmacologicSubstance Bile and Liver Therapy Drugs,Total_Cholesterol_level,0.1812694,25-25
+"['PharmacologicSubstance', 'Bile Therapy']",<http://purl.bioontology.org/ontology/UATC/A05A>,PharmacologicSubstance Bile Therapy,Total_Cholesterol_upper_range,0.17885903,17-27
+"['PharmacologicSubstance', 'Ursodeoxycholic Acid']",<http://purl.bioontology.org/ontology/UATC/A05AA02>,PharmacologicSubstance Ursodeoxycholic Acid,,,
+"['PharmacologicSubstance', 'Liver Therapy, Lipotropics']",<http://purl.bioontology.org/ontology/UATC/A05B>,"PharmacologicSubstance Liver Therapy, Lipotropics",HDL_Cholesterol_upper_range,0.20869634,17-31
+"['PharmacologicSubstance', 'Drugs for Bile Therapy and Lipotropics in Combination']",<http://purl.bioontology.org/ontology/UATC/A05C>,PharmacologicSubstance Drugs for Bile Therapy and Lipotropics in Combination,Total_Cholesterol_unit,0.2547345,25-28
+"['PharmacologicSubstance', 'Drugs for Constipation']",<http://purl.bioontology.org/ontology/UATC/A06>,PharmacologicSubstance Drugs for Constipation,,,
+"['PharmacologicSubstance', 'Lactulose']",<http://purl.bioontology.org/ontology/UATC/A06AD11>,PharmacologicSubstance Lactulose,,,
+"['PharmacologicSubstance', 'Antidiarrheals, Intestinal Antiinflammatory/Antiinfective Agents']",<http://purl.bioontology.org/ontology/UATC/A07>,"PharmacologicSubstance Antidiarrheals, Intestinal Antiinflammatory/Antiinfective Agents",,,
+"['PharmacologicSubstance', 'Sulfasalazine']",<http://purl.bioontology.org/ontology/UATC/A07EC01>,PharmacologicSubstance Sulfasalazine,,,
+"['PharmacologicSubstance', 'Mesalazine']",<http://purl.bioontology.org/ontology/UATC/A07EC02>,PharmacologicSubstance Mesalazine,,,
+"['PharmacologicSubstance', 'Antiobesity Preparations, excl. Diet Products']",<http://purl.bioontology.org/ontology/UATC/A08>,"PharmacologicSubstance Antiobesity Preparations, excl. Diet Products",LDL_Cholesterol_lower_range,0.18880005,25-34
+"['PharmacologicSubstance', 'Digestives, incl. Enzymes']",<http://purl.bioontology.org/ontology/UATC/A09>,"PharmacologicSubstance Digestives, incl. Enzymes",,,
+"['PharmacologicSubstance', 'Drugs Used in Diabetes']",<http://purl.bioontology.org/ontology/UATC/A10>,PharmacologicSubstance Drugs Used in Diabetes,Triglycerides_upper_range,0.18137696,17-39
+"['PharmacologicSubstance', 'Insulins and Analogues']",<http://purl.bioontology.org/ontology/UATC/A10A>,PharmacologicSubstance Insulins and Analogues,,,
+"['PharmacologicSubstance', 'Insulin Lispro']",<http://purl.bioontology.org/ontology/UATC/A10AB04>,PharmacologicSubstance Insulin Lispro,,,
+"['PharmacologicSubstance', 'Insulin Glargine']",<http://purl.bioontology.org/ontology/UATC/A10AE04>,PharmacologicSubstance Insulin Glargine,,,
+"['PharmacologicSubstance', 'Metformin']",<http://purl.bioontology.org/ontology/UATC/A10BA02>,PharmacologicSubstance Metformin,Creatinine_upper_range,0.17147824,25-23
+"['PharmacologicSubstance', 'Gliclazide']",<http://purl.bioontology.org/ontology/UATC/A10BB09>,PharmacologicSubstance Gliclazide,,,
+"['PharmacologicSubstance', 'Glimepiride']",<http://purl.bioontology.org/ontology/UATC/A10BB12>,PharmacologicSubstance Glimepiride,,,
+"['PharmacologicSubstance', 'Sitagliptin']",<http://purl.bioontology.org/ontology/UATC/A10BH01>,PharmacologicSubstance Sitagliptin,HDL_Cholesterol_lower_range,0.1539962,25-30
+"['PharmacologicSubstance', 'Vitamins']",<http://purl.bioontology.org/ontology/UATC/A11>,PharmacologicSubstance Vitamins,reference,0.21327075,21-3
+"['PharmacologicSubstance', 'Colecalciferol']",<http://purl.bioontology.org/ontology/UATC/A11CC05>,PharmacologicSubstance Colecalciferol,,,
+"['PharmacologicSubstance', 'Calcifediol']",<http://purl.bioontology.org/ontology/UATC/A11CC06>,PharmacologicSubstance Calcifediol,total_calories,0.27664328,6-89
+"['PharmacologicSubstance', 'Biotin']",<http://purl.bioontology.org/ontology/UATC/A11HA05>,PharmacologicSubstance Biotin,,,
+"['PharmacologicSubstance', 'Mineral Supplements']",<http://purl.bioontology.org/ontology/UATC/A12>,PharmacologicSubstance Mineral Supplements,,,
+"['PharmacologicSubstance', 'Calcium, Combinations with Vitamin D and/or Other Drugs']",<http://purl.bioontology.org/ontology/UATC/A12AX>,"PharmacologicSubstance Calcium, Combinations with Vitamin D and/or Other Drugs",alternate,0.21091703,21-4
+"['PharmacologicSubstance', 'Tonics']",<http://purl.bioontology.org/ontology/UATC/A13>,PharmacologicSubstance Tonics,onset_limb_type_lower-distal-limb,0.15110342,17-88
+"['PharmacologicSubstance', 'Anabolic Agents for Systemic Use']",<http://purl.bioontology.org/ontology/UATC/A14>,PharmacologicSubstance Anabolic Agents for Systemic Use,,,
+"['PharmacologicSubstance', 'Appetite Stimulants']",<http://purl.bioontology.org/ontology/UATC/A15>,PharmacologicSubstance Appetite Stimulants,,,
+"['PharmacologicSubstance', 'Other Alimentary Tract and Metabolism']",<http://purl.bioontology.org/ontology/UATC/A16>,PharmacologicSubstance Other Alimentary Tract and Metabolism,,,
+"['PharmacologicSubstance', 'Ademetionine']",<http://purl.bioontology.org/ontology/UATC/A16AA02>,PharmacologicSubstance Ademetionine,Creatinine_upper_range,0.20751855,17-23
+"['PharmacologicSubstance', 'Blood and Blood Forming Organs']",<http://purl.bioontology.org/ontology/UATC/B>,PharmacologicSubstance Blood and Blood Forming Organs,HDL_Cholesterol_unit,0.19360523,25-32
+"['PharmacologicSubstance', 'Antithrombotic Agents']",<http://purl.bioontology.org/ontology/UATC/B01>,PharmacologicSubstance Antithrombotic Agents,,,
+"['PharmacologicSubstance', 'Warfarin']",<http://purl.bioontology.org/ontology/UATC/B01AA03>,PharmacologicSubstance Warfarin,,,
+"['PharmacologicSubstance', 'Clopidogrel']",<http://purl.bioontology.org/ontology/UATC/B01AC04>,PharmacologicSubstance Clopidogrel,,,
+"['PharmacologicSubstance', 'Ticlopidine']",<http://purl.bioontology.org/ontology/UATC/B01AC05>,PharmacologicSubstance Ticlopidine,,,
+"['PharmacologicSubstance', 'Prasugrel']",<http://purl.bioontology.org/ontology/UATC/B01AC22>,PharmacologicSubstance Prasugrel,param_PP,0.16385138,19-11
+"['PharmacologicSubstance', 'Rivaroxaban']",<http://purl.bioontology.org/ontology/UATC/B01AF01>,PharmacologicSubstance Rivaroxaban,,,
+"['PharmacologicSubstance', 'Antihemorrhagics']",<http://purl.bioontology.org/ontology/UATC/B02>,PharmacologicSubstance Antihemorrhagics,,,
+"['PharmacologicSubstance', 'Antianemic Preparations']",<http://purl.bioontology.org/ontology/UATC/B03>,PharmacologicSubstance Antianemic Preparations,,,
+"['PharmacologicSubstance', 'Cyanocobalamin']",<http://purl.bioontology.org/ontology/UATC/B03BA01>,PharmacologicSubstance Cyanocobalamin,centre_turin,0.17525698,10-6
+"['PharmacologicSubstance', 'Blood Substitutes and Perfusion Solutions']",<http://purl.bioontology.org/ontology/UATC/B05>,PharmacologicSubstance Blood Substitutes and Perfusion Solutions,,,
+"['PharmacologicSubstance', 'Other Hematological Agents']",<http://purl.bioontology.org/ontology/UATC/B06>,PharmacologicSubstance Other Hematological Agents,,,
+"['PharmacologicSubstance', 'Cardiovascular System']",<http://purl.bioontology.org/ontology/UATC/C>,PharmacologicSubstance Cardiovascular System,heart_rate_r2,0.28204775,6-51
+"['PharmacologicSubstance', 'Cardiac Therapy']",<http://purl.bioontology.org/ontology/UATC/C01>,PharmacologicSubstance Cardiac Therapy,heart_rate_min_time,0.2219258,6-48
+"['PharmacologicSubstance', 'Amiodarone']",<http://purl.bioontology.org/ontology/UATC/C01BD01>,PharmacologicSubstance Amiodarone,,,
+"['PharmacologicSubstance', 'Antihypertensives']",<http://purl.bioontology.org/ontology/UATC/C02>,PharmacologicSubstance Antihypertensives,hypertension_True,0.31705526,17-186
+"['PharmacologicSubstance', 'Diuretics']",<http://purl.bioontology.org/ontology/UATC/C03>,PharmacologicSubstance Diuretics,,,
+"['PharmacologicSubstance', 'Furosemide']",<http://purl.bioontology.org/ontology/UATC/C03CA01>,PharmacologicSubstance Furosemide,,,
+"['PharmacologicSubstance', 'Peripheral Vasodilators']",<http://purl.bioontology.org/ontology/UATC/C04>,PharmacologicSubstance Peripheral Vasodilators,respiration_alpha2_DimRange,0.19369066,6-68
+"['PharmacologicSubstance', 'Nicergoline']",<http://purl.bioontology.org/ontology/UATC/C04AE02>,PharmacologicSubstance Nicergoline,HDL_Cholesterol_upper_range,0.20033845,25-31
+"['PharmacologicSubstance', 'Vasoprotectives']",<http://purl.bioontology.org/ontology/UATC/C05>,PharmacologicSubstance Vasoprotectives,,,
+"['PharmacologicSubstance', 'Beta Blocking Agents']",<http://purl.bioontology.org/ontology/UATC/C07>,PharmacologicSubstance Beta Blocking Agents,,,
+"['PharmacologicSubstance', 'Propanolol']",<http://purl.bioontology.org/ontology/UATC/C07AA05>,PharmacologicSubstance Propanolol,,,
+"['PharmacologicSubstance', 'Atenolol']",<http://purl.bioontology.org/ontology/UATC/C07AB03>,PharmacologicSubstance Atenolol,,,
+"['PharmacologicSubstance', 'Bisoprolol']",<http://purl.bioontology.org/ontology/UATC/C07AB07>,PharmacologicSubstance Bisoprolol,,,
+"['PharmacologicSubstance', 'Nebivolol']",<http://purl.bioontology.org/ontology/UATC/C07AB12>,PharmacologicSubstance Nebivolol,,,
+"['PharmacologicSubstance', 'Atenolol and Other Diuretics']",<http://purl.bioontology.org/ontology/UATC/C07CB03>,PharmacologicSubstance Atenolol and Other Diuretics,,,
+"['PharmacologicSubstance', 'Calcium Channel Blockers']",<http://purl.bioontology.org/ontology/UATC/C08>,PharmacologicSubstance Calcium Channel Blockers,,,
+"['PharmacologicSubstance', 'Amlodipine']",<http://purl.bioontology.org/ontology/UATC/C08CA01>,PharmacologicSubstance Amlodipine,,,
+"['PharmacologicSubstance', 'Barnidipine']",<http://purl.bioontology.org/ontology/UATC/C08CA12>,PharmacologicSubstance Barnidipine,,,
+"['PharmacologicSubstance', 'Lercanidipine']",<http://purl.bioontology.org/ontology/UATC/C08CA13>,PharmacologicSubstance Lercanidipine,,,
+"['PharmacologicSubstance', 'Verapamil']",<http://purl.bioontology.org/ontology/UATC/C08DA01>,PharmacologicSubstance Verapamil,,,
+"['PharmacologicSubstance', 'Agents Acting on the Renin-Angiotensin System']",<http://purl.bioontology.org/ontology/UATC/C09>,PharmacologicSubstance Agents Acting on the Renin-Angiotensin System,,,
+"['PharmacologicSubstance', 'ACE Inhibitors, Plain']",<http://purl.bioontology.org/ontology/UATC/C09AA>,"PharmacologicSubstance ACE Inhibitors, Plain",,,
+"['PharmacologicSubstance', 'Enalapril']",<http://purl.bioontology.org/ontology/UATC/C09AA02>,PharmacologicSubstance Enalapril,,,
+"['PharmacologicSubstance', 'Ramipril']",<http://purl.bioontology.org/ontology/UATC/C09AA05>,PharmacologicSubstance Ramipril,LDL_Cholesterol_unit,0.19934359,17-36
+"['PharmacologicSubstance', 'Perindopril and Amlodipine']",<http://purl.bioontology.org/ontology/UATC/C09BB04>,PharmacologicSubstance Perindopril and Amlodipine,,,
+"['PharmacologicSubstance', 'Losartan']",<http://purl.bioontology.org/ontology/UATC/C09CA01>,PharmacologicSubstance Losartan,prevalentLMN_True,0.26825058,25-80
+"['PharmacologicSubstance', 'Telmisartan']",<http://purl.bioontology.org/ontology/UATC/C09CA07>,PharmacologicSubstance Telmisartan,param_TN,0.22188976,27-16
+"['PharmacologicSubstance', 'Olmesartan Medoxomil']",<http://purl.bioontology.org/ontology/UATC/C09CA08>,PharmacologicSubstance Olmesartan Medoxomil,,,
+"['PharmacologicSubstance', 'Lipid Modifying Agents']",<http://purl.bioontology.org/ontology/UATC/C10>,PharmacologicSubstance Lipid Modifying Agents,Triglycerides_lower_range,0.2766018,25-38
+"['PharmacologicSubstance', 'Simvastatin']",<http://purl.bioontology.org/ontology/UATC/C10AA01>,PharmacologicSubstance Simvastatin,Total_Cholesterol_upper_range,0.25717863,25-27
+"['PharmacologicSubstance', 'Atrovastatin']",<http://purl.bioontology.org/ontology/UATC/C10AA05>,PharmacologicSubstance Atrovastatin,,,
+"['PharmacologicSubstance', 'Dermatologicals']",<http://purl.bioontology.org/ontology/UATC/D>,PharmacologicSubstance Dermatologicals,,,
+"['PharmacologicSubstance', 'Antifungals for Dermatological Use']",<http://purl.bioontology.org/ontology/UATC/D01>,PharmacologicSubstance Antifungals for Dermatological Use,,,
+"['PharmacologicSubstance', 'Emollients and Protectives']",<http://purl.bioontology.org/ontology/UATC/D02>,PharmacologicSubstance Emollients and Protectives,,,
+"['PharmacologicSubstance', 'Preparations for Treatment of Wounds and Ulcers']",<http://purl.bioontology.org/ontology/UATC/D03>,PharmacologicSubstance Preparations for Treatment of Wounds and Ulcers,,,
+"['PharmacologicSubstance', 'Antipruritics, incl. Antihistamines, Anesthetics, etc.']",<http://purl.bioontology.org/ontology/UATC/D04>,"PharmacologicSubstance Antipruritics, incl. Antihistamines, Anesthetics, etc.",,,
+"['PharmacologicSubstance', 'Antipsoriatics']",<http://purl.bioontology.org/ontology/UATC/D05>,PharmacologicSubstance Antipsoriatics,,,
+"['PharmacologicSubstance', 'Antibiotics and Chemotherapeutics for Dermatological Use']",<http://purl.bioontology.org/ontology/UATC/D06>,PharmacologicSubstance Antibiotics and Chemotherapeutics for Dermatological Use,,,
+"['PharmacologicSubstance', 'Corticosteroids, Dermatological Preparations']",<http://purl.bioontology.org/ontology/UATC/D07>,"PharmacologicSubstance Corticosteroids, Dermatological Preparations",,,
+"['PharmacologicSubstance', 'Hydrocortisone']",<http://purl.bioontology.org/ontology/UATC/D07AA02>,PharmacologicSubstance Hydrocortisone,,,
+"['PharmacologicSubstance', 'Antispetic and Disinfectants']",<http://purl.bioontology.org/ontology/UATC/D08>,PharmacologicSubstance Antispetic and Disinfectants,callCount,0.18563616,21-8
+"['PharmacologicSubstance', 'Medicated Dressings']",<http://purl.bioontology.org/ontology/UATC/D09>,PharmacologicSubstance Medicated Dressings,3_PASS,0.17255858,20-8
+"['PharmacologicSubstance', 'Anti-Acne Preparations']",<http://purl.bioontology.org/ontology/UATC/D10>,PharmacologicSubstance Anti-Acne Preparations,,,
+"['PharmacologicSubstance', 'Other Dermatological Preparations']",<http://purl.bioontology.org/ontology/UATC/D11>,PharmacologicSubstance Other Dermatological Preparations,,,
+"['PharmacologicSubstance', 'Genito Urinary System and Sex Hormones']",<http://purl.bioontology.org/ontology/UATC/G>,PharmacologicSubstance Genito Urinary System and Sex Hormones,svType_DUP,0.25808686,21-14
+"['PharmacologicSubstance', 'Gynecological Antiinfectives and Antiseptics']",<http://purl.bioontology.org/ontology/UATC/G01>,PharmacologicSubstance Gynecological Antiinfectives and Antiseptics,,,
+"['PharmacologicSubstance', 'Other Gynecologicals']",<http://purl.bioontology.org/ontology/UATC/G02>,PharmacologicSubstance Other Gynecologicals,,,
+"['PharmacologicSubstance', 'Sex Hormones and Modulators of the Genital System']",<http://purl.bioontology.org/ontology/UATC/G03>,PharmacologicSubstance Sex Hormones and Modulators of the Genital System,sex_Male,0.28755268,25-71
+"['PharmacologicSubstance', 'Desogestrel and Ethinylestradiol']",<http://purl.bioontology.org/ontology/UATC/G03AA09>,PharmacologicSubstance Desogestrel and Ethinylestradiol,,,
+"['PharmacologicSubstance', 'Drospirenone and Ethinylestradiol']",<http://purl.bioontology.org/ontology/UATC/G03AA12>,PharmacologicSubstance Drospirenone and Ethinylestradiol,,,
+"['PharmacologicSubstance', 'Progestogens and Estrogens Systemic Contraceptives, Sequential Preparations']",<http://purl.bioontology.org/ontology/UATC/G03AB>,"PharmacologicSubstance Progestogens and Estrogens Systemic Contraceptives, Sequential Preparations",,,
+"['PharmacologicSubstance', 'Urologicals']",<http://purl.bioontology.org/ontology/UATC/G04>,PharmacologicSubstance Urologicals,,,
+"['PharmacologicSubstance', 'Oxybutynin']",<http://purl.bioontology.org/ontology/UATC/G04BD04>,PharmacologicSubstance Oxybutynin,,,
+"['PharmacologicSubstance', 'Tolterodine']",<http://purl.bioontology.org/ontology/UATC/G04BD07>,PharmacologicSubstance Tolterodine,,,
+"['PharmacologicSubstance', 'Trospium']",<http://purl.bioontology.org/ontology/UATC/G04BD09>,PharmacologicSubstance Trospium,,,
+"['PharmacologicSubstance', 'Sildenafil']",<http://purl.bioontology.org/ontology/UATC/G04BE03>,PharmacologicSubstance Sildenafil,,,
+"['PharmacologicSubstance', 'Tamsulosin']",<http://purl.bioontology.org/ontology/UATC/G04CA02>,PharmacologicSubstance Tamsulosin,,,
+"['PharmacologicSubstance', 'Systemic Hormonal Preparations, excl. Sex Hormones and Insulins']",<http://purl.bioontology.org/ontology/UATC/H>,"PharmacologicSubstance Systemic Hormonal Preparations, excl. Sex Hormones and Insulins",sex_Female,0.15098786,17-70
+"['PharmacologicSubstance', 'Pituitary and Hypothalamic Hormones and Analogues']",<http://purl.bioontology.org/ontology/UATC/H01>,PharmacologicSubstance Pituitary and Hypothalamic Hormones and Analogues,,,
+"['PharmacologicSubstance', 'Corticotropin']",<http://purl.bioontology.org/ontology/UATC/H01AA01>,PharmacologicSubstance Corticotropin,Q7,0.1570498,8-7
+"['PharmacologicSubstance', 'Tetracosactide']",<http://purl.bioontology.org/ontology/UATC/H01AA02>,PharmacologicSubstance Tetracosactide,,,
+"['PharmacologicSubstance', 'Corticosteroids for Systemic Use']",<http://purl.bioontology.org/ontology/UATC/H02>,PharmacologicSubstance Corticosteroids for Systemic Use,,,
+"['PharmacologicSubstance', 'Glucocorticoids, Systemic']",<http://purl.bioontology.org/ontology/UATC/H02AB>,"PharmacologicSubstance Glucocorticoids, Systemic",,,
+"['PharmacologicSubstance', 'Betamethasone']",<http://purl.bioontology.org/ontology/UATC/H02AB01>,PharmacologicSubstance Betamethasone,,,
+"['PharmacologicSubstance', 'Dexamethasone']",<http://purl.bioontology.org/ontology/UATC/H02AB02>,PharmacologicSubstance Dexamethasone,,,
+"['PharmacologicSubstance', 'Methylprednisolone']",<http://purl.bioontology.org/ontology/UATC/H02AB04>,PharmacologicSubstance Methylprednisolone,respiration_SD2SD1,0.20751122,6-59
+"['PharmacologicSubstance', 'Prednisolone']",<http://purl.bioontology.org/ontology/UATC/H02AB06>,PharmacologicSubstance Prednisolone,,,
+"['PharmacologicSubstance', 'Prednisone']",<http://purl.bioontology.org/ontology/UATC/H02AB07>,PharmacologicSubstance Prednisone,,,
+"['PharmacologicSubstance', 'Hydrocortisone']",<http://purl.bioontology.org/ontology/UATC/H02AB09>,PharmacologicSubstance Hydrocortisone,,,
+"['PharmacologicSubstance', 'Deflazacort']",<http://purl.bioontology.org/ontology/UATC/H02AB13>,PharmacologicSubstance Deflazacort,prevalentLMN_True,0.15196855,17-80
+"['PharmacologicSubstance', 'Thyroid Therapy']",<http://purl.bioontology.org/ontology/UATC/H03>,PharmacologicSubstance Thyroid Therapy,,,
+"['PharmacologicSubstance', 'Levothyroxine Sodium']",<http://purl.bioontology.org/ontology/UATC/H03AA01>,PharmacologicSubstance Levothyroxine Sodium,,,
+"['PharmacologicSubstance', 'Thiamazole']",<http://purl.bioontology.org/ontology/UATC/H03BB02>,PharmacologicSubstance Thiamazole,,,
+"['PharmacologicSubstance', 'Pancreatic Hormones']",<http://purl.bioontology.org/ontology/UATC/H04>,PharmacologicSubstance Pancreatic Hormones,,,
+"['PharmacologicSubstance', 'Calcium Homeostasis']",<http://purl.bioontology.org/ontology/UATC/H05>,PharmacologicSubstance Calcium Homeostasis,spo2_CA,0.18887822,6-74
+"['PharmacologicSubstance', 'Antiinfectives for Systemic Use']",<http://purl.bioontology.org/ontology/UATC/J>,PharmacologicSubstance Antiinfectives for Systemic Use,,,
+"['PharmacologicSubstance', 'Antibacterials for Systemic Use']",<http://purl.bioontology.org/ontology/UATC/J01>,PharmacologicSubstance Antibacterials for Systemic Use,,,
+"['PharmacologicSubstance', 'Amoxicillin and Beta-Lactamase Inhibitor']",<http://purl.bioontology.org/ontology/UATC/J01CR02>,PharmacologicSubstance Amoxicillin and Beta-Lactamase Inhibitor,,,
+"['PharmacologicSubstance', 'Ceftriaxone']",<http://purl.bioontology.org/ontology/UATC/J01DD04>,PharmacologicSubstance Ceftriaxone,,,
+"['PharmacologicSubstance', 'Antimycotics for Systemic Use']",<http://purl.bioontology.org/ontology/UATC/J02>,PharmacologicSubstance Antimycotics for Systemic Use,,,
+"['PharmacologicSubstance', 'Antimycobacterials']",<http://purl.bioontology.org/ontology/UATC/J04>,PharmacologicSubstance Antimycobacterials,,,
+"['PharmacologicSubstance', 'Rifampicin']",<http://purl.bioontology.org/ontology/UATC/J04AB02>,PharmacologicSubstance Rifampicin,,,
+"['PharmacologicSubstance', 'Antivirals for Systemic Use']",<http://purl.bioontology.org/ontology/UATC/J05>,PharmacologicSubstance Antivirals for Systemic Use,,,
+"['PharmacologicSubstance', 'Aciclovir']",<http://purl.bioontology.org/ontology/UATC/J05AB01>,PharmacologicSubstance Aciclovir,source_APP,0.20155145,8-13
+"['PharmacologicSubstance', 'Valaciclovir']",<http://purl.bioontology.org/ontology/UATC/J05AB11>,PharmacologicSubstance Valaciclovir,beat_to_beat_cvi,0.19609812,6-22
+"['PharmacologicSubstance', 'Immune Sera and Immunoglobulins']",<http://purl.bioontology.org/ontology/UATC/J06>,PharmacologicSubstance Immune Sera and Immunoglobulins,,,
+"['PharmacologicSubstance', 'Immunoglobulins, Normal Human, for Intravascular Adm.']",<http://purl.bioontology.org/ontology/UATC/J06BA02>,"PharmacologicSubstance Immunoglobulins, Normal Human, for Intravascular Adm.",LDL_Cholesterol_lower_range,0.17936938,17-34
+"['PharmacologicSubstance', 'Tetanus Immunoglobulin']",<http://purl.bioontology.org/ontology/UATC/J06BB02>,PharmacologicSubstance Tetanus Immunoglobulin,,,
+"['PharmacologicSubstance', 'Vaccines']",<http://purl.bioontology.org/ontology/UATC/J07>,PharmacologicSubstance Vaccines,,,
+"['PharmacologicSubstance', 'Diphtheria Vaccines']",<http://purl.bioontology.org/ontology/UATC/J07AF>,PharmacologicSubstance Diphtheria Vaccines,Creatinine_lower_range,0.16490315,25-22
+"['PharmacologicSubstance', 'Hepatitis B, Purified Antigen']",<http://purl.bioontology.org/ontology/UATC/J07BC01>,"PharmacologicSubstance Hepatitis B, Purified Antigen",,,
+"['PharmacologicSubstance', 'Poliomyelitis, Trivalent, Inactivated, Whole Virus']",<http://purl.bioontology.org/ontology/UATC/J07BF03>,"PharmacologicSubstance Poliomyelitis, Trivalent, Inactivated, Whole Virus",,,
+"['PharmacologicSubstance', 'Other Vaccines']",<http://purl.bioontology.org/ontology/UATC/J07BX>,PharmacologicSubstance Other Vaccines,,,
+"['PharmacologicSubstance', 'Antineoplastic and Immunomodulating Agents']",<http://purl.bioontology.org/ontology/UATC/L>,PharmacologicSubstance Antineoplastic and Immunomodulating Agents,,,
+"['PharmacologicSubstance', 'Antineoplastic Agents']",<http://purl.bioontology.org/ontology/UATC/L01>,PharmacologicSubstance Antineoplastic Agents,,,
+"['PharmacologicSubstance', 'Cyclophosphamide']",<http://purl.bioontology.org/ontology/UATC/L01AA01>,PharmacologicSubstance Cyclophosphamide,,,
+"['PharmacologicSubstance', 'Methotrexate']",<http://purl.bioontology.org/ontology/UATC/L01BA01>,PharmacologicSubstance Methotrexate,,,
+"['PharmacologicSubstance', 'Cladribine']",<http://purl.bioontology.org/ontology/UATC/L01BB04>,PharmacologicSubstance Cladribine,,,
+"['PharmacologicSubstance', 'Mitoxantrone']",<http://purl.bioontology.org/ontology/UATC/L01DB07>,PharmacologicSubstance Mitoxantrone,,,
+"['PharmacologicSubstance', 'Alectinib']",<http://purl.bioontology.org/ontology/UATC/L01ED03>,PharmacologicSubstance Alectinib,beat_to_beat_sdNNI2,0.17549759,6-37
+"['PharmacologicSubstance', 'Rituximab']",<http://purl.bioontology.org/ontology/UATC/L01XC02>,PharmacologicSubstance Rituximab,,,
+"['PharmacologicSubstance', 'Trastuzumab']",<http://purl.bioontology.org/ontology/UATC/L01XC03>,PharmacologicSubstance Trastuzumab,,,
+"['PharmacologicSubstance', 'Endocrine Therapy']",<http://purl.bioontology.org/ontology/UATC/L02>,PharmacologicSubstance Endocrine Therapy,,,
+"['PharmacologicSubstance', 'Tamoxifen']",<http://purl.bioontology.org/ontology/UATC/L02BA01>,PharmacologicSubstance Tamoxifen,,,
+"['PharmacologicSubstance', 'Immunostimulants']",<http://purl.bioontology.org/ontology/UATC/L03>,PharmacologicSubstance Immunostimulants,,,
+"['PharmacologicSubstance', 'Interferon Beta Natural']",<http://purl.bioontology.org/ontology/UATC/L03AB02>,PharmacologicSubstance Interferon Beta Natural,chromosome,0.19188303,21-0
+"['PharmacologicSubstance', 'Interferon Beta-1a']",<http://purl.bioontology.org/ontology/UATC/L03AB07>,PharmacologicSubstance Interferon Beta-1a,,,
+"['PharmacologicSubstance', 'Interferon Beta-1b']",<http://purl.bioontology.org/ontology/UATC/L03AB08>,PharmacologicSubstance Interferon Beta-1b,,,
+"['PharmacologicSubstance', 'Peginterferon Alfa-2b']",<http://purl.bioontology.org/ontology/UATC/L03AB10>,PharmacologicSubstance Peginterferon Alfa-2b,Type_PEG,0.24090883,16-5
+"['PharmacologicSubstance', 'Peginterferon Beta-1a']",<http://purl.bioontology.org/ontology/UATC/L03AB13>,PharmacologicSubstance Peginterferon Beta-1a,onset_limb_type_upper-distal-right-limb,0.15841119,17-104
+"['PharmacologicSubstance', 'BCG Vaccine']",<http://purl.bioontology.org/ontology/UATC/L03AX03>,PharmacologicSubstance BCG Vaccine,PM25_who,0.19766572,0-3
+"['PharmacologicSubstance', 'Glatiramer Acetate']",<http://purl.bioontology.org/ontology/UATC/L03AX13>,PharmacologicSubstance Glatiramer Acetate,,,
+"['PharmacologicSubstance', 'Immunosuppressants']",<http://purl.bioontology.org/ontology/UATC/L04>,PharmacologicSubstance Immunosuppressants,,,
+"['PharmacologicSubstance', 'Natalizumab']",<http://purl.bioontology.org/ontology/UATC/L04AA23>,PharmacologicSubstance Natalizumab,ms_in_pediatric_age,0.15067182,12-0
+"['PharmacologicSubstance', 'Fingolimod']",<http://purl.bioontology.org/ontology/UATC/L04AA27>,PharmacologicSubstance Fingolimod,,,
+"['PharmacologicSubstance', 'Teriflunomide']",<http://purl.bioontology.org/ontology/UATC/L04AA31>,PharmacologicSubstance Teriflunomide,,,
+"['PharmacologicSubstance', 'Alemtuzumab']",<http://purl.bioontology.org/ontology/UATC/L04AA34>,PharmacologicSubstance Alemtuzumab,,,
+"['PharmacologicSubstance', 'Ocrelizumab']",<http://purl.bioontology.org/ontology/UATC/L04AA36>,PharmacologicSubstance Ocrelizumab,,,
+"['PharmacologicSubstance', 'Cladribine']",<http://purl.bioontology.org/ontology/UATC/L04AA40>,PharmacologicSubstance Cladribine,,,
+"['PharmacologicSubstance', 'Siponimod']",<http://purl.bioontology.org/ontology/UATC/L04AA42>,PharmacologicSubstance Siponimod,,,
+"['PharmacologicSubstance', 'Daclizumab']",<http://purl.bioontology.org/ontology/UATC/L04AC01>,PharmacologicSubstance Daclizumab,,,
+"['PharmacologicSubstance', 'Ustekinumab']",<http://purl.bioontology.org/ontology/UATC/L04AC05>,PharmacologicSubstance Ustekinumab,alsfrs_r_tot_score,0.22072041,26-3
+"['PharmacologicSubstance', 'Tocilizumab']",<http://purl.bioontology.org/ontology/UATC/L04AC07>,PharmacologicSubstance Tocilizumab,,,
+"['PharmacologicSubstance', 'Secukinumab']",<http://purl.bioontology.org/ontology/UATC/L04AC10>,PharmacologicSubstance Secukinumab,,,
+"['PharmacologicSubstance', 'Azathioprine']",<http://purl.bioontology.org/ontology/UATC/L04AX01>,PharmacologicSubstance Azathioprine,,,
+"['PharmacologicSubstance', 'Methotrexate']",<http://purl.bioontology.org/ontology/UATC/L04AX03>,PharmacologicSubstance Methotrexate,,,
+"['PharmacologicSubstance', 'Dimethyl Fumarate']",<http://purl.bioontology.org/ontology/UATC/L04AX07>,PharmacologicSubstance Dimethyl Fumarate,,,
+"['PharmacologicSubstance', 'Musculo-Skeletal System']",<http://purl.bioontology.org/ontology/UATC/M>,PharmacologicSubstance Musculo-Skeletal System,onset_limb_type_upper-limb,0.25063983,25-107
+"['PharmacologicSubstance', 'Antiinflammatory and Antirheumatic Products']",<http://purl.bioontology.org/ontology/UATC/M01>,PharmacologicSubstance Antiinflammatory and Antirheumatic Products,,,
+"['PharmacologicSubstance', 'Indometacin']",<http://purl.bioontology.org/ontology/UATC/M01AB01>,PharmacologicSubstance Indometacin,,,
+"['PharmacologicSubstance', 'Ketorolac']",<http://purl.bioontology.org/ontology/UATC/M01AB15>,PharmacologicSubstance Ketorolac,,,
+"['PharmacologicSubstance', 'Ibuprofen']",<http://purl.bioontology.org/ontology/UATC/M01AE01>,PharmacologicSubstance Ibuprofen,,,
+"['PharmacologicSubstance', 'Etoricoxib']",<http://purl.bioontology.org/ontology/UATC/M01AH05>,PharmacologicSubstance Etoricoxib,,,
+"['PharmacologicSubstance', 'Topical Products for Joint and Muscular Pain']",<http://purl.bioontology.org/ontology/UATC/M02>,PharmacologicSubstance Topical Products for Joint and Muscular Pain,,,
+"['PharmacologicSubstance', 'Muscle Relaxants']",<http://purl.bioontology.org/ontology/UATC/M03>,PharmacologicSubstance Muscle Relaxants,onset_limb_type_lower-limb,0.17784616,17-94
+"['PharmacologicSubstance', 'Botulinum Toxin']",<http://purl.bioontology.org/ontology/UATC/M03AX01>,PharmacologicSubstance Botulinum Toxin,,,
+"['PharmacologicSubstance', 'Baclofen']",<http://purl.bioontology.org/ontology/UATC/M03BX01>,PharmacologicSubstance Baclofen,,,
+"['PharmacologicSubstance', 'Tizanidine']",<http://purl.bioontology.org/ontology/UATC/M03BX02>,PharmacologicSubstance Tizanidine,,,
+"['PharmacologicSubstance', 'Dantrolene']",<http://purl.bioontology.org/ontology/UATC/M03CA01>,PharmacologicSubstance Dantrolene,,,
+"['PharmacologicSubstance', 'Antigout Preparations']",<http://purl.bioontology.org/ontology/UATC/M04>,PharmacologicSubstance Antigout Preparations,,,
+"['PharmacologicSubstance', 'Drugs for Treatment of Bone Diseases']",<http://purl.bioontology.org/ontology/UATC/M05>,PharmacologicSubstance Drugs for Treatment of Bone Diseases,thoracic_spine_surgery_more_than_5_years,0.1640495,17-54
+"['PharmacologicSubstance', 'Denosumab']",<http://purl.bioontology.org/ontology/UATC/M05BX04>,PharmacologicSubstance Denosumab,respiration_DFA_alpha2,0.23209909,6-55
+"['PharmacologicSubstance', 'Other Drugs for Disorders of the Musculo-Skeletal System']",<http://purl.bioontology.org/ontology/UATC/M09>,PharmacologicSubstance Other Drugs for Disorders of the Musculo-Skeletal System,onset_limb_type_upper-right-limb,0.20901844,25-115
+"['PharmacologicSubstance', 'Nervous System']",<http://purl.bioontology.org/ontology/UATC/N>,PharmacologicSubstance Nervous System,spo2_MED,0.24461836,6-78
+"['PharmacologicSubstance', 'Anesthetics']",<http://purl.bioontology.org/ontology/UATC/N01>,PharmacologicSubstance Anesthetics,,,
+"['PharmacologicSubstance', 'Analgesics']",<http://purl.bioontology.org/ontology/UATC/N02>,PharmacologicSubstance Analgesics,respiration_SD1,0.17038375,6-57
+"['PharmacologicSubstance', 'Codeine, Combinations excl. Psycholeptics']",<http://purl.bioontology.org/ontology/UATC/N02AA59>,"PharmacologicSubstance Codeine, Combinations excl. Psycholeptics",location_right,0.26004672,14-9
+"['PharmacologicSubstance', 'Acetylsalicylic Acid, Combinations excl. Psycholeptics']",<http://purl.bioontology.org/ontology/UATC/N02BA51>,"PharmacologicSubstance Acetylsalicylic Acid, Combinations excl. Psycholeptics",location_left,0.17048763,14-6
+"['PharmacologicSubstance', 'Paracetamol']",<http://purl.bioontology.org/ontology/UATC/N02BE01>,PharmacologicSubstance Paracetamol,,,
+"['PharmacologicSubstance', 'Cannabinoids']",<http://purl.bioontology.org/ontology/UATC/N02BG10>,PharmacologicSubstance Cannabinoids,smoking_startYear,0.15708885,25-11
+"['PharmacologicSubstance', 'Zolmitriptan']",<http://purl.bioontology.org/ontology/UATC/N02CC03>,PharmacologicSubstance Zolmitriptan,,,
+"['PharmacologicSubstance', 'Antiepileptics']",<http://purl.bioontology.org/ontology/UATC/N03>,PharmacologicSubstance Antiepileptics,,,
+"['PharmacologicSubstance', 'Phenobarbital']",<http://purl.bioontology.org/ontology/UATC/N03AA02>,PharmacologicSubstance Phenobarbital,,,
+"['PharmacologicSubstance', 'Barbexaclone']",<http://purl.bioontology.org/ontology/UATC/N03AA04>,PharmacologicSubstance Barbexaclone,,,
+"['PharmacologicSubstance', 'Phenytoin']",<http://purl.bioontology.org/ontology/UATC/N03AB02>,PharmacologicSubstance Phenytoin,,,
+"['PharmacologicSubstance', 'Clonazepam']",<http://purl.bioontology.org/ontology/UATC/N03AE01>,PharmacologicSubstance Clonazepam,,,
+"['PharmacologicSubstance', 'Carbamazepine']",<http://purl.bioontology.org/ontology/UATC/N03AF01>,PharmacologicSubstance Carbamazepine,,,
+"['PharmacologicSubstance', 'Oxcarbazepine']",<http://purl.bioontology.org/ontology/UATC/N03AF02>,PharmacologicSubstance Oxcarbazepine,,,
+"['PharmacologicSubstance', 'Valproic Acid']",<http://purl.bioontology.org/ontology/UATC/N03AG01>,PharmacologicSubstance Valproic Acid,,,
+"['PharmacologicSubstance', 'Vigabatrin']",<http://purl.bioontology.org/ontology/UATC/N03AG04>,PharmacologicSubstance Vigabatrin,,,
+"['PharmacologicSubstance', 'Lamotrigine']",<http://purl.bioontology.org/ontology/UATC/N03AX09>,PharmacologicSubstance Lamotrigine,LDL_Cholesterol_level,0.1559342,17-33
+"['PharmacologicSubstance', 'Topiramate']",<http://purl.bioontology.org/ontology/UATC/N03AX11>,PharmacologicSubstance Topiramate,eye_symptom,0.150201,12-5
+"['PharmacologicSubstance', 'Gabapentin']",<http://purl.bioontology.org/ontology/UATC/N03AX12>,PharmacologicSubstance Gabapentin,,,
+"['PharmacologicSubstance', 'Levetiracetam']",<http://purl.bioontology.org/ontology/UATC/N03AX14>,PharmacologicSubstance Levetiracetam,,,
+"['PharmacologicSubstance', 'Pregabalin']",<http://purl.bioontology.org/ontology/UATC/N03AX16>,PharmacologicSubstance Pregabalin,,,
+"['PharmacologicSubstance', 'Anti-Parkinson Drugs']",<http://purl.bioontology.org/ontology/UATC/N04>,PharmacologicSubstance Anti-Parkinson Drugs,beat_to_beat_sdaNN2,0.15530682,6-40
+"['PharmacologicSubstance', 'Levodopa and Decarboxylase Inhibitor']",<http://purl.bioontology.org/ontology/UATC/N04BA02>,PharmacologicSubstance Levodopa and Decarboxylase Inhibitor,,,
+"['PharmacologicSubstance', 'Amantadine']",<http://purl.bioontology.org/ontology/UATC/N04BB01>,PharmacologicSubstance Amantadine,,,
+"['PharmacologicSubstance', 'Ropinirole']",<http://purl.bioontology.org/ontology/UATC/N04BC04>,PharmacologicSubstance Ropinirole,,,
+"['PharmacologicSubstance', 'Pramipexole']",<http://purl.bioontology.org/ontology/UATC/N04BC05>,PharmacologicSubstance Pramipexole,,,
+"['PharmacologicSubstance', 'Cabergoline']",<http://purl.bioontology.org/ontology/UATC/N04BC06>,PharmacologicSubstance Cabergoline,,,
+"['PharmacologicSubstance', 'Psycholeptics']",<http://purl.bioontology.org/ontology/UATC/N05>,PharmacologicSubstance Psycholeptics,location_lower right,0.19988799,14-8
+"['PharmacologicSubstance', 'Zuclopenthixol']",<http://purl.bioontology.org/ontology/UATC/N05AF05>,PharmacologicSubstance Zuclopenthixol,Q5,0.16949168,5-4
+"['PharmacologicSubstance', 'Olanzapine']",<http://purl.bioontology.org/ontology/UATC/N05AH03>,PharmacologicSubstance Olanzapine,,,
+"['PharmacologicSubstance', 'Quetiapine']",<http://purl.bioontology.org/ontology/UATC/N05AH04>,PharmacologicSubstance Quetiapine,param_QQ,0.15032342,19-12
+"['PharmacologicSubstance', 'Paliperidone']",<http://purl.bioontology.org/ontology/UATC/N05AX13>,PharmacologicSubstance Paliperidone,,,
+"['PharmacologicSubstance', 'Diazepam']",<http://purl.bioontology.org/ontology/UATC/N05BA01>,PharmacologicSubstance Diazepam,,,
+"['PharmacologicSubstance', 'Bromazepam']",<http://purl.bioontology.org/ontology/UATC/N05BA08>,PharmacologicSubstance Bromazepam,,,
+"['PharmacologicSubstance', 'Clobazam']",<http://purl.bioontology.org/ontology/UATC/N05BA09>,PharmacologicSubstance Clobazam,param_PM10,0.1525768,19-9
+"['PharmacologicSubstance', 'Prazepam']",<http://purl.bioontology.org/ontology/UATC/N05BA11>,PharmacologicSubstance Prazepam,param_PP,0.19993418,27-11
+"['PharmacologicSubstance', 'Alprazolam']",<http://purl.bioontology.org/ontology/UATC/N05BA12>,PharmacologicSubstance Alprazolam,,,
+"['PharmacologicSubstance', 'Etizolam']",<http://purl.bioontology.org/ontology/UATC/N05BA19>,PharmacologicSubstance Etizolam,Triglycerides_unit,0.18059844,17-40
+"['PharmacologicSubstance', 'Hypnotics and Sedatives']",<http://purl.bioontology.org/ontology/UATC/N05C>,PharmacologicSubstance Hypnotics and Sedatives,Creatinine_unit,0.18814829,17-24
+"['PharmacologicSubstance', 'Flurazepam']",<http://purl.bioontology.org/ontology/UATC/N05CD01>,PharmacologicSubstance Flurazepam,,,
+"['PharmacologicSubstance', 'Triazolam']",<http://purl.bioontology.org/ontology/UATC/N05CD05>,PharmacologicSubstance Triazolam,,,
+"['PharmacologicSubstance', 'Brotizolam']",<http://purl.bioontology.org/ontology/UATC/N05CD09>,PharmacologicSubstance Brotizolam,,,
+"['PharmacologicSubstance', 'Zolpidem']",<http://purl.bioontology.org/ontology/UATC/N05CF02>,PharmacologicSubstance Zolpidem,spo2_ZC,0.21692781,6-85
+"['PharmacologicSubstance', 'Melatonin']",<http://purl.bioontology.org/ontology/UATC/N05CH01>,PharmacologicSubstance Melatonin,,,
+"['PharmacologicSubstance', 'Psychoanaleptics']",<http://purl.bioontology.org/ontology/UATC/N06>,PharmacologicSubstance Psychoanaleptics,potential_value,0.23331764,14-0
+"['PharmacologicSubstance', 'Amitriptyline']",<http://purl.bioontology.org/ontology/UATC/N06AA09>,PharmacologicSubstance Amitriptyline,slope,0.15691887,25-69
+"['PharmacologicSubstance', 'Fluoxetine']",<http://purl.bioontology.org/ontology/UATC/N06AB03>,PharmacologicSubstance Fluoxetine,,,
+"['PharmacologicSubstance', 'Citalopram']",<http://purl.bioontology.org/ontology/UATC/N06AB04>,PharmacologicSubstance Citalopram,sampleCount,0.19382833,21-9
+"['PharmacologicSubstance', 'Paroxetine']",<http://purl.bioontology.org/ontology/UATC/N06AB05>,PharmacologicSubstance Paroxetine,,,
+"['PharmacologicSubstance', 'Sertraline']",<http://purl.bioontology.org/ontology/UATC/N06AB06>,PharmacologicSubstance Sertraline,PM25_mean,0.18189542,0-2
+"['PharmacologicSubstance', 'Escitalopram']",<http://purl.bioontology.org/ontology/UATC/N06AB10>,PharmacologicSubstance Escitalopram,,,
+"['PharmacologicSubstance', 'Trazodone']",<http://purl.bioontology.org/ontology/UATC/N06AX05>,PharmacologicSubstance Trazodone,,,
+"['PharmacologicSubstance', 'Mitrazapine']",<http://purl.bioontology.org/ontology/UATC/N06AX11>,PharmacologicSubstance Mitrazapine,,,
+"['PharmacologicSubstance', 'Venlafaxine']",<http://purl.bioontology.org/ontology/UATC/N06AX16>,PharmacologicSubstance Venlafaxine,Creatinine_unit,0.15090781,25-24
+"['PharmacologicSubstance', 'Reboxetine']",<http://purl.bioontology.org/ontology/UATC/N06AX18>,PharmacologicSubstance Reboxetine,,,
+"['PharmacologicSubstance', 'Modafinil']",<http://purl.bioontology.org/ontology/UATC/N06BA07>,PharmacologicSubstance Modafinil,,,
+"['PharmacologicSubstance', 'Acetylcarnitine']",<http://purl.bioontology.org/ontology/UATC/N06BX12>,PharmacologicSubstance Acetylcarnitine,,,
+"['PharmacologicSubstance', 'Amitriptyline and Psycholeptics']",<http://purl.bioontology.org/ontology/UATC/N06CA01>,PharmacologicSubstance Amitriptyline and Psycholeptics,onset_limb_type_upper-lower-distal-proximal-left-right-limb,0.16528367,17-109
+"['PharmacologicSubstance', 'Rivastigmine']",<http://purl.bioontology.org/ontology/UATC/N06DA03>,PharmacologicSubstance Rivastigmine,,,
+"['PharmacologicSubstance', 'Other Nervous System Drugs']",<http://purl.bioontology.org/ontology/UATC/N07>,PharmacologicSubstance Other Nervous System Drugs,centre_pavia,0.2568221,14-12
+"['PharmacologicSubstance', 'Naltrexone']",<http://purl.bioontology.org/ontology/UATC/N07BB04>,PharmacologicSubstance Naltrexone,,,
+"['PharmacologicSubstance', 'Betahistine']",<http://purl.bioontology.org/ontology/UATC/N07CA01>,PharmacologicSubstance Betahistine,,,
+"['PharmacologicSubstance', 'Cinnarizine']",<http://purl.bioontology.org/ontology/UATC/N07CA02>,PharmacologicSubstance Cinnarizine,3_rs548419688,0.22540733,20-10
+"['PharmacologicSubstance', 'Flunarizine']",<http://purl.bioontology.org/ontology/UATC/N07CA03>,PharmacologicSubstance Flunarizine,,,
+"['PharmacologicSubstance', 'Cinnarizine, Combinations']",<http://purl.bioontology.org/ontology/UATC/N07CA52>,"PharmacologicSubstance Cinnarizine, Combinations",frequency,0.2459568,21-10
+"['PharmacologicSubstance', 'Riluzole']",<http://purl.bioontology.org/ontology/UATC/N07XX02>,PharmacologicSubstance Riluzole,,,
+"['PharmacologicSubstance', 'Fampridine']",<http://purl.bioontology.org/ontology/UATC/N07XX07>,PharmacologicSubstance Fampridine,,,
+"['PharmacologicSubstance', 'Antiparastic Products, Insecticides and Repllents']",<http://purl.bioontology.org/ontology/UATC/P>,"PharmacologicSubstance Antiparastic Products, Insecticides and Repllents",,,
+"['PharmacologicSubstance', 'Antiprotozoals']",<http://purl.bioontology.org/ontology/UATC/P01>,PharmacologicSubstance Antiprotozoals,,,
+"['PharmacologicSubstance', 'Hydroxychloroquine']",<http://purl.bioontology.org/ontology/UATC/P01BA02>,PharmacologicSubstance Hydroxychloroquine,,,
+"['PharmacologicSubstance', 'Anthelmintics']",<http://purl.bioontology.org/ontology/UATC/P02>,PharmacologicSubstance Anthelmintics,,,
+"['PharmacologicSubstance', 'Ectoparasiticides, incl. Scabicides, Insecticides and Repellents']",<http://purl.bioontology.org/ontology/UATC/P03>,"PharmacologicSubstance Ectoparasiticides, incl. Scabicides, Insecticides and Repellents",,,
+"['PharmacologicSubstance', 'Respiratory System']",<http://purl.bioontology.org/ontology/UATC/R>,PharmacologicSubstance Respiratory System,respiration_SampEn,0.30023104,6-62
+"['PharmacologicSubstance', 'Nasal Preparations']",<http://purl.bioontology.org/ontology/UATC/R01>,PharmacologicSubstance Nasal Preparations,,,
+"['PharmacologicSubstance', 'Throat Preparations']",<http://purl.bioontology.org/ontology/UATC/R02>,PharmacologicSubstance Throat Preparations,,,
+"['PharmacologicSubstance', 'Drugs for Obstructive Airway Diseases']",<http://purl.bioontology.org/ontology/UATC/R03>,PharmacologicSubstance Drugs for Obstructive Airway Diseases,respiration_SD2,0.18437757,6-58
+"['PharmacologicSubstance', 'Cough and Cold Preparations']",<http://purl.bioontology.org/ontology/UATC/R05>,PharmacologicSubstance Cough and Cold Preparations,average_temperature_num,0.17610183,0-29
+"['PharmacologicSubstance', 'Antihistamines for Systemic Use']",<http://purl.bioontology.org/ontology/UATC/R06>,PharmacologicSubstance Antihistamines for Systemic Use,,,
+"['PharmacologicSubstance', 'Chlorphenamine']",<http://purl.bioontology.org/ontology/UATC/R06AB04>,PharmacologicSubstance Chlorphenamine,,,
+"['PharmacologicSubstance', 'Thiethylperazine']",<http://purl.bioontology.org/ontology/UATC/R06AD03>,PharmacologicSubstance Thiethylperazine,,,
+"['PharmacologicSubstance', 'Cetirizine']",<http://purl.bioontology.org/ontology/UATC/R06AE07>,PharmacologicSubstance Cetirizine,3_10505,0.19214207,20-4
+"['PharmacologicSubstance', 'Other Respiratory System Products']",<http://purl.bioontology.org/ontology/UATC/R07>,PharmacologicSubstance Other Respiratory System Products,respiration_ApEn,0.27405626,6-53
+"['PharmacologicSubstance', 'Sensory Organs']",<http://purl.bioontology.org/ontology/UATC/S>,PharmacologicSubstance Sensory Organs,spo2_POD,0.19951487,6-82
+"['PharmacologicSubstance', 'Ophthalmologicals']",<http://purl.bioontology.org/ontology/UATC/S01>,PharmacologicSubstance Ophthalmologicals,,,
+"['PharmacologicSubstance', 'Otologicals']",<http://purl.bioontology.org/ontology/UATC/S02>,PharmacologicSubstance Otologicals,,,
+"['PharmacologicSubstance', 'Ophthalmologicals and Otologicals Products']",<http://purl.bioontology.org/ontology/UATC/S03>,PharmacologicSubstance Ophthalmologicals and Otologicals Products,,,
+"['PharmacologicSubstance', 'Various']",<http://purl.bioontology.org/ontology/UATC/V>,PharmacologicSubstance Various,Creatinine_lower_range,0.25945103,17-22
+"['PharmacologicSubstance', 'Allergens']",<http://purl.bioontology.org/ontology/UATC/V01>,PharmacologicSubstance Allergens,,,
+"['PharmacologicSubstance', 'All Other Therapeutic Products']",<http://purl.bioontology.org/ontology/UATC/V03>,PharmacologicSubstance All Other Therapeutic Products,,,
+"['PharmacologicSubstance', 'Calcium Folinate']",<http://purl.bioontology.org/ontology/UATC/V03AF03>,PharmacologicSubstance Calcium Folinate,,,
+"['PharmacologicSubstance', 'Diagnostic Agents']",<http://purl.bioontology.org/ontology/UATC/V04>,PharmacologicSubstance Diagnostic Agents,diagnostic_delay,0.20122889,12-2
+"['PharmacologicSubstance', 'General Nutrients']",<http://purl.bioontology.org/ontology/UATC/V06>,PharmacologicSubstance General Nutrients,Triglycerides_upper_range,0.24213158,25-39
+"['PharmacologicSubstance', 'All Other Non-Therapeutic Products']",<http://purl.bioontology.org/ontology/UATC/V07>,PharmacologicSubstance All Other Non-Therapeutic Products,,,
+"['PharmacologicSubstance', 'Contrast Media']",<http://purl.bioontology.org/ontology/UATC/V08>,PharmacologicSubstance Contrast Media,respiration_alpha1_DimRange,0.18822181,6-64
+"['PharmacologicSubstance', 'Diagnostic Radiopharmaceuticals']",<http://purl.bioontology.org/ontology/UATC/V09>,PharmacologicSubstance Diagnostic Radiopharmaceuticals,,,
+"['PharmacologicSubstance', 'Therapeutic Radiopharmaceuticals']",<http://purl.bioontology.org/ontology/UATC/V10>,PharmacologicSubstance Therapeutic Radiopharmaceuticals,,,
+"['PharmacologicSubstance', 'Surgical Dressings']",<http://purl.bioontology.org/ontology/UATC/V20>,PharmacologicSubstance Surgical Dressings,,,
+"['PharmacologicSubstance', 'Dietary Supplement']",<http://purl.obolibrary.org/obo/NCIT_C1505>,PharmacologicSubstance Dietary Supplement,Total_Cholesterol_lower_range,0.15815343,25-26
+"['PharmacologicSubstance', 'Alpha-Lipoic Acid']",<http://purl.obolibrary.org/obo/NCIT_C61595>,PharmacologicSubstance Alpha-Lipoic Acid,Triglycerides_unit,0.22164805,25-40
+"['PharmacologicSubstance', 'Covid-19 Vaccines']",<https://w3id.org/brainteaser/ontology/schema/J07BX03>,PharmacologicSubstance Covid-19 Vaccines,3_GT,0.16249074,20-7
+"['PharmacologicSubstance', 'BG-12']",<https://w3id.org/brainteaser/ontology/schema/N07XX09>,PharmacologicSubstance BG-12,Q12,0.2103743,8-12
+"['PharmacologicSubstance', 'Ecunerv']",<https://w3id.org/brainteaser/ontology/schema/ecunerv>,PharmacologicSubstance Ecunerv,beat_to_beat_hcvNN,0.30849785,6-24
+"['Place', 'placeArea']",<https://w3id.org/brainteaser/ontology/schema/placeArea>,Place placeArea,,,
+"['Place', 'zipCode']",<https://w3id.org/brainteaser/ontology/schema/zipCode>,Place zipCode,residence_classification_Rural Area,0.16805468,3-11
+"['Place', 'zipHashed']",<https://w3id.org/brainteaser/ontology/schema/zipHashed>,Place zipHashed,,,
+"['Pregnancy', 'pregnancyComplications']",<https://w3id.org/brainteaser/ontology/schema/pregnancyComplications>,Pregnancy pregnancyComplications,,,
+"['Pregnancy', 'pregnancyEnd']",<https://w3id.org/brainteaser/ontology/schema/pregnancyEnd>,Pregnancy pregnancyEnd,,,
+"['Pregnancy', 'pregnancyEndEvent']",<https://w3id.org/brainteaser/ontology/schema/pregnancyEndEvent>,Pregnancy pregnancyEndEvent,,,
+"['Pregnancy', 'pregnancyStart']",<https://w3id.org/brainteaser/ontology/schema/pregnancyStart>,Pregnancy pregnancyStart,,,
+"['Relapse', 'coexistingPregnancy']",<https://w3id.org/brainteaser/ontology/schema/coexistingPregnancy>,Relapse coexistingPregnancy,,,
+"['Relapse', 'requiredMRI']",<https://w3id.org/brainteaser/ontology/schema/requiredMRI>,Relapse requiredMRI,PM25_num,0.2201415,0-1
+"['Relapse', 'bowelAndBladderRelapse']",<https://w3id.org/brainteaser/ontology/schema/bowelAndBladderRelapse>,Relapse bowelAndBladderRelapse,,,
+"['Relapse', 'brainstemRelapse']",<https://w3id.org/brainteaser/ontology/schema/brainsetmRelapse>,Relapse brainstemRelapse,delta_relapse_time0,0.4678631,9-0
+"['Relapse', 'cerebellarRelapse']",<https://w3id.org/brainteaser/ontology/schema/cerebellarRelapse>,Relapse cerebellarRelapse,cervical_spine_surgery_last_5_years,0.25805512,17-51
+"['Relapse', 'cognitiveRelapse']",<https://w3id.org/brainteaser/ontology/schema/cognitiveRelapse>,Relapse cognitiveRelapse,steps_12_am-6_am,0.22428532,6-86
+"['Relapse', 'otherRelapse']",<https://w3id.org/brainteaser/ontology/schema/otherRelapse>,Relapse otherRelapse,,,
+"['Relapse', 'pyramidalRelapse']",<https://w3id.org/brainteaser/ontology/schema/pyramidalRelapse>,Relapse pyramidalRelapse,,,
+"['Relapse', 'relapseClinicalTherapy']",<https://w3id.org/brainteaser/ontology/schema/relapseClinicalTherapy>,Relapse relapseClinicalTherapy,,,
+"['Relapse', 'relapseCortisoneTherapy']",<https://w3id.org/brainteaser/ontology/schema/relapseCortisoneTherapy>,Relapse relapseCortisoneTherapy,,,
+"['Relapse', 'relapseDuration']",<https://w3id.org/brainteaser/ontology/schema/relapseDuration>,Relapse relapseDuration,,,
+"['Relapse', 'relapseEnd']",<https://w3id.org/brainteaser/ontology/schema/relapseEnd>,Relapse relapseEnd,,,
+"['Relapse', 'relapseHospitalAdmission']",<https://w3id.org/brainteaser/ontology/schema/relapseHospitalAdmission>,Relapse relapseHospitalAdmission,steps_12_pm-6_pm,0.16890791,6-87
+"['Relapse', 'relapseImpactOnADL']",<https://w3id.org/brainteaser/ontology/schema/relapseImpactOnADL>,Relapse relapseImpactOnADL,steps_6_am-12_pm,0.16414396,6-88
+"['Relapse', 'relapseRecovery']",<https://w3id.org/brainteaser/ontology/schema/relapseRecovery>,Relapse relapseRecovery,total_steps,0.15820219,6-90
+"['Relapse', 'relapseSequela']",<https://w3id.org/brainteaser/ontology/schema/relapseSequela>,Relapse relapseSequela,,,
+"['Relapse', 'relapseSeverity']",<https://w3id.org/brainteaser/ontology/schema/relapseSeverity>,Relapse relapseSeverity,,,
+"['Relapse', 'relapseStart']",<https://w3id.org/brainteaser/ontology/schema/relapseStart>,Relapse relapseStart,,,
+"['Relapse', 'sensoryRelapse']",<https://w3id.org/brainteaser/ontology/schema/sensoryRelapse>,Relapse sensoryRelapse,sensory,0.28253186,2-3
+"['Relapse', 'visualRelapse']",<https://w3id.org/brainteaser/ontology/schema/visualRelapse>,Relapse visualRelapse,,,
+"['Residence', 'placeLocation']",<https://w3id.org/brainteaser/ontology/schema/placeLocation>,Residence placeLocation,residence_classification_Cities,0.24646944,3-10
+"['Residence', 'residenceEnd']",<https://w3id.org/brainteaser/ontology/schema/residenceEnd>,Residence residenceEnd,residence_classification_Rural Area,0.22632368,12-11
+"['Residence', 'residenceStart']",<https://w3id.org/brainteaser/ontology/schema/residenceStart>,Residence residenceStart,residence_classification_Towns,0.24001077,3-12
+"['Surgical Procedure Type', 'Operative Procedure on Upper Extremity']",<http://purl.bioontology.org/ontology/SNOMEDCT/107769006>,Surgical Procedure Type Operative Procedure on Upper Extremity,upper_limb_surgery_more_than_5_years,0.2583931,25-58
+"['Surgical Procedure Type', 'Surgical Procedure on Lower Extremity']",<http://purl.bioontology.org/ontology/SNOMEDCT/107784002>,Surgical Procedure Type Surgical Procedure on Lower Extremity,lower_limb_surgery_last_5_years,0.25892028,25-59
+"['Surgical Procedure Type', 'Cone Biopsy']",<http://purl.bioontology.org/ontology/SNOMEDCT/110469002>,Surgical Procedure Type Cone Biopsy,bulbar_subscore,0.19074295,18-4
+"['Surgical Procedure Type', 'Partial Cystectomy']",<http://purl.bioontology.org/ontology/SNOMEDCT/112902005>,Surgical Procedure Type Partial Cystectomy,,,
+"['Surgical Procedure Type', 'Excision of Benign Neoplasm']",<http://purl.bioontology.org/ontology/SNOMEDCT/118445002>,Surgical Procedure Type Excision of Benign Neoplasm,,,
+"['Surgical Procedure Type', 'Thyroid Gland Excision']",<http://purl.bioontology.org/ontology/SNOMEDCT/13619001>,Surgical Procedure Type Thyroid Gland Excision,,,
+"['Surgical Procedure Type', 'Abdominoplasty']",<http://purl.bioontology.org/ontology/SNOMEDCT/177250006>,Surgical Procedure Type Abdominoplasty,,,
+"['Surgical Procedure Type', 'Operation on Abdominal Region']",<http://purl.bioontology.org/ontology/SNOMEDCT/21371007>,Surgical Procedure Type Operation on Abdominal Region,abdominal_surgery_last_5_years,0.2548277,25-61
+"['Surgical Procedure Type', 'Coronary Artery Bypass Graft']",<http://purl.bioontology.org/ontology/SNOMEDCT/232717009>,Surgical Procedure Type Coronary Artery Bypass Graft,,,
+"['Surgical Procedure Type', 'Percutaneous Endoscopic Gastrostomy (PEG)']",<http://purl.bioontology.org/ontology/SNOMEDCT/235159007>,Surgical Procedure Type Percutaneous Endoscopic Gastrostomy (PEG),,,
+"['Surgical Procedure Type', ""Drainage of Bartholin's Abscess""]",<http://purl.bioontology.org/ontology/SNOMEDCT/236825001>,Surgical Procedure Type Drainage of Bartholin's Abscess,,,
+"['Surgical Procedure Type', 'Hysterectomy']",<http://purl.bioontology.org/ontology/SNOMEDCT/236886002>,Surgical Procedure Type Hysterectomy,cervical_spine_surgery_last_5_years,0.1830684,25-51
+"['Surgical Procedure Type', 'Cardioversion']",<http://purl.bioontology.org/ontology/SNOMEDCT/250980009>,Surgical Procedure Type Cardioversion,thoracic_surgery_more_than_5_years,0.23238781,17-64
+"['Surgical Procedure Type', 'Removal of Acoustic Neuroma']",<http://purl.bioontology.org/ontology/SNOMEDCT/300009002>,Surgical Procedure Type Removal of Acoustic Neuroma,source_CT,0.2661299,8-14
+"['Surgical Procedure Type', 'Excision of Basal Cell Carcinoma']",<http://purl.bioontology.org/ontology/SNOMEDCT/300025007>,Surgical Procedure Type Excision of Basal Cell Carcinoma,,,
+"['Surgical Procedure Type', 'Head and Neck Approaches']",<http://purl.bioontology.org/ontology/SNOMEDCT/311801003>,Surgical Procedure Type Head and Neck Approaches,head_neck_surgery_more_than_5_years,0.3852566,17-68
+"['Surgical Procedure Type', 'Excision of Neoplasm']",<http://purl.bioontology.org/ontology/SNOMEDCT/370612006>,Surgical Procedure Type Excision of Neoplasm,,,
+"['Surgical Procedure Type', 'Cholecystectomy']",<http://purl.bioontology.org/ontology/SNOMEDCT/38102005>,Surgical Procedure Type Cholecystectomy,,,
+"['Surgical Procedure Type', 'Surgical Procedure on Thorax']",<http://purl.bioontology.org/ontology/SNOMEDCT/385487005>,Surgical Procedure Type Surgical Procedure on Thorax,thoracic_spine_surgery_last_5_years,0.32775497,25-53
+"['Surgical Procedure Type', 'Excision of Cyst']",<http://purl.bioontology.org/ontology/SNOMEDCT/428297005>,Surgical Procedure Type Excision of Cyst,,,
+"['Surgical Procedure Type', 'Operative Procedure on Lumbosacral Spinal Structure']",<http://purl.bioontology.org/ontology/SNOMEDCT/428402007>,Surgical Procedure Type Operative Procedure on Lumbosacral Spinal Structure,lumbo_sacral_spine_surgery_more_than_5_years,0.5046257,25-56
+"['Surgical Procedure Type', 'Surgical Procedure on Cervical Spine']",<http://purl.bioontology.org/ontology/SNOMEDCT/428490009>,Surgical Procedure Type Surgical Procedure on Cervical Spine,cervical_spine_surgery_more_than_5_years,0.44803947,25-52
+"['Surgical Procedure Type', 'Operative Procedure on Thoracic Spinal Structure']",<http://purl.bioontology.org/ontology/SNOMEDCT/428614005>,Surgical Procedure Type Operative Procedure on Thoracic Spinal Structure,thoracic_spine_surgery_more_than_5_years,0.44298527,25-54
+"['Surgical Procedure Type', 'Gastryc Bypass']",<http://purl.bioontology.org/ontology/SNOMEDCT/442338001>,Surgical Procedure Type Gastryc Bypass,lower_limb_surgery_more_than_5_years,0.17193118,17-60
+"['Surgical Procedure Type', 'Insertion of Implantable Intrathecal Access System']",<http://purl.bioontology.org/ontology/SNOMEDCT/445968009>,Surgical Procedure Type Insertion of Implantable Intrathecal Access System,,,
+"['Surgical Procedure Type', 'Emergency Tracheostomy']",<http://purl.bioontology.org/ontology/SNOMEDCT/55622001>,Surgical Procedure Type Emergency Tracheostomy,thoracic_surgery_last_5_years,0.22335838,17-63
+"['Surgical Procedure Type', 'Procedure on Pelvic Region of Trunk']",<http://purl.bioontology.org/ontology/SNOMEDCT/609637006>,Surgical Procedure Type Procedure on Pelvic Region of Trunk,pelvic_surgery_more_than_5_years,0.22753268,25-66
+"['Surgical Procedure Type', 'Excision of dermatofibroma']",<http://purl.bioontology.org/ontology/SNOMEDCT/700074001>,Surgical Procedure Type Excision of dermatofibroma,,,
+"['Surgical Procedure Type', 'Repair of Bladder']",<http://purl.bioontology.org/ontology/SNOMEDCT/74146001>,Surgical Procedure Type Repair of Bladder,,,
+"['Surgical Procedure Type', 'Appendectomy']",<http://purl.bioontology.org/ontology/SNOMEDCT/80146002>,Surgical Procedure Type Appendectomy,upper_limb_surgery_last_5_years,0.17555226,17-57
+"['Surgical Procedure Type', 'Transurethral Prostatectomy']",<http://purl.bioontology.org/ontology/SNOMEDCT/90199006>,Surgical Procedure Type Transurethral Prostatectomy,,,
+"['Surgical Procedure Type', 'Gastroplasty']",<http://purl.bioontology.org/ontology/SNOMEDCT/9429009>,Surgical Procedure Type Gastroplasty,,,
+"['Surgical Procedure Type', 'Head and Neck Surgery']",<http://purl.obolibrary.org/obo/NCIT_C15454>,Surgical Procedure Type Head and Neck Surgery,head_neck_surgery_more_than_5_years,0.40722352,25-68
+"['Therapeutic Procedure Type', 'Plasmapheresis']",<http://purl.obolibrary.org/obo/NCIT_C15304>,Therapeutic Procedure Type Plasmapheresis,,,
+"['Therapeutic Procedure Type', 'Non-Invasive Mechanical Ventilation (NIV)']",<http://purl.obolibrary.org/obo/NCIT_C171457>,Therapeutic Procedure Type Non-Invasive Mechanical Ventilation (NIV),thoracic_surgery_last_5_years,0.19203162,25-63
+"['Therapeutic Procedure Type', 'Anticonvulsant Agent']",<http://purl.obolibrary.org/obo/NCIT_C264>,Therapeutic Procedure Type Anticonvulsant Agent,centre_pavia,0.16274545,10-5
+"['Therapeutic Procedure Type', 'Cortisone Therapy for Relapse']",<https://w3id.org/brainteaser/ontology/schema/CortisoneTherapyForRelapse>,Therapeutic Procedure Type Cortisone Therapy for Relapse,CO_mean,0.16349164,0-8
+"['Therapeutic Procedure Type', 'Drugs for MS Symptomatic Therapy']",<https://w3id.org/brainteaser/ontology/schema/DrugsForMSSymptomaticTherapy>,Therapeutic Procedure Type Drugs for MS Symptomatic Therapy,diagnosis_criteria_detail_MS according to McDonald 2001,0.4720249,3-17
+"['Therapeutic Procedure Type', 'Drugs for MS Therapy Side Effects']",<https://w3id.org/brainteaser/ontology/schema/DrugsForMSTherapySideEffects>,Therapeutic Procedure Type Drugs for MS Therapy Side Effects,diagnosis_criteria_detail_MS according to McDonald 2017,0.4078396,3-19
+"['Therapeutic Procedure Type', 'Drugs for Other Diseases']",<https://w3id.org/brainteaser/ontology/schema/DrugsForOtherDiseases>,Therapeutic Procedure Type Drugs for Other Diseases,lower_limb_surgery_last_5_years,0.16214591,17-59
+"['Therapeutic Procedure Type', 'Immunoactive Drugs']",<https://w3id.org/brainteaser/ontology/schema/ImmunoactiveDrugs>,Therapeutic Procedure Type Immunoactive Drugs,,,
+"['Therapeutic Treatment', 'administration']",<https://w3id.org/brainteaser/ontology/schema/administration>,Therapeutic Treatment administration,q8,0.18048097,18-14
+"['Therapeutic Treatment', 'pharmacologicSubstance']",<https://w3id.org/brainteaser/ontology/schema/pharmacologicSubstance>,Therapeutic Treatment pharmacologicSubstance,,,
+"['Therapeutic Treatment', 'therapyType']",<https://w3id.org/brainteaser/ontology/schema/therapyType>,Therapeutic Treatment therapyType,Type_NONE,0.21716681,16-4
+"['Trauma', 'traumaDate']",<https://w3id.org/brainteaser/ontology/schema/traumaDate>,Trauma traumaDate,major_trauma_before_onset_True,0.5233995,25-200
+"['Trauma', 'traumaDescription']",<https://w3id.org/brainteaser/ontology/schema/traumaDescription>,Trauma traumaDescription,major_trauma_before_onset_False,0.49408874,25-199

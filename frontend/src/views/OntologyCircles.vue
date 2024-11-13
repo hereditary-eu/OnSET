@@ -21,7 +21,16 @@ watch(() => { graph_data.value }, () => {
 onMounted(() => {
     circleman.clicked_node = (node: NodeType) => {
         console.log('clicked_node', node)
-        // expandGraph(node as SubjectInGraph)
+        api.classes.getLinksClassesLinksGet({
+            subject_id: node.subject_id
+        }).then(resp => {
+            console.log('resp', resp)
+            circleman.removeLinks()
+            const links = resp.data
+            for (const out of links.targets) {
+                circleman.addLink(links.source.subject_id, out.target.subject_id, out.count)
+            }
+        }).catch(console.error)
     }
     (async () => {
         const resp = await api.classes.getFullClassesClassesFullGet()
@@ -47,6 +56,6 @@ onMounted(() => {
     align-items: center;
     height: 70vh;
     width: 80;
-    background-color: #f0f0f0;
+    background-color: #ffffff;
 }
 </style>
