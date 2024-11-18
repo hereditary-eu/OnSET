@@ -2,7 +2,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from pydantic import BaseModel, Field
 from rdflib import Graph, URIRef, Literal
-from typing import List, Optional
+from typing import List, Optional,Any
 
 from sqlalchemy import ForeignKey, String, create_engine, select
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship, Session
@@ -15,7 +15,7 @@ class Base(DeclarativeBase):
 class Subject(BaseModel):
     subject_id: str
     label: str
-    spos: dict[str, list[str]]
+    spos: dict[str, list[str|Any]]
     subject_type: str = "class"
     refcount: int = 0
     descendants: dict[str, list[Subject]] = Field({})
