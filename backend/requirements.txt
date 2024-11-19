@@ -10,3 +10,4 @@ fastapi
 sentence-transformers
 SQLAlchemy
 sqlmodel
+bertopic
