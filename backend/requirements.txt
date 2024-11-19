@@ -7,6 +7,14 @@ networkx
 pyvis
 rdflib[networkx,html,lxml,orjson]
 fastapi
+psycopg[binary]
 sentence-transformers
 SQLAlchemy
 sqlmodel
+torch
+jupyter
+ipywidgets
+transformers
+#CUDACXX="/usr/local/cuda-12.6/bin/nvcc" CMAKE_ARGS="-DGGML_CUDA=on" pip install llama-cpp-python
+
+
