@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field
 from rdflib import Graph, URIRef, Literal
-from .model import Subject
+from model import Subject
 import pandas as pd
 from rdflib.plugins.sparql import prepareQuery
 import numpy as np

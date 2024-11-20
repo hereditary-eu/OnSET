@@ -9,9 +9,14 @@
             "type": "debugpy",
             "request": "launch",
             "module": "uvicorn",
+            "cwd": "${workspaceFolder}/backend",
             "args": [
-                "backend:app",
-                "--reload"
+                "api:app",
+                "--reload",
+                // "--reload-include",
+                // "backend/**/*.py",
+                // "--reload-exclude",
+                // "docker/**/*",
             ],
             "jinja": true
         }

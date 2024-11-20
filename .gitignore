@@ -2,3 +2,7 @@ data
 __pycache__
 .vscode
 *.db
+*.csv
+pg-data
+pgdata
+*.pkl

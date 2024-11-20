@@ -1,5 +1,5 @@
 from hashlib import sha512
-from .ontology import *
+from ontology import *
 import regex as re
 import pandas as pd
 import numpy as np
@@ -20,7 +20,7 @@ from sqlalchemy.orm import (
 )
 from dataclasses import dataclass
 
-from .model import *
+from model import *
 
 
 def make_readable(txt: str, split_chars=["_", "-", "/", ":", "."]):
@@ -341,19 +341,19 @@ class DatasetManager:
         ] = None
         self.all_relations_filtered = all_relations_filtered
 
-        self.all_relations_filtered[
-            [
-                "path",
-                "subject_id",
-                "text",
-                "best_match_colname",
-                "best_match_score",
-                "best_match_idx",
-            ]
-        ].to_csv("all_relations_filtered.csv", index=False)
+        # self.all_relations_filtered[
+        #     [
+        #         "path",
+        #         "subject_id",
+        #         "text",
+        #         "best_match_colname",
+        #         "best_match_score",
+        #         "best_match_idx",
+        #     ]
+        # ].to_csv("all_relations_filtered.csv", index=False)
 
     def relation_row_to_relation_found(
-        self, row: pd.Series, repr: DataSetRepresentation, top_k=5
+        self, row: pd.Series,  top_k=5
     ):
         matches = []
         repr_idx, col_idx = unwrap_idx(row["best_match_idx"])
