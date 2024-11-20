@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '@/views/HomeView.vue'
 import OntologyGraph from '@/views/OntologyGraph.vue'
 import OntologyCircles from '@/views/OntologyCircles.vue'
+import OntologyExplorative from '@/views/OntologyExplorative.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -10,6 +11,11 @@ const router = createRouter({
       path: '/',
       name: 'home',
       component: HomeView
+    },
+    {
+      path: '/explorative',
+      name: 'explorative',
+      component: OntologyExplorative
     },
     {
       path: '/graph',

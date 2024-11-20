@@ -10,8 +10,9 @@ import HelloWorld from './components/HelloWorld.vue'
     <div class="wrapper">
       <nav>
         <RouterLink to="/">Home</RouterLink>
+        <RouterLink to="/explorative">Explore!</RouterLink>
+        <RouterLink to="/circles">Overview</RouterLink>
         <RouterLink to="/graph">Graph</RouterLink>
-        <RouterLink to="/circles">Circles</RouterLink>
         <RouterLink to="/about">About</RouterLink>
       </nav>
     </div>
