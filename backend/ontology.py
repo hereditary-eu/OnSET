@@ -174,12 +174,15 @@ class OntologyManager:
             outgoing_edges_dict: dict[str, list[str] | dict[str, str]] = {}
             for edge, obj in outgoing_edges:
                 edge_n3 = self.to_readable(edge)
-                if edge_n3 not in outgoing_edges_dict:
-                    outgoing_edges_dict[edge_n3] = []
+                pred_readable=None
                 if isinstance(obj, Literal) and hasattr(obj, "language"):
                     if obj.language == self.config.language or obj.language is None:
-                        outgoing_edges_dict[edge_n3].append(obj.value)
+                        pred_readable = obj.value
                 else:
+                    pred_readable = self.to_readable(obj)
+                if pred_readable is not None:
+                    if edge_n3 not in outgoing_edges_dict:
+                        outgoing_edges_dict[edge_n3] = []
                     outgoing_edges_dict[edge_n3].append(self.to_readable(obj))
 
             return outgoing_edges_dict

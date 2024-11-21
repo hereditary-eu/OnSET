@@ -85,7 +85,9 @@ class TopicModelling:
             ".".join(
                 [
                     str(e)
-                    for e in self.oman.onto.query("SELECT ?s  ?p ?o WHERE {?s ?o ?p.} LIMIT 25")
+                    for e in self.oman.onto.query(
+                        "SELECT ?s  ?p ?o WHERE {?s ?o ?p.} LIMIT 25"
+                    )
                 ]
             ).encode()
         ).hexdigest()
@@ -156,16 +158,13 @@ WHERE {
 
     def __model_topics(self):
 
-        with Session(self.engine) as session:
-            session.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
-            session.commit()
-        BasePostgres.metadata.drop_all(self.engine)
-        BasePostgres.metadata.create_all(self.engine)
         docs = self.__build_docs()
         # Create an instance of the Llama class and load the model
 
         # Create the provider by passing the Llama class instance to the LlamaCppPythonProvider class
-        representation_llama = LlamaCPP(self.llama_model, TOPIC_LLAMA3_PROMPT, diversity=0.3)
+        representation_llama = LlamaCPP(
+            self.llama_model, TOPIC_LLAMA3_PROMPT, diversity=0.3
+        )
         topic_model_llm = BERTopic(
             embedding_model=self.embedding_model,
             verbose=True,
@@ -209,7 +208,9 @@ WHERE {
         init_topics = False
         with Session(self.engine) as session:
             insp = inspect(self.engine)
-            if not insp.has_table("topics", schema="public"):
+            if not insp.has_table("topics", schema="public") or not insp.has_table(
+                "subjects", schema="public"
+            ):
                 init_topics = True
             else:
                 init_topics = (
@@ -219,6 +220,12 @@ WHERE {
                     is None
                 )
         if init_topics:
+            with Session(self.engine) as session:
+                session.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
+                session.commit()
+            BasePostgres.metadata.drop_all(self.engine)
+            BasePostgres.metadata.create_all(self.engine)
+            self.__embed_relations()
             self.__model_topics()
 
     def get_topic_tree(self) -> list[Topic]:
@@ -242,6 +249,44 @@ WHERE {
                 )
 
             return topic_tree(root_topic[0])
-    
-    
-    
+
+    def __embed_relations(self):
+
+        all_classes = self.oman.q_to_df(
+            """
+SELECT ?s
+WHERE {
+    ?s rdf:type owl:Class.
+}
+"""
+        )[0].to_list()
+        all_classes = [
+            self.oman.enrich_subject(c, load_properties=True) for c in all_classes
+        ]
+
+        with Session(self.engine) as session:
+
+            session.execute(text("SET CONSTRAINTS ALL DEFERRED"))
+            for cls in tqdm(all_classes, desc="Embedding classes"):
+                comment = cls.spos.get("rdfs:comment", [""])[0]
+                subcls = cls.spos.get("rdfs:subClassOf", [""])[0]
+                properties_desc = "\n".join(self.__get_properties_desc(cls))
+                desc = f"""{cls.label} is a {cls.subject_type} 
+                    {comment}
+                    {properties_desc}
+                    """
+
+                embedding = self.embedding_model.encode(desc)
+
+                session.add(
+                    SubjectInDB(
+                        subject_id=cls.subject_id,
+                        embedding=embedding,
+                        comment=comment if len(comment) > 0 else None,
+                        label=cls.label,
+                        onto_hash=self.identifier,
+                        parent_id=subcls if len(subcls) > 0 else None,
+                        subject_type=cls.subject_type,
+                    )
+                )
+            session.commit()
