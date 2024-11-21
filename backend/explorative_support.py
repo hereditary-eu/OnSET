@@ -235,13 +235,12 @@ WHERE {
                     topic_id=topic.topic_id,
                     topic=topic.topic,
                     count=topic.count,
-                    embedding=topic.embedding,
+                    # embedding=topic.embedding,
                     sub_topics=[
                         topic_tree(sub_topic) for sub_topic in topic.sub_topics
                     ],
                 )
 
             return topic_tree(root_topic[0])
-    
     
     
