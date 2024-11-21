@@ -1,5 +1,6 @@
 from rdflib import Graph, URIRef, Literal
 from rdflib.plugins.sparql import prepareQuery
+from rdflib.plugins.stores.sparqlstore import SPARQLStore
 import networkx as nx
 
 from typing import Union
@@ -24,12 +25,15 @@ base_path = "../data"
 onto_path = f"{base_path}/hero-ontology/hereditary_clinical.ttl"
 
 
-brainteaser_graph = Graph().parse(onto_path, format="turtle")
-brainteaser_graph.bind("bto", "http://www.semanticweb.org/ontologies/2020/3/bto#")
+# graph = Graph().parse(onto_path, format="turtle")
+# graph.bind("bto", "http://www.semanticweb.org/ontologies/2020/3/bto#")
+
+store = SPARQLStore('http://localhost:7200/repositories/dpedia')
+graph = Graph(store=store)
 
 config = OntologyConfig()
 
-ontology_manager = OntologyManager(config, brainteaser_graph)
+ontology_manager = OntologyManager(config, graph)
 dataset_manager = DatasetManager(ontology_manager)
 # dataset_manager.initialise(glob_path="data/datasets/ALS/**/*.csv")
 

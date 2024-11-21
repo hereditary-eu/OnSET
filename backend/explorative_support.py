@@ -85,7 +85,7 @@ class TopicModelling:
             ".".join(
                 [
                     str(e)
-                    for e in self.oman.onto.query("SELECT ?s  ?p ?o WHERE {?s ?o ?p.}")
+                    for e in self.oman.onto.query("SELECT ?s  ?p ?o WHERE {?s ?o ?p.} LIMIT 25")
                 ]
             ).encode()
         ).hexdigest()
