@@ -23,7 +23,7 @@ export class CircleMan {
     svg_d3: d3.Selection<SVGSVGElement, unknown, HTMLElement, any> = null
 
     color = d3.scaleLinear()
-        .domain([0, 5])
+        .domain([0, 10])
         .range(["hsl(152,80%,80%)", "hsl(228,30%,40%)"] as any)
         .interpolate(d3.interpolateHcl as any);
     color_type = d3.scaleOrdinal(d3.schemePastel2);
@@ -91,6 +91,17 @@ export class CircleMan {
 
             .padding(d => d.data.children ? 0.5 : 1)(this.hierarchy);
         console.log('root', this.root)
+        let max_depth = 0
+        this.root.each(d => {
+            if (d.depth > max_depth) {
+                max_depth = d.depth
+            }
+        })
+
+        this.color = d3.scaleLinear()
+            .domain([0, max_depth])
+            .range(["hsl(152,80%,80%)", "hsl(228,30%,40%)"] as any)
+            .interpolate(d3.interpolateHcl as any);
 
         // Create the SVG container.
         const svg = this.svg_d3

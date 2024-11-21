@@ -1,20 +1,7 @@
-from rdflib import Graph, URIRef, Literal
-from rdflib.plugins.sparql import prepareQuery
-import networkx as nx
-
-from typing import Union
 from fastapi import FastAPI, Query, File, UploadFile, Body, Form
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, Field
-from typing import Annotated
 
-from dataclasses import dataclass, field
 
-from psycopg.rows import dict_row
-import psycopg
-import requests as req
-
-import os
 from model import *
 from ontology import *
 from datasetmatcher import *
@@ -24,12 +11,19 @@ base_path = "../data"
 onto_path = f"{base_path}/hero-ontology/hereditary_clinical.ttl"
 
 
-brainteaser_graph = Graph().parse(onto_path, format="turtle")
-brainteaser_graph.bind("bto", "http://www.semanticweb.org/ontologies/2020/3/bto#")
+# graph = Graph().parse(onto_path, format="turtle")
+# graph.bind("bto", "http://www.semanticweb.org/ontologies/2020/3/bto#")
+
+store = SPARQLStore(
+    "http://localhost:7200/repositories/dpedia",
+    method="POST_FORM",
+    params={"infer": False, "sameAs": False},
+)
+graph = Graph(store=store)
 
 config = OntologyConfig()
 
-ontology_manager = OntologyManager(config, brainteaser_graph)
+ontology_manager = OntologyManager(config, graph)
 dataset_manager = DatasetManager(ontology_manager)
 # dataset_manager.initialise(glob_path="data/datasets/ALS/**/*.csv")
 

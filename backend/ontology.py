@@ -1,15 +1,15 @@
 from pydantic import BaseModel, Field
 from rdflib import Graph, URIRef, Literal
+from rdflib.plugins.stores.sparqlstore import SPARQLStore
 from model import Subject
 import pandas as pd
 from rdflib.plugins.sparql import prepareQuery
 import numpy as np
 from tqdm import tqdm
-
+import traceback
 
 from sqlalchemy import ForeignKey, String, create_engine, select
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship, Session
-
 
 
 class Prefix(BaseModel):
@@ -30,9 +30,7 @@ class OntologyConfig(BaseModel):
         description="List of prefixes to be used in the ontology",
     )
     parent_class_query: str = Field(
-        f"""PREFIX owl: <http://www.w3.org/2002/07/owl#>
-            PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-            SELECT ?cls
+        f"""SELECT ?cls
             WHERE {{
                     ?cls rdf:type owl:Class.
                     MINUS {{ ?cls rdfs:subClassOf ?sbcl}}.
@@ -42,10 +40,7 @@ class OntologyConfig(BaseModel):
         description="Query to get the parent classes",
     )
     sub_class_query: str = Field(
-        f"""
-                PREFIX owl: <http://www.w3.org/2002/07/owl#>
-                PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-                SELECT ?scls
+        f"""SELECT ?scls
                 WHERE {{
                      ?scls rdf:type owl:Class.
                      ?scls rdfs:subClassOf ?cls.
@@ -55,6 +50,9 @@ class OntologyConfig(BaseModel):
         description="Query to get the sub classes",
     )
     property_types: list[str] = Field(["ObjectProperty", "DatatypeProperty"])
+    language: str = Field(
+        "en", title="Language", description="Language of the ontology"
+    )
 
 
 class OntologyManager:
@@ -89,6 +87,17 @@ class OntologyManager:
 
     def get_root_classes(self, load_properties=False) -> list[Subject]:
         classes = self.q_to_df(self.config.parent_class_query)
+        if classes.empty:
+            # if no parent classes, return all classes belonging to owl:Thing
+            classes = self.q_to_df(
+                f"""
+                SELECT ?cls
+                WHERE {{
+                    ?cls rdf:type owl:Class.
+        			?cls rdfs:subClassOf owl:Thing.   
+                }}
+                """
+            )
         classes_list = classes[0].tolist()
         onto_classes: list[Subject] = [
             self.enrich_subject(cls, load_properties=load_properties)
@@ -106,7 +115,6 @@ class OntologyManager:
         classes = list(
             self.onto.query(
                 self.config.sub_class_query.replace("?cls", cls),
-                initBindings={"cls": cls},
             )
         )
         onto_classes: list[Subject] = [
@@ -116,10 +124,7 @@ class OntologyManager:
         return onto_classes
 
     def get_named_individuals(self, cls: str) -> list[Subject]:
-        query = f"""
-                    PREFIX owl: <http://www.w3.org/2002/07/owl#>
-                    PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-                    SELECT ?ind
+        query = f"""SELECT ?ind
                     WHERE {{
                          ?ind rdf:type owl:NamedIndividual.
                          ?ind rdf:type {cls}.
@@ -142,15 +147,12 @@ class OntologyManager:
         try:
             return list(
                 self.onto.query(
-                    f"""
-                PREFIX owl: <http://www.w3.org/2002/07/owl#>
-                PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-                SELECT ?label WHERE {{ {subject} rdfs:label ?label }}
+                    f"""SELECT ?label WHERE {{ {subject} rdfs:label ?label }}
                 """
                 )
             )[0][0].value
         except Exception as e:
-            print(e)
+            print(traceback.format_exc())
             return subject
 
     def to_readable(self, cls: str | Literal | URIRef):
@@ -166,21 +168,23 @@ class OntologyManager:
             outgoing_edges = list(
                 self.onto.query(
                     f"""
-                PREFIX owl: <http://www.w3.org/2002/07/owl#>
-                PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
                 SELECT ?edge ?obj WHERE {{ {cls} ?edge ?obj. }}"""
                 )
             )
-            outgoing_edges_dict = {}
+            outgoing_edges_dict: dict[str, list[str] | dict[str, str]] = {}
             for edge, obj in outgoing_edges:
                 edge_n3 = self.to_readable(edge)
                 if edge_n3 not in outgoing_edges_dict:
                     outgoing_edges_dict[edge_n3] = []
-                outgoing_edges_dict[edge_n3].append(self.to_readable(obj))
+                if isinstance(obj, Literal) and hasattr(obj, "language"):
+                    if obj.language == self.config.language or obj.language is None:
+                        outgoing_edges_dict[edge_n3].append(obj.value)
+                else:
+                    outgoing_edges_dict[edge_n3].append(self.to_readable(obj))
 
             return outgoing_edges_dict
         except Exception as e:
-            print(e)
+            print(traceback.format_exc())
             return {}
 
     def refcount(self, cls):
@@ -188,14 +192,12 @@ class OntologyManager:
             refcount = list(
                 self.onto.query(
                     f"""
-                PREFIX owl: <http://www.w3.org/2002/07/owl#>
-                PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
                 SELECT (COUNT(?s) as ?count) WHERE {{ ?s ?p {cls}. }}"""
                 )
             )
             return refcount[0][0].value
         except Exception as e:
-            print(e)
+            print(traceback.format_exc())
             return 0
 
     def properties_for(
@@ -205,9 +207,6 @@ class OntologyManager:
             properties = list(
                 self.onto.query(
                     f"""
-                PREFIX owl: <http://www.w3.org/2002/07/owl#>
-                PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-                PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
                 SELECT ?prop WHERE {{ 
                 ?prop rdf:type owl:{property_type}.
                 ?prop rdfs:domain {cls}.
@@ -221,7 +220,7 @@ class OntologyManager:
 
             return props_mapped
         except Exception as e:
-            print(e)
+            print(traceback.format_exc())
             return {}
 
     def enrich_subject(self, cls: str, subject_type="class", load_properties=False):
@@ -244,28 +243,28 @@ class OntologyManager:
         return subject
         # refs = self.refcount(col_ref)
 
-    def load_full_graph(self, depth=5) -> list[Subject]:
+    def load_full_graph(self, depth=10) -> list[Subject]:
         roots = self.get_root_classes(load_properties=True)[1:]
 
         def enrich_descendants(cls: Subject, d=depth):
             # print("enriching", cls.subject_id)
             cls.total_descendants = 1  # self
             if d <= 0:
-                return cls.total_descendants
+                return []
             try:
                 subclasses = self.get_classes(cls.subject_id, load_properties=True)
                 cls.descendants["subClass"] = [
                     enrich_descendants(subcls, d=d - 1) for subcls in subclasses
                 ]
             except Exception as e:
-                print(e)
+                print(traceback.format_exc())
             try:
                 named_ind = self.get_named_individuals(cls.subject_id)
                 cls.descendants["namedIndividual"] = [
                     enrich_descendants(ni, d=d - 1) for ni in named_ind
                 ]
             except Exception as e:
-                print(e)
+                print(traceback.format_exc())
 
             return cls
 
