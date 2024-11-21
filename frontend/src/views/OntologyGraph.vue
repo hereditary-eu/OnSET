@@ -4,7 +4,7 @@ import * as d3 from 'd3'
 import { Api, type Subject } from '@/api/client.ts/Api';
 import { de, fa, he } from 'vuetify/locale';
 import type { UnionType } from 'typescript';
-import { type NodeType, type SubjectInGraph, GraphMan } from '@/utils/GraphMan';
+import { type NodeType, type SubjectInGraph, GraphMan } from '@/utils/d3-man/GraphMan';
 const graph_data = ref([] as SubjectInGraph[])
 const api = new Api({
     baseURL: 'http://localhost:8000'

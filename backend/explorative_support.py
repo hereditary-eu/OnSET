@@ -7,7 +7,7 @@ from bertopic.representation import MaximalMarginalRelevance, LlamaCPP
 from llama_cpp import Llama
 from hashlib import sha256
 from explorative_model import *
-from sqlalchemy import text, inspect
+from sqlalchemy import text, inspect, create_engine, select
 
 # System prompt describes information given to all conversations
 TOPIC_LLAMA3_PROMPT_SYSTEM = """
@@ -204,7 +204,7 @@ WHERE {
                 session.add(topic)
             session.commit()
 
-    def initialize_topics(self):
+    def initialize_topics(self, force: bool = False):
         init_topics = False
         with Session(self.engine) as session:
             insp = inspect(self.engine)
@@ -219,7 +219,7 @@ WHERE {
                     ).first()
                     is None
                 )
-        if init_topics:
+        if init_topics or force:
             with Session(self.engine) as session:
                 session.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
                 session.commit()
@@ -290,3 +290,81 @@ WHERE {
                     )
                 )
             session.commit()
+            for cls in tqdm(all_classes, desc="Embedding relations"):
+                for prop in cls.properties.keys():
+                    for p in cls.properties[prop]:
+                        prop_desc = f"""{cls.label} is defined by {to_readable(p.label)} 
+                            {to_readable(p.spos.get("rdfs:range", [""])[0])}
+                            {to_readable(p.spos.get("rdfs:subPropertyOf", [""])[0])}
+                            """
+                        prop_embedding = self.embedding_model.encode(prop_desc)
+                        to_id = (
+                            p.spos["rdfs:range"][0] if "rdfs:range" in p.spos else None
+                        )
+                        to_proptype = None
+                        if to_id is not None:
+                            class_exists = session.execute(
+                                select(SubjectInDB)
+                                .where(SubjectInDB.subject_id == to_id)
+                                .limit(1)
+                            ).first()
+                            if class_exists is None:
+                                to_proptype = to_id
+                                to_id = None
+                                # print(f"Class {to_id} does not exist, skipping")
+                        session.add(
+                            SubjectLinkDB(
+                                from_id=cls.subject_id,
+                                to_id=to_id,
+                                to_proptype=to_proptype,
+                                property_id=p.subject_id,
+                                link_type=prop,
+                                onto_hash=self.identifier,
+                                embedding=prop_embedding,
+                            )
+                        )
+            session.commit()
+
+    def search_classes(self, query: str, limit=25):
+        query_embedding = self.embedding_model.encode(query)
+        with Session(self.engine) as session:
+            subjects = session.execute(
+                select(SubjectInDB)
+                .where(SubjectInDB.onto_hash == self.identifier)
+                .order_by(SubjectInDB.embedding.cosine_distance(query_embedding))
+                .limit(limit)
+            ).all()
+            subjects_enriched = [
+                self.oman.enrich_subject(s[0].subject_id) for s in subjects
+            ]
+            links = session.execute(
+                select(SubjectLinkDB)
+                .where(SubjectLinkDB.onto_hash == self.identifier)
+                .order_by(SubjectLinkDB.embedding.cosine_distance(query_embedding))
+                .limit(limit)
+            ).all()
+            links_enriched = [SubjectLink.from_db(l[0], self.oman) for l in links]
+            return FuzzyQueryResult(
+                links=links_enriched,
+                subjects=subjects_enriched,
+            )
+
+    def search_links(
+        self, querystring: str = None, from_id: str = None, to_id: str = None
+    ):
+        with Session(self.engine) as session:
+            query = select(SubjectLinkDB).where(
+                SubjectLinkDB.onto_hash == self.identifier
+            )
+            if from_id is not None:
+                query = query.where(SubjectLinkDB.from_id == from_id)
+            if to_id is not None:
+                query = query.where(SubjectLinkDB.to_id == to_id)
+            if querystring is not None:
+                query_embedding = self.embedding_model.encode(querystring)
+                query = query.order_by(
+                    SubjectLinkDB.embedding.cosine_distance(query_embedding)
+                )
+            links = session.execute(query.limit(25)).all()
+            links_enriched = [SubjectLink.from_db(l[0], self.oman) for l in links]
+            return links_enriched

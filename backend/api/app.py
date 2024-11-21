@@ -1,6 +1,7 @@
 from fastapi import FastAPI, Query, File, UploadFile, Body, Form
 from fastapi.middleware.cors import CORSMiddleware
 
+from rdflib.plugins.stores.sparqlstore import SPARQLStore
 
 from model import *
 from ontology import *
@@ -30,7 +31,7 @@ dataset_manager = DatasetManager(ontology_manager)
 # ontology_manager.load_full_graph()
 
 topic_man = TopicModelling(ontology_manager)
-
+# topic_man.initialize_topics(force=True)
 
 app = FastAPI(title="Ontology Provenance API", version="0.1.0")
 
@@ -80,13 +81,27 @@ def get_named_individuals(cls: str = Query()) -> list[Subject]:
 
 
 @app.get("/topics/root")
-def get_topics_root() -> Topic:
-    topic_man.initialize_topics()
+def get_topics_root(force_initialize: bool = Query(False)) -> Topic:
+    topic_man.initialize_topics(force_initialize)
     return topic_man.get_topic_tree()
 
 
 @app.get("/classes/links")
 def get_links(subject_id: str = Query()) -> SparseOutLinks:
-    if dataset_manager.engine is None:
+    if not hasattr(dataset_manager, "engine"):
         dataset_manager.initialise(glob_path=f"{base_path}/datasets/ALS/**/*.csv")
     return dataset_manager.target_outlinks(subject_id)
+
+
+@app.get("/classes/search")
+def search_classes(q: str = Query("working field of person")) -> FuzzyQueryResult:
+    return topic_man.search_classes(q)
+
+
+@app.get("/classes/relations")
+def get_relations(
+    q: str | None = Query(None),
+    from_id: str | None = Query(None),
+    to_id: str | None = Query(None),
+) -> list[SubjectLink]:
+    return topic_man.search_links(q, from_id, to_id)

@@ -18,6 +18,14 @@ export interface BodyLoadOntologyManagementOntologyPost {
   ontology: File;
 }
 
+/** FuzzyQueryResult */
+export interface FuzzyQueryResult {
+  /** Links */
+  links: SubjectLink[];
+  /** Subjects */
+  subjects: Subject[];
+}
+
 /** HTTPValidationError */
 export interface HTTPValidationError {
   /** Detail */
@@ -50,10 +58,6 @@ export interface Match {
 
 /** OutLink */
 export interface OutLink {
-  /**
-   * Target
-   * @default {"id":0,"path":[],"subject_id":"","text":"","matches":[]}
-   */
   target?: RelationsFound;
   /**
    * Count
@@ -127,6 +131,36 @@ export interface Subject {
    * @default {}
    */
   properties?: Record<string, Subject[]>;
+}
+
+/** SubjectLink */
+export interface SubjectLink {
+  /** Link Id */
+  link_id: number;
+  /** From Id */
+  from_id: string;
+  /** Link Type */
+  link_type: string;
+  /** To Id */
+  to_id: string | null;
+  /** To Proptype */
+  to_proptype: string | null;
+  /** Property Id */
+  property_id: string | null;
+  from_subject: Subject | null;
+  to_subject: Subject | null;
+}
+
+/** Topic */
+export interface Topic {
+  /** Topic Id */
+  topic_id: number;
+  /** Sub Topics */
+  sub_topics: Topic[];
+  /** Topic */
+  topic: string;
+  /** Count */
+  count: number;
 }
 
 /** ValidationError */
@@ -402,6 +436,83 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
     ) =>
       this.request<SparseOutLinks, HTTPValidationError>({
         path: `/classes/links`,
+        method: "GET",
+        query: query,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @name SearchClassesClassesSearchGet
+     * @summary Search Classes
+     * @request GET:/classes/search
+     */
+    searchClassesClassesSearchGet: (
+      query?: {
+        /**
+         * Q
+         * @default "working field of person"
+         */
+        q?: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<FuzzyQueryResult, HTTPValidationError>({
+        path: `/classes/search`,
+        method: "GET",
+        query: query,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @name GetRelationsClassesRelationsGet
+     * @summary Get Relations
+     * @request GET:/classes/relations
+     */
+    getRelationsClassesRelationsGet: (
+      query?: {
+        /** Q */
+        q?: string | null;
+        /** From Id */
+        from_id?: string | null;
+        /** To Id */
+        to_id?: string | null;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<SubjectLink[], HTTPValidationError>({
+        path: `/classes/relations`,
+        method: "GET",
+        query: query,
+        format: "json",
+        ...params,
+      }),
+  };
+  topics = {
+    /**
+     * No description
+     *
+     * @name GetTopicsRootTopicsRootGet
+     * @summary Get Topics Root
+     * @request GET:/topics/root
+     */
+    getTopicsRootTopicsRootGet: (
+      query?: {
+        /**
+         * Force Initialize
+         * @default false
+         */
+        force_initialize?: boolean;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<Topic, HTTPValidationError>({
+        path: `/topics/root`,
         method: "GET",
         query: query,
         format: "json",

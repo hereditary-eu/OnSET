@@ -1,15 +1,11 @@
 from pydantic import BaseModel, Field
 from rdflib import Graph, URIRef, Literal
-from rdflib.plugins.stores.sparqlstore import SPARQLStore
 from model import Subject
 import pandas as pd
 from rdflib.plugins.sparql import prepareQuery
-import numpy as np
 from tqdm import tqdm
 import traceback
 
-from sqlalchemy import ForeignKey, String, create_engine, select
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship, Session
 
 
 class Prefix(BaseModel):
@@ -226,8 +222,9 @@ class OntologyManager:
             print(traceback.format_exc())
             return {}
 
-    def enrich_subject(self, cls: str, subject_type="class", load_properties=False):
-
+    def enrich_subject(self, cls: str|None, subject_type="class", load_properties=False):
+        if cls is None:
+            return None
         col_ref = cls.n3(self.onto.namespace_manager) if hasattr(cls, "n3") else cls
 
         outgoing_edges = self.outgoing_edges_for(col_ref)

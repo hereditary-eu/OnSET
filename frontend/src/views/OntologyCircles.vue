@@ -4,13 +4,13 @@ import * as d3 from 'd3'
 import { Api, type Subject } from '@/api/client.ts/Api';
 import { de, fa, he } from 'vuetify/locale';
 import type { UnionType } from 'typescript';
-import { type NodeType, type SubjectInGraph, GraphMan } from '@/utils/GraphMan';
-import { CircleMan, SubjectInCircle } from '@/utils/CircleMan';
+import { type NodeType, type SubjectInGraph, GraphMan } from '@/utils/d3-man/GraphMan';
+import { CircleMan, SubjectInCircle } from '@/utils/d3-man/CircleMan';
 const graph_data = ref([] as SubjectInCircle[])
 
 const circleman = new CircleMan()
 const api = new Api({
-    baseURL: 'http://localhost:8001'
+    baseURL: 'http://localhost:8000'
 })
 
 watch(() => { graph_data.value }, () => {

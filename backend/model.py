@@ -1,10 +1,9 @@
 from __future__ import annotations
 from dataclasses import dataclass, field
 from pydantic import BaseModel, Field
-from rdflib import Graph, URIRef, Literal
 from typing import List, Optional, Any
 
-from sqlalchemy import ForeignKey, String, create_engine, select
+from sqlalchemy import ForeignKey
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship, Session
 
 
