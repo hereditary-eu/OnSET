@@ -36,7 +36,7 @@ class Topic(BaseModel):
     sub_topics: list[Topic]
     topic: str
     count: int
-    embedding: list[float]
+    # embedding: list[float]
 
 
 class SubjectLinkDB(BasePostgres):
