@@ -110,4 +110,4 @@ class SparseOutLinks:
     targets: list[OutLink] = field(default_factory=list)
 
 
-Subject.model_rebuild()
+# Subject.model_rebuild()

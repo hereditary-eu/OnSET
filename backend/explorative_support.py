@@ -132,8 +132,6 @@ class TopicModelling:
     def __build_docs(self) -> list[str]:
         classes = self.oman.q_to_df(
             """
-PREFIX owl: <http://www.w3.org/2002/07/owl#>
-PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 SELECT ?s
 WHERE {
     ?s rdf:type owl:Class.

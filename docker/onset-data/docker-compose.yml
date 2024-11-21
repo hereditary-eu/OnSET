@@ -44,8 +44,8 @@ services:
     ports:
       - "7200:7200"
     volumes:
-      - ./graphdb-data:/opt/graphdb/home
       - ./graphdb-import:/root/graphdb-import
+      - ./graphdb-data:/opt/graphdb/home
 volumes:
   pg-data:
     external: false

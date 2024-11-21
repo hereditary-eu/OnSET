@@ -2,6 +2,7 @@ data
 __pycache__
 .vscode
 *.db
+.vscode*
 *.csv
 pg-data
 pgdata
