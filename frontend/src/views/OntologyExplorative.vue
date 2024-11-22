@@ -2,7 +2,7 @@
 
     <div>
 
-        <TopicSelector></TopicSelector>
+        <TopicSelector v-model="selected_topic_ids"></TopicSelector>
     </div>
 
 
@@ -17,7 +17,7 @@ import { BACKEND_URL } from '@/utils/config';
 const api = new Api({
     baseURL: BACKEND_URL
 })
-
+const selected_topic_ids = ref([] as number[])
 
 
 

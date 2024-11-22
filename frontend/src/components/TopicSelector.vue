@@ -1,13 +1,9 @@
 <template>
     <div>
-
         <div class="d-flex align-center data_container">
-            <OnsetBtn v-for="topic of shown_components" :key="topic.topic_id" class="flex-grow-1 wrapper_clickable">
+            <OnsetBtn v-for="topic of shown_components" :key="topic.topic_id" v-model="topic.selected" class="flex-grow-1 wrapper_clickable">
                 {{ topic.topic }}
             </OnsetBtn>
-        </div>
-        <div class="show_more_wrapper">
-            <OnsetBtn @click="expanded = !expanded" btn_height="3rem">Show {{ expanded ? 'less' : 'more' }} </OnsetBtn>
         </div>
     </div>
 </template>
@@ -26,13 +22,20 @@ interface TopicSelection extends Topic {
 const api = new Api({
     baseURL: BACKEND_URL
 })
-const expanded = ref(false)
+const expanded = ref(true)
 const topics = ref([] as TopicSelection[])
+
+const model = defineModel({ default: [] as number[] })
+
+
 const shown_components = computed(() => {
+    //TODO: make reactivity work
+    const topics_reordered = [...topics.value.filter((t) => t.selected == true),
+    ...topics.value.filter((t) => t.selected == false),]
     if (expanded.value) {
-        return topics.value
+        return topics_reordered
     } else {
-        return topics.value.filter((t) => t.depth < 4)
+        return topics_reordered
     }
 })
 onMounted(() => {
@@ -58,36 +61,19 @@ onMounted(() => {
         topics.value = ordered_topics
     }).catch(console.error)
 })
+
+
+watch(shown_components, (new_val) => {
+    model.value = new_val.filter((t) => t.selected).map((t) => t.topic_id)
+}, { deep: true })
+watch(model, (new_val) => {
+    for (let t of topics.value) {
+        t.selected = new_val.includes(t.topic_id)
+    }
+}, { deep: true })
+
 </script>
 <style>
-.clickable_container {
-    cursor: pointer;
-    width: 16rem;
-    padding: 0.5rem;
-    border: 1px solid #e0e0e0;
-    height: 4rem;
-    text-align: center;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 0.5rem;
-    justify-items: center;
-}
-
-.clickable_container:hover {
-    border-color: #8fa88f;
-}
-
-.clickable_selected {
-    background-color: #d5edde;
-}
-
-.wrapper_clickable {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
 .data_container {
     display: flex;
     justify-content: space-around;
@@ -96,6 +82,8 @@ onMounted(() => {
     padding: 0.5rem;
     border-bottom: 1px solid #e0e0e0;
     flex-wrap: wrap;
+    overflow-x: auto;
+    max-height: 14rem;
 }
 
 .show_more_wrapper {
