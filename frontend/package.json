@@ -20,6 +20,7 @@
     "vuetify": "^3.7.4"
   },
   "devDependencies": {
+    "@mdi/font": "^7.4.47",
     "@tsconfig/node20": "^20.1.4",
     "@types/d3": "^7.4.3",
     "@types/node": "^20.17.0",

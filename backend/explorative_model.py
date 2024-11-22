@@ -34,6 +34,7 @@ class TopicDB(BasePostgres):
 class Topic(BaseModel):
     topic_id: int
     sub_topics: list[Topic]
+    parent_topic_id: int | None
     topic: str
     count: int
     # embedding: list[float]

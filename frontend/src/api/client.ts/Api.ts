@@ -157,6 +157,8 @@ export interface Topic {
   topic_id: number;
   /** Sub Topics */
   sub_topics: Topic[];
+  /** Parent Topic Id */
+  parent_topic_id: number | null;
   /** Topic */
   topic: string;
   /** Count */

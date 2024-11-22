@@ -4,21 +4,23 @@ import HelloWorld from './components/HelloWorld.vue'
 </script>
 
 <template>
-  <header>
+  <v-app>
+    <header>
 
-    <h1 class="heading">Ontology and Sparse data Exploration Tool (OnSET)</h1>
-    <div class="wrapper">
-      <nav>
-        <RouterLink to="/">Home</RouterLink>
-        <RouterLink to="/explorative">Explore!</RouterLink>
-        <RouterLink to="/circles">Overview</RouterLink>
-        <RouterLink to="/graph">Graph</RouterLink>
-        <RouterLink to="/about">About</RouterLink>
-      </nav>
-    </div>
-  </header>
+      <h1 class="heading">Ontology and Sparse data Exploration Tool (OnSET)</h1>
+      <div class="wrapper">
+        <nav>
+          <RouterLink to="/">Home</RouterLink>
+          <RouterLink to="/explorative">Explore!</RouterLink>
+          <RouterLink to="/circles">Overview</RouterLink>
+          <RouterLink to="/graph">Graph</RouterLink>
+          <RouterLink to="/about">About</RouterLink>
+        </nav>
+      </div>
+    </header>
 
-  <RouterView />
+    <RouterView />
+  </v-app>
 </template>
 
 <style scoped>
