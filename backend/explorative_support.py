@@ -340,7 +340,7 @@ WHERE {
                     {properties_desc}
                     """
                 cls_descs[cls.subject_id] = desc_short
-                embedding = self.embedding_model.encode(desc)
+                embedding = self.embedding_model.encode(desc_short)
 
                 session.add(
                     SubjectInDB(
