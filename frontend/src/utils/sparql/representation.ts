@@ -65,6 +65,7 @@ export class Link implements SubjectLink {
         this.from_subject = new Node(link.from_subject);
         this.to_subject = link.to_subject ? new Node(link.to_subject) : new UnknownNode();
     }
+    label: string;
 
 }
 export class MixedResponse implements FuzzyQueryResult {

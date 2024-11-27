@@ -462,7 +462,7 @@ WHERE {
                 query_embedding = self.embedding_model.encode(
                     query.q, prompt_name=self.query_prompt_name
                 )
-            if query.topic_ids is not None or len(query.topic_ids) > 0:
+            if query.topic_ids is not None and len(query.topic_ids) > 0:
                 topics = session.execute(
                     select(TopicDB)
                     .where(TopicDB.onto_hash == self.identifier)
@@ -524,5 +524,5 @@ WHERE {
                 results.append(FuzzyQueryResult(subject=s[0], score=s[1]))
             for l in links_enriched:
                 results.append(FuzzyQueryResult(link=l[0], score=l[1]))
-            results = sorted(results, key=lambda x: x.score, reverse=True)
+            results = sorted(results, key=lambda x: x.score, reverse=False)
             return FuzzyQueryResults(results=results)

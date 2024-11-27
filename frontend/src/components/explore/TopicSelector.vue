@@ -58,7 +58,7 @@ onMounted(() => {
             topics_one_below = []
             depth++
         }
-        topics.value = ordered_topics
+        topics.value = ordered_topics.reverse()
     }).catch(console.error)
 })
 

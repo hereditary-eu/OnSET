@@ -111,6 +111,8 @@ class SubjectLinkDB(BasePostgres):
 
 class SubjectLink(BaseModel):
     link_id: int
+    label: str | None
+    
     from_id: str
     link_type: str
     to_id: str | None
@@ -124,6 +126,7 @@ class SubjectLink(BaseModel):
     @classmethod
     def from_db(self, link: SubjectLinkDB, oman: OntologyManager):
         return SubjectLink(
+            label=link.label,
             link_id=link.link_id,
             from_id=link.from_id,
             link_type=link.link_type,

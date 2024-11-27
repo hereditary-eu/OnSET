@@ -182,6 +182,8 @@ export interface Subject {
 export interface SubjectLink {
   /** Link Id */
   link_id: number;
+  /** Label */
+  label: string | null;
   /** From Id */
   from_id: string;
   /** Link Type */
