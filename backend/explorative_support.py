@@ -197,8 +197,8 @@ WHERE {
             session.execute(text("SET CONSTRAINTS ALL DEFERRED"))
             topic_map: dict[int, TopicDB] = {}
             for i, topic in topics.iterrows():
-                topic_label = topic_model_llm.get_topic(topic["Topic"])
-                docs = "\n".join(topic["Representative_Docs"][0])
+                topic_label = topic_model_llm.get_topic(topic["Topic"])[0][0]
+                docs = "\n".join(topic["Representative_Docs"])
 
                 topic_embedding = self.embedding_model.encode(
                     f"{topic_label}\n\n{docs}"
