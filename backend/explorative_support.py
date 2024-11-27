@@ -276,8 +276,8 @@ WHERE {
                 session.commit()
             BasePostgres.metadata.drop_all(self.engine)
             BasePostgres.metadata.create_all(self.engine)
-            self.__model_topics()
             self.__embed_relations()
+            self.__model_topics()
 
     def get_topic_tree(self) -> list[Topic]:
         with Session(self.engine) as session:
@@ -340,7 +340,7 @@ WHERE {
                     {properties_desc}
                     """
                 cls_descs[cls.subject_id] = desc_short
-                embedding = self.embedding_model.encode(desc)
+                embedding = self.embedding_model.encode(desc_short)
 
                 session.add(
                     SubjectInDB(
@@ -374,9 +374,10 @@ WHERE {
                         superprop_desc = ""
                         if len(superprop) > 0:
                             superprop_cls = self.oman.enrich_subject(superprop)
-                            superprop_desc = f"{to_readable(p.label)} is a subproperty of {to_readable(superprop_cls.label)}."
+                            if not superprop_cls.label.startswith("<"):
+                                superprop_desc = f"{to_readable(p.label)} is a subproperty of {to_readable(superprop_cls.label)}."
 
-                        prop_desc = f"{prop_range_desc} {superprop_desc} {cls_descs[cls.subject_id]}"
+                        prop_desc = f"{prop_range_desc} {superprop_desc}"
                         prop_embedding = self.embedding_model.encode(prop_desc)
                         to_id = (
                             p.spos["rdfs:range"][0] if "rdfs:range" in p.spos else None
