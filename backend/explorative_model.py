@@ -2,13 +2,15 @@ from __future__ import annotations
 from model import *
 from ontology import *
 from pgvector.sqlalchemy import Vector
+from enum import Enum
 
 
 class BasePostgres(DeclarativeBase):
     pass
 
 
-N_EMBEDDINGS = 384
+N_EMBEDDINGS = 1024
+# N_EMBEDDINGS = 384
 
 
 class TopicDB(BasePostgres):
@@ -26,7 +28,8 @@ class TopicDB(BasePostgres):
     )
     topic: Mapped[str] = mapped_column()
     count: Mapped[int] = mapped_column(default=0)
-    embedding: Mapped[Vector] = mapped_column(Vector(N_EMBEDDINGS))
+    embedding: Mapped[Vector | None] = mapped_column(Vector(N_EMBEDDINGS))
+    doc_string: Mapped[str | None] = mapped_column()
 
     onto_hash: Mapped[str | None] = mapped_column()
 
@@ -88,6 +91,7 @@ class SubjectLinkDB(BasePostgres):
     to_id: Mapped[str | None] = mapped_column(ForeignKey("subjects.subject_id"))
     to_proptype: Mapped[str | None] = mapped_column()
     property_id: Mapped[str | None] = mapped_column()
+    label: Mapped[str | None] = mapped_column()
 
     embedding: Mapped[Vector] = mapped_column(Vector(N_EMBEDDINGS))
 
@@ -133,6 +137,30 @@ class SubjectLink(BaseModel):
         )
 
 
+class RETURN_TYPE(str, Enum):
+    SUBJECT = "subject"
+    LINK = "link"
+    BOTH = "both"
+
+
+class FuzzyQuery(BaseModel):
+    q: str | None = Field(None)
+    topic_ids: list[int] | None = Field(None)
+    mix_topic_factor: float | None = Field(0.5)
+    from_id: str | None = Field(None)
+    to_id: str | None = Field(None)
+
+    limit: int | None = Field(25)
+    skip: int | None = Field(0)
+
+    type: RETURN_TYPE = RETURN_TYPE.BOTH
+
+
 class FuzzyQueryResult(BaseModel):
-    links: list[SubjectLink]
-    subjects: list[Subject]
+    link: SubjectLink | None = Field(None)
+    subject: Subject | None = Field(None)
+    score: float = Field(0.0)
+
+
+class FuzzyQueryResults(BaseModel):
+    results: list[FuzzyQueryResult]

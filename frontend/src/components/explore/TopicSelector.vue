@@ -14,7 +14,7 @@ import * as d3 from 'd3'
 import { Api, type Subject, type Topic } from '@/api/client.ts/Api';
 import { BACKEND_URL } from '@/utils/config';
 import { de, tr } from 'vuetify/locale';
-import OnsetBtn from './OnsetBtn.vue';
+import OnsetBtn from '@/components/OnsetBtn.vue';
 interface TopicSelection extends Topic {
     selected: boolean
     depth: number

@@ -8,12 +8,14 @@ from llama_cpp import Llama
 from hashlib import sha256
 from explorative_model import *
 from sqlalchemy import text, inspect, create_engine, select
+import torch as t
+import numpy as np
 
 # System prompt describes information given to all conversations
 TOPIC_LLAMA3_PROMPT_SYSTEM = """
 <|begin_of_text|><|start_header_id|>system<|end_header_id|>
 
-You are a helpful, respectful and honest assistant for labeling topics.
+You are a helpful, respectful and honest assistant for labeling topics. You should provide a short label for a topic based on the information provided about the topic. The topic is described by a set of documents and keywords. The label should be a short phrase that captures the essence of the topic. The label should be concise and informative, and should not contain any information that is not directly related to the topic.
 """
 
 # Example prompt demonstrating the output we are looking for
@@ -54,6 +56,7 @@ def to_readable(s: str):
 
 from sentence_transformers import SentenceTransformer
 import torch
+from sentence_transformers import SentenceTransformer
 
 
 class TopicModelling:
@@ -72,7 +75,20 @@ class TopicModelling:
             else:
                 device = "cpu"
         self.device = device
-        self.embedding_model = SentenceTransformer("paraphrase-MiniLM-L6-v2").to(device)
+        # This model supports two prompts: "s2p_query" and "s2s_query" for sentence-to-passage and sentence-to-sentence tasks, respectively.
+        # They are defined in `config_sentence_transformers.json`
+        self.query_prompt_name = "s2p_query"
+        self.embedding_model = SentenceTransformer(
+            "dunzhang/stella_en_400M_v5",
+            trust_remote_code=True,
+            config_kwargs={
+                "use_memory_efficient_attention": False,
+                "unpad_inputs": False,
+            },
+        ).to(device)
+        # self.embedding_model = SentenceTransformer(
+        #     "paraphrase-MiniLM-L6-v2",
+        # ).to(device)
         self.llama_model = Llama.from_pretrained(
             repo_id="NousResearch/Hermes-3-Llama-3.1-8B-GGUF",
             filename="*.Q8_0.gguf",
@@ -104,21 +120,21 @@ class TopicModelling:
                 if prop.label.startswith("<"):
                     continue
                 if pt == "DatatypeProperty":
-                    prop_doc += f"{c.label} is defined by {to_readable(prop.label)} "
+                    prop_doc += f"{c.label} is defined by {to_readable(prop.label)}. "
                 else:
                     prop_doc += f"{c.label} {to_readable(prop.label)} "
                 if "rdfs:range" in prop.spos:
                     range = self.oman.enrich_subject(prop.spos["rdfs:range"][0])
                     if range.label.startswith("<"):
                         continue
-                    prop_doc += f" of type {range.label}"
+                    prop_doc += f" of type {range.label}. "
                 if "rdfs:subPropertyOf" in prop.spos:
                     subprop = self.oman.enrich_subject(
                         prop.spos["rdfs:subPropertyOf"][0]
                     )
                     if subprop.label.startswith("<"):
                         continue
-                    prop_doc += f" is subproperty of {subprop.label}"
+                    prop_doc += f" is subproperty of {subprop.label}. "
                 prop_docs.append(prop_doc)
         return prop_docs
 
@@ -181,7 +197,18 @@ WHERE {
             session.execute(text("SET CONSTRAINTS ALL DEFERRED"))
             topic_map: dict[int, TopicDB] = {}
             for i, topic in topics.iterrows():
-                topic_db = TopicDB(topic_id=i, topic=topic["Representation"][0])
+                topic_label = topic_model_llm.get_topic(topic["Topic"])
+                docs = "\n".join(topic["Representative_Docs"][0])
+
+                topic_embedding = self.embedding_model.encode(
+                    f"{topic_label}\n\n{docs}"
+                )
+                topic_db = TopicDB(
+                    topic_id=i,
+                    topic=topic_label,
+                    # doc_str=docs,
+                    embedding=topic_embedding,
+                )
                 topic_map[i] = topic_db
             for i, topic in hierarchical_topics.iterrows():
                 parent_name: str = topic["Parent_Name"]
@@ -198,10 +225,32 @@ WHERE {
                     topic_map[int(sub_topic.topic_id)].parent_topic_id = int(
                         topic["Parent_ID"]
                     )
+
             for topic in topic_map.values():
                 topic.onto_hash = self.identifier
-                topic.embedding = self.embedding_model.encode(topic.topic)
                 session.add(topic)
+            session.commit()
+
+            # Aggregate embeddings
+            root_topic = session.execute(
+                select(TopicDB).where(
+                    TopicDB.onto_hash == self.identifier,
+                    TopicDB.parent_topic_id == None,
+                )
+            ).first()
+
+            def get_and_set_aggregated_embedding(topic: TopicDB):
+                if len(topic.sub_topics) == 0:
+                    return topic.embedding
+                sub_embeddings = [
+                    get_and_set_aggregated_embedding(sub_topic)
+                    for sub_topic in topic.sub_topics
+                ]
+                aggregated_embedding = np.mean(np.stack(sub_embeddings), axis=0)
+                topic.embedding = aggregated_embedding
+                return aggregated_embedding
+
+            get_and_set_aggregated_embedding(root_topic[0])
             session.commit()
 
     def initialize_topics(self, force: bool = False):
@@ -215,7 +264,9 @@ WHERE {
             else:
                 init_topics = (
                     session.execute(
-                        select(TopicDB).where(TopicDB.onto_hash == self.identifier)
+                        select(TopicDB.topic_id).where(
+                            TopicDB.onto_hash == self.identifier
+                        )
                     ).first()
                     is None
                 )
@@ -225,8 +276,8 @@ WHERE {
                 session.commit()
             BasePostgres.metadata.drop_all(self.engine)
             BasePostgres.metadata.create_all(self.engine)
-            self.__embed_relations()
             self.__model_topics()
+            self.__embed_relations()
 
     def get_topic_tree(self) -> list[Topic]:
         with Session(self.engine) as session:
@@ -261,22 +312,34 @@ WHERE {
 }
 """
         )[0].to_list()
-        all_classes = [
-            self.oman.enrich_subject(c, load_properties=True) for c in all_classes
-        ]
+        all_classes = {
+            c: self.oman.enrich_subject(c, load_properties=True) for c in all_classes
+        }
 
         with Session(self.engine) as session:
 
             session.execute(text("SET CONSTRAINTS ALL DEFERRED"))
-            for cls in tqdm(all_classes, desc="Embedding classes"):
+            cls_descs: dict[str, str] = {}
+            for cls in tqdm(all_classes.values(), desc="Embedding classes"):
                 comment = cls.spos.get("rdfs:comment", [""])[0]
                 subcls = cls.spos.get("rdfs:subClassOf", [""])[0]
+                subcls_desc = ""
+                if len(subcls) > 0:
+                    parent_cls = all_classes.get(
+                        subcls, self.oman.enrich_subject(subcls)
+                    )
+                    subcls_desc = (
+                        ""
+                        if len(subcls) == 0
+                        else f"{cls.label} is a subclass of {parent_cls.label}."
+                    )
                 properties_desc = "\n".join(self.__get_properties_desc(cls))
-                desc = f"""{cls.label} is a {cls.subject_type} 
-                    {comment}
+                desc_short = f"""{cls.label} is a {cls.subject_type}. {subcls_desc} {comment}
+                    """
+                desc = f"""{desc_short}
                     {properties_desc}
                     """
-
+                cls_descs[cls.subject_id] = desc_short
                 embedding = self.embedding_model.encode(desc)
 
                 session.add(
@@ -291,13 +354,29 @@ WHERE {
                     )
                 )
             session.commit()
-            for cls in tqdm(all_classes, desc="Embedding relations"):
+            for cls in tqdm(all_classes.values(), desc="Embedding relations"):
                 for prop in cls.properties.keys():
                     for p in cls.properties[prop]:
-                        prop_desc = f"""{cls.label} is defined by {to_readable(p.label)} 
-                            {to_readable(p.spos.get("rdfs:range", [""])[0])}
-                            {to_readable(p.spos.get("rdfs:subPropertyOf", [""])[0])}
-                            """
+                        prop_range = p.spos.get("rdfs:range", [""])[0]
+                        prop_range_desc = (
+                            f"A {cls.label} is defined by {to_readable(p.label)}."
+                        )
+                        if len(prop_range) > 0:
+                            prop_range_cls = all_classes.get(
+                                prop_range, self.oman.enrich_subject(prop_range)
+                            )
+                            if prop =='ObjectProperty':
+                                prop_range_desc = f"A {cls.label} is {to_readable(p.label)} of {to_readable(prop_range_cls.label)}."
+                            else:
+                                prop_range_desc = f"A {cls.label} has {to_readable(p.label)} of type {to_readable(prop_range_cls.label)}."
+                            # print(prop_range_desc)
+                        superprop = p.spos.get("rdfs:subPropertyOf", [""])[0]
+                        superprop_desc = ""
+                        if len(superprop) > 0:
+                            superprop_cls = self.oman.enrich_subject(superprop)
+                            superprop_desc = f"{to_readable(p.label)} is a subproperty of {to_readable(superprop_cls.label)}."
+
+                        prop_desc = f"{prop_range_desc} {superprop_desc} {cls_descs[cls.subject_id]}"
                         prop_embedding = self.embedding_model.encode(prop_desc)
                         to_id = (
                             p.spos["rdfs:range"][0] if "rdfs:range" in p.spos else None
@@ -322,11 +401,16 @@ WHERE {
                                 link_type=prop,
                                 onto_hash=self.identifier,
                                 embedding=prop_embedding,
+                                label=p.label,
                             )
                         )
             session.commit()
 
-    def search_classes(self, query: str, limit=25):
+    def search_free(
+        self,
+        query: str,
+        limit=25,
+    ):
         query_embedding = self.embedding_model.encode(query)
         with Session(self.engine) as session:
             subjects = session.execute(
@@ -345,7 +429,7 @@ WHERE {
                 .limit(limit)
             ).all()
             links_enriched = [SubjectLink.from_db(l[0], self.oman) for l in links]
-            return FuzzyQueryResult(
+            return FuzzyQueryResults(
                 links=links_enriched,
                 subjects=subjects_enriched,
             )
@@ -369,3 +453,76 @@ WHERE {
             links = session.execute(query.limit(25)).all()
             links_enriched = [SubjectLink.from_db(l[0], self.oman) for l in links]
             return links_enriched
+
+    def search_fuzzy(self, query: FuzzyQuery):
+
+        with Session(self.engine) as session:
+            query_embedding = None
+            if query.q is not None:
+                query_embedding = self.embedding_model.encode(
+                    query.q, prompt_name=self.query_prompt_name
+                )
+            if query.topic_ids is not None or len(query.topic_ids) > 0:
+                topics = session.execute(
+                    select(TopicDB)
+                    .where(TopicDB.onto_hash == self.identifier)
+                    .where(TopicDB.topic_id.in_(query.topic_ids))
+                ).all()
+                topic_embeddings = t.tensor([t[0].embedding for t in topics])
+                topic_embedding = t.mean(topic_embeddings, axis=0)
+                if query_embedding is not None:
+                    query_embedding = (
+                        1 - query.mix_topic_factor
+                    ) * query_embedding + query.mix_topic_factor * topic_embedding
+                else:
+                    query_embedding = topic_embedding
+            if query.q is None and (
+                query.topic_ids is None or len(query.topic_ids) == 0
+            ):
+                query_embedding = (
+                    t.ones(N_EMBEDDINGS) / N_EMBEDDINGS
+                )  # default to uniform
+
+            subjects = session.execute(
+                select(
+                    SubjectInDB,
+                    SubjectInDB.embedding.cosine_distance(query_embedding).label(
+                        "distance"
+                    ),
+                )
+                .where(SubjectInDB.onto_hash == self.identifier)
+                .order_by(SubjectInDB.embedding.cosine_distance(query_embedding))
+                .limit(query.limit)
+            ).all()
+            subjects_enriched = [
+                (self.oman.enrich_subject(s[0].subject_id), s.distance)
+                for s in subjects
+            ]
+
+            query_link = select(
+                SubjectLinkDB,
+                SubjectLinkDB.embedding.cosine_distance(query_embedding).label(
+                    "distance"
+                ),
+            ).where(SubjectLinkDB.onto_hash == self.identifier)
+            if query.from_id is not None:
+                query_link = query_link.where(SubjectLinkDB.from_id == query.from_id)
+            if query.to_id is not None:
+                query_link = query_link.where(SubjectLinkDB.to_id == query.to_id)
+            if query.q is not None:
+                query_link = query_link.order_by(
+                    SubjectLinkDB.embedding.cosine_distance(query_embedding)
+                )
+            links = session.execute(query_link.limit(25)).all()
+
+            links_enriched = [
+                (SubjectLink.from_db(l[0], self.oman), l.distance) for l in links
+            ]
+
+            results: list[FuzzyQueryResult] = []
+            for s in subjects_enriched:
+                results.append(FuzzyQueryResult(subject=s[0], score=s[1]))
+            for l in links_enriched:
+                results.append(FuzzyQueryResult(link=l[0], score=l[1]))
+            results = sorted(results, key=lambda x: x.score, reverse=True)
+            return FuzzyQueryResults(results=results)

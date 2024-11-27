@@ -18,12 +18,50 @@ export interface BodyLoadOntologyManagementOntologyPost {
   ontology: File;
 }
 
+/** FuzzyQuery */
+export interface FuzzyQuery {
+  /** Q */
+  q?: string | null;
+  /** Topic Ids */
+  topic_ids?: number[] | null;
+  /**
+   * Mix Topic Factor
+   * @default 0.5
+   */
+  mix_topic_factor?: number | null;
+  /** From Id */
+  from_id?: string | null;
+  /** To Id */
+  to_id?: string | null;
+  /**
+   * Limit
+   * @default 25
+   */
+  limit?: number | null;
+  /**
+   * Skip
+   * @default 0
+   */
+  skip?: number | null;
+  /** @default "both" */
+  type?: RETURN_TYPE;
+}
+
 /** FuzzyQueryResult */
 export interface FuzzyQueryResult {
-  /** Links */
-  links: SubjectLink[];
-  /** Subjects */
-  subjects: Subject[];
+  link?: SubjectLink | null;
+  subject?: Subject | null;
+  /**
+   * Score
+   * @default 0
+   */
+  score?: number;
+}
+
+/** FuzzyQueryResults */
+export interface FuzzyQueryResults {
+  /** Results */
+  results: FuzzyQueryResult[];
 }
 
 /** HTTPValidationError */
@@ -66,6 +104,13 @@ export interface OutLink {
   count?: number;
   /** Instances */
   instances?: string[];
+}
+
+/** RETURN_TYPE */
+export enum RETURN_TYPE {
+  Subject = "subject",
+  Link = "link",
+  Both = "both",
 }
 
 /** RelationsFound */
@@ -447,24 +492,16 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
     /**
      * No description
      *
-     * @name SearchClassesClassesSearchGet
+     * @name SearchClassesClassesSearchPost
      * @summary Search Classes
-     * @request GET:/classes/search
+     * @request POST:/classes/search
      */
-    searchClassesClassesSearchGet: (
-      query?: {
-        /**
-         * Q
-         * @default "working field of person"
-         */
-        q?: string;
-      },
-      params: RequestParams = {},
-    ) =>
-      this.request<FuzzyQueryResult, HTTPValidationError>({
+    searchClassesClassesSearchPost: (data: FuzzyQuery, params: RequestParams = {}) =>
+      this.request<FuzzyQueryResults, HTTPValidationError>({
         path: `/classes/search`,
-        method: "GET",
-        query: query,
+        method: "POST",
+        body: data,
+        type: ContentType.Json,
         format: "json",
         ...params,
       }),

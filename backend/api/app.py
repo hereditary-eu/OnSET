@@ -31,7 +31,7 @@ dataset_manager = DatasetManager(ontology_manager)
 # ontology_manager.load_full_graph()
 
 topic_man = TopicModelling(ontology_manager)
-# topic_man.initialize_topics(force=True)
+# topic_man.initialize_topics(force=False)
 
 app = FastAPI(title="Ontology Provenance API", version="0.1.0")
 
@@ -93,9 +93,9 @@ def get_links(subject_id: str = Query()) -> SparseOutLinks:
     return dataset_manager.target_outlinks(subject_id)
 
 
-@app.get("/classes/search")
-def search_classes(q: str = Query("working field of person")) -> FuzzyQueryResult:
-    return topic_man.search_classes(q)
+@app.post("/classes/search")
+def search_classes(q: FuzzyQuery = Body("working field of person")) -> FuzzyQueryResults:
+    return topic_man.search_fuzzy(q)
 
 
 @app.get("/classes/relations")
