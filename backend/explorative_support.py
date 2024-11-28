@@ -108,6 +108,32 @@ class TopicModelling:
             ).encode()
         ).hexdigest()
 
+    def initialize_topics(self, force: bool = False):
+        init_topics = False
+        with Session(self.engine) as session:
+            insp = inspect(self.engine)
+            if not insp.has_table("topics", schema="public") or not insp.has_table(
+                "subjects", schema="public"
+            ):
+                init_topics = True
+            else:
+                init_topics = (
+                    session.execute(
+                        select(TopicDB.topic_id).where(
+                            TopicDB.onto_hash == self.identifier
+                        )
+                    ).first()
+                    is None
+                )
+        if init_topics or force:
+            with Session(self.engine) as session:
+                session.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
+                session.commit()
+            BasePostgres.metadata.drop_all(self.engine)
+            BasePostgres.metadata.create_all(self.engine)
+            self.__model_topics()
+            self.__embed_relations()
+
     def __get_named_individuals_desc(self, c: Subject) -> list[str]:
         nis = self.oman.get_named_individuals(c.subject_id)
         return [f"{ne.label} is a {c.label}" for ne in nis]
@@ -206,7 +232,7 @@ WHERE {
                 topic_db = TopicDB(
                     topic_id=i,
                     topic=topic_label,
-                    # doc_str=docs,
+                    doc_string=docs,
                     embedding=topic_embedding,
                 )
                 topic_map[i] = topic_db
@@ -228,10 +254,14 @@ WHERE {
 
             for topic in topic_map.values():
                 topic.onto_hash = self.identifier
+                # if topic.embedding is None:
+                #     topic.embedding = self.embedding_model.encode(topic.topic)
+                topic.onto_hash = self.identifier
                 session.add(topic)
             session.commit()
 
             # Aggregate embeddings
+            # --> seems to be a bit too average-y
             root_topic = session.execute(
                 select(TopicDB).where(
                     TopicDB.onto_hash == self.identifier,
@@ -239,45 +269,23 @@ WHERE {
                 )
             ).first()
 
-            def get_and_set_aggregated_embedding(topic: TopicDB):
+            def get_and_set_aggregated_embedding(topic: TopicDB) -> list[str]:
                 if len(topic.sub_topics) == 0:
-                    return topic.embedding
-                sub_embeddings = [
-                    get_and_set_aggregated_embedding(sub_topic)
+                    return [topic.topic + "\n" + topic.doc_string]
+                sub_topics = [
+                    topic_str
                     for sub_topic in topic.sub_topics
+                    for topic_str in get_and_set_aggregated_embedding(sub_topic)
                 ]
-                aggregated_embedding = np.mean(np.stack(sub_embeddings), axis=0)
+                topic_description = "\n".join(sub_topics)
+                aggregated_embedding = self.embedding_model.encode(
+                    f"{topic.topic}\n\n{topic_description}"
+                )
                 topic.embedding = aggregated_embedding
-                return aggregated_embedding
+                return [topic.topic] + sub_topics
 
             get_and_set_aggregated_embedding(root_topic[0])
             session.commit()
-
-    def initialize_topics(self, force: bool = False):
-        init_topics = False
-        with Session(self.engine) as session:
-            insp = inspect(self.engine)
-            if not insp.has_table("topics", schema="public") or not insp.has_table(
-                "subjects", schema="public"
-            ):
-                init_topics = True
-            else:
-                init_topics = (
-                    session.execute(
-                        select(TopicDB.topic_id).where(
-                            TopicDB.onto_hash == self.identifier
-                        )
-                    ).first()
-                    is None
-                )
-        if init_topics or force:
-            with Session(self.engine) as session:
-                session.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
-                session.commit()
-            BasePostgres.metadata.drop_all(self.engine)
-            BasePostgres.metadata.create_all(self.engine)
-            self.__embed_relations()
-            self.__model_topics()
 
     def get_topic_tree(self) -> list[Topic]:
         with Session(self.engine) as session:
@@ -331,10 +339,10 @@ WHERE {
                     subcls_desc = (
                         ""
                         if len(subcls) == 0
-                        else f"{cls.label} is a subclass of {parent_cls.label}."
+                        else f"A {cls.label} is a {parent_cls.label}."
                     )
                 properties_desc = "\n".join(self.__get_properties_desc(cls))
-                desc_short = f"""{cls.label} is a {cls.subject_type}. {subcls_desc} {comment}
+                desc_short = f"""A {cls.label} is a {cls.subject_type}. {subcls_desc} {comment}
                     """
                 desc = f"""{desc_short}
                     {properties_desc}
@@ -365,7 +373,7 @@ WHERE {
                             prop_range_cls = all_classes.get(
                                 prop_range, self.oman.enrich_subject(prop_range)
                             )
-                            if prop =='ObjectProperty':
+                            if prop == "ObjectProperty":
                                 prop_range_desc = f"A {cls.label} is {to_readable(p.label)} of {to_readable(prop_range_cls.label)}."
                             else:
                                 prop_range_desc = f"A {cls.label} has {to_readable(p.label)} of type {to_readable(prop_range_cls.label)}."
@@ -510,10 +518,9 @@ WHERE {
                 query_link = query_link.where(SubjectLinkDB.from_id == query.from_id)
             if query.to_id is not None:
                 query_link = query_link.where(SubjectLinkDB.to_id == query.to_id)
-            if query.q is not None:
-                query_link = query_link.order_by(
-                    SubjectLinkDB.embedding.cosine_distance(query_embedding)
-                )
+            query_link = query_link.order_by(
+                SubjectLinkDB.embedding.cosine_distance(query_embedding)
+            )
             links = session.execute(query_link.limit(25)).all()
 
             links_enriched = [
