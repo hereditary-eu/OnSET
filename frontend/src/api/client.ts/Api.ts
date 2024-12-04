@@ -45,6 +45,8 @@ export interface FuzzyQuery {
   skip?: number | null;
   /** @default "both" */
   type?: RETURN_TYPE;
+  /** @default "instance" */
+  relation_type?: RELATION_TYPE | null;
 }
 
 /** FuzzyQueryResult */
@@ -104,6 +106,12 @@ export interface OutLink {
   count?: number;
   /** Instances */
   instances?: string[];
+}
+
+/** RELATION_TYPE */
+export enum RELATION_TYPE {
+  Property = "property",
+  Instance = "instance",
 }
 
 /** RETURN_TYPE */

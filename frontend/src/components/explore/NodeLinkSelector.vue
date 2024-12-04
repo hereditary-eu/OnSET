@@ -1,15 +1,15 @@
 <template>
     <div>
-        <div class="node_link_carousel">
+        <div class="node_link_carousel" v-if="!params.collapsed">
             <div v-for="result of node_link_elements">
-                <div class="node_link_element">
+                <div class="node_link_element" @click="selected_node(result)">
                     <div v-if="result.link">
-                        <svg :width="params.node_width * 2 + params.link_width" :height="params.node_height">
+                        <svg :width="NODE_WIDTH * 2 + LINK_WIDTH" :height="NODE_HEIGHT">
                             <NodeLink :link="result.link"></NodeLink>
                         </svg>
                     </div>
                     <div v-else>
-                        <svg :width="params.node_width" :height="params.node_height">
+                        <svg :width="NODE_WIDTH" :height="NODE_HEIGHT">
                             <Node :subject="result.subject"></Node>
                         </svg>
                     </div>
@@ -17,20 +17,38 @@
 
             </div>
         </div>
+        <div v-else>
+            <OnsetBtn @click="selected_node(null)">Restart (current start: {{ params.selected_link ?
+                (params.selected_link.link ? params.selected_link.link.label : params.selected_link.subject.label) : ''
+                }})
+            </OnsetBtn>
+        </div>
     </div>
 </template>
 <script setup lang="ts">
 import { Api, type FuzzyQueryResult } from '@/api/client.ts/Api';
 import { BACKEND_URL } from '@/utils/config';
 import { MixedResponse, type FuzzyQueryRequest } from '@/utils/sparql/representation';
-import { ref, watch, reactive } from 'vue';
+import { ref, watch, reactive, defineEmits } from 'vue';
 import Node from './elements/Node.vue';
 import NodeLink from './elements/NodeLink.vue';
+import OnsetBtn from '../OnsetBtn.vue';
+import { LINK_WIDTH, NODE_HEIGHT, NODE_WIDTH } from '@/utils/sparql/explorer';
+
+const emits = defineEmits<{
+    select: [value: MixedResponse]
+}>()
+
 const params = reactive({
-    node_width: 150,
-    node_height: 100,
-    link_width: 75,
+    collapsed: false,
+    selected_link: null as MixedResponse | null
 })
+
+const selected_node = (node: MixedResponse) => {
+    params.collapsed = !!node
+    params.selected_link = node
+    emits('select', node)
+}
 
 const api = new Api({
     baseURL: BACKEND_URL
@@ -49,14 +67,14 @@ const fetchNodeLinkElements = async () => {
     node_link_elements.value = response.data.results.map((result) => {
         const resp = new MixedResponse(result)
         if (resp.link) {
-            resp.link.from_subject.width = params.node_width
-            resp.link.from_subject.height = params.node_height
-            resp.link.to_subject.x = params.node_width + params.link_width
-            resp.link.to_subject.width = params.node_width
-            resp.link.to_subject.height = params.node_height
+            resp.link.from_subject.width = NODE_WIDTH
+            resp.link.from_subject.height = NODE_HEIGHT
+            resp.link.to_subject.x = NODE_WIDTH + LINK_WIDTH
+            resp.link.to_subject.width = NODE_WIDTH
+            resp.link.to_subject.height = NODE_HEIGHT
         } else {
-            resp.subject.width = params.node_width
-            resp.subject.height = params.node_height
+            resp.subject.width = NODE_WIDTH
+            resp.subject.height = NODE_HEIGHT
         }
         return resp
     })

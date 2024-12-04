@@ -4,7 +4,7 @@
                 C ${link.to_subject.x},${link.from_subject.y + link.from_subject.height / 2} 
                 ${link.from_subject.x + link.from_subject.width},${link.to_subject.y + link.to_subject.height / 2} 
                 ${link.to_subject.x},${link.to_subject.y + link.to_subject.height / 2}`" fill="none" stroke="#666"
-            stroke-width="1.5"></path>
+            class="link_path"></path>
         <text :x="`${(link.from_subject.x + link.from_subject.width + link.to_subject.x) / 2}px`"
             :y="`${-5 + (link.from_subject.y + link.from_subject.height / 2 + link.to_subject.y + link.to_subject.height / 2) / 2}px`"
             fill="#000" class="link_text">{{ link.label
@@ -21,11 +21,11 @@ const { link } = defineProps({
         required: true
     },
 })
+
 watch(() => link, () => {
-    console.log('Link changed!', link)
 }, { deep: true })
 onMounted(() => {
-    console.log('Link', link)
+    // console.log('Link', link)
 })
 </script>
 <style lang="scss">
@@ -33,5 +33,10 @@ onMounted(() => {
     font: 10px sans-serif;
     text-anchor: middle;
     text-align: center;
+}
+.link_path {
+    fill: none;
+    stroke: #828282;
+    stroke-width: 1px;
 }
 </style>

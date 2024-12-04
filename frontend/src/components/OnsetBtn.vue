@@ -5,7 +5,7 @@ const model: ModelRef<boolean> = defineModel({})
 const props = defineProps({
     btn_height: {
         type: String,
-        default: '4rem'
+        default: '2.8rem'
     }
 })
 const emit = defineEmits(['click'])

@@ -1,4 +1,168 @@
 import type { Api, FuzzyQueryResult, Subject, SubjectLink } from "@/api/client.ts/Api";
+import { CONSTRAINT_HEIGHT, CONSTRAINT_WIDTH, NODE_HEIGHT, NODE_WIDTH } from "./explorer";
+export enum ConstraintType{
+    STRING = "string",
+    NUMBER = "number",
+    BOOLEAN = "boolean",
+    DATE = "date",
+    SUBJECT = "subject"
+}
+export class Constraint {
+    link: Link;
+    height: number
+    width: number
+    constraint_type: ConstraintType;
+    constructor() {
+        this.height = CONSTRAINT_HEIGHT
+        this.width = CONSTRAINT_WIDTH
+
+    }
+    static validPropType(propType: string): boolean {
+        return false;
+    }
+    static construct(link: Link): Constraint {
+        let constraint = null
+
+        if (StringConstraint.validPropType(link.to_proptype)) {
+            constraint = new StringConstraint("", StringConstraintType.CONTAINS);
+        } else if (NumberConstraint.validPropType(link.to_proptype)) {
+            constraint = new NumberConstraint(0, NumberConstraintType.GREATER);
+        } else if (BooleanConstraint.validPropType(link.to_proptype)) {
+            constraint = new BooleanConstraint(true);
+        } else if (DateConstraint.validPropType(link.to_proptype)) {
+            constraint = new DateConstraint(new Date(), NumberConstraintType.GREATER);
+        }
+        console.log("Constructed", constraint, link)
+        if (constraint) {
+            constraint.link = link;
+        }
+        return constraint;
+    }
+}
+export class SubjectConstraint extends Constraint {
+    subject_id: string;
+    constructor(subject_id: string) {
+        super();
+        this.subject_id = subject_id;
+        this.constraint_type = ConstraintType.SUBJECT
+    }
+    filterExpression(property: string): string {
+        return `${property} = "${this.subject_id}"`;
+    }
+    static validPropType(propType: string): boolean {
+        return false
+    }
+}
+export enum StringConstraintType {
+    EQUALS = "equals",
+    CONTAINS = "contains",
+    STARTSWITH = "startswith",
+    ENDSWITH = "endswith",
+    REGEX = "regex",
+}
+export class StringConstraint extends Constraint {
+    value: string;
+    type: StringConstraintType;
+    constructor(value: string, type: StringConstraintType) {
+        super();
+        this.value = value;
+        this.type = type;
+        this.constraint_type = ConstraintType.STRING
+    }
+    filterExpression(property: string): string {
+        switch (this.type) {
+            case StringConstraintType.EQUALS:
+                return `${property} ="${this.value}"`;
+            case StringConstraintType.CONTAINS:
+                return `contains(${property},"${this.value})"`;
+            case StringConstraintType.STARTSWITH:
+
+                return `strStarts(${property},"${this.value}")`;
+            case StringConstraintType.ENDSWITH:
+                return `strEnds(${property},"${this.value}")`;
+            case StringConstraintType.REGEX:
+                return `regex(${property} ,"${this.value}")`;
+        }
+    }
+    static validPropType(propType: string): boolean {
+        return propType == 'xsd:string' ||
+            propType == 'xsd:langString'
+    }
+
+}
+export enum NumberConstraintType {
+    EQUALS = "equals",
+    LESS = "less",
+    GREATER = "greater",
+}
+export class NumberConstraint extends Constraint {
+    value: number;
+    type: NumberConstraintType;
+    constructor(value: number, type: NumberConstraintType) {
+        super();
+        this.value = value;
+        this.type = type;
+        this.constraint_type = ConstraintType.NUMBER
+    }
+    filterExpression(property: string): string {
+        switch (this.type) {
+            case NumberConstraintType.EQUALS:
+                return `${property} = ${this.value}`;
+            case NumberConstraintType.LESS:
+                return `${property} < ${this.value}`;
+            case NumberConstraintType.GREATER:
+                return `${property} > ${this.value}`;
+        }
+    }
+    static validPropType(propType: string): boolean {
+        return propType == 'xsd:double' ||
+            propType == 'xsd:integer' ||
+            propType == 'xsd:float' ||
+            propType.includes('year') ||
+            propType.includes('minutes') ||
+            propType.includes('centimetre') ||
+            propType.includes('kilogram')
+    }
+}
+export class BooleanConstraint extends Constraint {
+    value: boolean;
+    constructor(value: boolean) {
+        super();
+        this.value = value;
+        this.constraint_type = ConstraintType.BOOLEAN
+    }
+    filterExpression(property: string): string {
+        return `${property} = ${this.value}`;
+    }
+    static validPropType(propType: string): boolean {
+        return propType == 'xsd:boolean'
+    }
+}
+export class DateConstraint extends Constraint {
+    value: Date;
+    type: NumberConstraintType;
+    constructor(value: Date, type: NumberConstraintType) {
+        super();
+        this.value = value;
+        this.type = type;
+        this.constraint_type = ConstraintType.DATE
+    }
+    filterExpression(property: string): string {
+        //TODO: test!!
+        switch (this.type) {
+            case NumberConstraintType.EQUALS:
+                return `${property} = ${this.value}`;
+            case NumberConstraintType.LESS:
+                return `${property} < ${this.value}`;
+            case NumberConstraintType.GREATER:
+                return `${property} > ${this.value}`;
+        }
+
+    }
+    static validPropType(propType: string): boolean {
+        return propType == 'xsd:date'
+    }
+}
 
 export class Node implements Subject {
     subject_id: string;
@@ -17,6 +181,11 @@ export class Node implements Subject {
     width?: number;
 
 
+    from_links: Link[];
+    to_links: Link[];
+
+    property_constraints?: Constraint[];
+
     unknown: boolean;
     constructor(node: Subject) {
         for (const key in node) {
@@ -26,9 +195,11 @@ export class Node implements Subject {
         }
         this.x = 0;
         this.y = 0;
-        this.height = 75
-        this.width = 125
+        this.height = NODE_HEIGHT
+        this.width = NODE_WIDTH
         this.unknown = false;
+        this.to_links = [];
+        this.from_links = [];
     }
 
 }
