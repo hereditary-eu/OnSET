@@ -485,6 +485,7 @@ WHERE {
                     ) * query_embedding + query.mix_topic_factor * topic_embedding
                 else:
                     query_embedding = topic_embedding
+
             if query.q is None and (
                 query.topic_ids is None or len(query.topic_ids) == 0
             ):
@@ -492,45 +493,59 @@ WHERE {
                     t.ones(N_EMBEDDINGS) / N_EMBEDDINGS
                 )  # default to uniform
 
-            subjects = session.execute(
-                select(
-                    SubjectInDB,
-                    SubjectInDB.embedding.cosine_distance(query_embedding).label(
+            results: list[FuzzyQueryResult] = []
+            if query.type == RETURN_TYPE.SUBJECT or query.type == RETURN_TYPE.BOTH:
+                subjects = session.execute(
+                    select(
+                        SubjectInDB,
+                        SubjectInDB.embedding.cosine_distance(query_embedding).label(
+                            "distance"
+                        ),
+                    )
+                    .where(SubjectInDB.onto_hash == self.identifier)
+                    .order_by(SubjectInDB.embedding.cosine_distance(query_embedding))
+                    .limit(query.limit)
+                ).all()
+                subjects_enriched = [
+                    (self.oman.enrich_subject(s[0].subject_id), s.distance)
+                    for s in subjects
+                ]
+                for s in subjects_enriched:
+                    results.append(FuzzyQueryResult(subject=s[0], score=s[1]))
+            if query.type == RETURN_TYPE.LINK or query.type == RETURN_TYPE.BOTH:
+                query_link = select(
+                    SubjectLinkDB,
+                    SubjectLinkDB.embedding.cosine_distance(query_embedding).label(
                         "distance"
                     ),
+                ).where(SubjectLinkDB.onto_hash == self.identifier)
+                if query.from_id is not None:
+                    query_link = query_link.where(
+                        SubjectLinkDB.from_id == query.from_id 
+                        # TODO: allow for class hierarchies insteal of just current class, i.e. allow all subclasses
+                    )
+                if query.to_id is not None:
+                    query_link = query_link.where(SubjectLinkDB.to_id == query.to_id)
+                if query.relation_type == RELATION_TYPE.INSTANCE:
+                    query_link = query_link.where(
+                        SubjectLinkDB.to_id != None,
+                    )
+                elif query.relation_type == RELATION_TYPE.PROPERTY:
+                    query_link = query_link.where(
+                        SubjectLinkDB.to_id == None,
+                        SubjectLinkDB.to_proptype != None, # constraint to known proptypes
+                    )
+                query_link = query_link.order_by(
+                    SubjectLinkDB.embedding.cosine_distance(query_embedding)
                 )
-                .where(SubjectInDB.onto_hash == self.identifier)
-                .order_by(SubjectInDB.embedding.cosine_distance(query_embedding))
-                .limit(query.limit)
-            ).all()
-            subjects_enriched = [
-                (self.oman.enrich_subject(s[0].subject_id), s.distance)
-                for s in subjects
-            ]
+                links = session.execute(query_link.limit(25)).all()
 
-            query_link = select(
-                SubjectLinkDB,
-                SubjectLinkDB.embedding.cosine_distance(query_embedding).label(
-                    "distance"
-                ),
-            ).where(SubjectLinkDB.onto_hash == self.identifier)
-            if query.from_id is not None:
-                query_link = query_link.where(SubjectLinkDB.from_id == query.from_id)
-            if query.to_id is not None:
-                query_link = query_link.where(SubjectLinkDB.to_id == query.to_id)
-            query_link = query_link.order_by(
-                SubjectLinkDB.embedding.cosine_distance(query_embedding)
-            )
-            links = session.execute(query_link.limit(25)).all()
+                links_enriched = [
+                    (SubjectLink.from_db(l[0], self.oman), l.distance) for l in links
+                ]
 
-            links_enriched = [
-                (SubjectLink.from_db(l[0], self.oman), l.distance) for l in links
-            ]
+                for l in links_enriched:
+                    results.append(FuzzyQueryResult(link=l[0], score=l[1]))
 
-            results: list[FuzzyQueryResult] = []
-            for s in subjects_enriched:
-                results.append(FuzzyQueryResult(subject=s[0], score=s[1]))
-            for l in links_enriched:
-                results.append(FuzzyQueryResult(link=l[0], score=l[1]))
             results = sorted(results, key=lambda x: x.score, reverse=False)
             return FuzzyQueryResults(results=results)

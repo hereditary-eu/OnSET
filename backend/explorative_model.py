@@ -112,7 +112,7 @@ class SubjectLinkDB(BasePostgres):
 class SubjectLink(BaseModel):
     link_id: int
     label: str | None
-    
+
     from_id: str
     link_type: str
     to_id: str | None
@@ -146,6 +146,11 @@ class RETURN_TYPE(str, Enum):
     BOTH = "both"
 
 
+class RELATION_TYPE(str, Enum):
+    PROPERTY = "property"
+    INSTANCE = "instance"
+
+
 class FuzzyQuery(BaseModel):
     q: str | None = Field(None)
     topic_ids: list[int] | None = Field(None)
@@ -157,7 +162,7 @@ class FuzzyQuery(BaseModel):
     skip: int | None = Field(0)
 
     type: RETURN_TYPE = RETURN_TYPE.BOTH
-
+    relation_type: RELATION_TYPE|None = RELATION_TYPE.INSTANCE
 
 class FuzzyQueryResult(BaseModel):
     link: SubjectLink | None = Field(None)
