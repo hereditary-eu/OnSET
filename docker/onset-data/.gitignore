@@ -1,2 +1,6 @@
 *-data
 *-import
+*.bz2
+*.bzip2
+*.ttl
+*.nt
