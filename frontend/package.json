@@ -13,9 +13,12 @@
     "generate-client-mac": "sta -p http://localhost:8001/openapi.json -o ./src/api/client.ts --axios"
   },
   "dependencies": {
+    "@types/prismjs": "^1.26.5",
     "axios": "^1.7.7",
     "d3": "^7.9.0",
     "pinia": "^2.2.4",
+    "prismjs": "^1.29.0",
+    "vite-plugin-prismjs": "^0.0.11",
     "vue": "^3.5.12",
     "vue-router": "^4.4.5",
     "vuetify": "^3.7.4"

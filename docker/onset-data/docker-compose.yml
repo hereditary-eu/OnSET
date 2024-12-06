@@ -46,6 +46,17 @@ services:
     volumes:
       - ./graphdb-import:/root/graphdb-import
       - ./graphdb-data:/opt/graphdb/home
+  fuseki:
+    image: stain/jena-fuseki
+    restart: always
+    environment:
+      - TDB=2
+      - ADMIN_PASSWORD=fuseki_dbpedia
+    ports:
+      - "3030:3030"
+    volumes:
+      - ./fuseki-data:/fuseki
+      # - ./graphdb-import/dbpedia_min:/staging
 volumes:
   pg-data:
     external: false

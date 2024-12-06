@@ -1,19 +1,19 @@
 <template>
     <g id="outlink_selector">
         <g :transform="`translate(${attachment_pt.x},${attachment_pt.y})`" v-if="display">
-            <foreignObject :height="(NODE_HEIGHT + 10) * 5" :width="NODE_WIDTH + LINK_WIDTH + 20">
-                <div class="selection_div_container">
-                    <div class="selection_element" v-for="option of selection_options"
+            <foreignObject :height="(NODE_HEIGHT + 10) * 5" :width="NODE_WIDTH + LINK_WIDTH + 35">
+                <div class="selection_div_container" :style="{ 'height': `${NODE_HEIGHT * 5 + 10}px` }">
+                    <div class="selection_element" v-for="option of selected_options_filtered"
                         @click="select_option(option, $event)"
                         :key="option.link?.property_id || option.subject?.subject_id">
                         <svg :width="NODE_WIDTH + LINK_WIDTH" :height="NODE_HEIGHT + 15">
                             <g @click="">
                                 <LinkComp :link="option.link"></LinkComp>
-                                <Node :subject="option.link.from_subject" :editable="false"
+                                <NodeComp :subject="option.link.from_subject" :editable="false"
                                     v-if="selection_event.side == NodeSide.FROM || selection_event.side == NodeSide.PROP">
-                                </Node>
-                                <Node :subject="option.link.to_subject" :editable="false"
-                                    v-if="selection_event.side == NodeSide.TO"> </Node>
+                                </NodeComp>
+                                <NodeComp :subject="option.link.to_subject" :editable="false"
+                                    v-if="selection_event.side == NodeSide.TO"> </NodeComp>
                             </g>
                         </svg>
                     </div>
@@ -24,9 +24,9 @@
 </template>
 <script setup lang="ts">
 import { ref, watch, reactive, computed, onMounted } from 'vue'
-import { Constraint, MixedResponse, Node as NodeRepr, NumberConstraint, NumberConstraintType, StringConstraint, StringConstraintType } from '@/utils/sparql/representation';
+import { Constraint, MixedResponse } from '@/utils/sparql/representation';
 import LinkComp from './Link.vue';
-import Node from './Node.vue';
+import NodeComp from './Node.vue';
 import { BACKEND_URL } from '@/utils/config';
 import { Api, RELATION_TYPE, RETURN_TYPE } from '@/api/client.ts/Api';
 import { LINK_WIDTH, NODE_HEIGHT, NODE_WIDTH, NodeSide, OutlinkSelectorOpenEvent } from '@/utils/sparql/explorer';
@@ -127,6 +127,14 @@ const select_option = (selected_option: MixedResponse, event: MouseEvent) => {
     }
     emit('select', selected_option)
 }
+const selected_options_filtered = computed(() => {
+    if(selection_event.side==NodeSide.PROP){
+        return selection_options.value.filter((option) => {
+            return Constraint.construct(option.link) != null
+        })
+    }
+    return selection_options.value
+})
 
 
 </script>
@@ -142,7 +150,6 @@ const select_option = (selected_option: MixedResponse, event: MouseEvent) => {
     padding: 5px;
     position: absolute;
     overflow-y: auto;
-    height: v-bind("NODE_HEIGHT * 5 + 10")px;
 }
 
 .selection_element {
