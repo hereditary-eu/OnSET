@@ -234,6 +234,10 @@ export interface Topic {
   topic: string;
   /** Count */
   count: number;
+  /** Subjects Ids */
+  subjects_ids: string[];
+  /** Property Ids */
+  property_ids: string[];
 }
 
 /** ValidationError */
@@ -409,7 +413,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @request POST:/sparql
      */
     sparqlQuerySparqlPost: (data: SparqlQuery, params: RequestParams = {}) =>
-      this.request<any, HTTPValidationError>({
+      this.request<object[], HTTPValidationError>({
         path: `/sparql`,
         method: "POST",
         body: data,

@@ -4,7 +4,7 @@
     "env.d.ts",
     "src/**/*",
     "src/**/*.vue"
-  ],
+, "src/utils/d3-man/.ts"  ],
   "exclude": [
     "src/**/__tests__/*"
   ],

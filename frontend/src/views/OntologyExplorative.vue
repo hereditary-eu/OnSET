@@ -11,8 +11,12 @@
         <h3 v-if="selected_start">.. and start querying!</h3>
         <div class="query_build_view">
             <QueryBuilder :root="selected_start"></QueryBuilder>
+            <div class="query_results">
+                <h3>Results</h3>
+                
+            </div>
         </div>
-        <pre v-html="query_string" />
+        <pre v-html="query_string_html" />
     </div>
 </template>
 <script setup lang="ts">
@@ -35,6 +39,7 @@ const api = new Api({
     baseURL: BACKEND_URL
 })
 const selected_topic_ids = ref([] as number[])
+const query_string_html = ref('')
 const query_string = ref('')
 const selected_start = ref(null as MixedResponse | null)
 
@@ -45,10 +50,15 @@ watch(() => selected_start, () => {
     if (!selected_start.value) {
         return
     }
-    query_string.value = Prism.highlight(
-        selected_start.value.link.from_subject.generateQuery(),
-        Prism.languages.sparql, 'sparql');
-    // query_string.value = selected_start.value.link.from_subject.generateQuery()
+
+    let new_query_string = selected_start.value.link.from_subject.generateQuery()
+    if (query_string.value != new_query_string) {
+        query_string.value = new_query_string
+        query_string_html.value = Prism.highlight(
+            query_string.value,
+            Prism.languages.sparql, 'sparql');
+        // query_string.value = selected_start.value.link.from_subject.generateQuery()
+    }
 }, { deep: true })
 const selected_root = (root: MixedResponse) => {
     // console.log('selected_root', root)
@@ -57,7 +67,7 @@ const selected_root = (root: MixedResponse) => {
 
 </script>
 <style lang="scss">
-.query_build_view{
+.query_build_view {
     display: flex;
     justify-content: center;
     align-items: start;
@@ -65,10 +75,10 @@ const selected_root = (root: MixedResponse) => {
     width: 100%;
     height: 100%;
     overflow: auto;
-    pre{
+
+    pre {
         width: 25%;
         height: 70vh;
     }
 }
-
 </style>
