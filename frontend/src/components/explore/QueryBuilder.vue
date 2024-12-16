@@ -25,7 +25,6 @@ const open_outlink_selector = reactive({
     event: null as OutlinkSelectorOpenEvent
 })
 const clicked_outlink = (evt: OutlinkSelectorOpenEvent) => {
-    console.log('Clicked outlink!', evt)
     open_outlink_selector.display = true
     open_outlink_selector.event = evt
 }
@@ -47,8 +46,8 @@ watch(() => root, () => {
 </script>
 <style lang="scss">
 .query_build_wrapper {
-    width: 100%;
-    height: 70rem;
+    width: 80%;
+    height: 70vh;
 }
 
 .node {

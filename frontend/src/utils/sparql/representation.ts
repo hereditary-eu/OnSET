@@ -1,6 +1,6 @@
 import type { Api, FuzzyQueryResult, Subject, SubjectLink } from "@/api/client.ts/Api";
 import { CONSTRAINT_HEIGHT, CONSTRAINT_WIDTH, NODE_HEIGHT, NODE_WIDTH } from "./explorer";
-export enum ConstraintType{
+export enum ConstraintType {
     STRING = "string",
     NUMBER = "number",
     BOOLEAN = "boolean",
@@ -38,6 +38,12 @@ export class Constraint {
         }
         return constraint;
     }
+    filterExpression(property: string): string {
+        return ""
+    }
+    expression(property: string): string {
+        return this.filterExpression(property);
+    }
 }
 export class SubjectConstraint extends Constraint {
     subject_id: string;
@@ -74,19 +80,18 @@ export class StringConstraint extends Constraint {
             case StringConstraintType.EQUALS:
                 return `${property} ="${this.value}"`;
             case StringConstraintType.CONTAINS:
-                return `contains(${property},"${this.value})"`;
+                return `CONTAINS(${property},"${this.value}")`;
             case StringConstraintType.STARTSWITH:
-
-                return `strStarts(${property},"${this.value}")`;
+                return `STRSTARTS(${property},"${this.value}")`;
             case StringConstraintType.ENDSWITH:
-                return `strEnds(${property},"${this.value}")`;
+                return `STRENDS(${property},"${this.value}")`;
             case StringConstraintType.REGEX:
-                return `regex(${property} ,"${this.value}")`;
+                return `REGEX(${property} ,"${this.value}")`;
         }
     }
     static validPropType(propType: string): boolean {
         return propType == 'xsd:string' ||
-            propType == 'xsd:langString'
+            propType == 'rdf:langString'
     }
 
 }
@@ -117,9 +122,12 @@ export class NumberConstraint extends Constraint {
     static validPropType(propType: string): boolean {
         return propType == 'xsd:double' ||
             propType == 'xsd:integer' ||
+            propType == 'xsd:nonNegativeInteger' ||
             propType == 'xsd:float' ||
             propType.includes('year') ||
+            propType.includes('Year') ||
             propType.includes('minutes') ||
+            propType.includes('minute') ||
             propType.includes('centimetre') ||
             propType.includes('kilogram')
     }
@@ -147,15 +155,18 @@ export class DateConstraint extends Constraint {
         this.type = type;
         this.constraint_type = ConstraintType.DATE
     }
+    valueExpression(): string {
+        return `"${this.value.toISOString()}"^^xsd:dateTime`
+    }
     filterExpression(property: string): string {
         //TODO: test!!
         switch (this.type) {
             case NumberConstraintType.EQUALS:
-                return `${property} = ${this.value}`;
+                return `${property} = ${this.valueExpression()}`;
             case NumberConstraintType.LESS:
-                return `${property} < ${this.value}`;
+                return `${property} < ${this.valueExpression()}`;
             case NumberConstraintType.GREATER:
-                return `${property} > ${this.value}`;
+                return `${property} > ${this.valueExpression()}`;
         }
 
     }
@@ -163,7 +174,24 @@ export class DateConstraint extends Constraint {
         return propType == 'xsd:date'
     }
 }
+export class LinkTriplet {
+    from_id: string;
+    link_id: string;
+    to_id: string;
+}
+export class QuerySet {
+    //from internal_id to subject_id
+    internal_ids: Record<string, string>;
+    link_triplets: LinkTriplet[];
 
+    filter: Constraint[];
+
+    constructor() {
+        this.internal_ids = {};
+        this.link_triplets = [];
+        this.filter = [];
+    }
+}
 export class Node implements Subject {
     subject_id: string;
     label: string;
@@ -185,8 +213,10 @@ export class Node implements Subject {
     to_links: Link[];
 
     property_constraints?: Constraint[];
-
+    internal_id: string;
+    static internal_id_counter: number = 0;
     unknown: boolean;
+    deletion_imminent: boolean
     constructor(node: Subject) {
         for (const key in node) {
             if (Object.prototype.hasOwnProperty.call(node, key)) {
@@ -200,8 +230,60 @@ export class Node implements Subject {
         this.unknown = false;
         this.to_links = [];
         this.from_links = [];
+        this.property_constraints = [];
+        this.deletion_imminent = false;
+        this.internal_id = `node_${++Node.internal_id_counter}`;
     }
-
+    generateQuery(): string {
+        let set = this.querySet()
+        let output_names = Object.keys(set.internal_ids).map((internal_id) => `?${internal_id}`)
+        let output_labels = Object.keys(set.internal_ids).map((internal_id) => `?lbl_${internal_id}`)
+        output_labels.push(...set.filter.map((constraint) => `?prop_${constraint.link.link_id}`))
+        let query = `SELECT DISTINCT ${output_names.join(" ")} ${output_labels.join(" ")} WHERE {`
+        for (let internal_id in set.internal_ids) {
+            if (set.internal_ids.hasOwnProperty(internal_id)) {
+                // console.log(internal_id, set.internal_ids[internal_id])
+                query += `\n?${internal_id} a ${set.internal_ids[internal_id]}.
+OPTIONAL {?${internal_id} rdfs:label ?lbl_${internal_id}.}`
+            }
+        }
+        for (let link of set.link_triplets) {
+            query += `\n?${link.from_id} ${link.link_id} ?${link.to_id}.`
+        }
+        for (let constraint of set.filter) {
+            let constrained_id = `?prop_${constraint.link.link_id}`
+            query += `\n?${constraint.link.from_subject.internal_id} ${constraint.link.property_id} ${constrained_id}.
+FILTER(${constraint.expression(constrained_id)})`
+        }
+        return query + "\n}"
+    }
+    querySet(): QuerySet {
+        let set = new QuerySet()
+        set.internal_ids[this.internal_id] = this.subject_id
+        set.filter.push(...this.property_constraints)
+        let subsets = []
+        for (let to_link of this.to_links) {
+            let subset = to_link.to_subject.querySet()
+            set.internal_ids = Object.assign(set.internal_ids, subset.internal_ids)
+            set.filter.push(...subset.filter)
+            set.link_triplets.push({
+                from_id: this.internal_id,
+                link_id: to_link.property_id,
+                to_id: to_link.to_subject.internal_id
+            })
+        }
+        for (let from_link of this.from_links) {
+            let subset = from_link.from_subject.querySet()
+            set.internal_ids = Object.assign(set.internal_ids, subset.internal_ids)
+            set.filter.push(...subset.filter)
+            set.link_triplets.push({
+                from_id: from_link.from_subject.internal_id,
+                link_id: from_link.property_id,
+                to_id: this.internal_id
+            })
+        }
+        return set
+    }
 }
 export class UnknownNode extends Node {
     constructor() {
@@ -252,6 +334,7 @@ export class MixedResponse implements FuzzyQueryResult {
         this.subject = result.subject ? new Node(result.subject) : null;
         this.link = result.link ? new Link(result.link) : null;
     }
+
 }
 
 export type FuzzyQueryRequest = Parameters<typeof Api.prototype.classes.searchClassesClassesSearchPost>[0]

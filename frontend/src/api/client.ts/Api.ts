@@ -144,6 +144,22 @@ export interface RelationsFound {
   matches?: Match[];
 }
 
+/** SparqlQuery */
+export interface SparqlQuery {
+  /** Query */
+  query: string;
+  /**
+   * Limit
+   * @default 25
+   */
+  limit?: number | null;
+  /**
+   * Skip
+   * @default 0
+   */
+  skip?: number | null;
+}
+
 /** SparseOutLinks */
 export interface SparseOutLinks {
   source?: RelationsFound;
@@ -218,6 +234,10 @@ export interface Topic {
   topic: string;
   /** Count */
   count: number;
+  /** Subjects Ids */
+  subjects_ids: string[];
+  /** Property Ids */
+  property_ids: string[];
 }
 
 /** ValidationError */
@@ -384,6 +404,24 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       ...params,
     });
 
+  sparql = {
+    /**
+     * No description
+     *
+     * @name SparqlQuerySparqlPost
+     * @summary Sparql Query
+     * @request POST:/sparql
+     */
+    sparqlQuerySparqlPost: (data: SparqlQuery, params: RequestParams = {}) =>
+      this.request<object[], HTTPValidationError>({
+        path: `/sparql`,
+        method: "POST",
+        body: data,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+  };
   management = {
     /**
      * No description

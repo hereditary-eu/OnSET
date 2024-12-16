@@ -303,6 +303,8 @@ while IFS= read -r file ; do wget $file; done <<< "$files"
 # tdb2.tdbloader --loader=parallel --loc ../fuseki-data/databases/dbpedia *.bz2
 # tdb2.tdbstats --loc=../fuseki-data/databases/dbpedia > /tmp/stats.opt 
 # mv /tmp/stats.opt > ../fuseki-data/databases/dbpedia/Data-0001/
+tdb2.tdbloader --loader=parallel --loc ../fuseki-data/databases/dbpedia *.nt
+tdb2.tdbloader --loader=parallel --loc ../fuseki-data/databases/dbpedia *.bz2
 
 # lbunzip2 *.bz2
 # lbunzip2 *.bzip2
