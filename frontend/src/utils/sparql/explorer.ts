@@ -3,7 +3,8 @@ import type { Node } from "./representation";
 export enum NodeSide {
     TO = 'to_link',
     FROM = 'from_link',
-    PROP = 'prop'
+    PROP = 'prop',
+    DETAIL = 'detail'
 }
 export class OutlinkSelectorOpenEvent {
     node: Node;
@@ -21,4 +22,5 @@ export enum DisplayMode {
     SELECT = 'select',
     EDIT = 'edit',
     RESULTS = 'results',
+    RESULT_INTERACTIVE = 'result_interactive',
 }

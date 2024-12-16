@@ -7,7 +7,7 @@ import HelloWorld from './components/HelloWorld.vue'
   <v-app>
     <header>
 
-      <h1 class="heading">Ontology and Sparse data Exploration Tool (OnSET)</h1>
+      <h1 class="heading">Ontology and Semantic data Exploration Tool (OnSET)</h1>
       <div class="wrapper">
         <nav>
           <RouterLink to="/">Home</RouterLink>

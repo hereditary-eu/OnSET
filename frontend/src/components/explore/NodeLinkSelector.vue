@@ -1,7 +1,8 @@
 <template>
     <div>
-        <div class="node_link_carousel" v-if="!params.collapsed">
-            <div v-for="result of node_link_elements">
+        <div class="node_link_carousel" v-if="!ui_state.collapsed">
+            <Loading v-if="ui_state.loading"></Loading>
+            <div v-else v-for="result of node_link_elements">
                 <div class="node_link_element" @click="selected_node(result)">
                     <div v-if="result.link">
                         <svg :width="NODE_WIDTH * 2 + LINK_WIDTH" :height="NODE_HEIGHT">
@@ -14,12 +15,12 @@
                         </svg>
                     </div>
                 </div>
-
             </div>
         </div>
         <div v-else>
-            <OnsetBtn @click="selected_node(null)">Restart (current start: {{ params.selected_link ?
-                (params.selected_link.link ? params.selected_link.link.label : params.selected_link.subject.label) : ''
+            <OnsetBtn @click="selected_node(null)">Restart (current start: {{ ui_state.selected_link ?
+                (ui_state.selected_link.link ? ui_state.selected_link.link.label : ui_state.selected_link.subject.label)
+                : ''
                 }})
             </OnsetBtn>
         </div>
@@ -32,21 +33,23 @@ import { MixedResponse, type FuzzyQueryRequest } from '@/utils/sparql/representa
 import { ref, watch, reactive, defineEmits } from 'vue';
 import Node from './elements/Node.vue';
 import NodeLink from './elements/NodeLink.vue';
-import OnsetBtn from '../OnsetBtn.vue';
+import OnsetBtn from '@/components/ui/OnsetBtn.vue';
 import { LINK_WIDTH, NODE_HEIGHT, NODE_WIDTH } from '@/utils/sparql/explorer';
+import Loading from '@/components/ui/Loading.vue';
 
 const emits = defineEmits<{
     select: [value: MixedResponse]
 }>()
 
-const params = reactive({
+const ui_state = reactive({
     collapsed: false,
-    selected_link: null as MixedResponse | null
+    selected_link: null as MixedResponse | null,
+    loading: false
 })
 
 const selected_node = (node: MixedResponse) => {
-    params.collapsed = !!node
-    params.selected_link = node
+    ui_state.collapsed = !!node
+    ui_state.selected_link = node
     emits('select', node)
 }
 
@@ -63,6 +66,7 @@ const { query } = defineProps({
 const node_link_elements = ref([] as MixedResponse[])
 
 const fetchNodeLinkElements = async () => {
+    ui_state.loading = true
     const response = await api.classes.searchClassesClassesSearchPost(query)
     node_link_elements.value = response.data.results.map((result) => {
         const resp = new MixedResponse(result)
@@ -78,6 +82,7 @@ const fetchNodeLinkElements = async () => {
         }
         return resp
     })
+    ui_state.loading = false
 }
 
 watch(() => query, fetchNodeLinkElements, { immediate: true, deep: true })

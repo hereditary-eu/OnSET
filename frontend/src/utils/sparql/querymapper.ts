@@ -6,13 +6,13 @@ import { Vector2, type Vector2Like } from "three";
 export class InstanceNode extends Node {
     instance_label: string = null
     instance_id: string = null
-
+    interactive_clone: InstanceNode = null
     constructor(base_node: Node, public instance_data: Record<string, string>) {
         super(base_node)
-        this.instance_label = instance_data[this.label_id().replace('?','')]
-        this.instance_id = instance_data[this.output_id().replace('?','')] || "-"
-        if(!this.instance_label){
-            let uri=this.instance_id.replace(/<|>/g, "")
+        this.instance_label = instance_data[this.label_id().replace('?', '')]
+        this.instance_id = instance_data[this.output_id().replace('?', '')] || "-"
+        if (!this.instance_label) {
+            let uri = this.instance_id.replace(/<|>/g, "")
             this.instance_label = (new URL(uri)).pathname.split("/").pop().replace(/_/g, " ")
         }
 
@@ -68,7 +68,9 @@ export class QueryMapper {
             return new InstanceNode(this.root_node, instance_data as Record<string, string>)
         })
 
-
+        mapped_nodes.forEach((node) => {
+            node.interactive_clone = new InstanceNode(node, node.instance_data)
+        })
         let querySet = this.root_node.querySet()
 
         let bbox = { br: new Vector2(0, 0), tl: new Vector2(Infinity, Infinity) }

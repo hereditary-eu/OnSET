@@ -1,12 +1,13 @@
 <template>
     <g id="outlink_selector" @mouseout.capture="edit_point_hover($event, false)"
-    @mouseenter.capture="edit_point_hover($event, true)" @mouseover="edit_point_hover($event, true)">
+        @mouseenter.capture="edit_point_hover($event, true)" @mouseover="edit_point_hover($event, true)">
         <g :transform="`translate(${attachment_pt.x},${attachment_pt.y})`" v-if="display">
             <foreignObject :height="(NODE_HEIGHT + 10) * 5" :width="NODE_WIDTH + LINK_WIDTH + 35">
                 <div class="selection_div_container" :style="{ 'height': `${NODE_HEIGHT * 5 + 10}px` }">
                     <div class="selection_search">
-                        <input type="text" placeholder="Search..." />
+                        <input type="text" placeholder="Search..." v-model="editor_data.q" />
                     </div>
+                    <Loading v-if="editor_data.loading"></Loading>
                     <div class="selection_element_container">
                         <div class="selection_element" v-for="option of selected_options_filtered"
                             @click="select_option(option, $event)"
@@ -41,6 +42,7 @@ import NodeComp from './Node.vue';
 import { BACKEND_URL } from '@/utils/config';
 import { Api, RELATION_TYPE, RETURN_TYPE } from '@/api/client.ts/Api';
 import { LINK_WIDTH, NODE_HEIGHT, NODE_WIDTH, NodeSide, OutlinkSelectorOpenEvent } from '@/utils/sparql/explorer';
+import Loading from '@/components/ui/Loading.vue';
 
 const emit = defineEmits<{
     select: [value: MixedResponse]
@@ -57,7 +59,10 @@ const { selection_event } = defineProps({
 
 const editor_data = reactive({
     show_editpoints: false,
-    editpoint_r: 7
+    editpoint_r: 7,
+    loading: false,
+    q: '',
+    query_id: 0
 })
 const display = defineModel<boolean>()
 const selection_options = ref([] as MixedResponse[])
@@ -66,8 +71,10 @@ const update_selection_options = async () => {
     if (display) {
         (async () => {
             selection_options.value = []
+            editor_data.loading = true
+            let query_id = ++editor_data.query_id
             const response = await api.classes.searchClassesClassesSearchPost({
-                q: selection_event.node.label,
+                q: editor_data.q,
                 from_id: selection_event.side == NodeSide.TO || selection_event.side == NodeSide.PROP ? selection_event.node.subject_id : undefined,
                 to_id: selection_event.side == NodeSide.FROM ? selection_event.node.subject_id : undefined,
                 type: RETURN_TYPE.Link,
@@ -75,6 +82,10 @@ const update_selection_options = async () => {
                 relation_type: selection_event.side == NodeSide.PROP ? RELATION_TYPE.Property : RELATION_TYPE.Instance
 
             })
+            if (query_id != editor_data.query_id) {
+                return
+            }
+            editor_data.loading = false
             //TODO: topic ids - user context!
             selection_options.value = response.data.results.map((result) => {
                 const resp = new MixedResponse(result)
@@ -93,13 +104,18 @@ const update_selection_options = async () => {
             })
         })().catch((e) => {
             console.error('Error fetching selection options', e)
+            editor_data.loading = false
         })
     } else {
         selection_options.value = []
     }
 }
 // watch(() => display, update_selection_options, { deep: false })
-watch(() => selection_event, update_selection_options, { deep: false })
+watch(() => selection_event, () => {
+    editor_data.q = ''
+    update_selection_options()
+}, { deep: false })
+watch(() => editor_data.q, update_selection_options, { deep: false })
 const attachment_pt = computed(() => {
     if (!selection_event) {
         return { x: 0, y: 0 }
@@ -203,11 +219,13 @@ const edit_point_hover = (event: MouseEvent, state: boolean) => {
     cursor: pointer;
     fill-opacity: 0.4;
 }
+
 .edit_point:hover {
     stroke: #888888;
     display: block;
     fill-opacity: 1;
 }
+
 .edit_point_delete {
     fill: #ea694f;
 }

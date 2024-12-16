@@ -63,7 +63,6 @@ const selected_root = (root: MixedResponse) => {
     align-items: start;
     flex-direction: row;
     width: 100%;
-    height: 100%;
     overflow: auto;
 
     pre {

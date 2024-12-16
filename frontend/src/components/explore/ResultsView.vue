@@ -1,14 +1,32 @@
 <template>
     <div class="results_view">
+        <div class="result_instance_header">Results</div>
         <div class="results_instance_container">
-            <div class="result_instance_element" ref="view_container" v-show="mapped_root_nodes.length == 0"></div>
-            <div class="result_instance_element" v-for="subject of mapped_root_nodes">
-                <svg class="result_instance_svg">
-                    <g :transform="`translate(${offset.x},${offset.y}) scale(${scale})`">
-                        <NodeComp :subject="subject" :mode="DisplayMode.RESULTS"></NodeComp>
-                    </g>
-                </svg>
+            <Loading v-if="ui_state.loading"></Loading>
+            <div v-else class="result_instance_element" v-for="subject of mapped_root_nodes">
+                <Expandable>
+                    <template v-slot:header>
+                        <div class="result_instance_overview_header">{{ subject.instance_label }}</div>
+                    </template>
+                    <template v-slot:content>
+                        <svg class="result_interact_svg">
+                            <g :transform="`translate(${ui_state.offset.x},${ui_state.offset.y})`">
+                                <NodeComp :subject="subject.interactive_clone"
+                                    :mode="DisplayMode.RESULT_INTERACTIVE"></NodeComp>
+                            </g>
+                        </svg>
+                    </template>
+                    <template v-slot:trigger>
+                        <svg class="result_instance_svg">
+                            <g
+                                :transform="`translate(${ui_state.offset.x},${ui_state.offset.y}) scale(${ui_state.scale})`">
+                                <NodeComp :subject="subject" :mode="DisplayMode.RESULTS"></NodeComp>
+                            </g>
+                        </svg>
+                    </template>
+                </Expandable>
             </div>
+            <div class="result_instance_element" ref="view_container" v-show="mapped_root_nodes.length == 0"></div>
         </div>
     </div>
 </template>
@@ -16,9 +34,11 @@
 import { ref, watch, reactive, computed, onMounted, defineProps } from 'vue'
 import { MixedResponse, Node, Link } from '@/utils/sparql/representation';
 import NodeComp from './elements/Node.vue';
-import { QueryMapper } from '@/utils/sparql/querymapper';
+import { InstanceNode, QueryMapper } from '@/utils/sparql/querymapper';
 import { Vector2, type Vector2Like } from 'three';
 import { DisplayMode } from '@/utils/sparql/explorer';
+import Loading from '../ui/Loading.vue';
+import Expandable from '../ui/Expandable.vue';
 
 const { root_node, query_string } = defineProps({
     root_node: {
@@ -31,13 +51,16 @@ const { root_node, query_string } = defineProps({
     }
 })
 const mapper = ref(null as QueryMapper | null)
-const mapped_root_nodes = ref([] as Node[])
-const scale = ref(1)
-const offset = reactive({ x: 0, y: 0 })
+const mapped_root_nodes = ref([] as InstanceNode[])
 const view_container = ref(null as SVGSVGElement | null)
 const root_subject = ref(null as Node | null)
-const last_query_id = ref(0)
-const initial_size = reactive(new Vector2(0, 0))
+const ui_state = reactive({
+    loading: false,
+    last_query_id: 0,
+    scale: 1,
+    offset: new Vector2(0, 0),
+    initial_size: new Vector2(0, 0)
+})
 watch(() => root_node, () => {
     if (!root_node) {
         return
@@ -47,25 +70,31 @@ watch(() => root_node, () => {
     } else if (root_node.subject) {
         root_subject.value = root_node.subject
     }
-}, { deep: false })
+}, { deep: true })
 watch(() => query_string, () => {
     console.log('Query string changed!', query_string, root_subject.value)
-    if(mapped_root_nodes.value.length == 0) {
-        initial_size.x = view_container.value?.clientWidth || 0
-        initial_size.y = view_container.value?.clientHeight || 0
+    if (mapped_root_nodes.value.length == 0) {
+        ui_state.initial_size.x = view_container.value?.clientWidth || 0
+        ui_state.initial_size.y = view_container.value?.clientHeight || 0
+        ui_state.initial_size.x -= 20
+        ui_state.initial_size.y -= 20
     }
-    mapper.value = new QueryMapper(root_subject.value, initial_size)
-    let query_id = last_query_id.value + 1
-    last_query_id.value = query_id
+    mapper.value = new QueryMapper(root_subject.value, ui_state.initial_size)
+    let query_id = ui_state.last_query_id + 1
+    ui_state.last_query_id = query_id
+    ui_state.loading = true
     mapper.value.runAndMap(query_string).then((results) => {
-        if (query_id == last_query_id.value) {
+        console.log('Mapped results!', results, query_id, ui_state.last_query_id)
+        if (query_id == ui_state.last_query_id) {
             mapped_root_nodes.value = results.mapped_nodes
-            scale.value = results.scale
-            offset.x = results.offset.x
-            offset.y = results.offset.y
+            ui_state.scale = results.scale
+            ui_state.offset.x = results.offset.x
+            ui_state.offset.y = results.offset.y
+            ui_state.loading = false
         }
     }).catch((err) => {
         console.error('Error while mapping query!', err)
+        ui_state.loading = false
     })
 }, { deep: true })
 </script>
@@ -77,6 +106,7 @@ watch(() => query_string, () => {
     justify-content: center;
     height: 70vh;
     width: 30%;
+    border-left: 1px solid rgb(192, 213, 191);
 }
 
 .results_instance_container {
@@ -87,6 +117,7 @@ watch(() => query_string, () => {
     width: 100%;
     height: 100%;
     overflow: auto;
+    padding: 5px;
 }
 
 .result_instance_element {
@@ -95,9 +126,27 @@ watch(() => query_string, () => {
     display: flex;
     justify-content: center;
     align-items: center;
+    margin: 4px;
 }
+
 .result_instance_svg {
     width: 100%;
     height: 100%;
+}
+
+.result_interact_svg {
+    width: 100%;
+    height: 100%;
+}
+
+.result_instance_header {
+    font-size: 1.5rem;
+    font-weight: bold;
+    padding: 5px;
+    border-bottom: 1px solid rgb(192, 213, 191);
+    width: 100%;
+}
+.result_instance_overview_header{
+    font-size: 2rem;
 }
 </style>

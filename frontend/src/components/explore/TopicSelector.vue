@@ -1,10 +1,12 @@
 <template>
     <div>
         <div class="d-flex align-center data_container">
-            <OnsetBtn v-for="topic of shown_components" :key="topic.topic_id" v-model="topic.selected" class="flex-grow-1 wrapper_clickable">
+            <OnsetBtn v-for="topic of shown_components" :key="topic.topic_id" v-model="topic.selected"
+                class="flex-grow-1 wrapper_clickable">
                 {{ topic.topic }}
             </OnsetBtn>
         </div>
+        <Loading v-if="topics.length == 0"></Loading>
     </div>
 </template>
 
@@ -14,7 +16,8 @@ import * as d3 from 'd3'
 import { Api, type Subject, type Topic } from '@/api/client.ts/Api';
 import { BACKEND_URL } from '@/utils/config';
 import { de, tr } from 'vuetify/locale';
-import OnsetBtn from '@/components/OnsetBtn.vue';
+import OnsetBtn from '@/components/ui/OnsetBtn.vue';
+import Loading from '@/components/ui/Loading.vue';
 interface TopicSelection extends Topic {
     selected: boolean
     depth: number

@@ -9,13 +9,14 @@ import { CircleMan, SubjectInCircle } from '@/utils/d3-man/CircleMan';
 import { BACKEND_URL } from '@/utils/config';
 import { CircleMan3D } from '@/utils/three-man/CircleMan3D';
 import { HierarchicalCircleMan3D } from '@/utils/three-man/HierarchicalCircleMan3D';
+import Loading from '@/components/ui/Loading.vue';
 const graph_data = ref([] as SubjectInCircle[])
 const topics_root = ref(null as Topic | null)
 const circleman = new HierarchicalCircleMan3D('.graph_wrapper')
 const api = new Api({
     baseURL: BACKEND_URL
 })
-
+const loading = ref(false)
 watch(() => { graph_data.value, topics_root.value }, () => {
     console.log('node_links changed')
     circleman.nodes = graph_data.value
@@ -37,12 +38,17 @@ onMounted(() => {
     //     }).catch(console.error)
     // }
     (async () => {
+        loading.value = true
         const resp_classes = await api.classes.getFullClassesClassesFullGet()
         const resp_topics = await api.topics.getTopicsRootTopicsRootGet()
+        loading.value = false
         topics_root.value = resp_topics.data
         graph_data.value = resp_classes.data as SubjectInCircle[]
         console.log('graph_data', graph_data)
-    })().catch(console.error)
+    })().catch((e) => {
+        console.error(e)
+        loading.value = true
+    })
 
     // .style('background-color', 'red')
 })
@@ -50,8 +56,8 @@ onMounted(() => {
 </script>
 <template>
     <main>
+        <Loading v-if="loading"></Loading>
         <div class="graph_wrapper"></div>
-
     </main>
 </template>
 <style>

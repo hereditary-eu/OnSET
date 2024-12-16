@@ -40,7 +40,7 @@ const link_width = computed(() => {
 
 .link_path {
     fill: none;
-    stroke: #828282;
+    stroke: #cccccc;
     stroke-width: v-bind("link_width");
 }
 </style>
