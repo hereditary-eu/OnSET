@@ -1,6 +1,6 @@
 <template>
     <svg class="query_build_wrapper">
-        <NodeComp v-if="root_subject" :subject="root_subject" :editable="true" @edit-point-clicked="clicked_outlink">
+        <NodeComp v-if="root_subject" :subject="root_subject" :mode="DisplayMode.EDIT" @edit-point-clicked="clicked_outlink">
         </NodeComp>
         <OutLinkSelector :selection_event="open_outlink_selector.event" v-model="open_outlink_selector.display">
         </OutLinkSelector>
@@ -12,7 +12,7 @@ import { ref, watch, reactive, computed, onMounted, defineProps } from 'vue'
 import { MixedResponse, Node, Link } from '@/utils/sparql/representation';
 import NodeComp from './elements/Node.vue';
 import OutLinkSelector from './elements/OutLinkSelector.vue';
-import type { NodeSide, OutlinkSelectorOpenEvent } from '@/utils/sparql/explorer';
+import { DisplayMode, type NodeSide, type OutlinkSelectorOpenEvent } from '@/utils/sparql/explorer';
 const { root } = defineProps({
     root: {
         type: Object as () => MixedResponse,

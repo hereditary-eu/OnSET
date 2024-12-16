@@ -200,6 +200,11 @@ export interface Subject {
    * @default {}
    */
   properties?: Record<string, Subject[]>;
+  /**
+   * Instance Count
+   * @default 0
+   */
+  instance_count?: number;
 }
 
 /** SubjectLink */
@@ -220,6 +225,11 @@ export interface SubjectLink {
   property_id: string | null;
   from_subject: Subject | null;
   to_subject: Subject | null;
+  /**
+   * Instance Count
+   * @default 0
+   */
+  instance_count?: number;
 }
 
 /** Topic */

@@ -8,9 +8,10 @@ import { type NodeType, type SubjectInGraph, GraphMan } from '@/utils/d3-man/Gra
 import { CircleMan, SubjectInCircle } from '@/utils/d3-man/CircleMan';
 import { BACKEND_URL } from '@/utils/config';
 import { CircleMan3D } from '@/utils/three-man/CircleMan3D';
+import { HierarchicalCircleMan3D } from '@/utils/three-man/HierarchicalCircleMan3D';
 const graph_data = ref([] as SubjectInCircle[])
 const topics_root = ref(null as Topic | null)
-const circleman = new CircleMan3D()
+const circleman = new HierarchicalCircleMan3D('.graph_wrapper')
 const api = new Api({
     baseURL: BACKEND_URL
 })

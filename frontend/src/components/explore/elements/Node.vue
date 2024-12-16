@@ -13,7 +13,7 @@
                 @mouseleave="mouse_up_node">
             </rect>
             <text :x="`${subject.width / 2}px`" :y="`${subject.height / 2}px`" class=node_text>
-                {{ subject.label }}
+                {{ mode == DisplayMode.RESULTS ? result_subject.instance_label : subject.label }}
             </text>
             <g v-for="constr_info in constraint_list_mapped"
                 :transform="`translate(${subject.width / 2},${constr_info.y})`">
@@ -22,7 +22,7 @@
                 </Constraint>
             </g>
 
-            <g v-show="editable && editor_data.show_editpoints">
+            <g v-show="mode == DisplayMode.EDIT && editor_data.show_editpoints">
                 <!--special container for editor points in order to not interfere?-->
                 <circle :cx="0" :cy="subject.height / 2" :r="editor_data.editpoint_r" class="edit_point edit_point_link"
                     @click="emit('editPointClicked', { side: NodeSide.FROM, node: subject })"></circle>
@@ -41,13 +41,13 @@
             </g>
         </g>
         <g v-for="to_link of subject.to_links ">
-            <Node :subject="to_link.to_subject" :editable="editable" :parent_subject="subject"
+            <Node :subject="to_link.to_subject" :mode="mode" :parent_subject="subject"
                 @edit-point-clicked="emit('editPointClicked', $event)">
             </Node>
             <LinkComp :link="to_link"></LinkComp>
         </g>
         <g v-for="from_link of subject.from_links ">
-            <Node :subject="from_link.from_subject" :editable="editable" :parent_subject="subject"
+            <Node :subject="from_link.from_subject" :mode="mode" :parent_subject="subject"
                 @edit-point-clicked="emit('editPointClicked', $event)">
             </Node>
             <LinkComp :link="from_link"></LinkComp>
@@ -59,13 +59,15 @@ import { ref, watch, reactive, computed, onMounted, defineProps, onBeforeUpdate 
 import { type Subject } from '@/api/client.ts/Api';
 import { Node as NodeRepr } from '@/utils/sparql/representation';
 import LinkComp from './Link.vue';
-import { CONSTRAINT_WIDTH, NodeSide, OutlinkSelectorOpenEvent } from '@/utils/sparql/explorer';
+import { CONSTRAINT_WIDTH, DisplayMode, NodeSide, OutlinkSelectorOpenEvent } from '@/utils/sparql/explorer';
 import Constraint from './Constraint.vue';
+import type { InstanceNode } from '@/utils/sparql/querymapper';
 const emit = defineEmits<{
     editPointClicked: [value: OutlinkSelectorOpenEvent]
 
 }>()
-const { subject, editable, parent_subject } = defineProps({
+
+const { subject, mode, parent_subject } = defineProps({
     subject: {
         type: Object as () => NodeRepr,
         required: true
@@ -74,9 +76,9 @@ const { subject, editable, parent_subject } = defineProps({
         type: Object as () => NodeRepr,
         default: null
     },
-    editable: {
-        type: Boolean,
-        default: false
+    mode: {
+        type: String as () => DisplayMode,
+        default: DisplayMode.SELECT
     }
 })
 const editor_data = reactive({
@@ -88,7 +90,7 @@ const editor_data = reactive({
     editpoint_r: 7
 })
 const mouse_down_node = (event: MouseEvent) => {
-    if (editable) {
+    if (mode == DisplayMode.EDIT) {
         editor_data.mouse_down = true
         editor_data.mouse_x = event.clientX
         editor_data.mouse_y = event.clientY
@@ -163,6 +165,7 @@ const edit_point_hover = (event: MouseEvent, state: boolean) => {
 const deleteConstraint = (constraint) => {
     subject.property_constraints = subject.property_constraints.filter((constr) => constr != constraint)
 }
+const result_subject = computed(() => subject as InstanceNode)
 </script>
 <style lang="scss">
 .node {

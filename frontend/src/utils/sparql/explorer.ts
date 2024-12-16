@@ -15,3 +15,10 @@ export const NODE_HEIGHT = 64
 export const LINK_WIDTH = 75
 export const CONSTRAINT_WIDTH = 250
 export const CONSTRAINT_HEIGHT = 50
+
+
+export enum DisplayMode {
+    SELECT = 'select',
+    EDIT = 'edit',
+    RESULTS = 'results',
+}

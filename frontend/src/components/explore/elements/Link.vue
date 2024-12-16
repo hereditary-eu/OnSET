@@ -27,6 +27,9 @@ watch(() => link, () => {
 onMounted(() => {
     // console.log('Link', link)
 })
+const link_width = computed(() => {
+    return Math.log10(link.instance_count + 1) + 1
+})
 </script>
 <style lang="scss">
 .link_text {
@@ -34,9 +37,10 @@ onMounted(() => {
     text-anchor: middle;
     text-align: center;
 }
+
 .link_path {
     fill: none;
     stroke: #828282;
-    stroke-width: 1px;
+    stroke-width: v-bind("link_width");
 }
 </style>

@@ -16,6 +16,7 @@ export class SubjectInCircle implements Subject {
     children?: SubjectInCircle[]
     n_id: number = 0
     position?: THREE.Vector3
+    properties?: Record<string, SubjectInCircle[]>;
 }
 export class TopicTreeLink {
     from_topic?: TopicInCircle
@@ -42,7 +43,6 @@ export class TopicInCircle implements Topic {
 // expanded with Topic links and fixed height of nodes (TODO)
 export class CircleMan3D {
     nodes: SubjectInCircle[] = []
-    topics_root: TopicInCircle = null
 
     color = d3.scaleLinear<number, string, string>()
         .domain([0, 10])
@@ -61,6 +61,7 @@ export class CircleMan3D {
     three_div: HTMLElement = null
     camera: THREE.PerspectiveCamera = null
     scene: THREE.Scene = null
+    renderer: THREE.Renderer = null
     dimensions = {
         width: 1000,
         height: 50,
@@ -76,20 +77,15 @@ export class CircleMan3D {
         line_materials: {} as Record<number, THREE.MeshBasicMaterial>,
     };
 
-    tree_params = {
-        segments: 16,
-        radius: 0.5,
-        level_height: 16,
-        radial_segments: 8
-    }
 
     subjects_by_id: Record<string, SubjectInCircle> = {}
-
-    private node_counter = 0
-    constructor() {
+    properties_by_id: Record<string, SubjectInCircle> = {}
+    max_depth = 0
+    node_counter = 0
+    constructor(public query_renderer:string) {
 
     }
-    private mapNodesToChildren(node: SubjectInCircle): SubjectInCircle {
+    mapNodesToChildren(node: SubjectInCircle): SubjectInCircle {
         let children: SubjectInCircle[] = []
         for (let key in node.descendants) {
             let child = new SubjectInCircle()
@@ -114,7 +110,7 @@ export class CircleMan3D {
             children: children
         }
     }
-    private computePacking() {
+    computePacking() {
 
         const mapped_nodes: SubjectInCircle[] = this.nodes.map(this.mapNodesToChildren.bind(this))
         mapped_nodes.forEach(child => child.n_id = this.node_counter++)
@@ -140,24 +136,31 @@ export class CircleMan3D {
 
             .padding(d => d.data.children ? 0.5 : 1)(this.hierarchy);
         console.log('root', this.root)
-        let max_depth = 0
+
         this.root.each(d => {
-            if (d.depth > max_depth) {
-                max_depth = d.depth
+            if (d.depth > this.max_depth) {
+                this.max_depth = d.depth
             }
             console.log('node', d.data.subject_id, d.data)
             this.subjects_by_id[d.data.subject_id] = d.data
+            if (d.data.properties) {
+                for (let proptype in d.data.properties) {
+                    for (let prop of d.data.properties[proptype]) {
+                        this.properties_by_id[prop.subject_id] = d.data
+                    }
+                }
+            }
         })
 
         this.color = d3.scaleLinear<number, string, string>()
-            .domain([0, max_depth])
+            .domain([0, this.max_depth])
             .range(["hsl(152,80%,80%)", "hsl(228,30%,40%)"] as any)
             .interpolate(d3.interpolateHcl as any);
 
 
     }
 
-    private restartPackedCircles() {
+    restartPackedCircles() {
         this.scene.clear()
         this.root.each(d => {
             const node = d.data
@@ -185,95 +188,18 @@ export class CircleMan3D {
         });
 
     }
-    private buildTopicTree() {
-        if (!this.topics_root) {
-            return
-        }
-        let depth = 0
-        const eval_depth = (topic, depth) => {
-            let max_depth = depth
-            for (let sub_topic of topic.sub_topics) {
-                let sub_topic_depth = eval_depth(sub_topic, depth + 1)
-                if (sub_topic_depth > max_depth) {
-                    max_depth = sub_topic_depth
-                }
-            }
-            return max_depth
-        }
-        depth = eval_depth(this.topics_root, 0)
-        const build_tree_bottom = (topic: TopicInCircle, depth: number) => {
-            let children = topic.sub_topics.map(sub_topic => build_tree_bottom(sub_topic, depth - 1))
-            topic.links = [...children.map(child => {
-                let link = new TopicTreeLink()
-                link.from_topic = child
-                link.from_position = child.to_position
-                return link
-            }), ...topic.subjects_ids.map(subject_id => {
-                let link = new TopicTreeLink()
-                link.from_subject = this.subjects_by_id[subject_id]
-                if (!link.from_subject) {
-                    console.log('no subject', subject_id)
-                    return
-                }
-                link.from_position = link.from_subject.position
-                return link
-            })].filter(link => link)
-            topic.to_position = new THREE.Vector3(0, 0, 0)
-            let n_valid_links = 0
-            topic.links.forEach(link => {
-                if (link.from_position) {
-                    topic.to_position.add(link.from_position)
-                    n_valid_links++
-                }
-            })
-            topic.to_position.divideScalar(n_valid_links)
-            topic.to_position.add(new THREE.Vector3(0, this.tree_params.level_height, 0))
-
-            topic.links.map(link => {
-                let curve = new THREE.QuadraticBezierCurve3(topic.to_position,
-                    link.from_position.clone().add(new THREE.Vector3(0, this.tree_params.level_height, 0)),
-                    link.from_position)
-                let geometry = new THREE.TubeGeometry(curve, this.tree_params.segments,
-                    this.tree_params.radius,
-                    this.tree_params.radial_segments,
-                    false);
-                let material = new THREE.MeshBasicMaterial({
-                    color: 0x999999,
-                    transparent: true,
-                    opacity: 0.7
-                });
-                let tube_mesh = new THREE.Mesh(geometry, material);
-
-                // let line_geometry = new THREE.LineSegments(geometry, new THREE.LineBasicMaterial({ color: 0x7f7f7f }));
-
-                // tube_mesh.add(line_geometry)
-
-                link.curve = curve
-                link.geometry = geometry
-                // link.line_geometry = line_geometry
-
-                // line.position.y =  / 2
-                this.scene.add(tube_mesh)
-
-            })
-            return topic
-
-        }
-        build_tree_bottom(this.topics_root, depth)
-    }
     initPackedCircles() {
 
         this.computePacking()
 
 
-        d3.select('.graph_wrapper').selectAll("*").remove()
-        this.three_div = d3.select('.graph_wrapper').append("div").attr("class", "threed_graph").node()
+        d3.select(this.query_renderer).selectAll("*").remove()
+        this.three_div = d3.select(this.query_renderer).append("div").attr("class", "threed_graph").node()
         this.width = this.three_div.clientWidth
         this.height = this.three_div.clientHeight
-
-        const renderer = new THREE.WebGLRenderer();
-        renderer.setSize(this.width, this.height);
-        this.three_div.appendChild(renderer.domElement);
+        this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        this.renderer.setSize(this.width, this.height);
+        this.three_div.appendChild(this.renderer.domElement);
 
         this.camera = new THREE.PerspectiveCamera(75, this.width / this.height, 0.2, 1500);
         this.camera.aspect = this.width / this.height;
@@ -306,25 +232,20 @@ export class CircleMan3D {
         // this.pool.line_material = new THREE.MeshBasicMaterial({ color: 0x000000 });
         this.restartPackedCircles()
 
-        this.buildTopicTree()
 
-        const controls = new OrbitControls(this.camera, renderer.domElement);
+        const controls = new OrbitControls(this.camera, this.renderer.domElement);
         controls.screenSpacePanning = true;
         controls.maxPolarAngle = Math.PI / 2.5;
         controls.minDistance = 50;
         controls.maxDistance = 650;
         controls.addEventListener("change", () => {
             // tooltip.clear();
-            renderer.clear();
-            renderer.render(this.scene, this.camera);
+            if (this.renderer && this.renderer instanceof THREE.WebGLRenderer) {
+                this.renderer.clear();
+            }
+            this.renderer.render(this.scene, this.camera);
         });
         controls.update();
-        renderer.render(this.scene, this.camera);
-    }
-    addLink(from: string, to: string, count: number) {
-
-
-    }
-    removeLinks() {
+        this.renderer.render(this.scene, this.camera);
     }
 }

@@ -1,5 +1,6 @@
 <template>
-    <g id="outlink_selector">
+    <g id="outlink_selector" @mouseout.capture="edit_point_hover($event, false)"
+    @mouseenter.capture="edit_point_hover($event, true)" @mouseover="edit_point_hover($event, true)">
         <g :transform="`translate(${attachment_pt.x},${attachment_pt.y})`" v-if="display">
             <foreignObject :height="(NODE_HEIGHT + 10) * 5" :width="NODE_WIDTH + LINK_WIDTH + 35">
                 <div class="selection_div_container" :style="{ 'height': `${NODE_HEIGHT * 5 + 10}px` }">
@@ -24,6 +25,11 @@
                     </div>
                 </div>
             </foreignObject>
+
+            <g v-show="editor_data.show_editpoints">
+                <circle :cx="NODE_WIDTH + LINK_WIDTH + 35" :cy="0" :r="editor_data.editpoint_r"
+                    class="edit_point edit_point_delete" @click="display = false"></circle>
+            </g>
         </g>
     </g>
 </template>
@@ -47,6 +53,11 @@ const { selection_event } = defineProps({
         type: Object as () => OutlinkSelectorOpenEvent,
         required: true
     }
+})
+
+const editor_data = reactive({
+    show_editpoints: false,
+    editpoint_r: 7
 })
 const display = defineModel<boolean>()
 const selection_options = ref([] as MixedResponse[])
@@ -141,12 +152,15 @@ const selected_options_filtered = computed(() => {
     return selection_options.value
 })
 
-
+const edit_point_hover = (event: MouseEvent, state: boolean) => {
+    editor_data.show_editpoints = state
+}
 </script>
 <style lang="scss">
 .selection_search {
     padding: 5px;
-    input{
+
+    input {
         padding: 0 5px 0 5px;
         border: 1px solid rgb(197, 196, 168);
     }
@@ -181,5 +195,20 @@ const selected_options_filtered = computed(() => {
 
 .selection_element:hover {
     background-color: #f0f0f0;
+}
+
+
+.edit_point {
+    fill: #a0c2a9;
+    cursor: pointer;
+    fill-opacity: 0.4;
+}
+.edit_point:hover {
+    stroke: #888888;
+    display: block;
+    fill-opacity: 1;
+}
+.edit_point_delete {
+    fill: #ea694f;
 }
 </style>
