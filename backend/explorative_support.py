@@ -7,7 +7,7 @@ from bertopic.representation import MaximalMarginalRelevance, LlamaCPP
 from llama_cpp import Llama
 from hashlib import sha256
 from explorative_model import *
-from sqlalchemy import text, inspect, create_engine, select
+from sqlalchemy import text, inspect, create_engine, select, delete
 import torch as t
 import numpy as np
 
@@ -78,37 +78,53 @@ class TopicModelling:
         # This model supports two prompts: "s2p_query" and "s2s_query" for sentence-to-passage and sentence-to-sentence tasks, respectively.
         # They are defined in `config_sentence_transformers.json`
         self.query_prompt_name = "s2p_query"
-        self.embedding_model = SentenceTransformer(
-            "dunzhang/stella_en_400M_v5",
-            trust_remote_code=True,
-            config_kwargs={
-                "use_memory_efficient_attention": False,
-                "unpad_inputs": False,
-            },
-        ).to(device)
-        # self.embedding_model = SentenceTransformer(
-        #     "paraphrase-MiniLM-L6-v2",
-        # ).to(device)
-        self.llama_model = Llama.from_pretrained(
+
+        self.engine = create_engine(conn_str)
+        identifier_results = self.oman.onto.query(
+            "SELECT ?s  ?p ?o WHERE {?s ?o ?p.} LIMIT 25"
+        )
+        if len(identifier_results) == 1:
+            raise ValueError(
+                "Ontology is empty or SPARQL endpoint is not reachable",
+                identifier_results,
+            )
+        self.identifier = sha256(
+            ".".join([str(e) for e in identifier_results]).encode()
+        ).hexdigest()
+        self.__lama_model = None
+        self.__embedding_model = None
+
+    @property
+    def llama_model(self):
+        if self.__lama_model is not None:
+            return self.__lama_model
+        self.__lama_model = Llama.from_pretrained(
             repo_id="NousResearch/Hermes-3-Llama-3.1-8B-GGUF",
             filename="*.Q8_0.gguf",
             n_batch=1024,
             n_ctx=10000,
             n_gpu_layers=-1,
         )
-        self.engine = create_engine(conn_str)
-        self.identifier = sha256(
-            ".".join(
-                [
-                    str(e)
-                    for e in self.oman.onto.query(
-                        "SELECT ?s  ?p ?o WHERE {?s ?o ?p.} LIMIT 25"
-                    )
-                ]
-            ).encode()
-        ).hexdigest()
+        return self.__lama_model
 
-    def initialize_topics(self, force: bool = False):
+    @property
+    def embedding_model(self):
+        if self.__embedding_model is not None:
+            return self.__embedding_model
+        self.__embedding_model = SentenceTransformer(
+            "dunzhang/stella_en_400M_v5",
+            trust_remote_code=True,
+            config_kwargs={
+                "use_memory_efficient_attention": False,
+                "unpad_inputs": False,
+            },
+        ).to(self.device)
+        # self.embedding_model = SentenceTransformer(
+        #     "paraphrase-MiniLM-L6-v2",
+        # ).to(device)
+        return self.__embedding_model
+
+    def initialize_topics(self, force: bool = False, delete_tables: bool = False):
         init_topics = False
         with Session(self.engine) as session:
             insp = inspect(self.engine)
@@ -126,20 +142,39 @@ class TopicModelling:
                     is None
                 )
         if init_topics or force:
+            print("Initializing topics")
             with Session(self.engine) as session:
                 session.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
                 session.commit()
-            BasePostgres.metadata.drop_all(self.engine)
+            if delete_tables:
+                BasePostgres.metadata.drop_all(self.engine)
+
             BasePostgres.metadata.create_all(self.engine)
-            self.__model_topics()
+            with Session(self.engine) as session:
+                session.execute(text("SET CONSTRAINTS ALL DEFERRED"))
+                session.execute(
+                    delete(TopicDB).where(TopicDB.onto_hash == self.identifier)
+                )
+                session.execute(
+                    delete(SubjectInDB).where(SubjectInDB.onto_hash == self.identifier)
+                )
+                session.execute(
+                    delete(SubjectLinkDB).where(
+                        SubjectLinkDB.onto_hash == self.identifier
+                    )
+                )
+                session.commit()
+
+            # embed first, then model to make sure subjects are available for topics
             self.__embed_relations()
+            self.model_topics()
 
-    def __get_named_individuals_desc(self, c: Subject) -> list[str]:
+    def __get_named_individuals_desc(self, c: Subject) -> dict[str, str]:
         nis = self.oman.get_named_individuals(c.subject_id)
-        return [f"{ne.label} is a {c.label}" for ne in nis]
+        return {ne.subject_id: f"{ne.label} is a {c.label}" for ne in nis}
 
-    def __get_properties_desc(self, c: Subject) -> list[str]:
-        prop_docs = []
+    def __get_properties_desc(self, c: Subject) -> dict[str, str]:
+        prop_docs = {}
         for pt, p in c.properties.items():
             for prop in p:
                 prop_doc = f"{c.label} \n"
@@ -161,7 +196,7 @@ class TopicModelling:
                     if subprop.label.startswith("<"):
                         continue
                     prop_doc += f" is subproperty of {subprop.label}. "
-                prop_docs.append(prop_doc)
+                prop_docs[prop.subject_id] = prop_doc
         return prop_docs
 
     def __get_subclass_desc(self, c: Subject) -> list[str]:
@@ -173,7 +208,7 @@ class TopicModelling:
             cls_doc += f" is subclass of  {subcls.label}\n"
         return [cls_doc]
 
-    def __build_docs(self) -> list[str]:
+    def build_docs(self):
         classes = self.oman.q_to_df(
             """
 SELECT ?s
@@ -186,21 +221,44 @@ WHERE {
             self.oman.enrich_subject(c, load_properties=True) for c in classes
         ]
 
-        documents = []
+        documents: list[dict[str, str]] = []
         for c in classes_enriched[1:]:
             if c.label.startswith("<"):
                 print("ignoring", c.label)
                 continue
             documents.extend(
-                self.__get_named_individuals_desc(c)
-                + self.__get_properties_desc(c)
-                + self.__get_subclass_desc(c)
+                [
+                    {
+                        "subject_id": c.subject_id,
+                        "named_individual_id": ne_id,
+                        "doc": ne_doc,
+                        "type": "named_individual",
+                    }
+                    for ne_id, ne_doc in self.__get_named_individuals_desc(c).items()
+                ]
             )
-        return documents
+            documents.extend(
+                {
+                    "subject_id": c.subject_id,
+                    "property_id": prop_id,
+                    "doc": prop_doc,
+                    "type": "property",
+                }
+                for prop_id, prop_doc in self.__get_properties_desc(c).items()
+            )
+            documents.extend(
+                {
+                    "subject_id": c.subject_id,
+                    "doc": subcls_doc,
+                    "type": "subclass",
+                }
+                for subcls_doc in self.__get_subclass_desc(c)
+            )
+        return pd.DataFrame(documents)
 
-    def __model_topics(self):
+    def model_topics(self):
 
-        docs = self.__build_docs()
+        docs = self.build_docs()
         # Create an instance of the Llama class and load the model
 
         # Create the provider by passing the Llama class instance to the LlamaCppPythonProvider class
@@ -212,8 +270,8 @@ WHERE {
             verbose=True,
             representation_model=representation_llama,
         )
-        topic_model_llm.fit(docs)
-        hierarchical_topics = topic_model_llm.hierarchical_topics(docs)
+        topic_model_llm.fit(docs["doc"])
+        hierarchical_topics = topic_model_llm.hierarchical_topics(docs["doc"])
         topics = topic_model_llm.get_topic_info()
         # Save the model
         # topic_model_llm.save(f"model_{self.identifier}.pkl")
@@ -221,21 +279,49 @@ WHERE {
             # https://stackoverflow.com/a/48057795
             # defer for *current* transaction!
             session.execute(text("SET CONSTRAINTS ALL DEFERRED"))
+            session.execute(delete(TopicDB).where(TopicDB.onto_hash == self.identifier))
             topic_map: dict[int, TopicDB] = {}
             for i, topic in topics.iterrows():
+                topic_id = topic["Topic"]
                 topic_label = topic_model_llm.get_topic(topic["Topic"])[0][0]
-                docs = "\n".join(topic["Representative_Docs"])
+                repr_docs = "\n".join(topic["Representative_Docs"])
 
                 topic_embedding = self.embedding_model.encode(
-                    f"{topic_label}\n\n{docs}"
+                    f"{topic_label}\n\n{repr_docs}"
                 )
                 topic_db = TopicDB(
-                    topic_id=i,
+                    topic_id=topic_id,
                     topic=topic_label,
-                    doc_string=docs,
+                    doc_string=repr_docs,
                     embedding=topic_embedding,
                 )
-                topic_map[i] = topic_db
+                # elif doc["type"] == "property":
+                #     link=session.execute(
+                #         select(SubjectLinkDB).where(SubjectLinkDB.property_id == doc["property_id"])
+                #     ).first()
+                #     if link is not None:
+                #         topic_db.subjects.append(link)
+                topic_map[topic_id] = topic_db
+
+            doc_info = topic_model_llm.get_document_info(docs["doc"], docs)
+            for i, doc in doc_info.iterrows():
+                topic_id = doc["Topic"]
+                if doc["type"] == "subclass":
+                    subject = session.execute(
+                        select(SubjectInDB).where(
+                            SubjectInDB.subject_id == doc["subject_id"]
+                        )
+                    ).first()
+                    if subject is not None and topic_id in topic_map:
+                        subject[0].topic_id = topic_id
+                elif doc["type"] == "property":
+                    link = session.execute(
+                        select(SubjectLinkDB).where(
+                            SubjectLinkDB.property_id == doc["property_id"]
+                        )
+                    ).first()
+                    if link is not None and topic_id in topic_map:
+                        link[0].topic_id = topic_id
             for i, topic in hierarchical_topics.iterrows():
                 parent_name: str = topic["Parent_Name"]
                 parent_name = parent_name.strip("_")
@@ -261,13 +347,13 @@ WHERE {
             session.commit()
 
             # Aggregate embeddings
-            # --> seems to be a bit too average-y
-            root_topic = session.execute(
+            # --> seems to be a bit too average-y -> parent topics are now combined
+            root_topics = session.execute(
                 select(TopicDB).where(
                     TopicDB.onto_hash == self.identifier,
                     TopicDB.parent_topic_id == None,
                 )
-            ).first()
+            ).fetchall()
 
             def get_and_set_aggregated_embedding(topic: TopicDB) -> list[str]:
                 if len(topic.sub_topics) == 0:
@@ -282,9 +368,13 @@ WHERE {
                     f"{topic.topic}\n\n{topic_description}"
                 )
                 topic.embedding = aggregated_embedding
+                session.add(topic)
                 return [topic.topic] + sub_topics
 
-            get_and_set_aggregated_embedding(root_topic[0])
+            [
+                get_and_set_aggregated_embedding(root_topic[0])
+                for root_topic in root_topics
+            ]
             session.commit()
 
     def get_topic_tree(self) -> list[Topic]:
@@ -293,6 +383,7 @@ WHERE {
                 select(TopicDB).where(
                     TopicDB.parent_topic_id == None,
                     TopicDB.onto_hash == self.identifier,
+                    TopicDB.topic_id != -1,
                 )
             ).first()
 
@@ -306,6 +397,8 @@ WHERE {
                     sub_topics=[
                         topic_tree(sub_topic) for sub_topic in topic.sub_topics
                     ],
+                    subjects_ids=[s.subject_id for s in topic.subjects],
+                    property_ids=[l.property_id for l in topic.links],
                 )
 
             return topic_tree(root_topic[0])
@@ -321,7 +414,7 @@ WHERE {
 """
         )[0].to_list()
         all_classes = {
-            c: self.oman.enrich_subject(c, load_properties=True) for c in all_classes
+            c: self.oman.enrich_subject(c, load_properties=True) for c in tqdm(all_classes, desc="Enriching classes")
         }
 
         with Session(self.engine) as session:
@@ -349,7 +442,6 @@ WHERE {
                     """
                 cls_descs[cls.subject_id] = desc_short
                 embedding = self.embedding_model.encode(desc_short)
-
                 session.add(
                     SubjectInDB(
                         subject_id=cls.subject_id,
@@ -359,9 +451,10 @@ WHERE {
                         onto_hash=self.identifier,
                         parent_id=subcls if len(subcls) > 0 else None,
                         subject_type=cls.subject_type,
+                        instance_count=cls.instance_count,
                     )
                 )
-            session.commit()
+            session.commit()    
             for cls in tqdm(all_classes.values(), desc="Embedding relations"):
                 for prop in cls.properties.keys():
                     for p in cls.properties[prop]:
@@ -411,6 +504,7 @@ WHERE {
                                 onto_hash=self.identifier,
                                 embedding=prop_embedding,
                                 label=p.label,
+                                instance_count=self.oman.property_count(p.subject_id),
                             )
                         )
             session.commit()
@@ -477,7 +571,7 @@ WHERE {
                     .where(TopicDB.onto_hash == self.identifier)
                     .where(TopicDB.topic_id.in_(query.topic_ids))
                 ).all()
-                topic_embeddings = t.tensor([t[0].embedding for t in topics])
+                topic_embeddings = t.tensor([topic[0].embedding for topic in topics])
                 topic_embedding = t.mean(topic_embeddings, axis=0)
                 if query_embedding is not None:
                     query_embedding = (
@@ -521,7 +615,8 @@ WHERE {
                 ).where(SubjectLinkDB.onto_hash == self.identifier)
                 if query.from_id is not None:
                     query_link = query_link.where(
-                        SubjectLinkDB.from_id == query.from_id 
+                        SubjectLinkDB.from_id
+                        == query.from_id
                         # TODO: allow for class hierarchies insteal of just current class, i.e. allow all subclasses
                     )
                 if query.to_id is not None:
@@ -533,7 +628,8 @@ WHERE {
                 elif query.relation_type == RELATION_TYPE.PROPERTY:
                     query_link = query_link.where(
                         SubjectLinkDB.to_id == None,
-                        SubjectLinkDB.to_proptype != None, # constraint to known proptypes
+                        SubjectLinkDB.to_proptype
+                        != None,  # constraint to known proptypes
                     )
                 query_link = query_link.order_by(
                     SubjectLinkDB.embedding.cosine_distance(query_embedding)

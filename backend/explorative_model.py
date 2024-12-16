@@ -30,9 +30,15 @@ class TopicDB(BasePostgres):
     count: Mapped[int] = mapped_column(default=0)
     embedding: Mapped[Vector | None] = mapped_column(Vector(N_EMBEDDINGS))
     doc_string: Mapped[str | None] = mapped_column()
-
+    
     onto_hash: Mapped[str | None] = mapped_column()
 
+    links: Mapped[list[SubjectLinkDB]] = relationship(
+        "SubjectLinkDB", back_populates="topic"
+    )
+    subjects: Mapped[list[SubjectInDB]] = relationship(
+        "SubjectInDB", back_populates="topic"
+    )
 
 class Topic(BaseModel):
     topic_id: int
@@ -40,6 +46,8 @@ class Topic(BaseModel):
     parent_topic_id: int | None
     topic: str
     count: int
+    subjects_ids: list[str]
+    property_ids: list[str]
     # embedding: list[float]
 
 
@@ -50,6 +58,8 @@ class SubjectInDB(BasePostgres):
     label: Mapped[str | None] = mapped_column()
     comment: Mapped[str | None] = mapped_column()
     subject_type: Mapped[str] = mapped_column()
+    topic_id: Mapped[int | None] = mapped_column(ForeignKey("topics.topic_id", deferrable=True))
+    instance_count: Mapped[int] = mapped_column(default=0)
 
     embedding: Mapped[Vector] = mapped_column(Vector(N_EMBEDDINGS))
     onto_hash: Mapped[str | None] = mapped_column()
@@ -79,6 +89,8 @@ class SubjectInDB(BasePostgres):
         primaryjoin="SubjectInDB.subject_id == SubjectLinkDB.to_id",
     )
 
+    topic: Mapped[TopicDB] = relationship("TopicDB", back_populates="subjects")
+
 
 class SubjectLinkDB(BasePostgres):
     __tablename__ = "subject_links"
@@ -92,10 +104,15 @@ class SubjectLinkDB(BasePostgres):
     to_proptype: Mapped[str | None] = mapped_column()
     property_id: Mapped[str | None] = mapped_column()
     label: Mapped[str | None] = mapped_column()
+    instance_count: Mapped[int] = mapped_column(default=0)
+    
+    topic_id: Mapped[int | None] = mapped_column(ForeignKey("topics.topic_id", deferrable=True))
 
     embedding: Mapped[Vector] = mapped_column(Vector(N_EMBEDDINGS))
 
     onto_hash: Mapped[str | None] = mapped_column()
+
+    topic: Mapped[TopicDB] = relationship("TopicDB", back_populates="links")
 
     from_subject: Mapped[SubjectInDB] = relationship(
         "SubjectInDB",
@@ -123,6 +140,8 @@ class SubjectLink(BaseModel):
     from_subject: Subject | None
     to_subject: Subject | None
 
+    instance_count: int = 0
+
     @classmethod
     def from_db(self, link: SubjectLinkDB, oman: OntologyManager):
         return SubjectLink(
@@ -137,6 +156,7 @@ class SubjectLink(BaseModel):
             to_subject=(
                 oman.enrich_subject(link.to_id) if link.to_id is not None else None
             ),
+            instance_count=link.instance_count,
         )
 
 
@@ -162,7 +182,8 @@ class FuzzyQuery(BaseModel):
     skip: int | None = Field(0)
 
     type: RETURN_TYPE = RETURN_TYPE.BOTH
-    relation_type: RELATION_TYPE|None = RELATION_TYPE.INSTANCE
+    relation_type: RELATION_TYPE | None = RELATION_TYPE.INSTANCE
+
 
 class FuzzyQueryResult(BaseModel):
     link: SubjectLink | None = Field(None)
@@ -172,3 +193,9 @@ class FuzzyQueryResult(BaseModel):
 
 class FuzzyQueryResults(BaseModel):
     results: list[FuzzyQueryResult]
+
+
+class SparqlQuery(BaseModel):
+    query: str = Field()
+    limit: int | None = Field(25)
+    skip: int | None = Field(0)

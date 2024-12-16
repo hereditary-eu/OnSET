@@ -14,12 +14,30 @@ onto_path = f"{base_path}/hero-ontology/hereditary_clinical.ttl"
 
 # graph = Graph().parse(onto_path, format="turtle")
 # graph.bind("bto", "http://www.semanticweb.org/ontologies/2020/3/bto#")
-
+# graphdb
+# store = SPARQLStore(
+#     "http://localhost:7200/repositories/dpedia",
+#     method="POST_FORM",
+#     params={"infer": False, "sameAs": False},
+# )
+# store = SPARQLStore(
+#     "http://localhost:3030/dbpedia/query",
+#     method="POST_FORM",
+#     params={"infer": False, "sameAs": False},
+# )
 store = SPARQLStore(
-    "http://localhost:7200/repositories/dpedia",
+    "http://localhost:7012/",
     method="POST_FORM",
     params={"infer": False, "sameAs": False},
 )
+# store = SPARQLStore(
+#     "http://examode.dei.unipd.it:7200/repositories/TUGraz_test",
+#     method="POST_FORM",
+#     params={"infer": False, "sameAs": False},
+#     headers={
+#         "Authorization": "GDB eyJ1c2VybmFtZSI6ImJlbmVkaWt0LmthbnR6IiwiYXV0aGVudGljYXRlZEF0IjoxNzMzODMxOTk3NTIzfQ==.QqebiiJt752/OThRujrJyNg0XXKrrteU7MhNPUCoSBI="
+#     },
+# )
 graph = Graph(store=store)
 
 config = OntologyConfig()
@@ -47,6 +65,11 @@ app.add_middleware(
 @app.get("/")
 def read_root():
     return "Welcome to the Ontology Provenance API"
+
+
+@app.post("/sparql")
+def sparql_query(query: SparqlQuery = Body(...)) -> list[dict[str, Any]]:
+    return ontology_manager.q_to_df_values(query.query).to_dict(orient="records")
 
 
 @app.post("/management/ontology")
@@ -94,7 +117,9 @@ def get_links(subject_id: str = Query()) -> SparseOutLinks:
 
 
 @app.post("/classes/search")
-def search_classes(q: FuzzyQuery = Body("working field of person")) -> FuzzyQueryResults:
+def search_classes(
+    q: FuzzyQuery = Body("working field of person"),
+) -> FuzzyQueryResults:
     return topic_man.search_fuzzy(q)
 
 
