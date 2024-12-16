@@ -1,0 +1,10 @@
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+SELECT ?node_471 ?node_472 ?lbl_node_471 ?lbl_node_472 ?prop_91 WHERE {
+?node_471 a <http://dbpedia.org/ontology/Work>.
+OPTIONAL {?node_471 rdfs:label ?lbl_node_471.}
+?node_472 a <http://dbpedia.org/ontology/Person>.
+OPTIONAL {?node_472 rdfs:label ?lbl_node_472.}
+?node_471 <http://dbpedia.org/ontology/composer> ?node_472.
+?node_680 <http://dbpedia.org/ontology/Person/height> ?prop_91.
+FILTER(?prop_91 > 180)
+} LIMIT 10

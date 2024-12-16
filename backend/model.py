@@ -7,6 +7,7 @@ from sqlalchemy import ForeignKey
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship, Session
 
 
+
 class Base(DeclarativeBase):
     pass
 
@@ -20,8 +21,7 @@ class Subject(BaseModel):
     descendants: dict[str, list[Subject]] = Field({})
     total_descendants: int = 0
     properties: dict[str, list[Subject]] = Field({})
-
-
+    instance_count: int = 0 
 class MatchDB(Base):
     __tablename__ = "match"
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -109,4 +109,5 @@ class SparseOutLinks:
     targets: list[OutLink] = field(default_factory=list)
 
 
-# Subject.model_rebuild()
+# Subject.update_forward_refs()
+Subject.model_rebuild()

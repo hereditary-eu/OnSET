@@ -7,7 +7,6 @@ from tqdm import tqdm
 import traceback
 
 
-
 class Prefix(BaseModel):
     ttl_prefix: str = Field(
         "bto", title="Prefix", description="Prefix to be used in the ontology"
@@ -29,6 +28,7 @@ class OntologyConfig(BaseModel):
         f"""SELECT ?cls
             WHERE {{
                     ?cls rdf:type owl:Class.
+                    ?cls rdfs:label ?cls_lbl.
                     MINUS {{ ?cls rdfs:subClassOf ?sbcl}}.
             }}
                 """,
@@ -68,7 +68,13 @@ class OntologyManager:
         #     lambda x: x.n3(self.onto.namespace_manager) if hasattr(x, "n3") else x
         # )
         return pd.DataFrame(results)
-
+    def q_to_df_values(self, q: str):
+        result_set = self.onto.query(q)
+        cols=[str(var) for var in result_set.vars]
+        results = [dict(zip(cols, row)) for row in result_set]
+        results_df = pd.DataFrame(results )
+        results_df=results_df.apply(self.to_readable)
+        return results_df
     def df_to_labels(self, df: pd.DataFrame):
         labeled_df = df.copy()
         for i, row in df.iterrows():
@@ -85,6 +91,9 @@ class OntologyManager:
         classes = self.q_to_df(self.config.parent_class_query)
         if classes.empty:
             # if no parent classes, return all classes belonging to owl:Thing
+            print(
+                "No parent classes found, returning all classes belonging to owl:Thing"
+            )
             classes = self.q_to_df(
                 f"""
                 SELECT ?cls
@@ -97,7 +106,7 @@ class OntologyManager:
         classes_list = classes[0].tolist()
         onto_classes: list[Subject] = [
             self.enrich_subject(cls, load_properties=load_properties)
-            for cls in classes_list
+            for cls in tqdm(classes_list, desc="Loading root classes")
         ]
         return onto_classes
 
@@ -159,18 +168,28 @@ class OntologyManager:
         else:
             return cls
 
-    def outgoing_edges_for(self, cls: str):
+    def outgoing_edges_for(
+        self, cls: str, edges: list[str] = []
+    ) -> dict[str, list[str]]:
         try:
-            outgoing_edges = list(
-                self.onto.query(
-                    f"""
-                SELECT ?edge ?obj WHERE {{ {cls} ?edge ?obj. }}"""
+            if edges and len(edges) > 0:
+                outgoing_edges = list(
+                    self.onto.query(
+                        f"""
+                    SELECT ?edge ?obj WHERE {{ {cls} ?edge ?obj. FILTER (?edge in ({", ".join(edges)})) }}"""
+                    )
                 )
-            )
+            else:
+                outgoing_edges = list(
+                    self.onto.query(
+                        f"""
+                    SELECT ?edge ?obj WHERE {{ {cls} ?edge ?obj. }}"""
+                    )
+                )
             outgoing_edges_dict: dict[str, list[str] | dict[str, str]] = {}
             for edge, obj in outgoing_edges:
                 edge_n3 = self.to_readable(edge)
-                pred_readable=None
+                pred_readable = None
                 if isinstance(obj, Literal) and hasattr(obj, "language"):
                     if obj.language == self.config.language or obj.language is None:
                         pred_readable = obj.value
@@ -202,11 +221,13 @@ class OntologyManager:
     def properties_for(
         self, cls: str, property_type: str = "ObjectProperty"
     ) -> list[Subject]:
+        if cls.startswith("_"):
+            return []
         try:
             properties = list(
                 self.onto.query(
                     f"""
-                SELECT ?prop WHERE {{ 
+                SELECT DISTINCT ?prop WHERE {{ 
                 ?prop rdf:type owl:{property_type}.
                 ?prop rdfs:domain {cls}.
                 }}"""
@@ -222,17 +243,23 @@ class OntologyManager:
             print(traceback.format_exc())
             return {}
 
-    def enrich_subject(self, cls: str|None, subject_type="class", load_properties=False):
+    def enrich_subject(
+        self, cls: str | None, subject_type="class", load_properties=False
+    ):
         if cls is None:
             return None
         col_ref = cls.n3(self.onto.namespace_manager) if hasattr(cls, "n3") else cls
 
-        outgoing_edges = self.outgoing_edges_for(col_ref)
+        outgoing_edges = self.outgoing_edges_for(
+            col_ref,
+            edges=["rdfs:label", "rdfs:range", "rdfs:subPropertyOf", "rdfs:subClassOf"],
+        )
         subject = Subject(
             subject_id=col_ref,
             label=outgoing_edges.get("rdfs:label", [col_ref])[0],
             spos=outgoing_edges,
             subject_type=subject_type,
+            instance_count=self.instance_count(col_ref),
             # refcount=refs,
         )
         if load_properties:
@@ -244,7 +271,7 @@ class OntologyManager:
         # refs = self.refcount(col_ref)
 
     def load_full_graph(self, depth=10) -> list[Subject]:
-        roots = self.get_root_classes(load_properties=True)[1:]
+        roots = self.get_root_classes(load_properties=True)
 
         def enrich_descendants(cls: Subject, d=depth):
             # print("enriching", cls.subject_id)
@@ -277,3 +304,9 @@ class OntologyManager:
             return self.roots_cache
         graph = self.load_full_graph()
         return graph
+    
+    
+    def instance_count(self, cls: str):
+        return self.q_to_df(f"SELECT DISTINCT (COUNT(?s) as ?count) WHERE {{?s a {cls}}}")[0][0].value
+    def property_count(self, cls: str):
+        return self.q_to_df(f"SELECT DISTINCT (COUNT(?s) as ?count) WHERE {{?s {cls} ?o}}")[0][0].value

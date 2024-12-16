@@ -14,21 +14,6 @@ SELECT ?file WHERE
 				{ ?distribution <https://dataid.dbpedia.org/databus#compression> 'bzip2' . }
 				{ ?distribution <https://dataid.dbpedia.org/databus#formatExtension> 'ttl' . }
 				{
-					?dataset databus:artifact <https://databus.dbpedia.org/dbpedia/generic/categories> .
-					{ ?distribution <https://dataid.dbpedia.org/databus-cv#lang> 'en' . }
-					{
-						?distribution dct:hasVersion ?version {
-							SELECT (?v as ?version) { 
-								GRAPH ?g2 { 
-									?dataset databus:artifact <https://databus.dbpedia.org/dbpedia/generic/categories> . 
-									?dataset dct:hasVersion ?v . 
-								}
-							} ORDER BY DESC (STR(?version)) LIMIT 1 
-						}
-					}
-				}
-				UNION
-				{
 					?dataset databus:artifact <https://databus.dbpedia.org/dbpedia/generic/geo-coordinates> .
 					{ ?distribution <https://dataid.dbpedia.org/databus-cv#lang> 'en' . }
 					{
@@ -314,6 +299,10 @@ rm -rf *.nt
 while IFS= read -r file ; do wget $file; done <<< "$files"
 
 
+# tdb2.tdbloader --loader=parallel --loc ../fuseki-data/databases/dbpedia *.nt
+# tdb2.tdbloader --loader=parallel --loc ../fuseki-data/databases/dbpedia *.bz2
+# tdb2.tdbstats --loc=../fuseki-data/databases/dbpedia > /tmp/stats.opt 
+# mv /tmp/stats.opt > ../fuseki-data/databases/dbpedia/Data-0001/
 tdb2.tdbloader --loader=parallel --loc ../fuseki-data/databases/dbpedia *.nt
 tdb2.tdbloader --loader=parallel --loc ../fuseki-data/databases/dbpedia *.bz2
 
