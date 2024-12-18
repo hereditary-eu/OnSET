@@ -185,13 +185,15 @@ class TopicModelling:
                 else:
                     prop_doc += f"{c.label} {to_readable(prop.label)} "
                 if "rdfs:range" in prop.spos:
-                    range = self.oman.enrich_subject(prop.spos["rdfs:range"][0])
+                    range = self.oman.enrich_subject(
+                        prop.spos["rdfs:range"].first_value()
+                    )
                     if range.label.startswith("<"):
                         continue
                     prop_doc += f" of type {range.label}. "
                 if "rdfs:subPropertyOf" in prop.spos:
                     subprop = self.oman.enrich_subject(
-                        prop.spos["rdfs:subPropertyOf"][0]
+                        prop.spos["rdfs:subPropertyOf"].first_value()
                     )
                     if subprop.label.startswith("<"):
                         continue
@@ -202,7 +204,7 @@ class TopicModelling:
     def __get_subclass_desc(self, c: Subject) -> list[str]:
         cls_doc = f"{c.label}"
         if "rdfs:subClassOf" in c.spos:
-            subcls = self.oman.enrich_subject(c.spos["rdfs:subClassOf"][0])
+            subcls = self.oman.enrich_subject(c.spos["rdfs:subClassOf"].first_value())
             if subcls.label.startswith("<"):
                 return []
             cls_doc += f" is subclass of  {subcls.label}\n"
@@ -414,7 +416,8 @@ WHERE {
 """
         )[0].to_list()
         all_classes = {
-            c: self.oman.enrich_subject(c, load_properties=True) for c in tqdm(all_classes, desc="Enriching classes")
+            c: self.oman.enrich_subject(c, load_properties=True)
+            for c in tqdm(all_classes, desc="Enriching classes")
         }
 
         with Session(self.engine) as session:
@@ -422,8 +425,16 @@ WHERE {
             session.execute(text("SET CONSTRAINTS ALL DEFERRED"))
             cls_descs: dict[str, str] = {}
             for cls in tqdm(all_classes.values(), desc="Embedding classes"):
-                comment = cls.spos.get("rdfs:comment", [""])[0]
-                subcls = cls.spos.get("rdfs:subClassOf", [""])[0]
+                comment = (
+                    cls.spos["rdfs:comment"].first_value()
+                    if "rdfs:comment" in cls.spos
+                    else ""
+                )
+                subcls = (
+                    cls.spos["rdfs:subClassOf"].first_value()
+                    if "rdfs:subClassOf" in cls.spos
+                    else ""
+                )
                 subcls_desc = ""
                 if len(subcls) > 0:
                     parent_cls = all_classes.get(
@@ -454,11 +465,11 @@ WHERE {
                         instance_count=cls.instance_count,
                     )
                 )
-            session.commit()    
+            session.commit()
             for cls in tqdm(all_classes.values(), desc="Embedding relations"):
                 for prop in cls.properties.keys():
                     for p in cls.properties[prop]:
-                        prop_range = p.spos.get("rdfs:range", [""])[0]
+                        prop_range = p.spos["rdfs:range"].first_value() if "rdfs:range" in p.spos else ""
                         prop_range_desc = (
                             f"A {cls.label} is defined by {to_readable(p.label)}."
                         )
@@ -471,7 +482,7 @@ WHERE {
                             else:
                                 prop_range_desc = f"A {cls.label} has {to_readable(p.label)} of type {to_readable(prop_range_cls.label)}."
                             # print(prop_range_desc)
-                        superprop = p.spos.get("rdfs:subPropertyOf", [""])[0]
+                        superprop = p.spos["rdfs:subPropertyOf"].first_value() if "rdfs:subPropertyOf" in p.spos else ""
                         superprop_desc = ""
                         if len(superprop) > 0:
                             superprop_cls = self.oman.enrich_subject(superprop)
@@ -481,7 +492,7 @@ WHERE {
                         prop_desc = f"{prop_range_desc} {superprop_desc}"
                         prop_embedding = self.embedding_model.encode(prop_desc)
                         to_id = (
-                            p.spos["rdfs:range"][0] if "rdfs:range" in p.spos else None
+                            p.spos["rdfs:range"].first_value() if "rdfs:range" in p.spos else None
                         )
                         to_proptype = None
                         if to_id is not None:
@@ -561,7 +572,7 @@ WHERE {
 
         with Session(self.engine) as session:
             query_embedding = None
-            if query.q is not None:
+            if query.q is not None and len(query.q) > 0:
                 query_embedding = self.embedding_model.encode(
                     query.q, prompt_name=self.query_prompt_name
                 )
@@ -614,13 +625,15 @@ WHERE {
                     ),
                 ).where(SubjectLinkDB.onto_hash == self.identifier)
                 if query.from_id is not None:
+                    from_parents = self.oman.get_parents(query.from_id) + [
+                        query.from_id
+                    ]
                     query_link = query_link.where(
-                        SubjectLinkDB.from_id
-                        == query.from_id
-                        # TODO: allow for class hierarchies insteal of just current class, i.e. allow all subclasses
+                        SubjectLinkDB.from_id.in_(from_parents)
                     )
                 if query.to_id is not None:
-                    query_link = query_link.where(SubjectLinkDB.to_id == query.to_id)
+                    to_parents = self.oman.get_parents(query.to_id) + [query.to_id]
+                    query_link = query_link.where(SubjectLinkDB.to_id.in_(to_parents))
                 if query.relation_type == RELATION_TYPE.INSTANCE:
                     query_link = query_link.where(
                         SubjectLinkDB.to_id != None,
@@ -641,7 +654,11 @@ WHERE {
                 ]
 
                 for l in links_enriched:
-                    results.append(FuzzyQueryResult(link=l[0], score=l[1]))
+                    results.append(
+                        FuzzyQueryResult(
+                            link=l[0], score=l[1] if l[1] is not None else 0.0
+                        )
+                    )
 
             results = sorted(results, key=lambda x: x.score, reverse=False)
             return FuzzyQueryResults(results=results)

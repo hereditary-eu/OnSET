@@ -98,9 +98,13 @@ def get_class(cls: str = Query()) -> list[Subject]:
     return ontology_manager.get_classes(cls)
 
 
-@app.get("/classes/named-individuals")
+@app.get("/classes/instances")
 def get_named_individuals(cls: str = Query()) -> list[Subject]:
     return ontology_manager.get_named_individuals(cls)
+
+@app.get("/classes/instances/properties")
+def get_named_individuals(instance_id: str=Query())-> dict[str, Property]:
+    return ontology_manager.outgoing_edges_for(instance_id)
 
 
 @app.get("/topics/root")

@@ -7,21 +7,38 @@ from sqlalchemy import ForeignKey
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship, Session
 
 
-
 class Base(DeclarativeBase):
     pass
+
+
+class PropertyValue(BaseModel):
+    value: Any | None
+    label: str | None
+
+
+class Property(BaseModel):
+    property: str | None = ""
+    label: str | None = ""
+    values: list[PropertyValue] = Field([])
+
+    def first_value(self):
+        if len(self.values) > 0:
+            return self.values[0].value
+        return ""
 
 
 class Subject(BaseModel):
     subject_id: str
     label: str
-    spos: dict[str, list[str | Any]]
+    spos: dict[str, Property] = Field({})
     subject_type: str = "class"
     refcount: int = 0
     descendants: dict[str, list[Subject]] = Field({})
     total_descendants: int = 0
     properties: dict[str, list[Subject]] = Field({})
-    instance_count: int = 0 
+    instance_count: int = 0
+
+
 class MatchDB(Base):
     __tablename__ = "match"
     id: Mapped[int] = mapped_column(primary_key=True)

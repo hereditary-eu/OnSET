@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field
 from rdflib import Graph, URIRef, Literal
-from model import Subject
+from model import Subject, Property, PropertyValue
 import pandas as pd
 from rdflib.plugins.sparql import prepareQuery
 from tqdm import tqdm
@@ -68,13 +68,15 @@ class OntologyManager:
         #     lambda x: x.n3(self.onto.namespace_manager) if hasattr(x, "n3") else x
         # )
         return pd.DataFrame(results)
-    def q_to_df_values(self, q: str):
+
+    def q_to_df_values(self, q: str) -> pd.DataFrame:
         result_set = self.onto.query(q)
-        cols=[str(var) for var in result_set.vars]
+        cols = [str(var) for var in result_set.vars]
         results = [dict(zip(cols, row)) for row in result_set]
-        results_df = pd.DataFrame(results )
-        results_df=results_df.apply(self.to_readable)
+        results_df = pd.DataFrame(results)
+        results_df = results_df.map(self.to_readable)
         return results_df
+
     def df_to_labels(self, df: pd.DataFrame):
         labeled_df = df.copy()
         for i, row in df.iterrows():
@@ -168,38 +170,82 @@ class OntologyManager:
         else:
             return cls
 
-    def outgoing_edges_for(
-        self, cls: str, edges: list[str] = []
-    ) -> dict[str, list[str]]:
+    def to_readable_literals(self, cls: str | Literal | URIRef):
+        if isinstance(cls, Literal):
+            return cls.value
+        else:
+            return cls
+
+    def __label_candidates(self, data: list[tuple[URIRef, Literal]]):
+        label_candidates: dict[str, list[str]] = {}
+        for ref, label in data:
+            if isinstance(ref, Literal):
+                if (hasattr(ref, "language") and ref.language == self.config.language) or ref.language is None:
+                    ref_n3 = ref.value
+                else:
+                    continue
+            else:
+                ref_n3 = self.to_readable(ref)
+            if ref_n3 not in label_candidates:
+                label_candidates[ref_n3] = []
+            if isinstance(label, Literal) and hasattr(label, "language"):
+                if label.language == self.config.language or label.language is None:
+                    label_candidates[ref_n3].append(label.value)
+        return label_candidates
+
+    def outgoing_edges_for(self, cls: str, edges: list[str] = []):
         try:
             if edges and len(edges) > 0:
                 outgoing_edges = list(
                     self.onto.query(
                         f"""
-                    SELECT ?edge ?obj WHERE {{ {cls} ?edge ?obj. FILTER (?edge in ({", ".join(edges)})) }}"""
+                    SELECT ?edge ?edge_lbl ?obj ?obj_lbl WHERE {{ {cls} ?edge ?obj. FILTER (?edge in ({", ".join(edges)})) 
+OPTIONAL {{?edge rdfs:label ?edge_label.}}
+OPTIONAL {{?obj rdfs:label ?obj_lbl.}}
+                    }}"""
                     )
                 )
             else:
                 outgoing_edges = list(
                     self.onto.query(
                         f"""
-                    SELECT ?edge ?obj WHERE {{ {cls} ?edge ?obj. }}"""
+                    SELECT ?edge ?edge_lbl ?obj ?obj_lbl WHERE {{ {cls} ?edge ?obj. 
+OPTIONAL {{?edge rdfs:label ?edge_label.}}
+OPTIONAL {{?obj rdfs:label ?obj_lbl.}}
+  
+                    }}"""
                     )
                 )
-            outgoing_edges_dict: dict[str, list[str] | dict[str, str]] = {}
-            for edge, obj in outgoing_edges:
-                edge_n3 = self.to_readable(edge)
-                pred_readable = None
-                if isinstance(obj, Literal) and hasattr(obj, "language"):
-                    if obj.language == self.config.language or obj.language is None:
-                        pred_readable = obj.value
-                else:
-                    pred_readable = self.to_readable(obj)
-                if pred_readable is not None:
-                    if edge_n3 not in outgoing_edges_dict:
-                        outgoing_edges_dict[edge_n3] = []
-                    outgoing_edges_dict[edge_n3].append(self.to_readable(obj))
+            outgoing_edge_label_candidates: dict[str, list[str]] = (
+                self.__label_candidates(
+                    [(edge, edge_lbl) for edge, edge_lbl, _, _ in outgoing_edges]
+                )
+            )
 
+            outgoing_edges_dict: dict[str, Property] = {}
+            for edge_n3 in outgoing_edge_label_candidates:
+                values_candidates = self.__label_candidates(
+                    [
+                        (obj, obj_lbl)
+                        for edge, _, obj, obj_lbl in outgoing_edges
+                        if self.to_readable(edge) == edge_n3
+                    ]
+                )
+                values=[
+                    PropertyValue(value=obj, label=values_candidates[obj][0] if len(values_candidates[obj]) > 0 else None)
+                    for obj in values_candidates
+                ]
+                label = (
+                    outgoing_edge_label_candidates[edge_n3][0]
+                    if len(outgoing_edge_label_candidates[edge_n3]) > 0
+                    else None
+                )
+                edge = Property(
+                    property=edge_n3,
+                    label=label,
+                    values=values,
+                )
+                outgoing_edges_dict[edge_n3] = edge
             return outgoing_edges_dict
         except Exception as e:
             print(traceback.format_exc())
@@ -254,9 +300,13 @@ class OntologyManager:
             col_ref,
             edges=["rdfs:label", "rdfs:range", "rdfs:subPropertyOf", "rdfs:subClassOf"],
         )
+        label_prop: Property = outgoing_edges.get(
+            "rdfs:label",
+            Property(values=[PropertyValue(value=col_ref, label=None)]),
+        )
         subject = Subject(
             subject_id=col_ref,
-            label=outgoing_edges.get("rdfs:label", [col_ref])[0],
+            label=label_prop.first_value(),
             spos=outgoing_edges,
             subject_type=subject_type,
             instance_count=self.instance_count(col_ref),
@@ -304,9 +354,25 @@ class OntologyManager:
             return self.roots_cache
         graph = self.load_full_graph()
         return graph
-    
-    
+
     def instance_count(self, cls: str):
-        return self.q_to_df(f"SELECT DISTINCT (COUNT(?s) as ?count) WHERE {{?s a {cls}}}")[0][0].value
+        return self.q_to_df(
+            f"SELECT DISTINCT (COUNT(?s) as ?count) WHERE {{?s a {cls}}}"
+        )[0][0].value
+
     def property_count(self, cls: str):
-        return self.q_to_df(f"SELECT DISTINCT (COUNT(?s) as ?count) WHERE {{?s {cls} ?o}}")[0][0].value
+        return self.q_to_df(
+            f"SELECT DISTINCT (COUNT(?s) as ?count) WHERE {{?s {cls} ?o}}"
+        )[0][0].value
+
+    def get_parents(self, cls: str) -> list[str]:
+        parents = self.q_to_df_values(
+            f"SELECT DISTINCT ?p WHERE {{ {cls} rdfs:subClassOf* ?p. ?p rdf:type owl:Class }}"
+        )
+        return parents["p"].to_list()
+
+    def get_instance_properties(self, instance_id: str) -> list[dict[str, str]]:
+        properties = self.q_to_df_values(
+            f"SELECT DISTINCT ?p ?o WHERE {{ {instance_id} ?p ?o }}"
+        )
+        return properties.to_dict(orient="records")

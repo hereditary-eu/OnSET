@@ -184,7 +184,6 @@ class FuzzyQuery(BaseModel):
     type: RETURN_TYPE = RETURN_TYPE.BOTH
     relation_type: RELATION_TYPE | None = RELATION_TYPE.INSTANCE
 
-
 class FuzzyQueryResult(BaseModel):
     link: SubjectLink | None = Field(None)
     subject: Subject | None = Field(None)
