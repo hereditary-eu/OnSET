@@ -49,6 +49,7 @@ const emit = defineEmits<{
 }>()
 const api = new Api({
     baseURL: BACKEND_URL
+    
 })
 const { selection_event } = defineProps({
     selection_event: {

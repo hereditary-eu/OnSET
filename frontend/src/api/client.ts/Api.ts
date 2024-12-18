@@ -108,6 +108,33 @@ export interface OutLink {
   instances?: string[];
 }
 
+/** Property */
+export interface Property {
+  /**
+   * Property
+   * @default ""
+   */
+  property?: string | null;
+  /**
+   * Label
+   * @default ""
+   */
+  label?: string | null;
+  /**
+   * Values
+   * @default []
+   */
+  values?: PropertyValue[];
+}
+
+/** PropertyValue */
+export interface PropertyValue {
+  /** Value */
+  value: string | null;
+  /** Label */
+  label: string | null;
+}
+
 /** RELATION_TYPE */
 export enum RELATION_TYPE {
   Property = "property",
@@ -173,8 +200,11 @@ export interface Subject {
   subject_id: string;
   /** Label */
   label: string;
-  /** Spos */
-  spos: Record<string, string[]>;
+  /**
+   * Spos
+   * @default {}
+   */
+  spos?: Record<string, Property>;
   /**
    * Subject Type
    * @default "class"
@@ -506,11 +536,11 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
     /**
      * No description
      *
-     * @name GetNamedIndividualsClassesNamedIndividualsGet
+     * @name GetNamedIndividualsClassesInstancesGet
      * @summary Get Named Individuals
-     * @request GET:/classes/named-individuals
+     * @request GET:/classes/instances
      */
-    getNamedIndividualsClassesNamedIndividualsGet: (
+    getNamedIndividualsClassesInstancesGet: (
       query: {
         /** Cls */
         cls: string;
@@ -518,7 +548,29 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       params: RequestParams = {},
     ) =>
       this.request<Subject[], HTTPValidationError>({
-        path: `/classes/named-individuals`,
+        path: `/classes/instances`,
+        method: "GET",
+        query: query,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @name GetNamedIndividualsClassesInstancesPropertiesGet
+     * @summary Get Named Individuals
+     * @request GET:/classes/instances/properties
+     */
+    getNamedIndividualsClassesInstancesPropertiesGet: (
+      query: {
+        /** Instance Id */
+        instance_id: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<Record<string, Property>, HTTPValidationError>({
+        path: `/classes/instances/properties`,
         method: "GET",
         query: query,
         format: "json",

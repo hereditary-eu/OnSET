@@ -2,19 +2,30 @@ import { Api } from "@/api/client.ts/Api";
 import { Link, Node } from "./representation";
 import { BACKEND_URL } from "../config";
 import { Vector2, type Vector2Like } from "three";
+export function readableName(uri?: string, label?: string) {
 
+    uri = uri || "-"
+    if (!label) {
+        try {
+            uri = uri.replace(/<|>/g, "")
+            label = (new URL(uri)).pathname.split("/").pop().replace(/_/g, " ")
+        } catch (error) {
+            console.log("Failed to parse id for readable labe", uri, error)
+            label = uri
+        }
+    }
+    return label
+}
 export class InstanceNode extends Node {
     instance_label: string = null
     instance_id: string = null
     interactive_clone: InstanceNode = null
+    expanded: boolean = false
     constructor(base_node: Node, public instance_data: Record<string, string>) {
         super(base_node)
+        this.instance_id = instance_data[this.output_id().replace('?', '')]
         this.instance_label = instance_data[this.label_id().replace('?', '')]
-        this.instance_id = instance_data[this.output_id().replace('?', '')] || "-"
-        if (!this.instance_label) {
-            let uri = this.instance_id.replace(/<|>/g, "")
-            this.instance_label = (new URL(uri)).pathname.split("/").pop().replace(/_/g, " ")
-        }
+        this.instance_label = readableName(this.instance_id, this.instance_label)
 
         this.to_links = base_node.to_links.map((link) => {
             let instance = new InstanceLink(link, instance_data)
@@ -46,6 +57,9 @@ export class InstanceLink extends Link {
     constructor(base_link: Link, public instance_data: Record<string, string>) {
         super(base_link)
     }
+}
+export class PropertiesOpenEvent {
+    node: InstanceNode;
 }
 export class QueryMapper {
     api: Api<unknown> = null;
