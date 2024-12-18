@@ -1,4 +1,4 @@
-import type { Api, FuzzyQueryResult, Subject, SubjectLink } from "@/api/client.ts/Api";
+import type { Api, FuzzyQueryResult, Property, Subject, SubjectLink } from "@/api/client.ts/Api";
 import { CONSTRAINT_HEIGHT, CONSTRAINT_WIDTH, NODE_HEIGHT, NODE_WIDTH } from "./explorer";
 export enum ConstraintType {
     STRING = "string",
@@ -195,9 +195,10 @@ export class QuerySet {
 export class Node implements Subject {
     subject_id: string;
     label: string;
-    spos: Record<string, string[]>;
+    spos?: Record<string, Property>;
     subject_type?: string;
     refcount?: number;
+
     descendants?: Record<string, Subject[]>;
     total_descendants?: number;
     properties?: Record<string, Subject[]>;

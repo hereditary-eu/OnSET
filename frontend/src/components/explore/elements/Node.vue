@@ -15,7 +15,7 @@
             <text :x="`${subject.width / 2}px`" :y="`${subject.height / 2}px`" class=node_text>
                 {{ (mode == DisplayMode.RESULTS || mode == DisplayMode.RESULT_INTERACTIVE) ?
                     result_subject.instance_label :
-                subject.label }}
+                    subject.label }}
             </text>
             <g v-if="mode == DisplayMode.EDIT" v-for="constr_info in constraint_list_mapped"
                 :transform="`translate(${subject.width / 2},${constr_info.y})`">
@@ -25,8 +25,8 @@
             </g>
 
             <g v-show="mode == DisplayMode.RESULT_INTERACTIVE && editor_data.show_editpoints">
-                <circle :cx="0" :cy="subject.height / 2" :r="editor_data.editpoint_r" class="edit_point edit_point_prop"
-                    @click="emit('propPointClicked', { side: NodeSide.DETAIL, node: subject })"></circle>
+                <circle :cx="subject.width/2" :cy="subject.height" :r="editor_data.editpoint_r" class="edit_point edit_point_prop"
+                    @click="emit('propPointClicked', { node: subject as InstanceNode })"></circle>
             </g>
             <g v-show="mode == DisplayMode.EDIT && editor_data.show_editpoints">
                 <circle :cx="0" :cy="subject.height / 2" :r="editor_data.editpoint_r" class="edit_point edit_point_link"
@@ -61,16 +61,16 @@
     </g>
 </template>
 <script setup lang="ts">
-import { ref, watch, reactive, computed, onMounted, defineProps, onBeforeUpdate } from 'vue'
+import { ref, watch, reactive, computed, onMounted, defineProps, onBeforeUpdate, type Prop } from 'vue'
 import { type Subject } from '@/api/client.ts/Api';
 import { Node as NodeRepr } from '@/utils/sparql/representation';
 import LinkComp from './Link.vue';
 import { CONSTRAINT_WIDTH, DisplayMode, NodeSide, OutlinkSelectorOpenEvent } from '@/utils/sparql/explorer';
 import Constraint from './Constraint.vue';
-import type { InstanceNode } from '@/utils/sparql/querymapper';
+import type { InstanceNode, PropertiesOpenEvent } from '@/utils/sparql/querymapper';
 const emit = defineEmits<{
     editPointClicked: [value: OutlinkSelectorOpenEvent]
-    propPointClicked: [value: OutlinkSelectorOpenEvent]
+    propPointClicked: [value: PropertiesOpenEvent]
 }>()
 
 const { subject, mode, parent_subject } = defineProps({

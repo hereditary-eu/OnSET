@@ -4,27 +4,7 @@
         <div class="results_instance_container">
             <Loading v-if="ui_state.loading"></Loading>
             <div v-else class="result_instance_element" v-for="subject of mapped_root_nodes">
-                <Expandable>
-                    <template v-slot:header>
-                        <div class="result_instance_overview_header">{{ subject.instance_label }}</div>
-                    </template>
-                    <template v-slot:content>
-                        <svg class="result_interact_svg">
-                            <g :transform="`translate(${ui_state.offset.x},${ui_state.offset.y})`">
-                                <NodeComp :subject="subject.interactive_clone"
-                                    :mode="DisplayMode.RESULT_INTERACTIVE"></NodeComp>
-                            </g>
-                        </svg>
-                    </template>
-                    <template v-slot:trigger>
-                        <svg class="result_instance_svg">
-                            <g
-                                :transform="`translate(${ui_state.offset.x},${ui_state.offset.y}) scale(${ui_state.scale})`">
-                                <NodeComp :subject="subject" :mode="DisplayMode.RESULTS"></NodeComp>
-                            </g>
-                        </svg>
-                    </template>
-                </Expandable>
+                <ResultView :subject="subject" :expanded="false" :scale="ui_state.scale" :offset="ui_state.offset"></ResultView>
             </div>
             <div class="result_instance_element" ref="view_container" v-show="mapped_root_nodes.length == 0"></div>
         </div>
@@ -34,11 +14,12 @@
 import { ref, watch, reactive, computed, onMounted, defineProps } from 'vue'
 import { MixedResponse, Node, Link } from '@/utils/sparql/representation';
 import NodeComp from './elements/Node.vue';
-import { InstanceNode, QueryMapper } from '@/utils/sparql/querymapper';
+import Propview from './elements/Propview.vue';
+import { InstanceNode, PropertiesOpenEvent, QueryMapper } from '@/utils/sparql/querymapper';
 import { Vector2, type Vector2Like } from 'three';
 import { DisplayMode } from '@/utils/sparql/explorer';
 import Loading from '../ui/Loading.vue';
-import Expandable from '../ui/Expandable.vue';
+import ResultView from '../explore/Result.vue';
 
 const { root_node, query_string } = defineProps({
     root_node: {
@@ -59,7 +40,9 @@ const ui_state = reactive({
     last_query_id: 0,
     scale: 1,
     offset: new Vector2(0, 0),
-    initial_size: new Vector2(0, 0)
+    initial_size: new Vector2(0, 0),
+    prop_open: false,
+    prop_open_event: null as PropertiesOpenEvent | null
 })
 watch(() => root_node, () => {
     if (!root_node) {
@@ -146,7 +129,8 @@ watch(() => query_string, () => {
     border-bottom: 1px solid rgb(192, 213, 191);
     width: 100%;
 }
-.result_instance_overview_header{
+
+.result_instance_overview_header {
     font-size: 2rem;
 }
 </style>
