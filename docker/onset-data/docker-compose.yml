@@ -38,25 +38,25 @@ services:
     links:
       - "db:pgsql-server"
   
-  graphdb:
-    image: ontotext/graphdb:10.8.0
-    restart: always
-    ports:
-      - "7200:7200"
-    volumes:
-      - ./graphdb-import:/root/graphdb-import
-      - ./graphdb-data:/opt/graphdb/home
-  fuseki:
-    image: stain/jena-fuseki
-    restart: always
-    environment:
-      - TDB=2
-      - ADMIN_PASSWORD=fuseki_dbpedia
-      - JVM_ARGS=-Xmx16G
-    ports:
-      - "3030:3030"
-    volumes:
-      - ./fuseki-data:/fuseki
+  # graphdb:
+  #   image: ontotext/graphdb:10.8.0
+  #   restart: always
+  #   ports:
+  #     - "7200:7200"
+  #   volumes:
+  #     - ./graphdb-import:/root/graphdb-import
+  #     - ./graphdb-data:/opt/graphdb/home
+  # fuseki:
+  #   image: stain/jena-fuseki
+  #   restart: always
+  #   environment:
+  #     - TDB=2
+  #     - ADMIN_PASSWORD=fuseki_dbpedia
+  #     - JVM_ARGS=-Xmx16G
+  #   ports:
+  #     - "3030:3030"
+  #   volumes:
+  #     - ./fuseki-data:/fuseki
 volumes:
   pg-data:
     external: false

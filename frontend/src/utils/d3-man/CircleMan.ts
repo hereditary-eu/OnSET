@@ -1,11 +1,11 @@
 
 
 import * as d3 from 'd3'
-import { Api, type Subject } from '@/api/client.ts/Api';
+import { Api, type Property, type Subject } from '@/api/client.ts/Api';
 export class SubjectInCircle implements Subject {
     subject_id: string;
     label: string;
-    spos: Record<string, string[]> = {};
+    spos: Record<string, Property> = {};
     subject_type?: string = 'split';
     refcount?: number = 0;
     descendants?: Record<string, Subject[]> = {};

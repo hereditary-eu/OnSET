@@ -1,5 +1,11 @@
 import type { Api, FuzzyQueryResult, Property, Subject, SubjectLink } from "@/api/client.ts/Api";
 import { CONSTRAINT_HEIGHT, CONSTRAINT_WIDTH, NODE_HEIGHT, NODE_WIDTH } from "./explorer";
+import { isProxy, toRaw } from "vue";
+import { jsonProperty, Serializable } from "ts-serializable";
+import { registerClass } from "../parsing";
+
+
+
 export enum ConstraintType {
     STRING = "string",
     NUMBER = "number",
@@ -7,6 +13,7 @@ export enum ConstraintType {
     DATE = "date",
     SUBJECT = "subject"
 }
+@registerClass
 export class Constraint {
     link: Link;
     height: number
@@ -45,9 +52,25 @@ export class Constraint {
         return this.filterExpression(property);
     }
 }
+@registerClass
 export class SubjectConstraint extends Constraint {
     subject_id: string;
-    constructor(subject_id: string) {
+    constructor(subject_id: string = null) {
+        super();
+        this.subject_id = subject_id;
+        this.constraint_type = ConstraintType.SUBJECT
+    }
+    filterExpression(property: string): string {
+        return `${property} = "${this.subject_id}"`;
+    }
+    static validPropType(propType: string): boolean {
+        return false
+    }
+}
+@registerClass
+export class LabelConstraint extends Constraint {
+    subject_id: string;
+    constructor(subject_id: string = null) {
         super();
         this.subject_id = subject_id;
         this.constraint_type = ConstraintType.SUBJECT
@@ -66,10 +89,11 @@ export enum StringConstraintType {
     ENDSWITH = "endswith",
     REGEX = "regex",
 }
+@registerClass
 export class StringConstraint extends Constraint {
     value: string;
     type: StringConstraintType;
-    constructor(value: string, type: StringConstraintType) {
+    constructor(value: string = null, type: StringConstraintType = StringConstraintType.CONTAINS) {
         super();
         this.value = value;
         this.type = type;
@@ -100,10 +124,11 @@ export enum NumberConstraintType {
     LESS = "less",
     GREATER = "greater",
 }
+@registerClass
 export class NumberConstraint extends Constraint {
     value: number;
     type: NumberConstraintType;
-    constructor(value: number, type: NumberConstraintType) {
+    constructor(value: number = 0, type: NumberConstraintType = NumberConstraintType.GREATER) {
         super();
         this.value = value;
         this.type = type;
@@ -132,9 +157,11 @@ export class NumberConstraint extends Constraint {
             propType.includes('kilogram')
     }
 }
+
+@registerClass
 export class BooleanConstraint extends Constraint {
     value: boolean;
-    constructor(value: boolean) {
+    constructor(value: boolean = false) {
         super();
         this.value = value;
         this.constraint_type = ConstraintType.BOOLEAN
@@ -146,10 +173,11 @@ export class BooleanConstraint extends Constraint {
         return propType == 'xsd:boolean'
     }
 }
+@registerClass
 export class DateConstraint extends Constraint {
     value: Date;
     type: NumberConstraintType;
-    constructor(value: Date, type: NumberConstraintType) {
+    constructor(value: Date = new Date(), type: NumberConstraintType = NumberConstraintType.GREATER) {
         super();
         this.value = value;
         this.type = type;
@@ -174,11 +202,13 @@ export class DateConstraint extends Constraint {
         return propType == 'xsd:date'
     }
 }
+@registerClass
 export class LinkTriplet {
     from_id: string;
     link_id: string;
     to_id: string;
 }
+@registerClass
 export class QuerySet {
     //from internal_id to subject_id
     nodes: Record<string, Node>;
@@ -192,6 +222,8 @@ export class QuerySet {
         this.filter = [];
     }
 }
+let internal_id_counter: number = 0;
+@registerClass
 export class Node implements Subject {
     subject_id: string;
     label: string;
@@ -215,17 +247,10 @@ export class Node implements Subject {
 
     property_constraints?: Constraint[];
     internal_id: string;
-    static internal_id_counter: number = 0;
     unknown: boolean;
     deletion_imminent: boolean
 
-    constructor(node: Node | Subject) {
-
-        for (const key in node) {
-            if (Object.prototype.hasOwnProperty.call(node, key)) {
-                this[key] = node[key];
-            }
-        }
+    constructor(node?: Node | Subject) {
         if (!(node instanceof Node)) {
             this.x = 0;
             this.y = 0;
@@ -236,8 +261,14 @@ export class Node implements Subject {
             this.from_links = [];
             this.property_constraints = [];
             this.deletion_imminent = false;
-            this.internal_id = `node_${++Node.internal_id_counter}`;
+            this.internal_id = `node_${++internal_id_counter}`;
         }
+        for (const key in node) {
+            if (Object.prototype.hasOwnProperty.call(node, key)) {
+                this[key] = node[key];
+            }
+        }
+        
     }
 
     label_id(): string {
@@ -267,7 +298,7 @@ OPTIONAL {${node.output_id()} rdfs:label ${node.label_id()}.}`
         }
         for (let constraint of set.filter) {
             let constrained_id = `?prop_${constraint.link.link_id}`
-            query += `\n?${constraint.link.from_subject.internal_id} ${constraint.link.property_id} ${constrained_id}.
+            query += `\n${constraint.link.from_subject.output_id()} ${constraint.link.property_id} ${constrained_id}.
 FILTER(${constraint.expression(constrained_id)})`
         }
         query += "\n}"
@@ -310,6 +341,7 @@ FILTER(${constraint.expression(constrained_id)})`
         return set
     }
 }
+@registerClass
 export class UnknownNode extends Node {
     constructor() {
         super({
@@ -325,6 +357,7 @@ export class UnknownNode extends Node {
         this.unknown = true;
     }
 }
+@registerClass
 export class Link implements SubjectLink {
     link_id: number;
     from_id: string;
@@ -334,17 +367,19 @@ export class Link implements SubjectLink {
     property_id: string;
     from_subject: Node;
     to_subject: Node | UnknownNode;
-    constructor(link: SubjectLink) {
-        for (const key in link) {
-            if (Object.prototype.hasOwnProperty.call(link, key)) {
-                this[key] = link[key];
+    constructor(link?: SubjectLink) {
+        if (link) {
+            for (const key in link) {
+                if (Object.prototype.hasOwnProperty.call(link, key)) {
+                    this[key] = link[key];
+                }
             }
-        }
-        if (!(link.from_subject instanceof Node)) {
-            this.from_subject = new Node(link.from_subject);
-        }
-        if (!(link.to_subject instanceof Node)) {
-            this.to_subject = link.to_subject ? new Node(link.to_subject) : new UnknownNode();
+            if (!(link.from_subject instanceof Node)) {
+                this.from_subject = new Node(link.from_subject);
+            }
+            if (!(link.to_subject instanceof Node)) {
+                this.to_subject = link.to_subject ? new Node(link.to_subject) : new UnknownNode();
+            }
         }
     }
     instance_count: number;
@@ -353,11 +388,12 @@ export class Link implements SubjectLink {
         return `?prop_${this.link_id}`
     }
 }
+@registerClass
 export class MixedResponse implements FuzzyQueryResult {
     link: Link;
     subject: Node;
     score: number;
-    constructor(result: FuzzyQueryResult) {
+    constructor(result: FuzzyQueryResult = null) {
         for (const key in result) {
             if (Object.prototype.hasOwnProperty.call(result, key)) {
                 this[key] = result[key];

@@ -20,19 +20,19 @@
 
 <script setup lang="ts">
 import { ref, defineModel } from 'vue'
-const expanded = defineModel<boolean>({default: false})
+const expanded = defineModel<boolean>({ default: false })
 
 </script>
 <style lang="css">
 .expandable_frame {
     cursor: pointer;
     background-color: rgba(187, 187, 187, 0.5);
-    height: 100vh;
+    height: 100%;
     width: 100vw;
     position: absolute;
-    top: 0;
-    left: 0;
-    z-index: 10;
+    top: -2rem;
+    left: -2rem;
+    z-index: 100;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -51,6 +51,7 @@ const expanded = defineModel<boolean>({default: false})
     width: 100%;
     height: 100%;
 }
+
 .expandable_window {
     cursor: default;
     background-color: white;
@@ -63,7 +64,8 @@ const expanded = defineModel<boolean>({default: false})
     justify-content: start;
     align-items: center;
 }
-.expandable_header{
+
+.expandable_header {
     width: 100%;
     height: 10%;
     display: flex;
@@ -71,7 +73,8 @@ const expanded = defineModel<boolean>({default: false})
     align-items: center;
     border-bottom: 1px solid rgb(192, 213, 191);
 }
-.expandable_content{
+
+.expandable_content {
     width: 100%;
     height: 100%;
     margin: 10px;

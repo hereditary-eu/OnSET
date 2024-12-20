@@ -49,7 +49,7 @@ const emit = defineEmits<{
 }>()
 const api = new Api({
     baseURL: BACKEND_URL
-    
+
 })
 const { selection_event } = defineProps({
     selection_event: {
@@ -146,6 +146,7 @@ const select_option = (selected_option: MixedResponse, event: MouseEvent) => {
             selection_event.node.from_links.push(selected_option.link)
             break
         case NodeSide.PROP:
+            selected_option.link.from_subject = selection_event.node
             let constraint = Constraint.construct(selected_option.link)
             if (!selection_event.node.property_constraints) {
                 selection_event.node.property_constraints = []
@@ -190,7 +191,7 @@ const edit_point_hover = (event: MouseEvent, state: boolean) => {
     align-items: center;
     background-color: white;
     border: 1px solid rgb(197, 196, 168);
-    border-radius: 5px;
+    // border-radius: 5px;
     padding: 5px;
 }
 

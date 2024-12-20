@@ -30,7 +30,7 @@ class TopicDB(BasePostgres):
     count: Mapped[int] = mapped_column(default=0)
     embedding: Mapped[Vector | None] = mapped_column(Vector(N_EMBEDDINGS))
     doc_string: Mapped[str | None] = mapped_column()
-    
+
     onto_hash: Mapped[str | None] = mapped_column()
 
     links: Mapped[list[SubjectLinkDB]] = relationship(
@@ -39,6 +39,7 @@ class TopicDB(BasePostgres):
     subjects: Mapped[list[SubjectInDB]] = relationship(
         "SubjectInDB", back_populates="topic"
     )
+
 
 class Topic(BaseModel):
     topic_id: int
@@ -58,7 +59,9 @@ class SubjectInDB(BasePostgres):
     label: Mapped[str | None] = mapped_column()
     comment: Mapped[str | None] = mapped_column()
     subject_type: Mapped[str] = mapped_column()
-    topic_id: Mapped[int | None] = mapped_column(ForeignKey("topics.topic_id", deferrable=True))
+    topic_id: Mapped[int | None] = mapped_column(
+        ForeignKey("topics.topic_id", deferrable=True)
+    )
     instance_count: Mapped[int] = mapped_column(default=0)
 
     embedding: Mapped[Vector] = mapped_column(Vector(N_EMBEDDINGS))
@@ -105,8 +108,10 @@ class SubjectLinkDB(BasePostgres):
     property_id: Mapped[str | None] = mapped_column()
     label: Mapped[str | None] = mapped_column()
     instance_count: Mapped[int] = mapped_column(default=0)
-    
-    topic_id: Mapped[int | None] = mapped_column(ForeignKey("topics.topic_id", deferrable=True))
+
+    topic_id: Mapped[int | None] = mapped_column(
+        ForeignKey("topics.topic_id", deferrable=True)
+    )
 
     embedding: Mapped[Vector] = mapped_column(Vector(N_EMBEDDINGS))
 
@@ -184,11 +189,23 @@ class FuzzyQuery(BaseModel):
     type: RETURN_TYPE = RETURN_TYPE.BOTH
     relation_type: RELATION_TYPE | None = RELATION_TYPE.INSTANCE
 
+
+class ResultAttributionType(Enum):
+    TOPIC = "topic"
+    QUERY = "query"
+
+
+class ResultAttribution(BaseModel):
+    topic_id: int | None = Field(None)
+    type: ResultAttributionType = Field(ResultAttributionType.TOPIC)
+    score: float = Field(0.0)
+
+
 class FuzzyQueryResult(BaseModel):
     link: SubjectLink | None = Field(None)
     subject: Subject | None = Field(None)
     score: float = Field(0.0)
-
+    attributions: list[ResultAttribution] = Field([])
 
 class FuzzyQueryResults(BaseModel):
     results: list[FuzzyQueryResult]

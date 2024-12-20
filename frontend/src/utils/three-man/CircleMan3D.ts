@@ -2,12 +2,12 @@
 
 import * as d3 from 'd3'
 import * as THREE from 'three'
-import { Api, type Subject, type Topic } from '@/api/client.ts/Api';
+import { Api, type Property, type Subject, type Topic } from '@/api/client.ts/Api';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 export class SubjectInCircle implements Subject {
     subject_id: string;
     label: string;
-    spos: Record<string, string[]> = {};
+    spos: Record<string, Property> = {};
     subject_type?: string = 'split';
     refcount?: number = 0;
     descendants?: Record<string, Subject[]> = {};
@@ -82,7 +82,7 @@ export class CircleMan3D {
     properties_by_id: Record<string, SubjectInCircle> = {}
     max_depth = 0
     node_counter = 0
-    constructor(public query_renderer:string) {
+    constructor(public query_renderer: string) {
 
     }
     mapNodesToChildren(node: SubjectInCircle): SubjectInCircle {
@@ -141,7 +141,7 @@ export class CircleMan3D {
             if (d.depth > this.max_depth) {
                 this.max_depth = d.depth
             }
-            console.log('node', d.data.subject_id, d.data)
+            // console.log('node', d.data.subject_id, d.data)
             this.subjects_by_id[d.data.subject_id] = d.data
             if (d.data.properties) {
                 for (let proptype in d.data.properties) {
@@ -222,8 +222,8 @@ export class CircleMan3D {
             }
             this.pool.materials[nd.depth] = new THREE.MeshBasicMaterial({
                 color: this.color(nd.depth),
-                transparent: true,
-                opacity: 0.8
+                // transparent: true,
+                // opacity: 0.8
             });
             this.pool.line_materials[nd.depth] = new THREE.MeshBasicMaterial({ color: d3.color(this.color(nd.depth)).darker(0.5).formatHex() });
         });

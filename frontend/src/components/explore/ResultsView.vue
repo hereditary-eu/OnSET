@@ -4,7 +4,8 @@
         <div class="results_instance_container">
             <Loading v-if="ui_state.loading"></Loading>
             <div v-else class="result_instance_element" v-for="subject of mapped_root_nodes">
-                <ResultView :subject="subject" :expanded="false" :scale="ui_state.scale" :offset="ui_state.offset"></ResultView>
+                <ResultView :subject="subject" :expanded="false" :scale="ui_state.scale" :offset="ui_state.offset">
+                </ResultView>
             </div>
             <div class="result_instance_element" ref="view_container" v-show="mapped_root_nodes.length == 0"></div>
         </div>
@@ -41,26 +42,23 @@ const ui_state = reactive({
     scale: 1,
     offset: new Vector2(0, 0),
     initial_size: new Vector2(0, 0),
+    computed_size: new Vector2(0, 0),
     prop_open: false,
     prop_open_event: null as PropertiesOpenEvent | null
 })
-watch(() => root_node, () => {
-    if (!root_node) {
-        return
-    }
+watch(() => query_string, () => {
+
     if (root_node.link) {
         root_subject.value = root_node.link.from_subject
     } else if (root_node.subject) {
         root_subject.value = root_node.subject
     }
-}, { deep: true })
-watch(() => query_string, () => {
     console.log('Query string changed!', query_string, root_subject.value)
     if (mapped_root_nodes.value.length == 0) {
         ui_state.initial_size.x = view_container.value?.clientWidth || 0
         ui_state.initial_size.y = view_container.value?.clientHeight || 0
-        ui_state.initial_size.x -= 20
-        ui_state.initial_size.y -= 20
+        ui_state.initial_size.x -= 50
+        ui_state.initial_size.y -= 50
     }
     mapper.value = new QueryMapper(root_subject.value, ui_state.initial_size)
     let query_id = ui_state.last_query_id + 1
@@ -71,8 +69,9 @@ watch(() => query_string, () => {
         if (query_id == ui_state.last_query_id) {
             mapped_root_nodes.value = results.mapped_nodes
             ui_state.scale = results.scale
-            ui_state.offset.x = results.offset.x
-            ui_state.offset.y = results.offset.y
+            ui_state.offset = results.offset
+            ui_state.computed_size = results.size
+
             ui_state.loading = false
         }
     }).catch((err) => {
@@ -104,7 +103,7 @@ watch(() => query_string, () => {
 }
 
 .result_instance_element {
-    width: 100%;
+    width: 95%;
     height: 20%;
     display: flex;
     justify-content: center;

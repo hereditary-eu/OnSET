@@ -3,7 +3,6 @@
 import * as THREE from 'three'
 import { CircleMan3D, SubjectInCircle } from './CircleMan3D';
 import type { Link, Node } from '../sparql/representation';
-import { l } from 'node_modules/vite/dist/node/types.d-aGj9QkWt';
 // 3D circle packing based upon https://observablehq.com/@analyzer2004/3d-circle-packing
 
 export class LinkCircles {
@@ -19,7 +18,7 @@ export class LinkCircles {
 
 export class OverviewCircles extends CircleMan3D {
 
-    links: LinkCircles[] = []
+    links: Record<string, LinkCircles> = {}
 
     link_params = {
         segments: 16,
@@ -35,6 +34,11 @@ export class OverviewCircles extends CircleMan3D {
         let link_circle = new LinkCircles()
         let from = this.subjects_by_id[link.from_id]
         let to = this.subjects_by_id[link.to_id]
+        if (!from || !to) {
+            console.error("Missing subjects for link", link)
+            return
+        }
+        console.log("Adding link", link, from, to)
         link_circle.from_subject = from
         link_circle.to_subject = to
         let height = from.position.distanceTo(to.position) * this.link_params.height_factor
@@ -59,28 +63,56 @@ export class OverviewCircles extends CircleMan3D {
 
         this.scene.add(tube_mesh)
 
-        this.links.push(link_circle)
+        this.links[`${link.from_id}-${link.to_id}`] = link_circle
     }
     updateLinks(root: Node) {
-
-        this.links = []
+        let new_links: Record<string, Link> = {}
+        if(!this.renderer){
+            console.warn('No renderer (yet?)')
+            return
+        }
         let eval_links = (node: Node) => {
             if (node.to_links) {
                 for (let to_link of node.to_links) {
-                    this.addLink(to_link)
+                    let link_id = `${to_link.from_id}-${to_link.to_id}`
+                    new_links[link_id] = to_link
+                    eval_links(to_link.to_subject)
                 }
             }
             if (node.from_links) {
                 for (let from_link of node.from_links) {
-                    this.addLink(from_link)
+                    let link_id = `${from_link.from_id}-${from_link.to_id}`
+                    new_links[link_id] = from_link
+                    eval_links(from_link.from_subject)
                 }
             }
         }
         eval_links(root)
+
+        let changes = false
+        //Add new links
+        Object.keys(new_links).forEach(link_id => {
+            if (!this.links[link_id]) {
+                this.addLink(new_links[link_id])
+                changes = true
+            }
+        })
+        //Remove old links
+        Object.keys(this.links).forEach(link_id => {
+            if (!new_links[link_id]) {
+                this.scene.remove(this.links[link_id].mesh)
+                delete this.links[link_id]
+                changes = true
+            }
+        })
+        if (changes) {
+            console.log('re-rendering')
+            this.renderer.render(this.scene, this.camera);
+        }
     }
     initPackedCircles() {
-        this.scene.remove(...this.links.map(link => link.mesh))
         super.initPackedCircles()
+        console.log('init packed circles')
         if (this.renderer instanceof THREE.WebGLRenderer) {
             this.renderer.clear()
         }

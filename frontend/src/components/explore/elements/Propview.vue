@@ -113,7 +113,7 @@ const edit_point_hover = (event: MouseEvent, state: boolean) => {
     align-items: center;
     background-color: white;
     border: 1px solid rgb(197, 196, 168);
-    border-radius: 5px;
+    // border-radius: 5px;
     padding: 5px;
 }
 

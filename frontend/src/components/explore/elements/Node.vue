@@ -61,7 +61,7 @@
     </g>
 </template>
 <script setup lang="ts">
-import { ref, watch, reactive, computed, onMounted, defineProps, onBeforeUpdate, type Prop } from 'vue'
+import { ref, watch, reactive, computed, onMounted, defineProps, onBeforeUpdate, type Prop, onUpdated, onRenderTriggered } from 'vue'
 import { type Subject } from '@/api/client.ts/Api';
 import { Node as NodeRepr } from '@/utils/sparql/representation';
 import LinkComp from './Link.vue';
@@ -172,6 +172,7 @@ const deleteConstraint = (constraint) => {
     subject.property_constraints = subject.property_constraints.filter((constr) => constr != constraint)
 }
 const result_subject = computed(() => subject as InstanceNode)
+
 </script>
 <style lang="scss">
 .node {
