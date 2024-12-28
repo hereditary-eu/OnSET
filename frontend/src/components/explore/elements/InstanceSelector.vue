@@ -88,7 +88,7 @@ const subject_id = computed(() => {
     return selection_event.node.subject_id
 })
 // watch(() => display, update_selection_options, { deep: false })
-watch(() => selection_event.node, () => {
+watch(() => { selection_event ? selection_event.node : selection_event }, () => {
     console.log('subject_id event changed!', subject_id)
     editor_data.q = ''
     update_selection_options()
