@@ -16,18 +16,24 @@
                     :constraint="(constraint as StringConstraint)" />
                 <DateConstraintEditor v-if="(constraint.constraint_type == ConstraintType.DATE)"
                     :constraint="(constraint as DateConstraint)" />
+                <SubjectConstraintEditor v-if="(constraint.constraint_type == ConstraintType.SUBJECT)"
+                    :constraint="(constraint as SubjectConstraint)" :node="node"
+                    @open_search="emit('instanceSearchClicked', $event)" />
             </div>
         </foreignObject>
     </g>
 </template>
 <script setup lang="ts">
-import { Constraint, ConstraintType, DateConstraint, NumberConstraint, StringConstraint } from '@/utils/sparql/representation';
+import { Constraint, ConstraintType, DateConstraint, Node, NumberConstraint, StringConstraint, SubjectConstraint } from '@/utils/sparql/representation';
 import { defineProps, defineModel } from 'vue'
 import NumberConstraintEditor from './constraints/NumberConstraintEditor.vue';
 import StringConstraintEditor from './constraints/StringConstraintEditor.vue';
 import DateConstraintEditor from './constraints/DateConstraintEditor.vue';
+import SubjectConstraintEditor from './constraints/SubjectConstraintEditor.vue';
+import type { InstanceSelectorOpenEvent } from '@/utils/sparql/helpers';
 const emit = defineEmits<{
     delete: [value: Constraint]
+    instanceSearchClicked: [value: InstanceSelectorOpenEvent]
 }>()
 const { extend_path, constraint } = defineProps({
     extend_path: {
@@ -38,15 +44,19 @@ const { extend_path, constraint } = defineProps({
         type: Object as () => Constraint,
         required: true
     },
+    node: {
+        type: Object as () => Node,
+        required: true
+    },
     show_editpoints: {
         type: Boolean,
         required: true
-    }
+    },
 })
 
 
 </script>
-<style lang="scss">
+<style lang="scss" scoped>
 .constraint_connection {
     fill: none;
     stroke: #828282;

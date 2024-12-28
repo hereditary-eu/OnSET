@@ -2,12 +2,15 @@
     <g id="outlink_selector" @mouseout.capture="edit_point_hover($event, false)"
         @mouseenter.capture="edit_point_hover($event, true)" @mouseover="edit_point_hover($event, true)">
         <g :transform="`translate(${attachment_pt.x},${attachment_pt.y})`" v-if="display">
-            <foreignObject :height="(NODE_HEIGHT + 10) * 5" :width="NODE_WIDTH + LINK_WIDTH + 35">
-                <div class="selection_div_container" :style="{ 'height': `${NODE_HEIGHT * 5 + 10}px` }">
+            <foreignObject :height="(NODE_HEIGHT) * 8 + 10" :width="NODE_WIDTH + LINK_WIDTH + 35">
+                <div class="selection_div_container" :style="{ 'height': `${NODE_HEIGHT * 8 + 10}px` }">
+                    <div class="selection_defaults">
+                        <OnsetBtn @click="addLabelConstraint()" btn_width="100%">Filter Label</OnsetBtn>
+                        <OnsetBtn @click="addInstanceConstraint()" btn_width="100%">Select Instance</OnsetBtn>
+                    </div>
                     <div class="selection_search">
                         <input type="text" placeholder="Search..." v-model="editor_data.q" />
                     </div>
-                    <Loading v-if="editor_data.loading"></Loading>
                     <div class="selection_element_container">
                         <div class="selection_element" v-for="option of selected_options_filtered"
                             @click="select_option(option, $event)"
@@ -23,6 +26,10 @@
                                 </g>
                             </svg>
                         </div>
+                        <Loading v-if="editor_data.loading"></Loading>
+                        <OnsetBtn @click="loadMore" btn_width="100%"
+                            v-if="selection_options.length > 0 && !editor_data.reached_end" :toggleable="false">More
+                        </OnsetBtn>
                     </div>
                 </div>
             </foreignObject>
@@ -36,13 +43,14 @@
 </template>
 <script setup lang="ts">
 import { ref, watch, reactive, computed, onMounted } from 'vue'
-import { Constraint, MixedResponse } from '@/utils/sparql/representation';
+import { Constraint, Link, MixedResponse, StringConstraint, SubjectConstraint } from '@/utils/sparql/representation';
 import LinkComp from './Link.vue';
 import NodeComp from './Node.vue';
 import { BACKEND_URL } from '@/utils/config';
 import { Api, RELATION_TYPE, RETURN_TYPE } from '@/api/client.ts/Api';
-import { LINK_WIDTH, NODE_HEIGHT, NODE_WIDTH, NodeSide, OutlinkSelectorOpenEvent } from '@/utils/sparql/explorer';
+import { LINK_WIDTH, NODE_HEIGHT, NODE_WIDTH, NodeSide, OutlinkSelectorOpenEvent } from '@/utils/sparql/helpers';
 import Loading from '@/components/ui/Loading.vue';
+import OnsetBtn from '@/components/ui/OnsetBtn.vue';
 
 const emit = defineEmits<{
     select: [value: MixedResponse]
@@ -63,7 +71,9 @@ const editor_data = reactive({
     editpoint_r: 7,
     loading: false,
     q: '',
-    query_id: 0
+    query_id: 0,
+    offset: 0,
+    reached_end: false
 })
 const display = defineModel<boolean>()
 const selection_options = ref([] as MixedResponse[])
@@ -72,37 +82,9 @@ const update_selection_options = async () => {
     if (display) {
         (async () => {
             selection_options.value = []
-            editor_data.loading = true
-            let query_id = ++editor_data.query_id
-            const response = await api.classes.searchClassesClassesSearchPost({
-                q: editor_data.q,
-                from_id: selection_event.side == NodeSide.TO || selection_event.side == NodeSide.PROP ? selection_event.node.subject_id : undefined,
-                to_id: selection_event.side == NodeSide.FROM ? selection_event.node.subject_id : undefined,
-                type: RETURN_TYPE.Link,
-                limit: 10,
-                relation_type: selection_event.side == NodeSide.PROP ? RELATION_TYPE.Property : RELATION_TYPE.Instance
-
-            })
-            if (query_id != editor_data.query_id) {
-                return
-            }
-            editor_data.loading = false
-            //TODO: topic ids - user context!
-            selection_options.value = response.data.results.map((result) => {
-                const resp = new MixedResponse(result)
-                const other_subject = selection_event.side == NodeSide.FROM || selection_event.side == NodeSide.PROP ? resp.link.to_subject : resp.link.from_subject
-
-                if (selection_event.side == NodeSide.TO) {
-                    resp.link.to_subject.x = LINK_WIDTH
-                    resp.link.from_subject.x = -NODE_WIDTH
-                } else if (selection_event.side == NodeSide.PROP) {
-                    resp.link.to_subject.x = LINK_WIDTH * 2
-                    resp.link.from_subject.x = -NODE_WIDTH
-                } else {
-                    resp.link.to_subject.x = LINK_WIDTH + NODE_WIDTH
-                }
-                return resp
-            })
+            editor_data.offset = 0
+            console.log('fetching selection options', selection_event, 'offset', editor_data.offset)
+            await loadMore()
         })().catch((e) => {
             console.error('Error fetching selection options', e)
             editor_data.loading = false
@@ -117,6 +99,44 @@ watch(() => selection_event, () => {
     update_selection_options()
 }, { deep: false })
 watch(() => editor_data.q, update_selection_options, { deep: false })
+
+const loadMore = async () => {
+    editor_data.loading = true
+    let query_id = ++editor_data.query_id
+    const response = await api.classes.searchClassesClassesSearchPost({
+        q: editor_data.q,
+        from_id: selection_event.side == NodeSide.TO || selection_event.side == NodeSide.PROP ? selection_event.node.subject_id : undefined,
+        to_id: selection_event.side == NodeSide.FROM ? selection_event.node.subject_id : undefined,
+        type: RETURN_TYPE.Link,
+        limit: 10,
+        skip: editor_data.offset,
+        relation_type: selection_event.side == NodeSide.PROP ? RELATION_TYPE.Property : RELATION_TYPE.Instance
+    })
+    if (query_id != editor_data.query_id) {
+        return
+    }
+    //TODO: topic ids - user context!
+    let mapped_responses = response.data.results.map((result) => {
+        const resp = new MixedResponse(result)
+        const other_subject = selection_event.side == NodeSide.FROM || selection_event.side == NodeSide.PROP ? resp.link.to_subject : resp.link.from_subject
+
+        if (selection_event.side == NodeSide.TO) {
+            resp.link.to_subject.x = LINK_WIDTH
+            resp.link.from_subject.x = -NODE_WIDTH
+        } else if (selection_event.side == NodeSide.PROP) {
+            resp.link.to_subject.x = LINK_WIDTH * 2
+            resp.link.from_subject.x = -NODE_WIDTH
+        } else {
+            resp.link.to_subject.x = LINK_WIDTH + NODE_WIDTH
+        }
+        return resp
+    })
+    if (mapped_responses.length == 0) {
+        editor_data.reached_end = true
+    }
+    selection_options.value = selection_options.value.concat(mapped_responses)
+    editor_data.loading = false
+}
 const attachment_pt = computed(() => {
     if (!selection_event) {
         return { x: 0, y: 0 }
@@ -173,6 +193,34 @@ const selected_options_filtered = computed(() => {
 const edit_point_hover = (event: MouseEvent, state: boolean) => {
     editor_data.show_editpoints = state
 }
+const addLabelConstraint = () => {
+    const link = new Link()
+    link.from_id = selection_event.node.subject_id
+    link.from_subject = selection_event.node
+    link.property_id = 'rdfs:label'
+    link.to_proptype = 'xsd:string'
+    link.label = 'Label'
+    const constraint = Constraint.construct(link)
+    if (!selection_event.node.property_constraints) {
+        selection_event.node.property_constraints = []
+    }
+    selection_event.node.property_constraints.push(constraint)
+    display.value = false
+}
+const addInstanceConstraint = () => {
+    const link = new Link()
+    link.from_id = selection_event.node.subject_id
+    link.from_subject = selection_event.node
+    link.to_proptype = 'owl:Thing'
+
+    const constraint = new SubjectConstraint()
+    constraint.link = link
+    if (!selection_event.node.property_constraints) {
+        selection_event.node.property_constraints = []
+    }
+    selection_event.node.property_constraints.push(constraint)
+    display.value = false
+}
 </script>
 <style lang="scss">
 .selection_search {
@@ -215,6 +263,13 @@ const edit_point_hover = (event: MouseEvent, state: boolean) => {
     background-color: #f0f0f0;
 }
 
+.selection_defaults {
+    display: flex;
+    justify-content: space-around;
+    flex-direction: column;
+    width: 100%;
+    padding: 4px;
+}
 
 .edit_point {
     fill: #a0c2a9;

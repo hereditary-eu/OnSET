@@ -6,28 +6,46 @@ const props = defineProps({
     btn_height: {
         type: String,
         default: '2.8rem'
+    },
+    btn_width: {
+        type: String,
+        default: '16rem'
+    },
+    toggleable: {
+        type: Boolean,
+        default: true
     }
 })
 const emit = defineEmits(['click'])
 function update(evt) {
     emit('click', evt)
-    model.value = !model.value
+    if (props.toggleable) {
+        model.value = !model.value
+    }
 }
 </script>
 <template>
     <div class="wrapper_clickable">
-        <button class="clickable_container" @click="update" :class="model ? 'clickable_selected' : null">
+        <button v-if="props.toggleable" class="clickable_container" @click="update"
+            :class="model ? 'clickable_selected' : null">
             <slot></slot>
         </button>
+        <div v-else @click="update">
+            <input type="checkbox" id="btnControl" />
+            <label class="clickable_container" for="btnControl">
+                <slot></slot>
+            </label>
+
+        </div>
     </div>
 </template>
 <style scoped>
 .clickable_container {
     cursor: pointer;
-    width: 16rem;
     padding: 0.5rem;
-    border: 1px solid #e0e0e0;
+    border: 1px solid #b8b7b7;
     height: v-bind("props.btn_height");
+    width: v-bind("props.btn_width");
     text-align: center;
     display: flex;
     align-items: center;
@@ -40,6 +58,10 @@ function update(evt) {
     border-color: #8fa88f;
 }
 
+.clickable_container:active {
+    border-color: #8fa88f;
+}
+
 .clickable_selected {
     background-color: #d5edde;
 }
@@ -48,5 +70,8 @@ function update(evt) {
     display: flex;
     justify-content: center;
     align-items: center;
+}
+#btnControl {
+    display: none;
 }
 </style>

@@ -32,7 +32,7 @@ import NodeComp from './elements/Node.vue';
 import Propview from './elements/Propview.vue';
 import { InstanceNode, PropertiesOpenEvent, QueryMapper } from '@/utils/sparql/querymapper';
 import { Vector2, type Vector2Like } from 'three';
-import { DisplayMode } from '@/utils/sparql/explorer';
+import { DisplayMode } from '@/utils/sparql/helpers';
 import Loading from '../ui/Loading.vue';
 import Expandable from '../ui/Expandable.vue';
 

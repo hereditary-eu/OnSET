@@ -1,9 +1,11 @@
 <template>
     <div class="constraint">
-        <span class="constraint_label">{{ constraint.link.label }}</span><span class="constraint_select"><select
-                @change="change_operator" :value="constraint.type">
-                <option v-for="option in operator_options" :value="option.value">{{ option.label }}</option>
-            </select></span><span><input type="date" v-model="date_value" class="constraint_input"></span>
+        <div class="constraint_label">{{ constraint.link.label }}</div>
+        <div>
+            <span class="constraint_select"><select @change="change_operator" :value="constraint.type">
+                    <option v-for="option in operator_options" :value="option.value">{{ option.label }}</option>
+                </select></span><span><input type="date" v-model="date_value" class="constraint_input"></span>
+        </div>
     </div>
 </template>
 <script setup lang="ts">
@@ -32,7 +34,7 @@ watch(() => date_value, () => {
     constraint.value = new Date(date_value.value)
 }, { deep: true })
 </script>
-<style lang="scss">
+<style lang="scss" scoped>
 .constraint_label {
     margin-right: 5px;
 }

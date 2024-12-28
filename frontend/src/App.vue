@@ -23,7 +23,16 @@ import HelloWorld from './components/HelloWorld.vue'
   </v-app>
 </template>
 
-<style scoped>
+<style>
+body {
+  font-family: 'Roboto Mono', monospace;
+  margin: 0px;
+}
+text{
+  font-family: 'Roboto Mono', monospace;
+}
+
+
 header {
   line-height: 1.5;
   max-height: 100vh;

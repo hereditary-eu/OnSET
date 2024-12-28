@@ -34,7 +34,7 @@ import { ref, watch, reactive, defineEmits } from 'vue';
 import Node from './elements/Node.vue';
 import NodeLink from './elements/NodeLink.vue';
 import OnsetBtn from '@/components/ui/OnsetBtn.vue';
-import { LINK_WIDTH, NODE_HEIGHT, NODE_WIDTH } from '@/utils/sparql/explorer';
+import { LINK_WIDTH, NODE_HEIGHT, NODE_WIDTH } from '@/utils/sparql/helpers';
 import Loading from '@/components/ui/Loading.vue';
 
 const emits = defineEmits<{

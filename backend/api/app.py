@@ -99,11 +99,17 @@ def get_class(cls: str = Query()) -> list[Subject]:
 
 
 @app.get("/classes/instances")
-def get_named_individuals(cls: str = Query()) -> list[Subject]:
+def get_named_instance(cls: str = Query()) -> list[Subject]:
     return ontology_manager.get_named_individuals(cls)
 
+
+@app.get("/classes/instances/search")
+def get_named_instance_search(query:InstanceQuery=Query()) -> list[Instance]:
+    return ontology_manager.get_instances(query)
+
+
 @app.get("/classes/instances/properties")
-def get_named_individuals(instance_id: str=Query())-> dict[str, Property]:
+def get_named_instance_properties(instance_id: str = Query()) -> dict[str, Property]:
     return ontology_manager.outgoing_edges_for(instance_id)
 
 

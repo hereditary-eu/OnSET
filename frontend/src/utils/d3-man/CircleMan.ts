@@ -139,7 +139,7 @@ export class CircleMan {
 
         // Append the text labels.
         const label = svg.append("g")
-            .style("font", "10px sans-serif")
+            .style("font-size", "10px")
             .attr("pointer-events", "none")
             .attr("text-anchor", "middle")
             .selectAll("text")

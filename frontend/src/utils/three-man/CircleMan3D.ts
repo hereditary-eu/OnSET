@@ -204,7 +204,7 @@ export class CircleMan3D {
         this.camera = new THREE.PerspectiveCamera(75, this.width / this.height, 0.2, 1500);
         this.camera.aspect = this.width / this.height;
         this.camera.updateProjectionMatrix();
-        this.camera.position.set(0, 250, 0);
+        this.camera.position.set(105, 105, 0);
 
 
         this.scene = new THREE.Scene();
@@ -238,6 +238,7 @@ export class CircleMan3D {
         controls.maxPolarAngle = Math.PI / 2.5;
         controls.minDistance = 50;
         controls.maxDistance = 650;
+        controls.autoRotate = true;
         controls.addEventListener("change", () => {
             // tooltip.clear();
             if (this.renderer && this.renderer instanceof THREE.WebGLRenderer) {
@@ -247,5 +248,9 @@ export class CircleMan3D {
         });
         controls.update();
         this.renderer.render(this.scene, this.camera);
+        (this.renderer as any).setAnimationLoop(() => {
+            controls.update();
+            this.renderer.render(this.scene, this.camera);
+        });
     }
 }

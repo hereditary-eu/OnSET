@@ -30,7 +30,7 @@ import { ref, watch, reactive, computed, onMounted } from 'vue'
 import { Constraint, MixedResponse } from '@/utils/sparql/representation';
 import { BACKEND_URL } from '@/utils/config';
 import { Api, RELATION_TYPE, RETURN_TYPE, type Property } from '@/api/client.ts/Api';
-import { LINK_WIDTH, NODE_HEIGHT, NODE_WIDTH, NodeSide, OutlinkSelectorOpenEvent } from '@/utils/sparql/explorer';
+import { LINK_WIDTH, NODE_HEIGHT, NODE_WIDTH, NodeSide, OutlinkSelectorOpenEvent } from '@/utils/sparql/helpers';
 import Loading from '@/components/ui/Loading.vue';
 import { readableName, type PropertiesOpenEvent } from '@/utils/sparql/querymapper';
 const dimensions = reactive({
@@ -64,7 +64,7 @@ const update_props = async () => {
     if (display) {
         (async () => {
             editor_data.loading = true
-            const options = await api.classes.getNamedIndividualsClassesInstancesPropertiesGet({
+            const options = await api.classes.getNamedInstancePropertiesClassesInstancesPropertiesGet({
                 instance_id: selection_event.node.instance_id,
             })
             for (const key in options.data) {

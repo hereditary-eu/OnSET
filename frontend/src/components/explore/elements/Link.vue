@@ -33,7 +33,7 @@ const link_width = computed(() => {
 </script>
 <style lang="scss">
 .link_text {
-    font: 10px sans-serif;
+    font-size: 10px;
     text-anchor: middle;
     text-align: center;
 }

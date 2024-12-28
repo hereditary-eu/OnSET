@@ -1,7 +1,7 @@
 <template>
     <div>
         <div class="d-flex align-center data_container">
-            <OnsetBtn v-for="topic of shown_components" :key="topic.topic_id" v-model="topic.selected"
+            <OnsetBtn v-for="topic of shown_components" :key="topic.topic_id" v-model="topic.selected" :btn_width="'18rem'" :btn_height="'4rem'" :toggleable="true"
                 class="flex-grow-1 wrapper_clickable">
                 {{ topic.topic }}
             </OnsetBtn>

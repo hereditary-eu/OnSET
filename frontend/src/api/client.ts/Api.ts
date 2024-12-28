@@ -58,6 +58,11 @@ export interface FuzzyQueryResult {
    * @default 0
    */
   score?: number;
+  /**
+   * Attributions
+   * @default []
+   */
+  attributions?: ResultAttribution[];
 }
 
 /** FuzzyQueryResults */
@@ -70,6 +75,20 @@ export interface FuzzyQueryResults {
 export interface HTTPValidationError {
   /** Detail */
   detail?: ValidationError[];
+}
+
+/** Instance */
+export interface Instance {
+  /**
+   * Id
+   * @default ""
+   */
+  id?: string;
+  /**
+   * Label
+   * @default ""
+   */
+  label?: string;
 }
 
 /** Match */
@@ -130,7 +149,7 @@ export interface Property {
 /** PropertyValue */
 export interface PropertyValue {
   /** Value */
-  value: string | null;
+  value: null;
   /** Label */
   label: string | null;
 }
@@ -169,6 +188,25 @@ export interface RelationsFound {
   text?: string;
   /** Matches */
   matches?: Match[];
+}
+
+/** ResultAttribution */
+export interface ResultAttribution {
+  /** Topic Id */
+  topic_id?: number | null;
+  /** @default "topic" */
+  type?: ResultAttributionType;
+  /**
+   * Score
+   * @default 0
+   */
+  score?: number;
+}
+
+/** ResultAttributionType */
+export enum ResultAttributionType {
+  Topic = "topic",
+  Query = "query",
 }
 
 /** SparqlQuery */
@@ -536,11 +574,11 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
     /**
      * No description
      *
-     * @name GetNamedIndividualsClassesInstancesGet
-     * @summary Get Named Individuals
+     * @name GetNamedInstanceClassesInstancesGet
+     * @summary Get Named Instance
      * @request GET:/classes/instances
      */
-    getNamedIndividualsClassesInstancesGet: (
+    getNamedInstanceClassesInstancesGet: (
       query: {
         /** Cls */
         cls: string;
@@ -558,11 +596,45 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
     /**
      * No description
      *
-     * @name GetNamedIndividualsClassesInstancesPropertiesGet
-     * @summary Get Named Individuals
+     * @name GetNamedInstanceSearchClassesInstancesSearchGet
+     * @summary Get Named Instance Search
+     * @request GET:/classes/instances/search
+     */
+    getNamedInstanceSearchClassesInstancesSearchGet: (
+      query: {
+        /** Cls */
+        cls: string;
+        /** Q */
+        q: string;
+        /**
+         * Limit
+         * @default 10
+         */
+        limit?: number;
+        /**
+         * Skip
+         * @default 0
+         */
+        skip?: number;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<Instance[], HTTPValidationError>({
+        path: `/classes/instances/search`,
+        method: "GET",
+        query: query,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @name GetNamedInstancePropertiesClassesInstancesPropertiesGet
+     * @summary Get Named Instance Properties
      * @request GET:/classes/instances/properties
      */
-    getNamedIndividualsClassesInstancesPropertiesGet: (
+    getNamedInstancePropertiesClassesInstancesPropertiesGet: (
       query: {
         /** Instance Id */
         instance_id: string;

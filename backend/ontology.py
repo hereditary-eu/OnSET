@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field
 from rdflib import Graph, URIRef, Literal
-from model import Subject, Property, PropertyValue
+from model import *
 import pandas as pd
 from rdflib.plugins.sparql import prepareQuery
 from tqdm import tqdm
@@ -150,6 +150,26 @@ class OntologyManager:
 
         return onto_classes
 
+    def get_instances(self, query: InstanceQuery) -> list[Instance]:
+        if query.q is None:
+            query.q = ""
+        individuals = self.q_to_df_values(
+            f"""SELECT DISTINCT ?ind ?ind_lbl
+                    WHERE {{
+                        ?ind rdf:type {query.cls}.
+                        ?ind rdfs:label ?ind_lbl.
+                        FILTER (lang(?ind_lbl) = "{self.config.language}")
+                        FILTER (CONTAINS(LCASE(?ind_lbl), LCASE("{query.q}")))
+                    }}
+                    ORDER BY ?ind ?ind_lbl
+                    LIMIT {query.limit} OFFSET {query.skip} 
+                    """
+        )
+        return [
+            Instance(id=ind["ind"], label=ind["ind_lbl"])
+            for i, ind in individuals.iterrows()
+        ]
+
     def label_for(self, subject: str):
         try:
             return list(
@@ -180,7 +200,9 @@ class OntologyManager:
         label_candidates: dict[str, list[str]] = {}
         for ref, label in data:
             if isinstance(ref, Literal):
-                if (hasattr(ref, "language") and ref.language == self.config.language) or ref.language is None:
+                if (
+                    hasattr(ref, "language") and ref.language == self.config.language
+                ) or ref.language is None:
                     ref_n3 = ref.value
                 else:
                     continue
@@ -231,8 +253,15 @@ OPTIONAL {{?obj rdfs:label ?obj_lbl.}}
                         if self.to_readable(edge) == edge_n3
                     ]
                 )
-                values=[
-                    PropertyValue(value=obj, label=values_candidates[obj][0] if len(values_candidates[obj]) > 0 else None)
+                values = [
+                    PropertyValue(
+                        value=obj,
+                        label=(
+                            values_candidates[obj][0]
+                            if len(values_candidates[obj]) > 0
+                            else None
+                        ),
+                    )
                     for obj in values_candidates
                 ]
                 label = (

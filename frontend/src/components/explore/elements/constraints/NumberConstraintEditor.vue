@@ -25,7 +25,7 @@ const change_operator = (event: Event) => {
     constraint.type = target.value as NumberConstraintType
 }
 </script>
-<style lang="scss">
+<style lang="scss" scoped>
 .constraint_label {
     margin-right: 5px;
 }

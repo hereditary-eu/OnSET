@@ -11,6 +11,18 @@ class Base(DeclarativeBase):
     pass
 
 
+class InstanceQuery(BaseModel):
+    cls: str
+    q: str | None = None
+    limit: int = 10
+    skip: int = 0
+
+
+class Instance(BaseModel):
+    id: str = ""
+    label: str = ""
+
+
 class PropertyValue(BaseModel):
     value: Any | None
     label: str | None

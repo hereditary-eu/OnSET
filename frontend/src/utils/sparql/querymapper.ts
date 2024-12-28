@@ -77,12 +77,12 @@ export class QueryMapper {
         )
 
     }
-    async runAndMap(query: string) {
+    async runAndMap(query: string, skip: number = 0, limit: number = 20) {
         if (!this.root_node) {
             return { mapped_nodes: [], offset: new Vector2(0, 0), scale: 1 }
         }
         const response = await this.api.sparql.sparqlQuerySparqlPost({
-            query: this.root_node.generateQuery()
+            query: this.root_node.generateQuery(limit, skip),
         })
         let copied_node = parseJSON<Node>(stringifyJSON(this.root_node))
         console.log("Copied node", copied_node, stringifyJSON(this.root_node))

@@ -20,12 +20,15 @@
             <g v-if="mode == DisplayMode.EDIT" v-for="constr_info in constraint_list_mapped"
                 :transform="`translate(${subject.width / 2},${constr_info.y})`">
                 <Constraint :constraint="constr_info.constraint" :extend_path="constr_info.extend_path"
-                    :show_editpoints="editor_data.show_editpoints" @delete="deleteConstraint">
+                    :show_editpoints="editor_data.show_editpoints" :node="subject" @delete="deleteConstraint"
+                    @instance-search-clicked="emit('instanceSearchClicked', $event)">
+                    
                 </Constraint>
             </g>
 
             <g v-show="mode == DisplayMode.RESULT_INTERACTIVE && editor_data.show_editpoints">
-                <circle :cx="subject.width/2" :cy="subject.height" :r="editor_data.editpoint_r" class="edit_point edit_point_prop"
+                <circle :cx="subject.width / 2" :cy="subject.height" :r="editor_data.editpoint_r"
+                    class="edit_point edit_point_prop"
                     @click="emit('propPointClicked', { node: subject as InstanceNode })"></circle>
             </g>
             <g v-show="mode == DisplayMode.EDIT && editor_data.show_editpoints">
@@ -48,13 +51,16 @@
         <g v-for="to_link of subject.to_links ">
             <Node :subject="to_link.to_subject" :mode="mode" :parent_subject="subject"
                 @edit-point-clicked="emit('editPointClicked', $event)"
-                @prop-point-clicked="emit('propPointClicked', $event)">
+                @prop-point-clicked="emit('propPointClicked', $event)"
+                @instance-search-clicked="emit('instanceSearchClicked', $event)">
             </Node>
             <LinkComp :link="to_link"></LinkComp>
         </g>
         <g v-for="from_link of subject.from_links ">
             <Node :subject="from_link.from_subject" :mode="mode" :parent_subject="subject"
-                @edit-point-clicked="emit('editPointClicked', $event)">
+                @edit-point-clicked="emit('editPointClicked', $event)"
+                @prop-point-clicked="emit('propPointClicked', $event)"
+                @instance-search-clicked="emit('instanceSearchClicked', $event)">
             </Node>
             <LinkComp :link="from_link"></LinkComp>
         </g>
@@ -65,12 +71,13 @@ import { ref, watch, reactive, computed, onMounted, defineProps, onBeforeUpdate,
 import { type Subject } from '@/api/client.ts/Api';
 import { Node as NodeRepr } from '@/utils/sparql/representation';
 import LinkComp from './Link.vue';
-import { CONSTRAINT_WIDTH, DisplayMode, NodeSide, OutlinkSelectorOpenEvent } from '@/utils/sparql/explorer';
+import { CONSTRAINT_PADDING, CONSTRAINT_WIDTH, DisplayMode, InstanceSelectorOpenEvent, NodeSide, OutlinkSelectorOpenEvent } from '@/utils/sparql/helpers';
 import Constraint from './Constraint.vue';
 import type { InstanceNode, PropertiesOpenEvent } from '@/utils/sparql/querymapper';
 const emit = defineEmits<{
     editPointClicked: [value: OutlinkSelectorOpenEvent]
     propPointClicked: [value: PropertiesOpenEvent]
+    instanceSearchClicked: [value: InstanceSelectorOpenEvent]
 }>()
 
 const { subject, mode, parent_subject } = defineProps({
@@ -127,15 +134,15 @@ const constraint_list_mapped = computed(() => {
     // if (constraints.length > 0) {
     //     constraints[0].first_prop = true
     // }
-    let y_pos = subject.height + editor_data.constraint_padding
+    let y_pos = subject.height + CONSTRAINT_PADDING
     let last_height = 0
     for (let constr of constraints) {
         constr.y = y_pos
-        y_pos += constr.constraint.height + editor_data.constraint_padding
+        y_pos += constr.constraint.height + CONSTRAINT_PADDING
         if (last_height == 0) {
-            constr.extend_path = editor_data.constraint_padding
+            constr.extend_path = CONSTRAINT_PADDING
         } else {
-            constr.extend_path = last_height / 2 + editor_data.constraint_padding
+            constr.extend_path = last_height / 2 + CONSTRAINT_PADDING
         }
         last_height = constr.constraint.height
     }
@@ -189,7 +196,7 @@ const result_subject = computed(() => subject as InstanceNode)
 }
 
 .node_text {
-    font: 10px sans-serif;
+    font-size: 10px;
     text-anchor: middle;
 }
 

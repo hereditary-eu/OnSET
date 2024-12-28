@@ -1,8 +1,11 @@
 <template>
     <div class="constraint">
-        <span class="constraint_label">{{ constraint.link.label }}</span><span class="constraint_select"><select @change="change_operator" :value="constraint.type">
+        <div class="constraint_label">{{ constraint.link.label }}</div>
+        <div>
+            <span class="constraint_select"><select @change="change_operator" :value="constraint.type">
                 <option v-for="option in operator_options" :value="option.value">{{ option.label }}</option>
             </select></span><span><input v-model="constraint.value" class="constraint_input"></span>
+        </div>
     </div>
 </template>
 <script setup lang="ts">
@@ -27,20 +30,26 @@ const change_operator = (event: Event) => {
     constraint.type = target.value as StringConstraintType
 }
 </script>
-<style lang="scss">
-
+<style lang="scss" scoped>
+.constraint{
+    display: flex;
+    justify-items: start;
+    align-items: start;
+    flex-direction: column;
+    padding: 5px;
+}
 
 .constraint_label {
-    margin-right: 5px;
+    margin-right: 3px;
 }
 .constraint_select {
-    margin-right: 5px;
+    margin-right: 3px;
     border: rgb(105, 132, 99) 1px solid;
     border-radius: 0px;
 
 }
 .constraint_input {
-    width: 50px;
+    width: 60px;
     border: rgb(105, 132, 99) 1px solid;
     border-radius: 0px;
 }

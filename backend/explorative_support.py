@@ -469,7 +469,11 @@ WHERE {
             for cls in tqdm(all_classes.values(), desc="Embedding relations"):
                 for prop in cls.properties.keys():
                     for p in cls.properties[prop]:
-                        prop_range = p.spos["rdfs:range"].first_value() if "rdfs:range" in p.spos else ""
+                        prop_range = (
+                            p.spos["rdfs:range"].first_value()
+                            if "rdfs:range" in p.spos
+                            else ""
+                        )
                         prop_range_desc = (
                             f"A {cls.label} is defined by {to_readable(p.label)}."
                         )
@@ -482,7 +486,11 @@ WHERE {
                             else:
                                 prop_range_desc = f"A {cls.label} has {to_readable(p.label)} of type {to_readable(prop_range_cls.label)}."
                             # print(prop_range_desc)
-                        superprop = p.spos["rdfs:subPropertyOf"].first_value() if "rdfs:subPropertyOf" in p.spos else ""
+                        superprop = (
+                            p.spos["rdfs:subPropertyOf"].first_value()
+                            if "rdfs:subPropertyOf" in p.spos
+                            else ""
+                        )
                         superprop_desc = ""
                         if len(superprop) > 0:
                             superprop_cls = self.oman.enrich_subject(superprop)
@@ -492,7 +500,9 @@ WHERE {
                         prop_desc = f"{prop_range_desc} {superprop_desc}"
                         prop_embedding = self.embedding_model.encode(prop_desc)
                         to_id = (
-                            p.spos["rdfs:range"].first_value() if "rdfs:range" in p.spos else None
+                            p.spos["rdfs:range"].first_value()
+                            if "rdfs:range" in p.spos
+                            else None
                         )
                         to_proptype = None
                         if to_id is not None:
@@ -609,6 +619,7 @@ WHERE {
                     )
                     .where(SubjectInDB.onto_hash == self.identifier)
                     .order_by(SubjectInDB.embedding.cosine_distance(query_embedding))
+                    .offset(query.skip)
                     .limit(query.limit)
                 ).all()
                 subjects_enriched = [
@@ -647,7 +658,9 @@ WHERE {
                 query_link = query_link.order_by(
                     SubjectLinkDB.embedding.cosine_distance(query_embedding)
                 )
-                links = session.execute(query_link.limit(25)).all()
+                links = session.execute(
+                    query_link.offset(query.skip).limit(query.limit)
+                ).all()
 
                 links_enriched = [
                     (SubjectLink.from_db(l[0], self.oman), l.distance) for l in links

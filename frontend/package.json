@@ -28,6 +28,7 @@
     "vuetify": "^3.7.4"
   },
   "devDependencies": {
+    "@iconify/vue": "^4.2.0",
     "@mdi/font": "^7.4.47",
     "@tsconfig/node20": "^20.1.4",
     "@types/d3": "^7.4.3",

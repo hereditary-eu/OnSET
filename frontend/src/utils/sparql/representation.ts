@@ -1,5 +1,5 @@
-import type { Api, FuzzyQueryResult, Property, Subject, SubjectLink } from "@/api/client.ts/Api";
-import { CONSTRAINT_HEIGHT, CONSTRAINT_WIDTH, NODE_HEIGHT, NODE_WIDTH } from "./explorer";
+import type { Api, FuzzyQueryResult, Instance, Property, Subject, SubjectLink } from "@/api/client.ts/Api";
+import { CONSTRAINT_HEIGHT, CONSTRAINT_WIDTH, NODE_HEIGHT, NODE_WIDTH } from "./helpers";
 import { isProxy, toRaw } from "vue";
 import { jsonProperty, Serializable } from "ts-serializable";
 import { registerClass } from "../parsing";
@@ -20,9 +20,8 @@ export class Constraint {
     width: number
     constraint_type: ConstraintType;
     constructor() {
-        this.height = CONSTRAINT_HEIGHT
+        this.height = CONSTRAINT_HEIGHT / 2
         this.width = CONSTRAINT_WIDTH
-
     }
     static validPropType(propType: string): boolean {
         return false;
@@ -39,7 +38,6 @@ export class Constraint {
         } else if (DateConstraint.validPropType(link.to_proptype)) {
             constraint = new DateConstraint(new Date(), NumberConstraintType.GREATER);
         }
-        console.log("Constructed", constraint, link)
         if (constraint) {
             constraint.link = link;
         }
@@ -54,29 +52,15 @@ export class Constraint {
 }
 @registerClass
 export class SubjectConstraint extends Constraint {
-    subject_id: string;
-    constructor(subject_id: string = null) {
+    instance: Instance;
+    constructor() {
         super();
-        this.subject_id = subject_id;
+        this.height = CONSTRAINT_HEIGHT / 2
+        this.instance = null;
         this.constraint_type = ConstraintType.SUBJECT
     }
     filterExpression(property: string): string {
-        return `${property} = "${this.subject_id}"`;
-    }
-    static validPropType(propType: string): boolean {
-        return false
-    }
-}
-@registerClass
-export class LabelConstraint extends Constraint {
-    subject_id: string;
-    constructor(subject_id: string = null) {
-        super();
-        this.subject_id = subject_id;
-        this.constraint_type = ConstraintType.SUBJECT
-    }
-    filterExpression(property: string): string {
-        return `${property} = "${this.subject_id}"`;
+        return `${property} = "${this.instance.id}"`;
     }
     static validPropType(propType: string): boolean {
         return false
@@ -95,6 +79,7 @@ export class StringConstraint extends Constraint {
     type: StringConstraintType;
     constructor(value: string = null, type: StringConstraintType = StringConstraintType.CONTAINS) {
         super();
+        this.height = CONSTRAINT_HEIGHT / 1.3
         this.value = value;
         this.type = type;
         this.constraint_type = ConstraintType.STRING
@@ -116,6 +101,7 @@ export class StringConstraint extends Constraint {
     static validPropType(propType: string): boolean {
         return propType == 'xsd:string' ||
             propType == 'rdf:langString'
+            || propType == 'rdfs:label'
     }
 
 }
@@ -268,7 +254,7 @@ export class Node implements Subject {
                 this[key] = node[key];
             }
         }
-        
+
     }
 
     label_id(): string {
@@ -297,9 +283,15 @@ OPTIONAL {${node.output_id()} rdfs:label ${node.label_id()}.}`
             }
         }
         for (let constraint of set.filter) {
-            let constrained_id = `?prop_${constraint.link.link_id}`
-            query += `\n${constraint.link.from_subject.output_id()} ${constraint.link.property_id} ${constrained_id}.
-FILTER(${constraint.expression(constrained_id)})`
+            if (constraint instanceof SubjectConstraint) {
+                if (constraint.instance) {
+                    query += `\nFILTER(${constraint.link.from_subject.output_id()}=${constraint.instance.id})`
+                }
+            } else {
+                let constrained_id = `?prop_${constraint.link.link_id}`
+                query += `\n${constraint.link.from_subject.output_id()} ${constraint.link.property_id} ${constrained_id}.
+    FILTER(${constraint.expression(constrained_id)})`
+            }
         }
         query += "\n}"
         query += "\nORDER BY " + output_labels.join(" ")
@@ -339,6 +331,36 @@ FILTER(${constraint.expression(constrained_id)})`
             })
         }
         return set
+    }
+
+    computeConstraintOffsets(padding: number) {
+
+        if (!this.property_constraints) {
+            return []
+        }
+        let constraints = this.property_constraints.filter(constr => constr != null).map((constraint) => {
+            return {
+                constraint: constraint,
+                y: 0,
+                extend_path: 0
+            }
+        })
+        // if (constraints.length > 0) {
+        //     constraints[0].first_prop = true
+        // }
+        let y_pos = this.height + padding
+        let last_height = 0
+        for (let constr of constraints) {
+            constr.y = y_pos
+            y_pos += constr.constraint.height + padding
+            if (last_height == 0) {
+                constr.extend_path = padding
+            } else {
+                constr.extend_path = last_height / 2 + padding
+            }
+            last_height = constr.constraint.height
+        }
+        return constraints
     }
 }
 @registerClass
@@ -381,6 +403,7 @@ export class Link implements SubjectLink {
                 this.to_subject = link.to_subject ? new Node(link.to_subject) : new UnknownNode();
             }
         }
+        this.link_id = internal_id_counter++
     }
     instance_count: number;
     label: string;

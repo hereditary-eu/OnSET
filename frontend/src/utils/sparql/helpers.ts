@@ -1,4 +1,4 @@
-import type { Node } from "./representation";
+import type { Node, SubjectConstraint } from "./representation";
 
 export enum NodeSide {
     TO = 'to_link',
@@ -11,11 +11,16 @@ export class OutlinkSelectorOpenEvent {
     side: NodeSide;
 
 }
+export class InstanceSelectorOpenEvent {
+    node: Node;
+    constraint: SubjectConstraint
+}
 export const NODE_WIDTH = 150
 export const NODE_HEIGHT = 64
 export const LINK_WIDTH = 75
 export const CONSTRAINT_WIDTH = 250
-export const CONSTRAINT_HEIGHT = 50
+export const CONSTRAINT_HEIGHT = 75
+export const CONSTRAINT_PADDING = 5
 
 
 export enum DisplayMode {
