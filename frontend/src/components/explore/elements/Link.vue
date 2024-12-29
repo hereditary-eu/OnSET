@@ -1,27 +1,32 @@
 <template>
     <g>
-        <path :d="`M ${link.from_subject.x + link.from_subject.width},${link.from_subject.y + link.from_subject.height / 2} 
-                C ${link.to_subject.x},${link.from_subject.y + link.from_subject.height / 2} 
-                ${link.from_subject.x + link.from_subject.width},${link.to_subject.y + link.to_subject.height / 2} 
-                ${link.to_subject.x},${link.to_subject.y + link.to_subject.height / 2}`" fill="none" stroke="#666"
-            class="link_path"></path>
-        <text :x="`${(link.from_subject.x + link.from_subject.width + link.to_subject.x) / 2}px`"
-            :y="`${-5 + (link.from_subject.y + link.from_subject.height / 2 + link.to_subject.y + link.to_subject.height / 2) / 2}px`"
-            fill="#000" class="link_text">{{ link.label
+        <path :d="`M ${from.x + from.width},${from.y + from.height / 2} 
+                C ${to.x},${from.y + from.height / 2} 
+                ${from.x + from.width},${to.y + to.height / 2} 
+                ${to.x},${to.y + to.height / 2}`" fill="none" stroke="#666" class="link_path"></path>
+        <text :x="`${(from.x + from.width + to.x) / 2}px`"
+            :y="`${-5 + (from.y + from.height / 2 + to.y + to.height / 2) / 2}px`" fill="#000" class="link_text">{{
+                link.label
             }}</text>
     </g>
 </template>
 <script setup lang="ts">
 import type { Link } from '@/utils/sparql/representation';
+import type { NodeLinkRepository } from '@/utils/sparql/store';
 import { ref, watch, reactive, computed, onMounted, defineProps } from 'vue'
 
-const { link } = defineProps({
+const { link, store } = defineProps({
     link: {
         type: Object as () => Link,
         required: true
     },
+    store: {
+        type: Object as () => NodeLinkRepository,
+        required: true
+    }
 })
-
+let from = computed(() => store.from(link))
+let to = computed(() => store.to(link))
 watch(() => link, () => {
 }, { deep: true })
 onMounted(() => {

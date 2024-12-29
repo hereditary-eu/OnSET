@@ -6,12 +6,12 @@
                 <div class="node_link_element" @click="selected_node(result)">
                     <div v-if="result.link">
                         <svg :width="NODE_WIDTH * 2 + LINK_WIDTH" :height="NODE_HEIGHT">
-                            <NodeLink :link="result.link"></NodeLink>
+                            <GraphView :store="result.store"></GraphView>
                         </svg>
                     </div>
                     <div v-else>
                         <svg :width="NODE_WIDTH" :height="NODE_HEIGHT">
-                            <Node :subject="result.subject"></Node>
+                            <GraphView :store="result.store"></GraphView>
                         </svg>
                     </div>
                 </div>
@@ -29,25 +29,25 @@
 <script setup lang="ts">
 import { Api, type FuzzyQueryResult } from '@/api/client.ts/Api';
 import { BACKEND_URL } from '@/utils/config';
-import { MixedResponse, type FuzzyQueryRequest } from '@/utils/sparql/representation';
+import { MixedResponse, Node, type FuzzyQueryRequest } from '@/utils/sparql/representation';
 import { ref, watch, reactive, defineEmits } from 'vue';
-import Node from './elements/Node.vue';
-import NodeLink from './elements/NodeLink.vue';
+import NodeComp from './elements/Node.vue';
 import OnsetBtn from '@/components/ui/OnsetBtn.vue';
 import { LINK_WIDTH, NODE_HEIGHT, NODE_WIDTH } from '@/utils/sparql/helpers';
 import Loading from '@/components/ui/Loading.vue';
+import GraphView from './elements/GraphView.vue';
 
 const emits = defineEmits<{
-    select: [value: MixedResponse]
+    select: [value: MixedResponse<Node>]
 }>()
 
 const ui_state = reactive({
     collapsed: false,
-    selected_link: null as MixedResponse | null,
+    selected_link: null as MixedResponse<Node> | null,
     loading: false
 })
 
-const selected_node = (node: MixedResponse) => {
+const selected_node = (node: MixedResponse<Node>) => {
     ui_state.collapsed = !!node
     ui_state.selected_link = node
     emits('select', node)
@@ -63,19 +63,21 @@ const { query } = defineProps({
     }
 })
 
-const node_link_elements = ref([] as MixedResponse[])
+const node_link_elements = ref([] as MixedResponse<Node>[])
 
 const fetchNodeLinkElements = async () => {
     ui_state.loading = true
     const response = await api.classes.searchClassesClassesSearchPost(query)
     node_link_elements.value = response.data.results.map((result) => {
-        const resp = new MixedResponse(result)
+        const resp = new MixedResponse<Node>(result)
         if (resp.link) {
-            resp.link.from_subject.width = NODE_WIDTH
-            resp.link.from_subject.height = NODE_HEIGHT
-            resp.link.to_subject.x = NODE_WIDTH + LINK_WIDTH
-            resp.link.to_subject.width = NODE_WIDTH
-            resp.link.to_subject.height = NODE_HEIGHT
+            let from = resp.store.from(resp.link)
+            let to = resp.store.to(resp.link)
+            from.width = NODE_WIDTH
+            from.height = NODE_HEIGHT
+            to.x = NODE_WIDTH + LINK_WIDTH
+            to.width = NODE_WIDTH
+            to.height = NODE_HEIGHT
         } else {
             resp.subject.width = NODE_WIDTH
             resp.subject.height = NODE_HEIGHT

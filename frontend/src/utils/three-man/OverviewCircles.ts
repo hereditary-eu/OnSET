@@ -3,6 +3,7 @@
 import * as THREE from 'three'
 import { CircleMan3D, SubjectInCircle } from './CircleMan3D';
 import type { Link, Node } from '../sparql/representation';
+import type { NodeLinkRepository } from '../sparql/store';
 // 3D circle packing based upon https://observablehq.com/@analyzer2004/3d-circle-packing
 
 export class LinkCircles {
@@ -25,7 +26,8 @@ export class OverviewCircles extends CircleMan3D {
         radius: 0.5,
         level_height: 16,
         radial_segments: 8,
-        height_factor: 0.5
+        height_factor: 0.5,
+        min_height: 25
     }
     constructor(query_renderer: string) {
         super(query_renderer)
@@ -41,7 +43,7 @@ export class OverviewCircles extends CircleMan3D {
         console.log("Adding link", link, from, to)
         link_circle.from_subject = from
         link_circle.to_subject = to
-        let height = from.position.distanceTo(to.position) * this.link_params.height_factor
+        let height = from.position.distanceTo(to.position) * this.link_params.height_factor + this.link_params.min_height
         let curve_up = new THREE.QuadraticBezierCurve3(from.position.clone(),
             from.position.clone().add(to.position).divideScalar(2).add(new THREE.Vector3(0, height, 0)),
             to.position.clone())
@@ -65,29 +67,15 @@ export class OverviewCircles extends CircleMan3D {
 
         this.links[`${link.from_id}-${link.to_id}`] = link_circle
     }
-    updateLinks(root: Node) {
+    updateLinks(store: NodeLinkRepository) {
         let new_links: Record<string, Link> = {}
-        if(!this.renderer){
+        if (!this.renderer) {
             console.warn('No renderer (yet?)')
             return
         }
-        let eval_links = (node: Node) => {
-            if (node.to_links) {
-                for (let to_link of node.to_links) {
-                    let link_id = `${to_link.from_id}-${to_link.to_id}`
-                    new_links[link_id] = to_link
-                    eval_links(to_link.to_subject)
-                }
-            }
-            if (node.from_links) {
-                for (let from_link of node.from_links) {
-                    let link_id = `${from_link.from_id}-${from_link.to_id}`
-                    new_links[link_id] = from_link
-                    eval_links(from_link.from_subject)
-                }
-            }
-        }
-        eval_links(root)
+        store.links.forEach(link => {
+            new_links[`${link.from_id}-${link.to_id}`] = link
+        })
 
         let changes = false
         //Add new links

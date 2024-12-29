@@ -1,11 +1,11 @@
 <template>
     <div class="query_builder">
         <svg class="query_build_wrapper">
-            <NodeComp v-if="root_subject" :subject="root_subject" :mode="DisplayMode.EDIT"
-                @edit-point-clicked="clicked_outlink"
-                @instance-search-clicked="clicked_instance">
-            </NodeComp>
-            <OutLinkSelector :selection_event="ui_state.outlink_event" v-model="ui_state.outlink_display">
+
+            <GraphView :store="store" :display-mode="DisplayMode.EDIT" @edit-point-clicked="clicked_outlink($event)"
+                @instance-search-clicked="clicked_instance($event)"></GraphView>
+            <OutLinkSelector :selection_event="ui_state.outlink_event" v-model="ui_state.outlink_display"
+                :store="store">
             </OutLinkSelector>
             <InstanceSelector :selection_event="ui_state.instance_event" v-model="ui_state.instance_display">
             </InstanceSelector>
@@ -21,12 +21,14 @@ import NodeComp from './elements/Node.vue';
 import OutLinkSelector from './elements/OutLinkSelector.vue';
 import { DisplayMode, InstanceSelectorOpenEvent, type NodeSide, type OutlinkSelectorOpenEvent } from '@/utils/sparql/helpers';
 import InstanceSelector from './elements/InstanceSelector.vue';
+import type { NodeLinkRepository } from '@/utils/sparql/store';
+import GraphView from './elements/GraphView.vue';
 
-const { root } = defineProps({
-    root: {
-        type: Object as () => MixedResponse,
+const { store } = defineProps({
+    store: {
+        type: Object as () => NodeLinkRepository,
         required: true
-    },
+    }
 })
 const ui_state = reactive({
     outlink_display: false,
@@ -44,20 +46,11 @@ const clicked_instance = (evt: InstanceSelectorOpenEvent) => {
     ui_state.instance_event = evt
 }
 const root_subject = ref(null as Node | null)
-watch(() => root, () => {
-    console.log('Root changed!', root)
-    if (!root) {
+watch(() => store, () => {
+    console.log('Store changed!', store)
+    if (!store) {
         return
     }
-    if (root.subject) {
-        root_subject.value = root.subject
-    } else if (root.link) {
-        const root_subject_holder = root.link.from_subject
-        root_subject_holder.to_links = [root.link]
-
-        root_subject.value = root_subject_holder
-    }
-
 }, { deep: false })
 
 </script>

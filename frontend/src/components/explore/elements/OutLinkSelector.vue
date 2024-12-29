@@ -4,7 +4,7 @@
         <g :transform="`translate(${attachment_pt.x},${attachment_pt.y})`" v-if="display">
             <foreignObject :height="(NODE_HEIGHT) * 8 + 10" :width="NODE_WIDTH + LINK_WIDTH + 35">
                 <div class="selection_div_container" :style="{ 'height': `${NODE_HEIGHT * 8 + 10}px` }">
-                    <div class="selection_defaults">
+                    <div class="selection_defaults" v-if="selection_event.side == NodeSide.PROP">
                         <OnsetBtn @click="addLabelConstraint()" btn_width="100%">Filter Label</OnsetBtn>
                         <OnsetBtn @click="addInstanceConstraint()" btn_width="100%">Select Instance</OnsetBtn>
                     </div>
@@ -17,12 +17,7 @@
                             :key="option.link?.property_id || option.subject?.subject_id">
                             <svg :width="NODE_WIDTH + LINK_WIDTH" :height="NODE_HEIGHT + 15">
                                 <g @click="">
-                                    <LinkComp :link="option.link"></LinkComp>
-                                    <NodeComp :subject="option.link.from_subject" :editable="false"
-                                        v-if="selection_event.side == NodeSide.FROM || selection_event.side == NodeSide.PROP">
-                                    </NodeComp>
-                                    <NodeComp :subject="option.link.to_subject" :editable="false"
-                                        v-if="selection_event.side == NodeSide.TO"> </NodeComp>
+                                    <GraphView :store="option.store" :display-mode="DisplayMode.SELECT"></GraphView>
                                 </g>
                             </svg>
                         </div>
@@ -43,14 +38,16 @@
 </template>
 <script setup lang="ts">
 import { ref, watch, reactive, computed, onMounted } from 'vue'
-import { Constraint, Link, MixedResponse, StringConstraint, SubjectConstraint } from '@/utils/sparql/representation';
+import { Constraint, Link, MixedResponse, Node, StringConstraint, SubjectConstraint } from '@/utils/sparql/representation';
 import LinkComp from './Link.vue';
 import NodeComp from './Node.vue';
 import { BACKEND_URL } from '@/utils/config';
 import { Api, RELATION_TYPE, RETURN_TYPE } from '@/api/client.ts/Api';
-import { LINK_WIDTH, NODE_HEIGHT, NODE_WIDTH, NodeSide, OutlinkSelectorOpenEvent } from '@/utils/sparql/helpers';
+import { DisplayMode, LINK_WIDTH, NODE_HEIGHT, NODE_WIDTH, NodeSide, OutlinkSelectorOpenEvent } from '@/utils/sparql/helpers';
 import Loading from '@/components/ui/Loading.vue';
 import OnsetBtn from '@/components/ui/OnsetBtn.vue';
+import type { NodeLinkRepository } from '@/utils/sparql/store';
+import GraphView from './GraphView.vue';
 
 const emit = defineEmits<{
     select: [value: MixedResponse]
@@ -59,9 +56,13 @@ const api = new Api({
     baseURL: BACKEND_URL
 
 })
-const { selection_event } = defineProps({
+const { selection_event, store } = defineProps({
     selection_event: {
         type: Object as () => OutlinkSelectorOpenEvent,
+        required: true
+    },
+    store: {
+        type: Object as () => NodeLinkRepository,
         required: true
     }
 })
@@ -76,7 +77,7 @@ const editor_data = reactive({
     reached_end: false
 })
 const display = defineModel<boolean>()
-const selection_options = ref([] as MixedResponse[])
+const selection_options = ref([] as MixedResponse<Node>[])
 const update_selection_options = async () => {
     console.log('Node changed!', selection_event, display)
     if (display) {
@@ -115,19 +116,21 @@ const loadMore = async () => {
     if (query_id != editor_data.query_id) {
         return
     }
+    editor_data.offset += response.data.results.length
     //TODO: topic ids - user context!
     let mapped_responses = response.data.results.map((result) => {
-        const resp = new MixedResponse(result)
-        const other_subject = selection_event.side == NodeSide.FROM || selection_event.side == NodeSide.PROP ? resp.link.to_subject : resp.link.from_subject
-
+        const resp = new MixedResponse<Node>(result)
+        const other_subject = selection_event.side == NodeSide.FROM || selection_event.side == NodeSide.PROP ? resp.store.to(resp.link) : resp.store.from(resp.link)
+        let from = resp.store.from(resp.link)
+        let to = resp.store.to(resp.link)
         if (selection_event.side == NodeSide.TO) {
-            resp.link.to_subject.x = LINK_WIDTH
-            resp.link.from_subject.x = -NODE_WIDTH
+            to.x = LINK_WIDTH
+            from.x = -NODE_WIDTH
         } else if (selection_event.side == NodeSide.PROP) {
-            resp.link.to_subject.x = LINK_WIDTH * 2
-            resp.link.from_subject.x = -NODE_WIDTH
+            to.x = LINK_WIDTH + NODE_WIDTH
+            from.x = -from.width
         } else {
-            resp.link.to_subject.x = LINK_WIDTH + NODE_WIDTH
+            to.x = LINK_WIDTH + NODE_WIDTH
         }
         return resp
     })
@@ -151,22 +154,26 @@ const attachment_pt = computed(() => {
     }
 })
 
-const select_option = (selected_option: MixedResponse, event: MouseEvent) => {
+const select_option = (selected_option: MixedResponse<Node>, event: MouseEvent) => {
     display.value = false
+
+
 
     switch (selection_event.side) {
         case NodeSide.TO:
-            selected_option.link.from_subject = selection_event.node
-            selected_option.link.to_subject.x = selection_event.node.x + selection_event.node.width + LINK_WIDTH
-            selection_event.node.to_links.push(selected_option.link)
-            break
         case NodeSide.FROM:
-            selected_option.link.to_subject = selection_event.node
-            selected_option.link.from_subject.x = selection_event.node.x - (NODE_WIDTH + LINK_WIDTH)
-            selection_event.node.from_links.push(selected_option.link)
+            let target = selection_event.side == NodeSide.TO ? selected_option.link.to_subject : selected_option.link.from_subject
+            if (selection_event.side == NodeSide.TO) {
+                target.x = selection_event.node.x + selection_event.node.width + LINK_WIDTH
+            } else {
+                target.x = selection_event.node.x - (target.width + LINK_WIDTH)
+            }
+            target.y = selection_event.node.y
+
+            store.addOutlink(selected_option.link, selection_event.node, target, selection_event.side)
             break
         case NodeSide.PROP:
-            selected_option.link.from_subject = selection_event.node
+            selected_option.link.from_internal_id = selection_event.node.internal_id
             let constraint = Constraint.construct(selected_option.link)
             if (!selection_event.node.property_constraints) {
                 selection_event.node.property_constraints = []

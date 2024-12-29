@@ -10,15 +10,16 @@
         <NodeLinkSelector :query="{ topic_ids: selected_topic_ids }" @select="selected_root"></NodeLinkSelector>
         <h3 v-if="selected_start">.. and start querying!</h3>
         <div class="query_build_view">
-            <QueryBuilder :root="selected_start"></QueryBuilder>
-            <ResultsView :query_string="query_string" :root_node="selected_start"></ResultsView>
+            <QueryBuilder :store="store"></QueryBuilder>
+            <ResultsView :query_string="query_string" :store="store"></ResultsView>
             <div id="threed_minimap">
                 <Loading v-if="ui_state.loading"></Loading>
                 <div id="threed_graph"></div>
             </div>
         </div>
         <div>
-            <OnsetBtn @click="ui_state.show_query = !ui_state.show_query">{{ !ui_state.show_query ? "Show" : "Hide" }} Query
+            <OnsetBtn @click="ui_state.show_query = !ui_state.show_query">{{ !ui_state.show_query ? "Show" : "Hide" }}
+                Query
             </OnsetBtn>
             <pre v-if="ui_state.show_query" v-html="query_string_html" />
         </div>
@@ -39,6 +40,7 @@ import { Api } from '@/api/client.ts/Api';
 import { BACKEND_URL } from '@/utils/config';
 import type { SubjectInCircle } from '@/utils/d3-man/CircleMan';
 import OnsetBtn from '@/components/ui/OnsetBtn.vue';
+import type { NodeLinkRepository } from '@/utils/sparql/store';
 
 const api = new Api({
     baseURL: BACKEND_URL
@@ -56,28 +58,18 @@ const ui_state = reactive({
     loading: false,
     show_query: false
 })
-
-
+const store = ref(null as NodeLinkRepository | null)
+watch(() => selected_start, () => {
+}, { deep: false })
 const overviewBox = new OverviewCircles('#threed_graph')
-const root_subject = computed(() => {
-    if (!selected_start.value) {
-        return null
-    }
-    if (selected_start.value.subject) {
-        return selected_start.value.subject
-    } else if (selected_start.value.link) {
-        return selected_start.value.link.from_subject
-    }
-    return null
-})
 watch(() => query_string, () => {
-    if (!root_subject.value) {
+    if (!selected_start.value) {
         return
     }
     if (overviewBox.nodes.length == 0 && overviewBox.renderer) {
         return
     }
-    overviewBox.updateLinks(root_subject.value)
+    overviewBox.updateLinks(store.value)
 }, { deep: true })
 watch(() => selected_topic_ids, () => {
     console.log('selected_topic_ids changed!', selected_topic_ids.value)
@@ -85,8 +77,10 @@ watch(() => selected_topic_ids, () => {
 watch(() => selected_start, () => {
     if (!selected_start.value) {
         return
+    } else {
+        store.value = selected_start.value.store
     }
-    let new_query_string = selected_start.value.link.from_subject.generateQuery()
+    let new_query_string = store.value.generateQuery()
     if (query_string.value != new_query_string) {
         query_string.value = new_query_string
         query_string_html.value = Prism.highlight(
@@ -121,8 +115,8 @@ onBeforeMount(() => {
         ui_state.loading = false
         overviewBox.nodes = resp_classes.data as SubjectInCircle[]
         overviewBox.initPackedCircles()
-        if (root_subject.value) {
-            overviewBox.updateLinks(root_subject.value)
+        if (selected_start.value) {
+            overviewBox.updateLinks(selected_start.value.store)
         }
     })().catch((e) => {
         console.error(e)

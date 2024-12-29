@@ -3,6 +3,7 @@ import { Link, Node } from "./representation";
 import { BACKEND_URL } from "../config";
 import { Vector2, type Vector2Like } from "three";
 import { parseJSON, registerClass, stringifyJSON } from "../parsing";
+import type { NodeLinkRepository as NodeLinkRepository } from "./store";
 export function readableName(uri?: string, label?: string) {
 
     uri = uri || "-"
@@ -30,32 +31,6 @@ export class InstanceNode extends Node {
         this.instance_id = this.instance_data[this.output_id().replace('?', '')]
         this.instance_label = this.instance_data[this.label_id().replace('?', '')]
         this.instance_label = readableName(this.instance_id, this.instance_label)
-        if (base_node) {
-            this.to_links = base_node.to_links.map((link) => {
-                let instance = new InstanceLink(link, instance_data)
-                if (instance.to_subject) {
-                    instance.to_subject = new InstanceNode(link.to_subject, instance_data)
-                    instance.to_subject.from_links = instance.to_subject.from_links.map((link) => {
-                        let instance = new InstanceLink(link, instance_data)
-                        return instance
-                    })
-                }
-                instance.from_subject = this
-                return instance
-            })
-            this.from_links = base_node.from_links.map((link) => {
-                let instance = new InstanceLink(link, instance_data)
-                if (instance.from_subject) {
-                    instance.from_subject = new InstanceNode(link.from_subject, instance_data)
-                    instance.from_subject.to_links = instance.from_subject.to_links.map((link) => {
-                        let instance = new InstanceLink(link, instance_data)
-                        return instance
-                    })
-                }
-                instance.to_subject = this
-                return instance
-            })
-        }
     }
 }
 @registerClass
@@ -67,9 +42,10 @@ export class InstanceLink extends Link {
 export class PropertiesOpenEvent {
     node: InstanceNode;
 }
+export type InstanceNodeLinkRepository = NodeLinkRepository<InstanceNode, InstanceLink>
 export class QueryMapper {
     api: Api<unknown> = null;
-    constructor(public root_node: Node, public target_size: Vector2Like) {
+    constructor(public store: NodeLinkRepository, public target_size: Vector2Like) {
         this.api = new Api(
             {
                 baseURL: BACKEND_URL
@@ -78,22 +54,33 @@ export class QueryMapper {
 
     }
     async runAndMap(query: string, skip: number = 0, limit: number = 20) {
-        if (!this.root_node) {
+        if (!this.store) {
             return { mapped_nodes: [], offset: new Vector2(0, 0), scale: 1 }
         }
         const response = await this.api.sparql.sparqlQuerySparqlPost({
-            query: this.root_node.generateQuery(limit, skip),
+            query: this.store.generateQuery(limit, skip),
         })
-        let copied_node = parseJSON<Node>(stringifyJSON(this.root_node))
-        console.log("Copied node", copied_node, stringifyJSON(this.root_node))
-        let mapped_nodes = response.data.map((instance_data) => {
-            return new InstanceNode(copied_node, instance_data as Record<string, string>)
+        // console.log("Copied node", copied_store, stringifyJSON(this.store))
+        let mapped_stores = response.data.map((instance_data) => {
+            let copied_store: InstanceNodeLinkRepository = parseJSON<InstanceNodeLinkRepository>(stringifyJSON(this.store))
+            let mapped_nodes = copied_store.nodes.map((node) => {
+                return new InstanceNode(node, instance_data as Record<string, string>)
+            })
+            let mapped_links = copied_store.links.map((link) => {
+                return new InstanceLink(link, instance_data as Record<string, string>)
+            })
+            copied_store.nodes = mapped_nodes
+            copied_store.links = mapped_links
+
+            return copied_store
         })
 
-        mapped_nodes.forEach((node) => {
-            node.interactive_clone = new InstanceNode(node)
+        mapped_stores.forEach((store) => {
+            store.nodes.forEach((node) => {
+                node.interactive_clone = new InstanceNode(node)
+            })
         })
-        let querySet = this.root_node.querySet()
+        let querySet = this.store.querySet()
 
         let bbox = { br: new Vector2(0, 0), tl: new Vector2(Infinity, Infinity) }
 
@@ -121,7 +108,7 @@ export class QueryMapper {
         bbox.tl.multiplyScalar(scale)
         bbox.br.multiplyScalar(scale)
         let size = bbox.br.clone().sub(bbox.tl)
-        return { mapped_nodes, offset, scale, size }
+        return { mapped_stores, offset, scale, size }
     }
 
 

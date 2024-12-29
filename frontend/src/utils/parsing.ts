@@ -7,7 +7,6 @@ let registeredClasses: Record<string, RegisterEntry> = {
 }
 function reviveRegisteredClasses(key: string, value: any) {
     if (value && value.__parseregister) {
-        console.log('Reviving', value)
         let entry = registeredClasses[value.__parseregister]
         if (entry) {
             let obj = new entry.cnstr()

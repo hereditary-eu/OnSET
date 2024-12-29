@@ -22,7 +22,7 @@
                 <Constraint :constraint="constr_info.constraint" :extend_path="constr_info.extend_path"
                     :show_editpoints="editor_data.show_editpoints" :node="subject" @delete="deleteConstraint"
                     @instance-search-clicked="emit('instanceSearchClicked', $event)">
-                    
+
                 </Constraint>
             </g>
 
@@ -48,22 +48,6 @@
 
             </g>
         </g>
-        <g v-for="to_link of subject.to_links ">
-            <Node :subject="to_link.to_subject" :mode="mode" :parent_subject="subject"
-                @edit-point-clicked="emit('editPointClicked', $event)"
-                @prop-point-clicked="emit('propPointClicked', $event)"
-                @instance-search-clicked="emit('instanceSearchClicked', $event)">
-            </Node>
-            <LinkComp :link="to_link"></LinkComp>
-        </g>
-        <g v-for="from_link of subject.from_links ">
-            <Node :subject="from_link.from_subject" :mode="mode" :parent_subject="subject"
-                @edit-point-clicked="emit('editPointClicked', $event)"
-                @prop-point-clicked="emit('propPointClicked', $event)"
-                @instance-search-clicked="emit('instanceSearchClicked', $event)">
-            </Node>
-            <LinkComp :link="from_link"></LinkComp>
-        </g>
     </g>
 </template>
 <script setup lang="ts">
@@ -74,20 +58,21 @@ import LinkComp from './Link.vue';
 import { CONSTRAINT_PADDING, CONSTRAINT_WIDTH, DisplayMode, InstanceSelectorOpenEvent, NodeSide, OutlinkSelectorOpenEvent } from '@/utils/sparql/helpers';
 import Constraint from './Constraint.vue';
 import type { InstanceNode, PropertiesOpenEvent } from '@/utils/sparql/querymapper';
+import type { NodeLinkRepository } from '@/utils/sparql/store';
 const emit = defineEmits<{
     editPointClicked: [value: OutlinkSelectorOpenEvent]
     propPointClicked: [value: PropertiesOpenEvent]
     instanceSearchClicked: [value: InstanceSelectorOpenEvent]
 }>()
 
-const { subject, mode, parent_subject } = defineProps({
+const { subject, mode, store } = defineProps({
     subject: {
         type: Object as () => NodeRepr,
         required: true
     },
-    parent_subject: {
-        type: Object as () => NodeRepr,
-        default: null
+    store: {
+        type: Object as () => NodeLinkRepository,
+        required: true
     },
     mode: {
         type: String as () => DisplayMode,
@@ -152,25 +137,19 @@ const constraints_height = computed(() => {
     return constraint_list_mapped.value.reduce((acc, constr) => acc + constr.extend_path + constr.constraint.height / 2, 0)
 })
 watch(() => subject.deletion_imminent, () => {
-    for (let link of subject.to_links) {
-        link.to_subject.deletion_imminent = subject.deletion_imminent
+    if(!store){
+        return
     }
-    for (let link of subject.from_links) {
-        link.from_subject.deletion_imminent = subject.deletion_imminent
+    let subElements = store.subElements(subject)
+    for (let node of subElements.nodes) {
+        node.deletion_imminent = subject.deletion_imminent
     }
 }, { deep: true })
 const hover_deletion = (state: boolean) => {
     subject.deletion_imminent = state
-    for (let link of subject.to_links) {
-        link.to_subject.deletion_imminent = state
-    }
-    for (let link of subject.from_links) {
-        link.from_subject.deletion_imminent = state
-    }
 }
 const do_deletion = () => {
-    parent_subject.to_links = parent_subject.to_links.filter((link) => link.to_subject != subject)
-    parent_subject.from_links = parent_subject.from_links.filter((link) => link.from_subject != subject)
+    store.deleteWithSubnodes(subject)
 }
 const edit_point_hover = (event: MouseEvent, state: boolean) => {
     editor_data.show_editpoints = state

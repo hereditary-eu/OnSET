@@ -1,14 +1,13 @@
 <template>
     <Expandable v-model="expanded">
         <template v-slot:header>
-            <div class="result_instance_overview_header">{{ subject.instance_label }}</div>
+            <div class="result_instance_overview_header">{{ store.nodes[0].instance_label }}</div>
         </template>
         <template v-slot:content>
             <svg class="result_interact_svg">
                 <g :transform="`translate(${offset.x},${offset.y})`">
-                    <NodeComp :subject="subject.interactive_clone" :mode="DisplayMode.RESULT_INTERACTIVE"
-                        @prop-point-clicked="ui_state.prop_open_event = $event; ui_state.prop_open = true">
-                    </NodeComp>
+                    <GraphView :store="store" :display-mode="DisplayMode.RESULT_INTERACTIVE"
+                        @prop-point-clicked="ui_state.prop_open_event = $event; ui_state.prop_open = true"></GraphView>
                     <Propview v-if="ui_state.prop_open_event" :selection_event="ui_state.prop_open_event"
                         v-model="ui_state.prop_open">
                     </Propview>
@@ -19,7 +18,7 @@
         <template v-slot:trigger>
             <svg class="result_instance_svg">
                 <g :transform="`translate(${offset.x},${offset.y}) scale(${scale})`">
-                    <NodeComp :subject="subject" :mode="DisplayMode.RESULTS"></NodeComp>
+                    <GraphView :store="store" :display-mode="DisplayMode.RESULTS"></GraphView>
                 </g>
             </svg>
         </template>
@@ -30,15 +29,16 @@ import { ref, watch, reactive, computed, onMounted, defineProps } from 'vue'
 import { MixedResponse, Node, Link } from '@/utils/sparql/representation';
 import NodeComp from './elements/Node.vue';
 import Propview from './elements/Propview.vue';
-import { InstanceNode, PropertiesOpenEvent, QueryMapper } from '@/utils/sparql/querymapper';
+import { InstanceNode, PropertiesOpenEvent, QueryMapper, type InstanceNodeLinkRepository } from '@/utils/sparql/querymapper';
 import { Vector2, type Vector2Like } from 'three';
 import { DisplayMode } from '@/utils/sparql/helpers';
 import Loading from '../ui/Loading.vue';
 import Expandable from '../ui/Expandable.vue';
+import GraphView from './elements/GraphView.vue';
 
-const { subject, scale, offset } = defineProps({
-    subject: {
-        type: Object as () => InstanceNode,
+const { store, scale, offset } = defineProps({
+    store: {
+        type: Object as () => InstanceNodeLinkRepository,
         required: true
     },
     expanded: {
