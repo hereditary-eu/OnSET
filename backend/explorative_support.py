@@ -118,7 +118,7 @@ class TopicModelling:
                 "use_memory_efficient_attention": False,
                 "unpad_inputs": False,
             },
-            revision="eb1ce34a33908596b61c83a88903b5f5f30beaa9", # problematic merge, wrong dimensionality
+            revision="eb1ce34a33908596b61c83a88903b5f5f30beaa9",  # problematic merge, wrong dimensionality
         ).to(self.device)
         # self.embedding_model = SentenceTransformer(
         #     "paraphrase-MiniLM-L6-v2",
@@ -611,6 +611,11 @@ WHERE {
 
             results: list[FuzzyQueryResult] = []
             if query.type == RETURN_TYPE.SUBJECT or query.type == RETURN_TYPE.BOTH:
+                order_by = (
+                    SubjectInDB.embedding.cosine_distance(query_embedding)
+                    if query.order == FUZZY_QUERY_ORDER.SCORE
+                    else SubjectInDB.instance_count
+                )
                 subjects = session.execute(
                     select(
                         SubjectInDB,
@@ -619,7 +624,7 @@ WHERE {
                         ),
                     )
                     .where(SubjectInDB.onto_hash == self.identifier)
-                    .order_by(SubjectInDB.embedding.cosine_distance(query_embedding))
+                    .order_by(order_by)
                     .offset(query.skip)
                     .limit(query.limit)
                 ).all()
@@ -630,6 +635,11 @@ WHERE {
                 for s in subjects_enriched:
                     results.append(FuzzyQueryResult(subject=s[0], score=s[1]))
             if query.type == RETURN_TYPE.LINK or query.type == RETURN_TYPE.BOTH:
+                order_by = (
+                    SubjectLinkDB.embedding.cosine_distance(query_embedding)
+                    if query.order == FUZZY_QUERY_ORDER.SCORE
+                    else SubjectLinkDB.instance_count
+                )
                 query_link = select(
                     SubjectLinkDB,
                     SubjectLinkDB.embedding.cosine_distance(query_embedding).label(
@@ -656,9 +666,7 @@ WHERE {
                         SubjectLinkDB.to_proptype
                         != None,  # constraint to known proptypes
                     )
-                query_link = query_link.order_by(
-                    SubjectLinkDB.embedding.cosine_distance(query_embedding)
-                )
+                query_link = query_link.order_by(order_by)
                 links = session.execute(
                     query_link.offset(query.skip).limit(query.limit)
                 ).all()

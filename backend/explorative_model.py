@@ -175,6 +175,9 @@ class RELATION_TYPE(str, Enum):
     PROPERTY = "property"
     INSTANCE = "instance"
 
+class FUZZY_QUERY_ORDER(str, Enum):
+    SCORE = "score"
+    INSTANCES = "instances"
 
 class FuzzyQuery(BaseModel):
     q: str | None = Field(None)
@@ -189,6 +192,7 @@ class FuzzyQuery(BaseModel):
     type: RETURN_TYPE = RETURN_TYPE.BOTH
     relation_type: RELATION_TYPE | None = RELATION_TYPE.INSTANCE
 
+    order: FUZZY_QUERY_ORDER = FUZZY_QUERY_ORDER.SCORE
 
 class ResultAttributionType(Enum):
     TOPIC = "topic"
