@@ -192,7 +192,7 @@ class FuzzyQuery(BaseModel):
     type: RETURN_TYPE = RETURN_TYPE.BOTH
     relation_type: RELATION_TYPE | None = RELATION_TYPE.INSTANCE
 
-    order: FUZZY_QUERY_ORDER = FUZZY_QUERY_ORDER.SCORE
+    order: FUZZY_QUERY_ORDER = Field(FUZZY_QUERY_ORDER.SCORE)
 
 class ResultAttributionType(Enum):
     TOPIC = "topic"
