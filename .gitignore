@@ -8,3 +8,5 @@ pg-data
 pgdata
 *.pkl
 *.zip
+node_modules
+llama-cpp*

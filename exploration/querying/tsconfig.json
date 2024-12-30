@@ -1,0 +1,18 @@
+{
+    "compilerOptions": {
+        "outDir": "./dist/",
+        "sourceMap": true,
+        "noImplicitAny": true,
+        "module": "nodenext",
+        "moduleResolution": "nodenext",
+        "target": "ES2024",
+        "allowJs": true,
+        "typeRoots": [
+            "./node_modules/@types"
+        ]
+    },
+    "include": [
+        "./db/**/*",
+        "./src/**/*"
+    ]
+}

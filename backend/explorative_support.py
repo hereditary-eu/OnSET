@@ -118,6 +118,7 @@ class TopicModelling:
                 "use_memory_efficient_attention": False,
                 "unpad_inputs": False,
             },
+            revision="eb1ce34a33908596b61c83a88903b5f5f30beaa9", # problematic merge, wrong dimensionality
         ).to(self.device)
         # self.embedding_model = SentenceTransformer(
         #     "paraphrase-MiniLM-L6-v2",

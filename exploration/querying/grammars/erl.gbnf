@@ -1,0 +1,15 @@
+root ::= EntitiesRelations
+EntitiesRelations ::= "{"   ws   "\"relations\":"   ws   Relationslist   ","   ws   "\"entities\":"   ws   Entitylist   "}"
+EntitiesRelationslist ::= "[]" | "["   ws   EntitiesRelations   (","   ws   EntitiesRelations)*   "]"
+Relations ::= "{"   ws   "\"entity\":"   ws   string   ","   ws   "\"relation\":"   ws   string   ","   ws   "\"target\":"   ws   string   "}"
+Relationslist ::= "[]" | "["   ws   Relations   (","   ws   Relations)*   "]"
+Constraint ::= "{"   ws   "\"property\":"   ws   string   ","   ws   "\"value\":"   ws   string   ","   ws   "\"modifier\":"   ws   string   "}"
+Constraintlist ::= "[]" | "["   ws   Constraint   (","   ws   Constraint)*   "]"
+Entity ::= "{"   ws   "\"name\":"   ws   string   ","   ws   "\"constraints\":"   ws   Constraintlist   "}"
+Entitylist ::= "[]" | "["   ws   Entity   (","   ws   Entity)*   "]"
+string ::= "\""   ((  [^"\x7F\x00-\x1F] | "\\"   (  ["\\/bfnrt] | "u"   [0-9a-fA-F]   [0-9a-fA-F]   [0-9a-fA-F]   [0-9a-fA-F]  )  ))*   "\""
+boolean ::= "true" | "false"
+ws ::= [ \t\n]*
+number ::= ("-")?   [0-9]+   "."?   [0-9]*
+stringlist ::= "["   ws   "]" | "["   ws   string   (","   ws   string)*   ws   "]"
+numberlist ::= "["   ws   "]" | "["   ws   string   (","   ws   number)*   ws   "]"
