@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Query, File, UploadFile, Body, Form
+from fastapi import FastAPI, Query, File, UploadFile, Body, Form, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 
 from rdflib.plugins.stores.sparqlstore import SPARQLStore
@@ -7,6 +7,7 @@ from model import *
 from ontology import *
 from datasetmatcher import *
 from explorative_support import *
+from llm_query import *
 
 base_path = "../data"
 onto_path = f"{base_path}/hero-ontology/hereditary_clinical.ttl"
@@ -50,6 +51,8 @@ dataset_manager = DatasetManager(ontology_manager)
 
 topic_man = TopicModelling(ontology_manager)
 # topic_man.initialize_topics(force=False)
+
+llm_query = LLMQuery(topic=topic_man)
 
 app = FastAPI(title="Ontology Provenance API", version="0.1.0")
 
@@ -104,7 +107,7 @@ def get_named_instance(cls: str = Query()) -> list[Subject]:
 
 
 @app.get("/classes/instances/search")
-def get_named_instance_search(query:InstanceQuery=Query()) -> list[Instance]:
+def get_named_instance_search(query: InstanceQuery = Query()) -> list[Instance]:
     return ontology_manager.get_instances(query)
 
 
@@ -140,3 +143,18 @@ def get_relations(
     to_id: str | None = Query(None),
 ) -> list[SubjectLink]:
     return topic_man.search_links(q, from_id, to_id)
+
+
+@app.get("/classes/search/llm")
+def get_llm_results(
+    background_tasks: BackgroundTasks,
+    q: str = Query("working field of person"),
+) -> QueryProgress:
+    return llm_query.start_query(q, background_tasks)
+
+
+@app.get("/classes/search/llm/running")
+def get_llm_results_running(
+    query_id: str = Query(),
+) -> QueryProgress:
+    return llm_query.query_progress(query_id)

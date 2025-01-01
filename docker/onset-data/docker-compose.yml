@@ -37,7 +37,13 @@ services:
       # - ./pg-admin-data:/var/lib/pgadmin
     links:
       - "db:pgsql-server"
-  
+  redis:
+    image: redis/redis-stack
+    restart: always
+    ports:
+      - "6379:6379"
+      - 8005:8001
+  #TODO: qlever in compose
   # graphdb:
   #   image: ontotext/graphdb:10.8.0
   #   restart: always

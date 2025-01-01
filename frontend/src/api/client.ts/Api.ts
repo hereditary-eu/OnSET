@@ -18,6 +18,40 @@ export interface BodyLoadOntologyManagementOntologyPost {
   ontology: File;
 }
 
+/** Constraint */
+export interface Constraint {
+  /** Property */
+  property: string;
+  /** Value */
+  value: string | null;
+  /** Modifier */
+  modifier: string | null;
+}
+
+/** EntitiesRelations */
+export interface EntitiesRelations {
+  /** Relations */
+  relations: Relation[];
+  /** Entities */
+  entities: Entity[];
+}
+
+/** Entity */
+export interface Entity {
+  /** Identifier */
+  identifier: string;
+  /** Type */
+  type: string;
+  /** Constraints */
+  constraints: Constraint[];
+}
+
+/** FUZZY_QUERY_ORDER */
+export enum FUZZY_QUERY_ORDER {
+  Score = "score",
+  Instances = "instances",
+}
+
 /** FuzzyQuery */
 export interface FuzzyQuery {
   /** Q */
@@ -47,6 +81,8 @@ export interface FuzzyQuery {
   type?: RETURN_TYPE;
   /** @default "instance" */
   relation_type?: RELATION_TYPE | null;
+  /** @default "score" */
+  order?: FUZZY_QUERY_ORDER;
 }
 
 /** FuzzyQueryResult */
@@ -154,6 +190,31 @@ export interface PropertyValue {
   label: string | null;
 }
 
+/** QueryProgress */
+export interface QueryProgress {
+  /** Id */
+  id: string;
+  /** Start Time */
+  start_time: string;
+  /**
+   * Progress
+   * @default 0
+   */
+  progress?: number;
+  /** Max Steps */
+  max_steps: number;
+  /**
+   * Message
+   * @default ""
+   */
+  message?: string;
+  /**
+   * Relations Steps
+   * @default []
+   */
+  relations_steps?: EntitiesRelations[];
+}
+
 /** RELATION_TYPE */
 export enum RELATION_TYPE {
   Property = "property",
@@ -165,6 +226,16 @@ export enum RETURN_TYPE {
   Subject = "subject",
   Link = "link",
   Both = "both",
+}
+
+/** Relation */
+export interface Relation {
+  /** Entity */
+  entity: string;
+  /** Relation */
+  relation: string;
+  /** Target */
+  target: string;
 }
 
 /** RelationsFound */
@@ -605,7 +676,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         /** Cls */
         cls: string;
         /** Q */
-        q: string;
+        q?: string | null;
         /**
          * Limit
          * @default 10
@@ -708,6 +779,53 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
     ) =>
       this.request<SubjectLink[], HTTPValidationError>({
         path: `/classes/relations`,
+        method: "GET",
+        query: query,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @name GetLlmResultsClassesSearchLlmGet
+     * @summary Get Llm Results
+     * @request GET:/classes/search/llm
+     */
+    getLlmResultsClassesSearchLlmGet: (
+      query?: {
+        /**
+         * Q
+         * @default "working field of person"
+         */
+        q?: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<QueryProgress, HTTPValidationError>({
+        path: `/classes/search/llm`,
+        method: "GET",
+        query: query,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @name GetLlmResultsRunningClassesSearchLlmRunningGet
+     * @summary Get Llm Results Running
+     * @request GET:/classes/search/llm/running
+     */
+    getLlmResultsRunningClassesSearchLlmRunningGet: (
+      query: {
+        /** Query Id */
+        query_id: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<QueryProgress, HTTPValidationError>({
+        path: `/classes/search/llm/running`,
         method: "GET",
         query: query,
         format: "json",

@@ -22,3 +22,8 @@ transformers
 #CMAKE_ARGS="-DGGML_METAL=on" pip install llama-cpp-python
 bertopic
 pgvector
+cachetools
+redis-om
+# git clone git@github.com:Dakantz/llama-cpp-agent.git
+# git checkout fix-gbnf-generation-trailing-bracket
+# pip install -e ./llama-cpp-agent
