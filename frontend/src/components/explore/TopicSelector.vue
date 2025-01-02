@@ -2,7 +2,7 @@
     <div>
         <div class="d-flex align-center data_container">
             <OnsetBtn v-for="topic of shown_components" :key="topic.topic_id" v-model="topic.selected" :btn_width="'18rem'" :btn_height="'4rem'" :toggleable="true"
-                class="flex-grow-1 wrapper_clickable">
+                class="flex-grow-1 topic_btn">
                 {{ topic.topic }}
             </OnsetBtn>
         </div>
@@ -83,7 +83,6 @@ watch(model, (new_val) => {
     justify-items: center;
     align-items: center;
     padding: 0.5rem;
-    border-bottom: 1px solid #e0e0e0;
     flex-wrap: wrap;
     overflow-x: auto;
     max-height: 14rem;
@@ -93,5 +92,8 @@ watch(model, (new_val) => {
     display: flex;
     justify-content: center;
     margin-top: 1rem;
+}
+.topic_btn {
+    margin: 0.5rem;
 }
 </style>

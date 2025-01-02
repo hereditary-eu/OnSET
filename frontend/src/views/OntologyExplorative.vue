@@ -1,20 +1,37 @@
 <template>
 
     <div>
+        <div class="mode_selector input_step">
+            <h3>Mode</h3>
+            <SelectorGroup v-model="ui_state.query_mode" :options="Object.keys(QueryMode).map(qm => {
+                return { value: QueryMode[qm], label: QueryMode[qm] }
+            })"></SelectorGroup>
+        </div>
+        <div v-if="ui_state.query_mode == QueryMode.TOPICS">
+            <div class="input_step">
+                <h3>Select one or more topics...</h3>
+                <TopicSelector v-model="selected_topic_ids"></TopicSelector>
+            </div>
 
-
-        <h3>Select your Interests...</h3>
-        <TopicSelector v-model="selected_topic_ids"></TopicSelector>
-
-        <h3>...pick a relation to start with...</h3>
-        <NodeLinkSelector :query="{ topic_ids: selected_topic_ids }" @select="selected_root"></NodeLinkSelector>
-        <h3 v-if="selected_start">.. and start querying!</h3>
-        <div class="query_build_view">
-            <QueryBuilder :store="store"></QueryBuilder>
-            <ResultsView :query_string="query_string" :store="store"></ResultsView>
-            <div id="threed_minimap">
-                <Loading v-if="ui_state.loading"></Loading>
-                <div id="threed_graph"></div>
+            <div class="input_step">
+                <h3>...pick a relation to start with...</h3>
+                <NodeLinkSelector :query="{ topic_ids: selected_topic_ids }" @select="selected_root"></NodeLinkSelector>
+            </div>
+        </div>
+        <div v-else>
+            <div class="input_step">
+                <FuzzyQueryStarter @query_complete="selected_root"></FuzzyQueryStarter>
+            </div>
+        </div>
+        <div class="input_step">
+            <h3 v-if="store">.. and start querying!</h3>
+            <div class="query_build_view">
+                <QueryBuilder :store="store"></QueryBuilder>
+                <ResultsView :query_string="query_string" :store="store"></ResultsView>
+                <div id="threed_minimap">
+                    <Loading v-if="ui_state.loading"></Loading>
+                    <div id="threed_graph"></div>
+                </div>
             </div>
         </div>
         <div>
@@ -41,6 +58,8 @@ import { BACKEND_URL } from '@/utils/config';
 import type { SubjectInCircle } from '@/utils/d3-man/CircleMan';
 import OnsetBtn from '@/components/ui/OnsetBtn.vue';
 import type { NodeLinkRepository } from '@/utils/sparql/store';
+import SelectorGroup from '@/components/ui/SelectorGroup.vue';
+import FuzzyQueryStarter from '@/components/explore/FuzzyQueryStarter.vue';
 
 const api = new Api({
     baseURL: BACKEND_URL
@@ -53,10 +72,14 @@ const selected_topic_ids = ref([] as number[])
 const query_string_html = ref('')
 const query_string = ref('')
 const selected_start = ref(null as MixedResponse | null)
-
+enum QueryMode {
+    FUZZY = 'Fuzzy',
+    TOPICS = 'Topics',
+}
 const ui_state = reactive({
     loading: false,
-    show_query: false
+    show_query: false,
+    query_mode: QueryMode.FUZZY
 })
 const store = ref(null as NodeLinkRepository | null)
 watch(() => selected_start, () => {
@@ -126,7 +149,7 @@ onBeforeMount(() => {
     // .style('background-color', 'red')
 })
 </script>
-<style lang="scss">
+<style lang="scss" scoped>
 .query_build_view {
     display: flex;
     justify-content: center;
@@ -140,6 +163,16 @@ onBeforeMount(() => {
         width: 25%;
         height: 100%;
     }
+}
+
+.input_step {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    border-bottom: 1px solid #e0e0e0;
+    margin: 0.5rem;
+    padding: 0.5rem;
 }
 
 #threed_graph {
@@ -157,5 +190,13 @@ onBeforeMount(() => {
     border: 1px solid #8fa88f;
     padding: 4px;
     margin: 5px;
+}
+
+.mode_selector {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    border-bottom: 1px solid #e0e0e0;
 }
 </style>

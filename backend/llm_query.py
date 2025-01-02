@@ -91,6 +91,7 @@ class QueryProgress(pydantic.BaseModel):
     max_steps: int
     message: str = Field("")
     relations_steps: list[EntitiesRelations] = Field([])
+    enriched_relations: EnrichedEntitiesRelations | None = None
 
 
 # System prompt describes information given to all conversations
@@ -204,19 +205,23 @@ class LLMQuery:
         erl = self.query_erl(query)
         progress.progress = 1
         progress.message = "Fetching possible candidates"
+        progress.relations_steps.append(erl)
         self.cache[progress.id] = progress
         candidates = self.candidates_for_erl(erl)
         progress.progress = 2
         progress.message = "Querying candidates"
+        progress.relations_steps.append(candidates)
         self.cache[progress.id] = progress
         constrained_erl = self.query_constrained(query, candidates)
         progress.progress = 3
         progress.message = "Enriching results"
+        progress.relations_steps.append(constrained_erl)
         self.cache[progress.id] = progress
         enriched_erl = self.enrich_entities_relations(constrained_erl)
         progress.progress = 4
         progress.message = "Query completed"
-        progress.relations_steps = [erl, candidates, constrained_erl, enriched_erl]
+        progress.relations_steps.append(enriched_erl)
+        progress.enriched_relations = enriched_erl
         self.cache[progress.id] = progress
 
     def start_query(self, query: str, background_tasks: BackgroundTasks):

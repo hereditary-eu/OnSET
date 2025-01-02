@@ -28,6 +28,47 @@ export interface Constraint {
   modifier: string | null;
 }
 
+/** EnrichedConstraint */
+export interface EnrichedConstraint {
+  /** Property */
+  property: string;
+  /** Value */
+  value: string | null;
+  /** Modifier */
+  modifier: string | null;
+  constraint: SubjectLink | null;
+}
+
+/** EnrichedEntitiesRelations */
+export interface EnrichedEntitiesRelations {
+  /** Relations */
+  relations: EnrichedRelation[];
+  /** Entities */
+  entities: EnrichedEntity[];
+}
+
+/** EnrichedEntity */
+export interface EnrichedEntity {
+  /** Identifier */
+  identifier: string;
+  /** Type */
+  type: string;
+  /** Constraints */
+  constraints: EnrichedConstraint[];
+  subject: Subject;
+}
+
+/** EnrichedRelation */
+export interface EnrichedRelation {
+  /** Entity */
+  entity: string;
+  /** Relation */
+  relation: string;
+  /** Target */
+  target: string;
+  link: SubjectLink | null;
+}
+
 /** EntitiesRelations */
 export interface EntitiesRelations {
   /** Relations */
@@ -213,6 +254,7 @@ export interface QueryProgress {
    * @default []
    */
   relations_steps?: EntitiesRelations[];
+  enriched_relations?: EnrichedEntitiesRelations | null;
 }
 
 /** RELATION_TYPE */

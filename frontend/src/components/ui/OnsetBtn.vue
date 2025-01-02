@@ -50,7 +50,6 @@ function update(evt) {
     display: flex;
     align-items: center;
     justify-content: center;
-    margin: 0.5rem;
     justify-items: center;
 }
 

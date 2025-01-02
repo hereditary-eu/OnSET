@@ -96,7 +96,6 @@ watch(() => query, fetchNodeLinkElements, { immediate: true, deep: true })
     justify-items: center;
     align-items: center;
     padding: 0.5rem;
-    border-bottom: 1px solid #e0e0e0;
     flex-wrap: wrap;
     overflow-x: auto;
     max-height: 28rem;
