@@ -6,13 +6,14 @@
                 <input type="text" v-model="state.query_string" @keypress="submit_query" class="query_input" />
                 <OnsetBtn @click="submit_query" :toggleable="false">Submit</OnsetBtn>
             </div>
-            <div v-if="state.loading && state.running_query" class="input_step">
+            <div v-if="state.loading && state.updated_query" class="input_step">
                 <Loading></Loading>
-                <OnsetProgress :progress="state.running_query.progress" :max="state.running_query.max_steps">
+                <OnsetProgress :progress="state.updated_query.progress" :max="state.updated_query.max_steps">
                 </OnsetProgress>
-                <h3 v-if="state.updated_query">{{ state.updated_query.message }}</h3>
+                <h3>{{ state.updated_query.message }}</h3>
             </div>
-            <FuzzyQueryIntermediate v-if="updated_steps && state.updated_query.relations_steps.length > 0"
+            <FuzzyQueryIntermediate
+                v-if="updated_steps && state.updated_query.relations_steps.length > 0 && state.loading"
                 :erl="state.updated_query.relations_steps[state.updated_query.relations_steps.length - 1]">>
             </FuzzyQueryIntermediate>
         </div>
@@ -29,10 +30,14 @@ import { ca, fa, fr } from 'vuetify/locale';
 import OnsetProgress from '../ui/OnsetProgress.vue';
 import OnsetBtn from '../ui/OnsetBtn.vue';
 import { NodeLinkRepository } from '@/utils/sparql/store';
-import { Constraint, Link, Node } from '@/utils/sparql/representation';
-import { NodeSide } from '@/utils/sparql/helpers';
+import { Constraint, Link, MixedResponse, Node } from '@/utils/sparql/representation';
+import { mapERLToStore, NodeSide } from '@/utils/sparql/helpers';
 import Loading from '../ui/Loading.vue';
 import FuzzyQueryIntermediate from './FuzzyQueryIntermediate.vue';
+const emit = defineEmits<{
+    query_complete: [value: MixedResponse]
+}>()
+
 const state = reactive({
     query_string: 'the birthplace of a ceo of a company',
     running_query: null as QueryProgress | null,
@@ -58,7 +63,7 @@ onBeforeMount(() => {
 })
 
 watch(() => state.running_query, (new_val) => {
-    if (new_val) {
+    if (state.running_query) {
         if (state.running_timer) clearInterval(state.running_timer)
         state.running_timer = setInterval(() => {
             console.log('Running query', state.running_query.id);
@@ -66,11 +71,17 @@ watch(() => state.running_query, (new_val) => {
                 const response = await api.classes.getLlmResultsRunningClassesSearchLlmRunningGet({
                     query_id: state.running_query.id
                 })
-                if (!state.updated_query || state.updated_query.relations_steps.length != response.data.relations_steps.length) {
+                if (!state.updated_query
+                    || state.updated_query.relations_steps.length != response.data.relations_steps.length
+                    || state.updated_query.enriched_relations) {
                     state.updated_query = response.data
                 }
-                if (state.updated_query.enriched_relations) {
+                if (state.updated_query && state.updated_query.enriched_relations) {
                     clearInterval(state.running_timer)
+                    let store = mapERLToStore(state.updated_query.enriched_relations)
+                    let response = new MixedResponse()
+                    response.store = store
+                    emit('query_complete', response)
                     state.loading = false
                 }
             })().catch(console.error)
@@ -81,7 +92,7 @@ watch(() => state.running_query, (new_val) => {
 })
 const submit_query = (evt: KeyboardEvent | MouseEvent) => {
     if (evt instanceof KeyboardEvent && evt.key !== 'Enter') return
-    console.log('Running query', state.query_string);
+    console.log('Running query', state.query_string, evt);
     (async () => {
         state.running_query = null
         state.updated_query = null

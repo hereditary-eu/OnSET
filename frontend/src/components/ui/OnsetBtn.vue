@@ -18,6 +18,7 @@ const props = defineProps({
 })
 const emit = defineEmits(['click'])
 function update(evt) {
+    evt.preventDefault()
     emit('click', evt)
     if (props.toggleable) {
         model.value = !model.value

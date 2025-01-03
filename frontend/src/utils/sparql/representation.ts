@@ -355,6 +355,7 @@ export class MixedResponse<N extends Subject = Subject> implements FuzzyQueryRes
     subject: Node;
     score: number;
     store: NodeLinkRepository;
+    compute_layout: boolean = false;
     constructor(result: FuzzyQueryResult = null) {
         for (const key in result) {
             if (Object.prototype.hasOwnProperty.call(result, key)) {

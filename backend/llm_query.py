@@ -297,7 +297,7 @@ class LLMQuery:
             messages.extend(
                 [
                     {"role": "user", "content": RAG_PROMPT_EXAMPLE[0]},
-                    {"role": "assistant", "content": RAG_PROMPT_EXAMPLE[1]},
+                    {"role": "assistant", "content": RAG_PROMPT_EXAMPLE[2]},
                 ]
             )
         messages.append({"role": "user", "content": query})

@@ -8,7 +8,7 @@
 </template>
 <script setup lang="ts">
 import type { Candidates, EnrichedEntitiesRelations, EntitiesRelations } from '@/api/client.ts/Api';
-import { DisplayMode, NODE_HEIGHT, NODE_WIDTH, NodeSide } from '@/utils/sparql/helpers';
+import { DisplayMode, mapERLToStore, NODE_HEIGHT, NODE_WIDTH, NodeSide } from '@/utils/sparql/helpers';
 import { Constraint, Link, Node } from '@/utils/sparql/representation';
 import { NodeLinkRepository } from '@/utils/sparql/store';
 import { compute } from 'three/webgpu';
@@ -63,80 +63,7 @@ onMounted(() => {
     start_simulation()
 })
 const store = computed(() => {
-
-    let step = erl
-    let store = new NodeLinkRepository()
-    store.nodes = step.entities.map((entity) => {
-        let mapped_node = new Node({
-            subject_id: entity.type,
-            label: entity.type,
-            internal_id: entity.identifier
-        })
-        mapped_node.height = NODE_HEIGHT / 2
-        return mapped_node
-    })
-
-    step.relations.forEach((relation, i) => {
-        let from_subject = store.nodes.find((n) => n.internal_id == relation.entity)
-        if (!from_subject) {
-            from_subject = new Node({
-                subject_id: relation.entity,
-                label: relation.entity,
-                internal_id: relation.entity
-            })
-            from_subject.height = NODE_HEIGHT / 2
-        }
-        let to_subject = store.nodes.find((n) => n.internal_id == relation.target)
-        if (!to_subject) {
-            to_subject = new Node({
-                subject_id: relation.target,
-                label: relation.target,
-                internal_id: relation.target
-            })
-            to_subject.height = NODE_HEIGHT / 2
-        }
-        store.addOutlink(
-            new Link({
-                link_id: i,
-                from_id: relation.entity,
-                to_id: relation.target,
-                label: relation.relation,
-                from_internal_id: relation.entity,
-                to_internal_id: relation.target,
-                link_type: 'relation',
-                to_proptype: null,
-                property_id: null,
-                instance_count: 1,
-                from_subject,
-                to_subject
-            }), from_subject, to_subject, NodeSide.TO
-        )
-    })
-    if ((step as Candidates).constraints) {
-        (step as Candidates).constraints.forEach((candidate) => {
-            let constrained_node = store.nodes.find((n) => n.subject_id == candidate.entity)
-            if (constrained_node) {
-                let constraint_link = new Link({
-                    link_id: 0,
-                    from_id: candidate.entity,
-                    to_id: null,
-                    label: candidate.property,
-                    from_internal_id: candidate.entity,
-                    to_internal_id: candidate.entity,
-                    link_type: 'constraint',
-                    to_proptype: candidate.type,
-                    property_id: candidate.property,
-                    instance_count: 1,
-                    from_subject: constrained_node,
-                    to_subject: null
-                })
-                constrained_node.property_constraints.push(Constraint.construct(constraint_link))
-            }
-        })
-    }
-    store.nodes = store.nodes.map(node => reactive(node))
-    store.links = store.links.map(link => reactive(link))
-    return store
+    return mapERLToStore(erl)
 })
 watch(() => store.value, start_simulation, { deep: false })
 </script>
