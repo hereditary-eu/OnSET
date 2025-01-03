@@ -156,5 +156,5 @@ def get_llm_results(
 @app.get("/classes/search/llm/running")
 def get_llm_results_running(
     query_id: str = Query(),
-) -> QueryProgress:
+) -> QueryProgress | None:
     return llm_query.query_progress(query_id)

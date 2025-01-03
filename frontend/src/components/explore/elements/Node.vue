@@ -158,7 +158,9 @@ const deleteConstraint = (constraint) => {
     subject.property_constraints = subject.property_constraints.filter((constr) => constr != constraint)
 }
 const result_subject = computed(() => subject as InstanceNode)
-
+onMounted(() => {
+    console.log('subject', subject)
+})
 </script>
 <style lang="scss">
 .node {

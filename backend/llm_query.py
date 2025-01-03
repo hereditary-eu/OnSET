@@ -32,7 +32,7 @@ class Constraint(pydantic.BaseModel):
 class Entity(pydantic.BaseModel):
     identifier: str
     type: str
-    constraints: list[Constraint]
+    constraints: list[Constraint] = Field([])
 
 
 class Relation(pydantic.BaseModel):
@@ -48,16 +48,21 @@ class EntitiesRelations(pydantic.BaseModel):
 
 class CandidateRelation(Relation):
     score: float
+    link: SubjectLink | None = Field(None)
 
 
 class CandidateConstraint(Constraint):
     score: float
     type: str
+    property: str
+    entity: str
+    link: SubjectLink | None = Field(None)
 
 
-class CandidateEntity(pydantic.BaseModel):
+class CandidateEntity(Entity):
     score: float
     type: str
+    subject: Subject | None = Field(None)
 
 
 class Candidates(pydantic.BaseModel):
@@ -90,7 +95,9 @@ class QueryProgress(pydantic.BaseModel):
     progress: int = Field(0)
     max_steps: int
     message: str = Field("")
-    relations_steps: list[EntitiesRelations] = Field([])
+    relations_steps: list[
+        EntitiesRelations | Candidates | EnrichedEntitiesRelations
+    ] = Field([])
     enriched_relations: EnrichedEntitiesRelations | None = None
 
 
@@ -128,10 +135,10 @@ RAG_PROMPT_EXAMPLE_CANDIDATES = Candidates(
         )
     ],
     entities=[
-        CandidateEntity(type="person", score=0.9),
-        CandidateEntity(type="composer", score=0.7),
-        CandidateEntity(type="work", score=0.9),
-        CandidateEntity(type="song", score=0.6),
+        CandidateEntity(identifier="person 1", type="person", score=0.9),
+        CandidateEntity(identifier="composer 1", type="composer", score=0.7),
+        CandidateEntity(identifier="work 1", type="work", score=0.9),
+        CandidateEntity(identifier="song 1", type="song", score=0.6),
     ],
     constraints=[
         CandidateConstraint(
@@ -140,6 +147,7 @@ RAG_PROMPT_EXAMPLE_CANDIDATES = Candidates(
             modifier="greater_than",
             score=0.9,
             type="sko:DateTime",
+            entity="person 1",
         ),
         CandidateConstraint(
             property="death year",
@@ -147,6 +155,7 @@ RAG_PROMPT_EXAMPLE_CANDIDATES = Candidates(
             modifier="greater_than",
             score=0.8,
             type="sko:DateTime",
+            entity="person 1",
         ),
     ],
 )
@@ -202,23 +211,27 @@ class LLMQuery:
         self.cache = RedisCache[QueryProgress](model=QueryProgress)
 
     def run_query(self, progress: QueryProgress, query: str):
-        erl = self.query_erl(query)
+        
         progress.progress = 1
+        progress.message = "Querying entities and relations"
+        self.cache[progress.id] = progress
+        erl = self.query_erl(query)
+        progress.progress = 2
         progress.message = "Fetching possible candidates"
         progress.relations_steps.append(erl)
         self.cache[progress.id] = progress
         candidates = self.candidates_for_erl(erl)
-        progress.progress = 2
+        progress.progress = 3
         progress.message = "Querying candidates"
         progress.relations_steps.append(candidates)
         self.cache[progress.id] = progress
         constrained_erl = self.query_constrained(query, candidates)
-        progress.progress = 3
+        progress.progress = 4
         progress.message = "Enriching results"
         progress.relations_steps.append(constrained_erl)
         self.cache[progress.id] = progress
         enriched_erl = self.enrich_entities_relations(constrained_erl)
-        progress.progress = 4
+        progress.progress = 5
         progress.message = "Query completed"
         progress.relations_steps.append(enriched_erl)
         progress.enriched_relations = enriched_erl
@@ -229,7 +242,7 @@ class LLMQuery:
         start_time = datetime.datetime.now().isoformat()
         query_key = f"query:{query_id}:{start_time}"
         progress = QueryProgress(
-            max_steps=4,
+            max_steps=5,
             id=query_key,
             start_time=start_time,
             relations_steps=[],
@@ -320,6 +333,7 @@ class LLMQuery:
                         relation=res.link.label,
                         target=res.link.to_subject.label,
                         score=res.score,
+                        link=res.link,
                     )
                     for res in top_results.results
                 ]
@@ -334,20 +348,23 @@ class LLMQuery:
                     relation_type=RELATION_TYPE.INSTANCE,
                 )
             )
-            entity_candidates.extend(
-                [
-                    CandidateEntity(
-                        type=res.subject.label,
-                        score=res.score,
-                    )
-                    for res in top_results.results
-                ]
-            )
+            candidates = [
+                CandidateEntity(
+                    type=res.subject.label,
+                    score=res.score,
+                    identifier=res.subject.label,
+                    subject=res.subject,
+                )
+                for res in top_results.results
+            ]
+            candidate_ids = [c.subject.subject_id for c in candidates]
+            entity_candidates.extend(candidates)
             for constraint in entity.constraints:
                 top_results = self.topic_man.search_fuzzy(
                     query=FuzzyQuery(
                         q=f"The {constraint.property} of is {constraint.modifier} {constraint.value}",
                         limit=example_limit,
+                        from_id=candidate_ids,
                         type=RETURN_TYPE.LINK,
                         relation_type=RELATION_TYPE.PROPERTY,
                     )
@@ -360,6 +377,8 @@ class LLMQuery:
                             modifier=None,
                             score=res.score,
                             type=res.link.to_proptype,
+                            entity=res.link.from_subject.subject_id,
+                            link=res.link,
                         )
                         for res in top_results.results
                     ]

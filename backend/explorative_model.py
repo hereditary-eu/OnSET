@@ -175,15 +175,18 @@ class RELATION_TYPE(str, Enum):
     PROPERTY = "property"
     INSTANCE = "instance"
 
+
 class FUZZY_QUERY_ORDER(str, Enum):
     SCORE = "score"
     INSTANCES = "instances"
+
 
 class FuzzyQuery(BaseModel):
     q: str | None = Field(None)
     topic_ids: list[int] | None = Field(None)
     mix_topic_factor: float | None = Field(0.5)
-    from_id: str | None = Field(None)
+    from_id: str | list[str] | None = Field(None)
+
     to_id: str | None = Field(None)
 
     limit: int | None = Field(25)
@@ -193,6 +196,7 @@ class FuzzyQuery(BaseModel):
     relation_type: RELATION_TYPE | None = RELATION_TYPE.INSTANCE
 
     order: FUZZY_QUERY_ORDER = Field(FUZZY_QUERY_ORDER.SCORE)
+
 
 class ResultAttributionType(Enum):
     TOPIC = "topic"
@@ -210,6 +214,7 @@ class FuzzyQueryResult(BaseModel):
     subject: Subject | None = Field(None)
     score: float = Field(0.0)
     attributions: list[ResultAttribution] = Field([])
+
 
 class FuzzyQueryResults(BaseModel):
     results: list[FuzzyQueryResult]

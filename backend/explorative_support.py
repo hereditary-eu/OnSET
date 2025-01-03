@@ -104,6 +104,7 @@ class TopicModelling:
             n_batch=1024,
             n_ctx=10000,
             n_gpu_layers=-1,
+            embedding=False,
         )
         return self.__lama_model
 
@@ -647,8 +648,14 @@ WHERE {
                     ),
                 ).where(SubjectLinkDB.onto_hash == self.identifier)
                 if query.from_id is not None:
-                    from_parents = self.oman.get_parents(query.from_id) + [
-                        query.from_id
+                    if isinstance(query.from_id, str):
+                        query.from_id = [query.from_id]
+                    from_parents = [
+                        self.oman.get_parents(from_id) + [from_id]
+                        for from_id in query.from_id
+                    ]
+                    from_parents = [
+                        item for sublist in from_parents for item in sublist
                     ]
                     query_link = query_link.where(
                         SubjectLinkDB.from_id.in_(from_parents)

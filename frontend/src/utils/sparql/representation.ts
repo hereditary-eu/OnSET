@@ -315,8 +315,8 @@ export class Link<N extends Subject = Subject> implements SubjectLink {
     from_id: string;
     link_type: string;
     to_id: string;
-    to_proptype: string;
-    property_id: string;
+    to_proptype: string | null;
+    property_id: string | null;
 
     from_internal_id: string;
     to_internal_id: string;
@@ -324,7 +324,7 @@ export class Link<N extends Subject = Subject> implements SubjectLink {
     from_subject: N | Node;
     to_subject: N | UnknownNode;
 
-    constructor(link?: SubjectLink) {
+    constructor(link?: SubjectLink | Link) {
         if (link) {
             for (const key in link) {
                 if (Object.prototype.hasOwnProperty.call(link, key)) {

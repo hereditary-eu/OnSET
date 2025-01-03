@@ -23,7 +23,7 @@ class RedisCache(Generic[T]):
             parsed_data = self.model.model_validate_json(data)
             return parsed_data
 
-    def set(self, key: str, value: T, ttl=10 * 60):
+    def set(self, key: str, value: T, ttl=24 * 60 * 60):
         self.redis.setex(key, ttl, value.model_dump_json())
 
     def __setitem__(self, key: str, value: T) -> None:

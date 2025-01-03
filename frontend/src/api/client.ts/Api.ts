@@ -18,6 +18,62 @@ export interface BodyLoadOntologyManagementOntologyPost {
   ontology: File;
 }
 
+/** CandidateConstraint */
+export interface CandidateConstraint {
+  /** Property */
+  property: string;
+  /** Value */
+  value: string | null;
+  /** Modifier */
+  modifier: string | null;
+  /** Score */
+  score: number;
+  /** Type */
+  type: string;
+  /** Entity */
+  entity: string;
+  link?: SubjectLink | null;
+}
+
+/** CandidateEntity */
+export interface CandidateEntity {
+  /** Identifier */
+  identifier: string;
+  /** Type */
+  type: string;
+  /**
+   * Constraints
+   * @default []
+   */
+  constraints?: Constraint[];
+  /** Score */
+  score: number;
+  subject?: Subject | null;
+}
+
+/** CandidateRelation */
+export interface CandidateRelation {
+  /** Entity */
+  entity: string;
+  /** Relation */
+  relation: string;
+  /** Target */
+  target: string;
+  /** Score */
+  score: number;
+  link?: SubjectLink | null;
+}
+
+/** Candidates */
+export interface Candidates {
+  /** Relations */
+  relations: CandidateRelation[];
+  /** Entities */
+  entities: CandidateEntity[];
+  /** Constraints */
+  constraints: CandidateConstraint[];
+}
+
 /** Constraint */
 export interface Constraint {
   /** Property */
@@ -83,8 +139,11 @@ export interface Entity {
   identifier: string;
   /** Type */
   type: string;
-  /** Constraints */
-  constraints: Constraint[];
+  /**
+   * Constraints
+   * @default []
+   */
+  constraints?: Constraint[];
 }
 
 /** FUZZY_QUERY_ORDER */
@@ -105,7 +164,7 @@ export interface FuzzyQuery {
    */
   mix_topic_factor?: number | null;
   /** From Id */
-  from_id?: string | null;
+  from_id?: string | string[] | null;
   /** To Id */
   to_id?: string | null;
   /**
@@ -253,7 +312,7 @@ export interface QueryProgress {
    * Relations Steps
    * @default []
    */
-  relations_steps?: EntitiesRelations[];
+  relations_steps?: (EntitiesRelations | Candidates | EnrichedEntitiesRelations)[];
   enriched_relations?: EnrichedEntitiesRelations | null;
 }
 
