@@ -1,18 +1,54 @@
+import type { FuzzyQueryResult, Subject } from "@/api/client.ts/Api";
 import { registerClass } from "../parsing";
 import { NodeSide } from "./helpers";
-import { QuerySet, SubjectConstraint, type Link, type Node } from "./representation";
+import { Link, QuerySet, SubjectConstraint, SubjectNode } from "./representation";
+
+
 @registerClass
-export class NodeLinkRepository<N extends Node = Node, L extends Link = Link> {
+export class MixedResponse<N extends Subject = Subject> implements FuzzyQueryResult {
+    link: Link<N>;
+    subject: SubjectNode;
+    score: number;
+    store: NodeLinkRepository;
+    compute_layout: boolean = false;
+    constructor(result: FuzzyQueryResult = null) {
+        for (const key in result) {
+            if (Object.prototype.hasOwnProperty.call(result, key)) {
+                this[key] = result[key];
+            }
+        }
+        this.store = new NodeLinkRepository()
+        if (this.subject) {
+            this.subject = new SubjectNode(result.subject)
+            this.store.nodes.push(this.subject)
+        }
+        if (this.link) {
+            this.link = new Link(result.link)
+            let from_subject = new SubjectNode(result.link.from_subject)
+            let to_subject = new SubjectNode(result.link.to_subject)
+            this.link.from_internal_id = from_subject.internal_id
+            this.link.to_internal_id = to_subject.internal_id
+            this.store.links.push(this.link)
+            this.store.nodes.push(...[from_subject, to_subject])
+
+        }
+    }
+
+}
+
+
+@registerClass
+export class NodeLinkRepository<N extends SubjectNode = SubjectNode, L extends Link = Link> {
     nodes: N[] = []
     links: L[] = []
     constructor(nodes: N[] = [], links: L[] = []) {
         this.nodes = nodes
         this.links = links
     }
-    fromLinks(node: Node): L[] {
+    fromLinks(node: SubjectNode): L[] {
         return this.links.filter(link => link.from_internal_id === node.internal_id)
     }
-    toLinks(node: Node): L[] {
+    toLinks(node: SubjectNode): L[] {
         return this.links.filter(link => link.to_internal_id === node.internal_id)
     }
     from(link: Link): N | null {
@@ -45,8 +81,8 @@ export class NodeLinkRepository<N extends Node = Node, L extends Link = Link> {
         }
         this.links.push(link)
     }
-    subElementsRecursive(node: Node, visited: Node[] = []) {
-        let subNodes: Node[] = []
+    subElementsRecursive(node: SubjectNode, visited: SubjectNode[] = []) {
+        let subNodes: SubjectNode[] = []
         let subLinks: Link[] = []
         let all_links = [...this.fromLinks(node), ...this.toLinks(node)]
         subLinks.push(...all_links)
@@ -69,11 +105,11 @@ export class NodeLinkRepository<N extends Node = Node, L extends Link = Link> {
             links: subLinks
         }
     }
-    subElements(node: Node) {
+    subElements(node: SubjectNode) {
         return this.subElementsRecursive(node)
     }
 
-    deleteWithSubnodes(node: Node) {
+    deleteWithSubnodes(node: SubjectNode) {
         let subElements = this.subElements(node)
         console.log("Subelements", subElements)
         let subNodeIds = subElements.nodes.map(n => n.internal_id)
@@ -156,7 +192,6 @@ export class NodeLinkRepository<N extends Node = Node, L extends Link = Link> {
         for (let link of this.links) {
             let from = this.from(link)
             let to = this.to(link)
-            console.log("Adding link", link, from, to)
             set.link_triplets.push({
                 from_id: from.output_id(),
                 link_id: link.property_id,

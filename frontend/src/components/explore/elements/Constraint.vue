@@ -24,7 +24,7 @@
     </g>
 </template>
 <script setup lang="ts">
-import { Constraint, ConstraintType, DateConstraint, Node, NumberConstraint, StringConstraint, SubjectConstraint } from '@/utils/sparql/representation';
+import { Constraint, ConstraintType, DateConstraint, SubjectNode, NumberConstraint, StringConstraint, SubjectConstraint } from '@/utils/sparql/representation';
 import { defineProps, defineModel } from 'vue'
 import NumberConstraintEditor from './constraints/NumberConstraintEditor.vue';
 import StringConstraintEditor from './constraints/StringConstraintEditor.vue';
@@ -45,7 +45,7 @@ const { extend_path, constraint } = defineProps({
         required: true
     },
     node: {
-        type: Object as () => Node,
+        type: Object as () => SubjectNode,
         required: true
     },
     show_editpoints: {

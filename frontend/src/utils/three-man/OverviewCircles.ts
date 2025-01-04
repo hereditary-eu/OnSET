@@ -2,7 +2,7 @@
 
 import * as THREE from 'three'
 import { CircleMan3D, SubjectInCircle } from './CircleMan3D';
-import type { Link, Node } from '../sparql/representation';
+import type { Link, SubjectNode } from '../sparql/representation';
 import type { NodeLinkRepository } from '../sparql/store';
 // 3D circle packing based upon https://observablehq.com/@analyzer2004/3d-circle-packing
 

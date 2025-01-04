@@ -16,7 +16,7 @@
 </template>
 <script setup lang="ts">
 import { ref, watch, reactive, computed, onMounted, defineProps, onBeforeMount } from 'vue'
-import { MixedResponse, Node, Link } from '@/utils/sparql/representation';
+import { SubjectNode, Link } from '@/utils/sparql/representation';
 import NodeComp from './elements/Node.vue';
 import OutLinkSelector from './elements/OutLinkSelector.vue';
 import { DisplayMode, InstanceSelectorOpenEvent, type NodeSide, type OutlinkSelectorOpenEvent } from '@/utils/sparql/helpers';
@@ -45,7 +45,7 @@ const clicked_instance = (evt: InstanceSelectorOpenEvent) => {
     ui_state.instance_display = true
     ui_state.instance_event = evt
 }
-const root_subject = ref(null as Node | null)
+const root_subject = ref(null as SubjectNode | null)
 watch(() => store, () => {
     console.log('Store changed!', store)
     if (!store) {

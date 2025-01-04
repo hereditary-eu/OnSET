@@ -38,7 +38,7 @@
 </template>
 <script setup lang="ts">
 import { ref, watch, reactive, computed, onMounted } from 'vue'
-import { Constraint, Link, MixedResponse, Node, StringConstraint, SubjectConstraint } from '@/utils/sparql/representation';
+import { Constraint, Link, SubjectNode, StringConstraint, SubjectConstraint } from '@/utils/sparql/representation';
 import LinkComp from './Link.vue';
 import NodeComp from './Node.vue';
 import { BACKEND_URL } from '@/utils/config';
@@ -46,7 +46,7 @@ import { Api, RELATION_TYPE, RETURN_TYPE } from '@/api/client.ts/Api';
 import { DisplayMode, LINK_WIDTH, NODE_HEIGHT, NODE_WIDTH, NodeSide, OutlinkSelectorOpenEvent } from '@/utils/sparql/helpers';
 import Loading from '@/components/ui/Loading.vue';
 import OnsetBtn from '@/components/ui/OnsetBtn.vue';
-import type { NodeLinkRepository } from '@/utils/sparql/store';
+import { MixedResponse, type NodeLinkRepository } from '@/utils/sparql/store';
 import GraphView from './GraphView.vue';
 
 const emit = defineEmits<{
@@ -77,7 +77,7 @@ const editor_data = reactive({
     reached_end: false
 })
 const display = defineModel<boolean>()
-const selection_options = ref([] as MixedResponse<Node>[])
+const selection_options = ref([] as MixedResponse<SubjectNode>[])
 const update_selection_options = async () => {
     console.log('Node changed!', selection_event, display)
     if (display) {
@@ -119,7 +119,7 @@ const loadMore = async () => {
     editor_data.offset += response.data.results.length
     //TODO: topic ids - user context!
     let mapped_responses = response.data.results.map((result) => {
-        const resp = new MixedResponse<Node>(result)
+        const resp = new MixedResponse<SubjectNode>(result)
         const other_subject = selection_event.side == NodeSide.FROM || selection_event.side == NodeSide.PROP ? resp.store.to(resp.link) : resp.store.from(resp.link)
         let from = resp.store.from(resp.link)
         let to = resp.store.to(resp.link)
@@ -154,7 +154,7 @@ const attachment_pt = computed(() => {
     }
 })
 
-const select_option = (selected_option: MixedResponse<Node>, event: MouseEvent) => {
+const select_option = (selected_option: MixedResponse<SubjectNode>, event: MouseEvent) => {
     display.value = false
 
 

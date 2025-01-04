@@ -1,5 +1,5 @@
 import { Api } from "@/api/client.ts/Api";
-import { Link, Node } from "./representation";
+import { Link, SubjectNode as NodeRepr } from "./representation";
 import { BACKEND_URL } from "../config";
 import { Vector2, type Vector2Like } from "three";
 import { parseJSON, registerClass, stringifyJSON } from "../parsing";
@@ -19,13 +19,13 @@ export function readableName(uri?: string, label?: string) {
     return label
 }
 @registerClass
-export class InstanceNode extends Node {
+export class InstanceNode extends NodeRepr {
     instance_label: string = null
     instance_id: string = null
-    interactive_clone: InstanceNode = null
+    interactive_clone: InstanceNode | null = null
     expanded: boolean = false
     instance_data: Record<string, string> = null
-    constructor(base_node?: Node | InstanceNode, instance_data?: Record<string, string>) {
+    constructor(base_node?: NodeRepr | InstanceNode, instance_data?: Record<string, string>) {
         super(base_node)
         this.instance_data = instance_data || (base_node as InstanceNode).instance_data || {}
         this.instance_id = this.instance_data[this.output_id().replace('?', '')]
