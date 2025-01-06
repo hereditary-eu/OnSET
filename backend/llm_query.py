@@ -212,7 +212,7 @@ class LLMQuery:
         self.cache = RedisCache[QueryProgress](model=QueryProgress)
 
     def run_query(self, progress: QueryProgress, query: str):
-        
+
         progress.progress = 1
         progress.message = "Querying entities and relations"
         self.cache[progress.id] = progress
@@ -222,21 +222,21 @@ class LLMQuery:
         erl.message = "Found entities and relations"
         progress.relations_steps.append(erl)
         self.cache[progress.id] = progress
-        
+
         candidates = self.candidates_for_erl(erl)
         progress.progress = 3
         progress.message = "Querying candidates"
         progress.relations_steps.append(candidates)
         candidates.message = "Found similar candidates"
         self.cache[progress.id] = progress
-        
+
         constrained_erl = self.query_constrained(query, candidates)
         progress.progress = 4
         progress.message = "Enriching results"
         constrained_erl.message = "Constraints applied"
-        progress.relations_steps.append(constrained_erl)        
+        progress.relations_steps.append(constrained_erl)
         self.cache[progress.id] = progress
-        
+
         enriched_erl = self.enrich_entities_relations(constrained_erl)
         progress.progress = 5
         progress.message = "Query completed"
@@ -497,7 +497,36 @@ class LLMQuery:
                     **entity.model_dump(exclude=["constraints"]),
                 )
 
-            return EnrichedEntitiesRelations(
+            erl_enriched = EnrichedEntitiesRelations(
                 relations=[enrich_relation(r) for r in erl.relations],
                 entities=[enrich_entity(e) for e in erl.entities],
             )
+            # swap links if the schema is the other way around - does not constrain llm
+            # TODO: how could we constrain LLM?
+            for relation in erl_enriched.relations:
+                from_entity = next(
+                    (
+                        e
+                        for e in erl_enriched.entities
+                        if e.identifier == relation.entity
+                    ),
+                    None,
+                )
+                to_entity = next(
+                    (
+                        e
+                        for e in erl_enriched.entities
+                        if e.identifier == relation.target
+                    ),
+                    None,
+                )
+                if from_entity and to_entity:
+                    if from_entity.subject.is_of_type(
+                        relation.link.to_id
+                    ) and to_entity.subject.is_of_type(relation.link.from_id):
+                        relation.entity, relation.target = (
+                            relation.target,
+                            relation.entity,
+                        )
+
+            return erl_enriched

@@ -4,7 +4,7 @@
             <h3>Enter your query:</h3>
             <div class="fuzzy_query_input_row">
                 <input type="text" v-model="state.query_string" @keypress="submit_query" class="query_input" />
-                <OnsetBtn @click="submit_query" :toggleable="false">Submit</OnsetBtn>
+                <OnsetBtn @click="submit_query" :toggleable="false">Search</OnsetBtn>
             </div>
             <div v-if="state.loading && state.updated_query" class="input_step">
                 <Loading></Loading>
@@ -118,6 +118,7 @@ const updated_steps = computed(() => {
     justify-content: center;
     align-items: center;
     padding: 1rem;
+    width: 100%;
 }
 
 .fuzzy_query_starter {
@@ -139,9 +140,10 @@ const updated_steps = computed(() => {
 
 .fuzzy_query_input_row {
     display: flex;
-    flex-direction: row;
+    flex-direction: column;
     justify-content: center;
     align-items: center;
+    width: 50vw;
 }
 .query_steps{
     display: flex;
