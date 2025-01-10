@@ -19,7 +19,7 @@ export class InstanceSelectorOpenEvent {
     constraint: SubjectConstraint
 }
 export const NODE_WIDTH = 150
-export const NODE_HEIGHT = 64
+export const NODE_HEIGHT = 32
 export const LINK_WIDTH = 75
 export const CONSTRAINT_WIDTH = 250
 export const CONSTRAINT_HEIGHT = 75
@@ -44,7 +44,7 @@ function nodeFromEntity(entity: Entity): SubjectNode {
         ...subject_data,
         internal_id: identifier,
     })
-    mapped_node.height = NODE_HEIGHT / 2
+    mapped_node.height = NODE_HEIGHT 
     return mapped_node
 }
 function linkFromRelation(relation: Relation, from: SubjectNode, to: SubjectNode, i = 0): Link {
