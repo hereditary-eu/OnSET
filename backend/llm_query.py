@@ -11,10 +11,8 @@ from explorative_model import (
 from model import Subject
 from sqlalchemy import select
 from sqlalchemy.orm import Session
-import pydantic
-from pydantic.fields import Field
+from pydantic import BaseModel, Field, create_model
 from enum import Enum
-import cachetools
 import datetime
 
 # has to be installed from fork until merged!
@@ -24,25 +22,25 @@ from llama_cpp_agent.gbnf_grammar_generator.gbnf_grammar_from_pydantic_models im
 from redis_cache import RedisCache
 
 
-class Constraint(pydantic.BaseModel):
+class Constraint(BaseModel):
     property: str
     value: str | None
     modifier: str | None
 
 
-class Entity(pydantic.BaseModel):
+class Entity(BaseModel):
     identifier: str
     type: str
     constraints: list[Constraint] = Field([])
 
 
-class Relation(pydantic.BaseModel):
+class Relation(BaseModel):
     entity: str
     relation: str
     target: str
 
 
-class EntitiesRelations(pydantic.BaseModel):
+class EntitiesRelations(BaseModel):
     relations: list[Relation]
     entities: list[Entity]
     message: str = Field("Found Relations and Entities")
@@ -91,7 +89,7 @@ class EnrichedEntitiesRelations(EntitiesRelations):
     entities: list[EnrichedEntity] = Field([])
 
 
-class QueryProgress(pydantic.BaseModel):
+class QueryProgress(BaseModel):
     id: str
     start_time: str
     progress: int = Field(0)
@@ -216,21 +214,21 @@ class LLMQuery:
         progress.progress = 1
         progress.message = "Querying entities and relations"
         self.cache[progress.id] = progress
-        
+
         erl = self.query_erl(query)
         progress.progress = 2
         progress.message = "Fetching possible candidates"
         erl.message = "Found entities and relations"
         progress.relations_steps.append(erl)
         self.cache[progress.id] = progress
-        
+
         candidates = self.candidates_for_erl(erl)
         progress.progress = 3
         progress.message = "Querying candidates"
         candidates.message = "Found similar candidates"
         progress.relations_steps.append(candidates)
         self.cache[progress.id] = progress
-        
+
         constrained_erl = self.query_constrained(query, candidates)
         progress.progress = 4
         progress.message = "Enriching results"
@@ -399,7 +397,7 @@ class LLMQuery:
         )
         return candidates
 
-    def build_constrained_classes(self, candidates: Candidates) -> pydantic.BaseModel:
+    def build_constrained_classes(self, candidates: Candidates) -> BaseModel:
         constrained_classes = []
         ALLOWED_ENTITY_TYPES = Enum(
             "ALLOWED_ENTITY_TYPES",
@@ -414,36 +412,36 @@ class LLMQuery:
             {r.relation.lower(): r.relation.lower() for r in candidates.relations},
         )
 
-        ConstrainedRelation = pydantic.create_model(
+        ConstrainedRelation = create_model(
             "ConstrainedRelation",
-            # (pydantic.BaseModel,),
+            # (BaseModel,),
             **{
                 "entity": (str, ...),
                 "relation": (ALLOWED_RELATION_TYPES, ...),
                 "target": (str, ...),
             },
         )
-        ConstrainedConstraint = pydantic.create_model(
+        ConstrainedConstraint = create_model(
             "ConstrainedConstraint",
-            # (pydantic.BaseModel,),
+            # (BaseModel,),
             **{
                 "property": (ALLOWED_CONSTRAINT_TYPES, ...),
                 "value": (str, ...),
                 "modifier": (str, ...),
             },
         )
-        ConstrainedEntity = pydantic.create_model(
+        ConstrainedEntity = create_model(
             "ConstrainedEntity",
-            # (pydantic.BaseModel,),
+            # (BaseModel,),
             **{
                 "type": (ALLOWED_ENTITY_TYPES, ...),
                 "identifier": (str, ...),
                 "constraints": (list[ConstrainedConstraint], []),
             },
         )
-        ConstrainedEntitiesRelations = pydantic.create_model(
+        ConstrainedEntitiesRelations = create_model(
             "ConstrainedEntitiesRelations",
-            # (pydantic.BaseModel,),
+            # (BaseModel,),
             **{
                 "relations": (list[ConstrainedRelation], []),
                 "entities": (list[ConstrainedEntity], []),
