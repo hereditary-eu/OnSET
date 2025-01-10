@@ -44,6 +44,7 @@ class Relation(pydantic.BaseModel):
 class EntitiesRelations(pydantic.BaseModel):
     relations: list[Relation]
     entities: list[Entity]
+    message: str = Field("Found Relations and Entities")
 
 
 class CandidateRelation(Relation):
@@ -65,7 +66,7 @@ class CandidateEntity(Entity):
     subject: Subject | None = Field(None)
 
 
-class Candidates(pydantic.BaseModel):
+class Candidates(EntitiesRelations):
     relations: list[CandidateRelation]
     entities: list[CandidateEntity]
     constraints: list[CandidateConstraint]
@@ -84,7 +85,7 @@ class EnrichedRelation(Relation):
     link: SubjectLink | None
 
 
-class EnrichedEntitiesRelations(pydantic.BaseModel):
+class EnrichedEntitiesRelations(EntitiesRelations):
     relations: list[EnrichedRelation]
     entities: list[EnrichedEntity]
 
@@ -218,21 +219,28 @@ class LLMQuery:
         erl = self.query_erl(query)
         progress.progress = 2
         progress.message = "Fetching possible candidates"
+        erl.message = "Found entities and relations"
         progress.relations_steps.append(erl)
         self.cache[progress.id] = progress
+        
         candidates = self.candidates_for_erl(erl)
         progress.progress = 3
         progress.message = "Querying candidates"
         progress.relations_steps.append(candidates)
+        candidates.message = "Found similar candidates"
         self.cache[progress.id] = progress
+        
         constrained_erl = self.query_constrained(query, candidates)
         progress.progress = 4
         progress.message = "Enriching results"
-        progress.relations_steps.append(constrained_erl)
+        constrained_erl.message = "Constraints applied"
+        progress.relations_steps.append(constrained_erl)        
         self.cache[progress.id] = progress
+        
         enriched_erl = self.enrich_entities_relations(constrained_erl)
         progress.progress = 5
         progress.message = "Query completed"
+        enriched_erl.message = "Aligned results"
         progress.relations_steps.append(enriched_erl)
         progress.enriched_relations = enriched_erl
         self.cache[progress.id] = progress
@@ -438,6 +446,7 @@ class LLMQuery:
             **{
                 "relations": (list[ConstrainedRelation], []),
                 "entities": (list[ConstrainedEntity], []),
+                "message": (str, "Constrained Entities and Relations"),
             },
         )
 
