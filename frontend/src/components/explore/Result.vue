@@ -26,8 +26,6 @@
 </template>
 <script setup lang="ts">
 import { ref, watch, reactive, computed, onMounted, defineProps } from 'vue'
-import { MixedResponse, Node, Link } from '@/utils/sparql/representation';
-import NodeComp from './elements/Node.vue';
 import Propview from './elements/Propview.vue';
 import { InstanceNode, PropertiesOpenEvent, QueryMapper, type InstanceNodeLinkRepository } from '@/utils/sparql/querymapper';
 import { Vector2, type Vector2Like } from 'three';

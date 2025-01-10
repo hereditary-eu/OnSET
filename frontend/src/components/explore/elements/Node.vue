@@ -53,7 +53,7 @@
 <script setup lang="ts">
 import { ref, watch, reactive, computed, onMounted, defineProps, onBeforeUpdate, type Prop, onUpdated, onRenderTriggered } from 'vue'
 import { type Subject } from '@/api/client.ts/Api';
-import { Node as NodeRepr } from '@/utils/sparql/representation';
+import { SubjectNode as NodeRepr } from '@/utils/sparql/representation';
 import LinkComp from './Link.vue';
 import { CONSTRAINT_PADDING, CONSTRAINT_WIDTH, DisplayMode, InstanceSelectorOpenEvent, NodeSide, OutlinkSelectorOpenEvent } from '@/utils/sparql/helpers';
 import Constraint from './Constraint.vue';

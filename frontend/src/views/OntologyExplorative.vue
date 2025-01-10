@@ -48,7 +48,6 @@ import 'prismjs/themes/prism.css';
 import { ref, watch, reactive, computed, onMounted, onBeforeMount } from 'vue'
 import TopicSelector from '@/components/explore/TopicSelector.vue';
 import NodeLinkSelector from '@/components/explore/NodeLinkSelector.vue';
-import type { MixedResponse, Node } from '@/utils/sparql/representation';
 import QueryBuilder from '@/components/explore/QueryBuilder.vue';
 import ResultsView from '@/components/explore/ResultsView.vue';
 import Loading from '@/components/ui/Loading.vue';
@@ -57,7 +56,7 @@ import { Api } from '@/api/client.ts/Api';
 import { BACKEND_URL } from '@/utils/config';
 import type { SubjectInCircle } from '@/utils/d3-man/CircleMan';
 import OnsetBtn from '@/components/ui/OnsetBtn.vue';
-import type { NodeLinkRepository } from '@/utils/sparql/store';
+import type { MixedResponse, NodeLinkRepository } from '@/utils/sparql/store';
 import SelectorGroup from '@/components/ui/SelectorGroup.vue';
 import FuzzyQueryStarter from '@/components/explore/FuzzyQueryStarter.vue';
 

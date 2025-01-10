@@ -1,7 +1,6 @@
-import type { Candidates, EntitiesRelations } from "@/api/client.ts/Api";
-import { Link, Node, type SubjectConstraint } from "./representation";
+import type { Candidates, EnrichedEntity, EnrichedRelation, EntitiesRelations, Entity, Relation } from "@/api/client.ts/Api";
+import { Constraint, Link, SubjectNode, type SubjectConstraint } from "./representation";
 import { NodeLinkRepository } from "./store";
-import Constraint from "@/components/explore/elements/Constraint.vue";
 import { reactive } from "vue";
 
 export enum NodeSide {
@@ -11,16 +10,16 @@ export enum NodeSide {
     DETAIL = 'detail'
 }
 export class OutlinkSelectorOpenEvent {
-    node: Node;
+    node: SubjectNode;
     side: NodeSide;
 
 }
 export class InstanceSelectorOpenEvent {
-    node: Node;
+    node: SubjectNode;
     constraint: SubjectConstraint
 }
 export const NODE_WIDTH = 150
-export const NODE_HEIGHT = 64
+export const NODE_HEIGHT = 32
 export const LINK_WIDTH = 75
 export const CONSTRAINT_WIDTH = 250
 export const CONSTRAINT_HEIGHT = 75
@@ -33,53 +32,57 @@ export enum DisplayMode {
     RESULTS = 'results',
     RESULT_INTERACTIVE = 'result_interactive',
 }
+function toVar(v: string) {
+    return v.replace(/[_ &]/, '_')
+}
+function nodeFromEntity(entity: Entity): SubjectNode {
+    let subject_data = (entity as EnrichedEntity).subject ? (entity as EnrichedEntity).subject : entity
+    let identifier = toVar(entity.identifier)
+    let mapped_node = new SubjectNode({
+        label: entity.type,
+        subject_id: identifier,
+        ...subject_data,
+        internal_id: identifier,
+    })
+    mapped_node.height = NODE_HEIGHT 
+    return mapped_node
+}
+function linkFromRelation(relation: Relation, from: SubjectNode, to: SubjectNode, i = 0): Link {
+    let link_data = (relation as EnrichedRelation).link ? (relation as EnrichedRelation).link : relation
+    return new Link({
+        link_id: i,
+        from_id: from.subject_id,
+        to_id: to.subject_id,
+        label: relation.relation,
+        from_internal_id: from.internal_id,
+        to_internal_id: to.internal_id,
+        link_type: 'relation',
+        to_proptype: null,
+        property_id: null,
+        instance_count: 1,
+        from_subject: from,
+        to_subject: to,
+        ...link_data,
+    })
+}
 export function mapERLToStore(step: EntitiesRelations) {
 
     let store = new NodeLinkRepository()
-    store.nodes = step.entities.map((entity) => {
-        let mapped_node = new Node({
-            subject_id: entity.type,
-            label: entity.type,
-            internal_id: entity.identifier
-        })
-        mapped_node.height = NODE_HEIGHT / 2
-        return mapped_node
-    })
+    store.nodes = step.entities.map(nodeFromEntity)
 
     step.relations.forEach((relation, i) => {
-        let from_subject = store.nodes.find((n) => n.internal_id == relation.entity)
+        let from_internal_id = toVar(relation.entity)
+        let to_internal_id = toVar(relation.target)
+        let from_subject = store.nodes.find((n) => n.internal_id == from_internal_id)
         if (!from_subject) {
-            from_subject = new Node({
-                subject_id: relation.entity,
-                label: relation.entity,
-                internal_id: relation.entity
-            })
-            from_subject.height = NODE_HEIGHT / 2
+            from_subject = nodeFromEntity({ type: relation.entity, identifier: relation.entity })
         }
-        let to_subject = store.nodes.find((n) => n.internal_id == relation.target)
+        let to_subject = store.nodes.find((n) => n.internal_id == to_internal_id)
         if (!to_subject) {
-            to_subject = new Node({
-                subject_id: relation.target,
-                label: relation.target,
-                internal_id: relation.target
-            })
-            to_subject.height = NODE_HEIGHT / 2
+            to_subject = nodeFromEntity({ type: relation.target, identifier: relation.target })
         }
-        store.addOutlink(
-            new Link({
-                link_id: i,
-                from_id: relation.entity,
-                to_id: relation.target,
-                label: relation.relation,
-                from_internal_id: relation.entity,
-                to_internal_id: relation.target,
-                link_type: 'relation',
-                to_proptype: null,
-                property_id: null,
-                instance_count: 1,
-                from_subject,
-                to_subject
-            }), from_subject, to_subject, NodeSide.TO
+        let mapped_link = linkFromRelation(relation, from_subject, to_subject, i)
+        store.addOutlink(mapped_link, from_subject, to_subject, NodeSide.TO
         )
     })
     if ((step as Candidates).constraints) {

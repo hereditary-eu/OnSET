@@ -11,7 +11,7 @@
 <script setup lang="ts">
 import { Api } from '@/api/client.ts/Api';
 import { BACKEND_URL } from '@/utils/config';
-import { Node } from '@/utils/sparql/representation';
+import { SubjectNode } from '@/utils/sparql/representation';
 import { ref, watch, reactive, computed, onMounted, defineProps } from 'vue'
 
 const { query_string, root_node } = defineProps({
@@ -20,7 +20,7 @@ const { query_string, root_node } = defineProps({
         required: true
     },
     root_node: {
-        type: Object as () => Node,
+        type: Object as () => SubjectNode,
         required: true
     }
 })

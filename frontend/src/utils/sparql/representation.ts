@@ -1,7 +1,6 @@
 import type { Api, FuzzyQueryResult, Instance, Property, Subject, SubjectLink } from "@/api/client.ts/Api";
 import { CONSTRAINT_HEIGHT, CONSTRAINT_WIDTH, NODE_HEIGHT, NODE_WIDTH } from "./helpers";
-import { isProxy, toRaw } from "vue";
-import { jsonProperty, Serializable } from "ts-serializable";
+
 import { registerClass } from "../parsing";
 import { NodeLinkRepository } from "./store";
 
@@ -198,7 +197,7 @@ export class LinkTriplet {
 @registerClass
 export class QuerySet {
     //from internal_id to subject_id
-    nodes: Record<string, Node>;
+    nodes: Record<string, SubjectNode>;
     link_triplets: LinkTriplet[];
 
     filter: Constraint[];
@@ -211,7 +210,7 @@ export class QuerySet {
 }
 let internal_id_counter: number = 0;
 @registerClass
-export class Node implements Subject {
+export class SubjectNode implements Subject {
     subject_id: string;
     label: string;
     spos?: Record<string, Property>;
@@ -236,8 +235,8 @@ export class Node implements Subject {
     unknown: boolean;
     deletion_imminent: boolean
 
-    constructor(node?: Node | Subject) {
-        if (!(node instanceof Node)) {
+    constructor(node?: SubjectNode | Subject) {
+        if (!(node instanceof SubjectNode)) {
             this.x = 0;
             this.y = 0;
             this.height = NODE_HEIGHT
@@ -294,7 +293,7 @@ export class Node implements Subject {
     }
 }
 @registerClass
-export class UnknownNode extends Node {
+export class UnknownNode extends SubjectNode {
     constructor() {
         super({
             subject_id: '--',
@@ -321,7 +320,7 @@ export class Link<N extends Subject = Subject> implements SubjectLink {
     from_internal_id: string;
     to_internal_id: string;
 
-    from_subject: N | Node;
+    from_subject: N | SubjectNode;
     to_subject: N | UnknownNode;
 
     constructor(link?: SubjectLink | Link) {
@@ -331,11 +330,11 @@ export class Link<N extends Subject = Subject> implements SubjectLink {
                     this[key] = link[key];
                 }
             }
-            if (!(link.from_subject instanceof Node)) {
-                this.from_subject = new Node(link.from_subject);
+            if (!(link.from_subject instanceof SubjectNode)) {
+                this.from_subject = new SubjectNode(link.from_subject);
             }
-            if (!(link.to_subject instanceof Node)) {
-                this.to_subject = link.to_subject ? new Node(link.to_subject) : new UnknownNode();
+            if (!(link.to_subject instanceof SubjectNode)) {
+                this.to_subject = link.to_subject ? new SubjectNode(link.to_subject) : new UnknownNode();
             }
         }
         this.link_id = internal_id_counter++
@@ -349,36 +348,4 @@ export class Link<N extends Subject = Subject> implements SubjectLink {
         return `${this.from_internal_id}-${this.link_id}-${this.to_internal_id}`
     }
 }
-@registerClass
-export class MixedResponse<N extends Subject = Subject> implements FuzzyQueryResult {
-    link: Link<N>;
-    subject: Node;
-    score: number;
-    store: NodeLinkRepository;
-    compute_layout: boolean = false;
-    constructor(result: FuzzyQueryResult = null) {
-        for (const key in result) {
-            if (Object.prototype.hasOwnProperty.call(result, key)) {
-                this[key] = result[key];
-            }
-        }
-        this.store = new NodeLinkRepository()
-        if (this.subject) {
-            this.subject = new Node(result.subject)
-            this.store.nodes.push(this.subject)
-        }
-        if (this.link) {
-            this.link = new Link(result.link)
-            let from_subject = new Node(result.link.from_subject)
-            let to_subject = new Node(result.link.to_subject)
-            this.link.from_internal_id = from_subject.internal_id
-            this.link.to_internal_id = to_subject.internal_id
-            this.store.links.push(this.link)
-            this.store.nodes.push(...[from_subject, to_subject])
-
-        }
-    }
-
-}
-
 export type FuzzyQueryRequest = Parameters<typeof Api.prototype.classes.searchClassesClassesSearchPost>[0]

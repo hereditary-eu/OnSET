@@ -15,7 +15,7 @@
 </template>
 <script setup lang="ts">
 import { ref, watch, reactive, computed, onMounted, defineProps } from 'vue'
-import { MixedResponse, Node, Link } from '@/utils/sparql/representation';
+import { SubjectNode, Link } from '@/utils/sparql/representation';
 import NodeComp from './elements/Node.vue';
 import Propview from './elements/Propview.vue';
 import { InstanceNode, PropertiesOpenEvent, QueryMapper, type InstanceNodeLinkRepository } from '@/utils/sparql/querymapper';
@@ -39,7 +39,7 @@ const { store, query_string } = defineProps({
 const mapper = ref(null as QueryMapper | null)
 const mapped_stores = ref([] as InstanceNodeLinkRepository[])
 const view_container = ref(null as SVGSVGElement | null)
-const root_subject = ref(null as Node | null)
+const root_subject = ref(null as SubjectNode | null)
 const ui_state = reactive({
     loading: false,
     last_query_id: 0,

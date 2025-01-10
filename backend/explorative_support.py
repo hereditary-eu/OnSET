@@ -222,7 +222,7 @@ WHERE {
 """
         )[0].to_list()
         classes_enriched = [
-            self.oman.enrich_subject(c, load_properties=True) for c in classes
+            self.oman.enrich_subject(c, load_properties=True) for c in tqdm(classes, desc="Enriching classes")
         ]
 
         documents: list[dict[str, str]] = []
@@ -425,6 +425,7 @@ WHERE {
         with Session(self.engine) as session:
 
             session.execute(text("SET CONSTRAINTS ALL DEFERRED"))
+            session.execute(text("SET session_replication_role = replica"))
             cls_descs: dict[str, str] = {}
             for cls in tqdm(all_classes.values(), desc="Embedding classes"):
                 comment = (

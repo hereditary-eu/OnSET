@@ -50,6 +50,16 @@ class Subject(BaseModel):
     properties: dict[str, list[Subject]] = Field({})
     instance_count: int = 0
 
+    def is_of_type(self, subject_id: str):
+        if self.subject_id == subject_id:
+            return True
+        subclasses = self.spos.get("rdfs:subClassOf")
+        if subclasses:
+            for subclass in subclasses.values:
+                if subclass.value == subject_id:
+                    return True
+        return self.subject_id == subject_id
+
 
 class MatchDB(Base):
     __tablename__ = "match"

@@ -70,6 +70,11 @@ export interface Candidates {
   relations: CandidateRelation[];
   /** Entities */
   entities: CandidateEntity[];
+  /**
+   * Message
+   * @default "Found Relations and Entities"
+   */
+  message?: string;
   /** Constraints */
   constraints: CandidateConstraint[];
 }
@@ -101,6 +106,11 @@ export interface EnrichedEntitiesRelations {
   relations: EnrichedRelation[];
   /** Entities */
   entities: EnrichedEntity[];
+  /**
+   * Message
+   * @default "Found Relations and Entities"
+   */
+  message?: string;
 }
 
 /** EnrichedEntity */
@@ -131,6 +141,11 @@ export interface EntitiesRelations {
   relations: Relation[];
   /** Entities */
   entities: Entity[];
+  /**
+   * Message
+   * @default "Found Relations and Entities"
+   */
+  message?: string;
 }
 
 /** Entity */
@@ -925,7 +940,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<QueryProgress, HTTPValidationError>({
+      this.request<QueryProgress | null, HTTPValidationError>({
         path: `/classes/search/llm/running`,
         method: "GET",
         query: query,

@@ -29,25 +29,26 @@
 <script setup lang="ts">
 import { Api, type FuzzyQueryResult } from '@/api/client.ts/Api';
 import { BACKEND_URL } from '@/utils/config';
-import { MixedResponse, Node, type FuzzyQueryRequest } from '@/utils/sparql/representation';
+import {  SubjectNode, type FuzzyQueryRequest } from '@/utils/sparql/representation';
 import { ref, watch, reactive, defineEmits } from 'vue';
 import NodeComp from './elements/Node.vue';
 import OnsetBtn from '@/components/ui/OnsetBtn.vue';
 import { LINK_WIDTH, NODE_HEIGHT, NODE_WIDTH } from '@/utils/sparql/helpers';
 import Loading from '@/components/ui/Loading.vue';
 import GraphView from './elements/GraphView.vue';
+import { MixedResponse } from '@/utils/sparql/store';
 
 const emits = defineEmits<{
-    select: [value: MixedResponse<Node>]
+    select: [value: MixedResponse<SubjectNode>]
 }>()
 
 const ui_state = reactive({
     collapsed: false,
-    selected_link: null as MixedResponse<Node> | null,
+    selected_link: null as MixedResponse<SubjectNode> | null,
     loading: false
 })
 
-const selected_node = (node: MixedResponse<Node>) => {
+const selected_node = (node: MixedResponse<SubjectNode>) => {
     ui_state.collapsed = !!node
     ui_state.selected_link = node
     emits('select', node)
@@ -63,13 +64,13 @@ const { query } = defineProps({
     }
 })
 
-const node_link_elements = ref([] as MixedResponse<Node>[])
+const node_link_elements = ref([] as MixedResponse<SubjectNode>[])
 
 const fetchNodeLinkElements = async () => {
     ui_state.loading = true
     const response = await api.classes.searchClassesClassesSearchPost(query)
     node_link_elements.value = response.data.results.map((result) => {
-        const resp = new MixedResponse<Node>(result)
+        const resp = new MixedResponse<SubjectNode>(result)
         if (resp.link) {
             let from = resp.store.from(resp.link)
             let to = resp.store.to(resp.link)

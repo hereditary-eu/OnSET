@@ -55,7 +55,9 @@ class Topic(BaseModel):
 class SubjectInDB(BasePostgres):
     __tablename__ = "subjects"
     subject_id: Mapped[str] = mapped_column(primary_key=True)
-    parent_id: Mapped[str | None] = mapped_column()
+    parent_id: Mapped[str | None] = mapped_column(
+        ForeignKey("subjects.subject_id", deferrable=True)
+    )
     label: Mapped[str | None] = mapped_column()
     comment: Mapped[str | None] = mapped_column()
     subject_type: Mapped[str] = mapped_column()
@@ -67,18 +69,15 @@ class SubjectInDB(BasePostgres):
     embedding: Mapped[Vector] = mapped_column(Vector(N_EMBEDDINGS))
     onto_hash: Mapped[str | None] = mapped_column()
 
-    parent: Mapped[SubjectInDB] = relationship(
-        "SubjectInDB",
-        remote_side=[subject_id],
-        back_populates="sub_classes",
-        primaryjoin=parent_id == subject_id,
-        foreign_keys=[parent_id],
-    )
     sub_classes: Mapped[list[SubjectInDB]] = relationship(
         "SubjectInDB",
         back_populates="parent",
-        primaryjoin=subject_id == parent_id,
-        foreign_keys=[subject_id],
+        remote_side=[parent_id],
+    )
+    parent: Mapped[SubjectInDB] = relationship(
+        "SubjectInDB",
+        back_populates="sub_classes",
+        remote_side=[subject_id],
     )
 
     from_links: Mapped[list[SubjectLinkDB]] = relationship(
