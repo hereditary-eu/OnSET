@@ -17,13 +17,14 @@ ipywidgets
 transformers
 #CUDA
 #CUDACXX="/usr/local/cuda-12.6/bin/nvcc" CMAKE_ARGS="-DGGML_CUDA=on" pip install llama-cpp-python
-#MAKE_ARGS="-DLLAVA_BUILD=OFF -DGGML_CUDA=on"   pip install -e .
+#CMAKE_ARGS="-DLLAVA_BUILD=OFF -DGGML_CUDA=on"   pip install -e .
 #MPS
 #CMAKE_ARGS="-DGGML_METAL=on" pip install llama-cpp-python
 bertopic
 pgvector
 cachetools
 redis-om
+matplotlib
 # git clone git@github.com:Dakantz/llama-cpp-agent.git
 # cd llama-cpp-agent
 # git checkout fix-gbnf-generation-trailing-bracket
