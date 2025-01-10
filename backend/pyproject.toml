@@ -1,0 +1,48 @@
+[project]
+name = "onset-backend"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi[standard]",
+    "python-multipart",
+    "pandas",
+    "numpy",
+    "owlready2",
+    "networkx",
+    "pyvis",
+    "rdflib[networkx,html,lxml,orjson]",
+    "fastapi",
+    "psycopg[binary]",
+    "sentence-transformers",
+    "SQLAlchemy",
+    "sqlmodel",
+    "torch",
+    "jupyter",
+    "ipywidgets",
+    "transformers",
+    "bertopic",
+    "pgvector",
+    "cachetools",
+    "redis-om",
+    "matplotlib",
+    "llama-cpp-python==0.3.4",
+    "llvmlite>=0.43.0",
+]
+
+[tool.uv.sources]
+llama-cpp-python = [
+    { index = "llama-metal", marker = "platform_system == 'Darwin'" },
+    { index = "llama-gpu", marker = "platform_system == 'Linux'" },
+]
+
+[[tool.uv.index]]
+name = "llama-metal"
+url = "https://abetlen.github.io/llama-cpp-python/whl/metal/"
+explicit = true
+
+[[tool.uv.index]]
+name = "llama-gpu"
+url = "https://abetlen.github.io/llama-cpp-python/whl/cu124/"
+explicit = true

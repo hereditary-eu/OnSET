@@ -1,6 +1,11 @@
 from __future__ import annotations
-from model import *
-from ontology import *
+from sqlalchemy import ForeignKey
+from sqlalchemy.orm import relationship, DeclarativeBase, Mapped, mapped_column
+
+from pydantic import Field, BaseModel
+
+from model import Subject
+from ontology import OntologyManager
 from pgvector.sqlalchemy import Vector
 from enum import Enum
 

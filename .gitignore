@@ -10,3 +10,4 @@ pgdata
 *.zip
 node_modules
 llama-cpp*
+.venv
