@@ -1,15 +1,32 @@
 from __future__ import annotations
-from model import *
-from ontology import *
+from model import Subject
+from ontology import OntologyManager
 import regex as re
 from bertopic import BERTopic
 from bertopic.representation import MaximalMarginalRelevance, LlamaCPP
 from llama_cpp import Llama
 from hashlib import sha256
-from explorative_model import *
+from explorative_model import (
+    BasePostgres,
+    TopicDB,
+    SubjectLinkDB,
+    SubjectLink,
+    SubjectInDB,
+    FuzzyQueryResult,
+    FuzzyQuery,
+    N_EMBEDDINGS,
+    RETURN_TYPE,
+    RELATION_TYPE,
+    FUZZY_QUERY_ORDER,
+    FuzzyQueryResults,
+    Topic,
+)
 from sqlalchemy import text, inspect, create_engine, select, delete
+from sqlalchemy.orm import Session
 import torch as t
 import numpy as np
+from tqdm import tqdm
+import pandas as pd
 
 # System prompt describes information given to all conversations
 TOPIC_LLAMA3_PROMPT_SYSTEM = """
@@ -222,7 +239,8 @@ WHERE {
 """
         )[0].to_list()
         classes_enriched = [
-            self.oman.enrich_subject(c, load_properties=True) for c in tqdm(classes, desc="Enriching classes")
+            self.oman.enrich_subject(c, load_properties=True)
+            for c in tqdm(classes, desc="Enriching classes")
         ]
 
         documents: list[dict[str, str]] = []
@@ -261,7 +279,6 @@ WHERE {
         return pd.DataFrame(documents)
 
     def model_topics(self):
-
         docs = self.build_docs()
         # Create an instance of the Llama class and load the model
 
@@ -408,7 +425,6 @@ WHERE {
             return topic_tree(root_topic[0])
 
     def __embed_relations(self):
-
         all_classes = self.oman.q_to_df(
             """
 SELECT ?s
@@ -423,7 +439,6 @@ WHERE {
         }
 
         with Session(self.engine) as session:
-
             session.execute(text("SET CONSTRAINTS ALL DEFERRED"))
             session.execute(text("SET session_replication_role = replica"))
             cls_descs: dict[str, str] = {}
@@ -582,7 +597,6 @@ WHERE {
             return links_enriched
 
     def search_fuzzy(self, query: FuzzyQuery):
-
         with Session(self.engine) as session:
             query_embedding = None
             if query.q is not None and len(query.q) > 0:

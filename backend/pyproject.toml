@@ -29,6 +29,7 @@ dependencies = [
     "matplotlib",
     "llama-cpp-python==0.3.4",
     "llvmlite>=0.43.0",
+    "llama-cpp-agent",
 ]
 
 [tool.uv.sources]
@@ -36,6 +37,11 @@ llama-cpp-python = [
     { index = "llama-metal", marker = "platform_system == 'Darwin'" },
     { index = "llama-gpu", marker = "platform_system == 'Linux'" },
 ]
+
+llama-cpp-agent = [
+    { git = "https://github.com/Dakantz/llama-cpp-agent.git", branch = "fix-gbnf-generation-trailing-bracket" },
+]
+
 
 [[tool.uv.index]]
 name = "llama-metal"
