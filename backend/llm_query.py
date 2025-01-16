@@ -9,7 +9,7 @@ from explorative_model import (
     SubjectInDB,
 )
 from model import Subject
-from sqlalchemy import select
+from sqlalchemy import select, text
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, Field, create_model
 from enum import Enum
@@ -401,15 +401,15 @@ class LLMQuery:
         constrained_classes = []
         ALLOWED_ENTITY_TYPES = Enum(
             "ALLOWED_ENTITY_TYPES",
-            {e.type.lower(): e.type.lower() for e in candidates.entities},
+            {e.type: e.type for e in candidates.entities},
         )
         ALLOWED_CONSTRAINT_TYPES = Enum(
             "ALLOWED_CONSTRAINT_TYPES",
-            {c.property.lower(): c.property.lower() for c in candidates.constraints},
+            {c.property: c.property for c in candidates.constraints},
         )
         ALLOWED_RELATION_TYPES = Enum(
             "ALLOWED_RELATION_TYPES",
-            {r.relation.lower(): r.relation.lower() for r in candidates.relations},
+            {r.relation: r.relation for r in candidates.relations},
         )
 
         ConstrainedRelation = create_model(
@@ -455,6 +455,8 @@ class LLMQuery:
         self, erl: EntitiesRelations
     ) -> EnrichedEntitiesRelations:
         with Session(self.topic_man.engine) as session:
+            session.execute(text("SET TRANSACTION READ ONLY"))
+            session.autoflush = False
 
             def enrich_relation(relation: Relation) -> EnrichedRelation:
                 link_db = session.execute(

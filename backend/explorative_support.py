@@ -82,6 +82,7 @@ class TopicModelling:
         oman: OntologyManager,
         device=None,
         conn_str: str = "postgresql+psycopg://postgres:postgres@localhost:5434/onset",
+        llm_model_id: str = "NousResearch/Hermes-3-Llama-3.2-3B-GGUF",
     ) -> None:
         self.oman = oman
         if device is None:
@@ -95,7 +96,7 @@ class TopicModelling:
         # This model supports two prompts: "s2p_query" and "s2s_query" for sentence-to-passage and sentence-to-sentence tasks, respectively.
         # They are defined in `config_sentence_transformers.json`
         self.query_prompt_name = "s2p_query"
-
+        self.llm_model_id = llm_model_id
         self.engine = create_engine(conn_str)
         identifier_results = self.oman.onto.query(
             "SELECT ?s  ?p ?o WHERE {?s ?o ?p.} LIMIT 25"
@@ -116,11 +117,13 @@ class TopicModelling:
         if self.__lama_model is not None:
             return self.__lama_model
         self.__lama_model = Llama.from_pretrained(
-            repo_id="NousResearch/Hermes-3-Llama-3.1-8B-GGUF",
+            repo_id=self.llm_model_id,
             filename="*.Q8_0.gguf",
-            n_batch=1024,
+            n_batch=2048,
+            n_ubatch=512,
             n_ctx=10000,
             n_gpu_layers=-1,
+            n_threads=6,
             embedding=False,
         )
         return self.__lama_model

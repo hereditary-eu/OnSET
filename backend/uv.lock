@@ -1841,6 +1841,7 @@ dependencies = [
     { name = "rdflib", extra = ["html", "lxml", "networkx", "orjson"] },
     { name = "redis-om" },
     { name = "sentence-transformers" },
+    { name = "seqeval" },
     { name = "sqlalchemy" },
     { name = "sqlmodel" },
     { name = "torch" },
@@ -1872,6 +1873,7 @@ requires-dist = [
     { name = "rdflib", extras = ["networkx", "html", "lxml", "orjson"] },
     { name = "redis-om" },
     { name = "sentence-transformers" },
+    { name = "seqeval" },
     { name = "sqlalchemy" },
     { name = "sqlmodel" },
     { name = "torch" },
@@ -2796,6 +2798,16 @@ sdist = { url = "https://files.pythonhosted.org/packages/79/0a/c677efe908b20e7e8
 wheels = [
     { url = "https://files.pythonhosted.org/packages/8b/c8/990e22a465e4771338da434d799578865d6d7ef1fdb50bd844b7ecdcfa19/sentence_transformers-3.3.1-py3-none-any.whl", hash = "sha256:abffcc79dab37b7d18d21a26d5914223dd42239cfe18cb5e111c66c54b658ae7", size = 268797 },
 ]
+
+[[package]]
+name = "seqeval"
+version = "1.2.2"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "numpy" },
+    { name = "scikit-learn" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/9d/2d/233c79d5b4e5ab1dbf111242299153f3caddddbb691219f363ad55ce783d/seqeval-1.2.2.tar.gz", hash = "sha256:f28e97c3ab96d6fcd32b648f6438ff2e09cfba87f05939da9b3970713ec56e6f", size = 43605 }
 
 [[package]]
 name = "setuptools"

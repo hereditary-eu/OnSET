@@ -30,6 +30,7 @@ dependencies = [
     "llama-cpp-python==0.3.4",
     "llvmlite>=0.43.0",
     "llama-cpp-agent",
+    "seqeval",
 ]
 
 [tool.uv.sources]
