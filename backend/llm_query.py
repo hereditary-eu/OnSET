@@ -14,6 +14,7 @@ from sqlalchemy.orm import Session
 from pydantic import BaseModel, Field, create_model
 from enum import Enum
 import datetime
+from fastapi import BackgroundTasks
 
 # has to be installed from fork until merged!
 from llama_cpp_agent.gbnf_grammar_generator.gbnf_grammar_from_pydantic_models import (
@@ -160,7 +161,7 @@ RAG_PROMPT_EXAMPLE_CANDIDATES = Candidates(
     ],
 )
 
-RAG_PROMPT_SYSTEM = f"""
+RAG_PROMPT_SYSTEM = """
 Return all the entities, relations, and constraints within the query in the form of JSON output. The output should be a list of all entities and their relations between them, with additional constraints if they are present in the query.
 """
 
@@ -190,11 +191,13 @@ RAG_PROMPT_EXAMPLE = (
     RAG_PROMPT_EXAMPLE_CANDIDATES.model_dump_json(),
     RAG_PROMPT_EXPECTED_OUTPUT.model_dump_json(),
 )
-from fastapi import BackgroundTasks, FastAPI
 
 
 class LLMQuery:
-    def __init__(self, topic: TopicModelling, zero_shot=False, temperature=0.3):
+    def __init__(
+        self, topic: TopicModelling, zero_shot=False, temperature=0.3, max_tokens=2048
+    ):
+        self.max_tokens = max_tokens
         self.zero_shot = zero_shot
         self.temperature = temperature
         self.topic_man = topic
@@ -280,7 +283,7 @@ class LLMQuery:
         response = self.model.create_chat_completion(
             grammar=self.grammar_erl,
             messages=messages,
-            max_tokens=-1,
+            max_tokens=self.max_tokens,
             temperature=self.temperature,
         )
         response_msg = response["choices"][0]["message"]["content"]
@@ -311,7 +314,7 @@ class LLMQuery:
         response = self.model.create_chat_completion(
             grammar=grammar_constrained,
             messages=messages,
-            max_tokens=-1,
+            max_tokens=self.max_tokens,
             temperature=self.temperature,
         )
         response_msg = response["choices"][0]["message"]["content"]

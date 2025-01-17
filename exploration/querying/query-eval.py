@@ -131,12 +131,20 @@ def run_eval(query: pd.Series, llm_query: LLMQuery):
     target_graph = graph_from_erl(target_erl)
     retrieved_grap = graph_from_erl(progress.enriched_relations)
     edit_distance = 1 - nx.graph_edit_distance(
-        target_graph, retrieved_grap, edge_match=edge_match, node_match=node_match
+        target_graph,
+        retrieved_grap,
+        edge_match=edge_match,
+        node_match=node_match,
+        timeout=10,
     ) / (
-        len(target_graph.edges)
-        + len(retrieved_grap.edges)
-        + len(target_graph.nodes)
-        + len(retrieved_grap.nodes)
+        max(
+            len(target_graph.nodes),
+            len(retrieved_grap.nodes),
+        )
+        + max(
+            len(target_graph.edges),
+            len(retrieved_grap.edges),
+        )
     )
     return f1_score_ents, edit_distance
 
@@ -162,5 +170,5 @@ print(f"zero_shot={zero_shot}, n_samples={n_samples}, llm_model_id={args.llm_mod
 query_man = LLMQuery(topic_man, zero_shot=zero_shot)
 results = run_evals(generated_queries.iloc[:n_samples], llm_query=query_man)
 results.to_csv(
-    f"results/eval_results_{'oneshot' if zero_shot else 'zeroshot'}_{topic_man.llm_model_id.replace('/', '-')}.csv"
+    f"results/eval_results_{'zeroshot' if zero_shot else 'oneshot'}_{topic_man.llm_model_id.replace('/', '-')}.csv"
 )
