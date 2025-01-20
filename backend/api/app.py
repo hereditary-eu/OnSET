@@ -3,11 +3,19 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from rdflib.plugins.stores.sparqlstore import SPARQLStore
 
-from model import *
-from ontology import *
-from datasetmatcher import *
-from explorative_support import *
-from llm_query import *
+from model import Subject, SparseOutLinks, Instance, Property
+from ontology import OntologyManager, OntologyConfig, Graph, InstanceQuery
+from datasetmatcher import DatasetManager
+from explorative_support import TopicModelling
+from explorative_model import (
+    SparqlQuery,
+    Topic,
+    SubjectLink,
+    FuzzyQuery,
+    FuzzyQueryResults,
+)
+from typing import Any
+from llm_query import LLMQuery, QueryProgress
 
 base_path = "../data"
 onto_path = f"{base_path}/hero-ontology/hereditary_clinical.ttl"
