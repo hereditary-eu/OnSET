@@ -65,13 +65,13 @@ graph = Graph(store=store)
 config = OntologyConfig()
 
 ontology_manager = OntologyManager(config, graph)
-topic_man = TopicModelling(ontology_manager, llm_model_id=args.llm_model_id)
+topic_man = TopicModelling(ontology_manager, llm_model_id=args.llm_model_id, ctx_size=4096)
 
 query_man = LLMQuery(topic_man)
 
 # %%
 generated_queries = pd.read_csv("llama_examples.csv", index_col=0)
-generated_queries["erl"] = generated_queries["erl"].apply(
+generated_queries["erl_loaded"] = generated_queries["erl"].apply(
     lambda x: EnrichedEntitiesRelations.model_validate_json(x)
 )
 
@@ -115,16 +115,16 @@ def f1k(y_true, y_pred, k: int = None):
         return 0
     precision = tp / (tp + fp)
     recall = tp / (tp + fn)
-    return 2 * precision * recall / (precision + recall)
+    return 2 * precision * recall / (precision + recall), precision, recall
 
 
 # %%
 def run_eval(query: pd.Series, llm_query: LLMQuery):
-    target_erl: EnrichedEntitiesRelations = query["erl"]
+    target_erl: EnrichedEntitiesRelations = query["erl_loaded"]
     query = query["response"]
     progress = QueryProgress(id="0", max_steps=1, start_time="0")
     llm_query.run_query(query=query, progress=progress)
-    f1_score_ents = f1k(
+    f1_score_ents, precision, recall = f1k(
         [ent.type for ent in target_erl.entities],
         [ent.type for ent in progress.enriched_relations.entities],
     )
@@ -146,20 +146,23 @@ def run_eval(query: pd.Series, llm_query: LLMQuery):
             len(retrieved_grap.edges),
         )
     )
-    return f1_score_ents, edit_distance
+    return {
+        "f1_score": f1_score_ents,
+        "precision": precision,
+        "recall": recall,
+        "edit_distance": edit_distance,
+    }
 
 
 def run_evals(queries: pd.DataFrame, llm_query: LLMQuery):
     results = queries.copy()
     for i, query in tqdm(queries.iterrows(), total=len(queries)):
         try:
-            f1_score_ents, edit_distance = run_eval(query, llm_query)
-            results.loc[i, "f1_score"] = f1_score_ents
-            results.loc[i, "edit_distance"] = edit_distance
+            scores = run_eval(query, llm_query)
+            for key, value in scores.items():
+                results.loc[i, key] = value
         except Exception as e:
             print(e)
-            results.loc[i, "f1_score"] = np.nan
-            results.loc[i, "edit_distance"] = np.nan
     return results
 
 

@@ -162,7 +162,7 @@ RAG_PROMPT_EXAMPLE_CANDIDATES = Candidates(
 )
 
 RAG_PROMPT_SYSTEM = """
-Return all the entities, relations, and constraints within the query in the form of JSON output. The output should be a list of all entities and their relations between them, with additional constraints if they are present in the query.
+Return all the entity relations and constraint within the prompt in the form of JSON output. The output should be a list of all entities and their constraints, as well as the relations between them. Make sure to include all entities and targets in the list of entities. Constraints should only be included in the list of entities they are associated with.
 """
 
 RAG_PROMPT_EXPECTED_OUTPUT = EntitiesRelations(
@@ -187,9 +187,9 @@ RAG_PROMPT_EXPECTED_OUTPUT = EntitiesRelations(
     ],
 )
 RAG_PROMPT_EXAMPLE = (
-    "the birth place of an author of a work where the author is born after 1990",
+    ERL_PROMPT_EXAMPLE[0],
     RAG_PROMPT_EXAMPLE_CANDIDATES.model_dump_json(),
-    RAG_PROMPT_EXPECTED_OUTPUT.model_dump_json(),
+    ERL_SAMPLE.model_dump_json(),
 )
 
 

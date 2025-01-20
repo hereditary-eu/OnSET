@@ -82,7 +82,8 @@ class TopicModelling:
         oman: OntologyManager,
         device=None,
         conn_str: str = "postgresql+psycopg://postgres:postgres@localhost:5434/onset",
-        llm_model_id: str = "NousResearch/Hermes-3-Llama-3.2-3B-GGUF",
+        llm_model_id: str = "NousResearch/Hermes-3-Llama-3.1-8B-GGUF",
+        ctx_size=10000,
     ) -> None:
         self.oman = oman
         if device is None:
@@ -97,6 +98,7 @@ class TopicModelling:
         # They are defined in `config_sentence_transformers.json`
         self.query_prompt_name = "s2p_query"
         self.llm_model_id = llm_model_id
+        self.ctx_size = ctx_size
         self.engine = create_engine(conn_str)
         identifier_results = self.oman.onto.query(
             "SELECT ?s  ?p ?o WHERE {?s ?o ?p.} LIMIT 25"
@@ -121,7 +123,7 @@ class TopicModelling:
             filename="*.Q8_0.gguf",
             n_batch=2048,
             n_ubatch=512,
-            n_ctx=10000,
+            n_ctx=self.ctx_size,
             n_gpu_layers=-1,
             n_threads=6,
             embedding=False,

@@ -180,7 +180,7 @@ def choose_graph(max_nodes=4, top_k=top_k, seed=seed, max_tries=5):
                 query = query.where(SubjectLinkDB.from_id == start_node.subject_id)
             else:
                 query = query.where(SubjectLinkDB.to_id == start_node.subject_id)
-            print("Extending to", start_node.label, "extending_to", extending_to)
+            # print("Extending to", start_node.label, "extending_to", extending_to)
             new_links = session.execute(
                 query.order_by(SubjectLinkDB.instance_count.desc()).limit(top_k)
             ).all()
@@ -199,13 +199,13 @@ def choose_graph(max_nodes=4, top_k=top_k, seed=seed, max_tries=5):
             )
 
             downgraded_extend = random_downgrade(extending_direction[1], rs)
-            print(
-                "Downgraded from",
-                extending_direction[1].label,
-                downgraded_extend.label,
-                "on link",
-                choice.label,
-            )
+            # print(
+            #     "Downgraded from",
+            #     extending_direction[1].label,
+            #     downgraded_extend.label,
+            #     "on link",
+            #     choice.label,
+            # )
             if extending_to:
                 choice_downgraded.to_id = downgraded_extend.subject_id
                 choice_downgraded.to_subject = downgraded_extend
@@ -259,46 +259,17 @@ def choose_graph(max_nodes=4, top_k=top_k, seed=seed, max_tries=5):
         return enriched_erl
 
 
-erl = choose_graph(seed=33, max_nodes=10)
-
-# %%
-[(link.entity, link.relation, link.target) for link in erl.relations]
-
-# %%
-erl.entities[0].model_dump_json()
-
-# %%
+def erl_to_templated_query(erl: EnrichedEntitiesRelations):
+    qs = []
+    for rel in erl.relations:
+        qs.append(f"a {rel.entity} has a {rel.relation} with {rel.target}")
+    return ", and ".join(qs)
 
 
-def viz_graph(erl: EnrichedEntitiesRelations):
-    G = nx.DiGraph()
-    for node in erl.entities:
-        G.add_node(node.identifier, label=node.type)
-    for link in erl.relations:
-        G.add_edge(
-            link.entity,
-            link.target,
-            weight=link.link.instance_count,
-            label=link.relation,
-        )
-    pos = nx.shell_layout(G)
-    nx.draw_networkx(
-        G,
-        pos,
-        with_labels=True,
-        labels={node.identifier: node.type for node in erl.entities},
-    )
-    nx.draw_networkx_edge_labels(
-        G,
-        pos,
-        edge_labels={
-            (link.entity, link.target): link.relation for link in erl.relations
-        },
-    )
-    return G
+def reduce_erl(erl: EnrichedEntitiesRelations):
+    reduced_erl = EntitiesRelations(entities=erl.entities, relations=erl.relations)
+    return reduced_erl
 
-
-viz_graph(erl)
 
 # %%
 llama_model = topic_man.llama_model
@@ -348,24 +319,6 @@ messages = [
 
 
 # %%
-response = llama_model.create_chat_completion(
-    # grammar=self.grammar_erl,
-    messages=messages
-    + [
-        {
-            "role": "user",
-            "content": erl.model_dump_json(),
-        }
-    ],
-    max_tokens=-1,
-    temperature=0.7,  # get wild :)
-)
-
-
-# %%
-response["choices"][0]["message"]["content"]
-
-# %%
 n_examples = 300
 n_nodes = [3, 5, 10]
 resulting_examples = []
@@ -374,23 +327,35 @@ for n_node in n_nodes:
     for i in range(n_examples):
         try:
             erl = choose_graph(seed=i, max_nodes=n_node)
+            reduced_erl = reduce_erl(erl)
             response = llama_model.create_chat_completion(
                 # grammar=self.grammar_erl,
                 messages=messages
                 + [
                     {
                         "role": "user",
-                        "content": erl.model_dump_json(),
+                        "content": reduced_erl.model_dump_json(),
                     }
                 ],
-                max_tokens=10000,
+                max_tokens=4096,
                 temperature=0.7,  # get wild :)
             )
+            templated_query = erl_to_templated_query(erl)
             progress.update(1)
             resulting_examples.append(
                 {
                     "erl": erl.model_dump_json(),
                     "response": response["choices"][0]["message"]["content"],
+                    "generator": "llama",
+                    "n_nodes": n_node,
+                    "seed": i,
+                }
+            )
+            resulting_examples.append(
+                {
+                    "erl": erl.model_dump_json(),
+                    "response": templated_query,
+                    "generator": "templated",
                     "n_nodes": n_node,
                     "seed": i,
                 }
