@@ -270,104 +270,104 @@ def reduce_erl(erl: EnrichedEntitiesRelations):
     reduced_erl = EntitiesRelations(entities=erl.entities, relations=erl.relations)
     return reduced_erl
 
-
+if __name__ == "__main__":
 # %%
-llama_model = topic_man.llama_model
+    llama_model = topic_man.llama_model
 
-# %%
-messages = [
-    {
-        "role": "system",
-        "content": """"You are a helpful assistant turning relational knowledge into natural language.""",
-    },
-    {
-        "role": "user",
-        "content": EntitiesRelations(
-            entities=[
-                Entity(
-                    identifier="person 1",
-                    type="person",
-                ),
-                Entity(
-                    identifier="place 1",
-                    type="place",
-                ),
-                Entity(
-                    identifier="company 1",
-                    type="person",
-                ),
-            ],
-            relations=[
-                Relation(
-                    entity="company 1",
-                    relation="employs",
-                    target="person 1",
-                ),
-                Relation(
-                    entity="person 1",
-                    relation="residence",
-                    target="place 1",
-                ),
-            ],
-        ).model_dump_json(),
-    },
-    {
-        "role": "assistant",
-        "content": "a person is employed by a company and the same person resides in a place",
-    },
-]
-
-
-# %%
-n_examples = 300
-n_nodes = [3, 5, 10]
-resulting_examples = []
-progress = tqdm(total=n_examples * len(n_nodes))
-for n_node in n_nodes:
-    for i in range(n_examples):
-        try:
-            erl = choose_graph(seed=i, max_nodes=n_node)
-            reduced_erl = reduce_erl(erl)
-            response = llama_model.create_chat_completion(
-                # grammar=self.grammar_erl,
-                messages=messages
-                + [
-                    {
-                        "role": "user",
-                        "content": reduced_erl.model_dump_json(),
-                    }
+    # %%
+    messages = [
+        {
+            "role": "system",
+            "content": """"You are a helpful assistant turning relational knowledge into natural language.""",
+        },
+        {
+            "role": "user",
+            "content": EntitiesRelations(
+                entities=[
+                    Entity(
+                        identifier="person 1",
+                        type="person",
+                    ),
+                    Entity(
+                        identifier="place 1",
+                        type="place",
+                    ),
+                    Entity(
+                        identifier="company 1",
+                        type="person",
+                    ),
                 ],
-                max_tokens=4096,
-                temperature=0.7,  # get wild :)
-            )
-            templated_query = erl_to_templated_query(erl)
-            progress.update(1)
-            resulting_examples.append(
-                {
-                    "erl": erl.model_dump_json(),
-                    "response": response["choices"][0]["message"]["content"],
-                    "generator": "llama",
-                    "n_nodes": n_node,
-                    "seed": i,
-                }
-            )
-            resulting_examples.append(
-                {
-                    "erl": erl.model_dump_json(),
-                    "response": templated_query,
-                    "generator": "templated",
-                    "n_nodes": n_node,
-                    "seed": i,
-                }
-            )
-        except Exception as e:
-            print(e)
-            continue
-        resulting_examples_df = pd.DataFrame(resulting_examples)
-        resulting_examples_df.to_csv("llama_examples.csv")
-
-# %%
+                relations=[
+                    Relation(
+                        entity="company 1",
+                        relation="employs",
+                        target="person 1",
+                    ),
+                    Relation(
+                        entity="person 1",
+                        relation="residence",
+                        target="place 1",
+                    ),
+                ],
+            ).model_dump_json(),
+        },
+        {
+            "role": "assistant",
+            "content": "a person is employed by a company and the same person resides in a place",
+        },
+    ]
 
 
-# %% [markdown]
-#
+    # %%
+    n_examples = 300
+    n_nodes = [3, 5, 10]
+    resulting_examples = []
+    progress = tqdm(total=n_examples * len(n_nodes))
+    for n_node in n_nodes:
+        for i in range(n_examples):
+            try:
+                erl = choose_graph(seed=i, max_nodes=n_node)
+                reduced_erl = reduce_erl(erl)
+                response = llama_model.create_chat_completion(
+                    # grammar=self.grammar_erl,
+                    messages=messages
+                    + [
+                        {
+                            "role": "user",
+                            "content": reduced_erl.model_dump_json(),
+                        }
+                    ],
+                    max_tokens=4096,
+                    temperature=0.7,  # get wild :)
+                )
+                templated_query = erl_to_templated_query(erl)
+                progress.update(1)
+                resulting_examples.append(
+                    {
+                        "erl": erl.model_dump_json(),
+                        "response": response["choices"][0]["message"]["content"],
+                        "generator": "llama",
+                        "n_nodes": n_node,
+                        "seed": i,
+                    }
+                )
+                resulting_examples.append(
+                    {
+                        "erl": erl.model_dump_json(),
+                        "response": templated_query,
+                        "generator": "templated",
+                        "n_nodes": n_node,
+                        "seed": i,
+                    }
+                )
+            except Exception as e:
+                print(e)
+                continue
+            resulting_examples_df = pd.DataFrame(resulting_examples)
+            resulting_examples_df.to_csv("llama_examples.csv")
+
+    # %%
+
+
+    # %% [markdown]
+    #

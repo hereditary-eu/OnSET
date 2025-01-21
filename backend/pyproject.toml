@@ -31,6 +31,10 @@ dependencies = [
     "llvmlite",
     "llama-cpp-agent",
     "seqeval",
+    "sparql-llm>=0.0.3",
+    "langchain>=0.3.14",
+    "langchain-huggingface>=0.1.2",
+    "langchain-community>=0.3.14",
 ]
 
 [tool.uv.sources]

@@ -38,6 +38,7 @@ store = SPARQLStore(
     "http://localhost:7012/",
     method="POST_FORM",
     params={"infer": False, "sameAs": False},
+    timeout=300,
 )
 # store = SPARQLStore(
 #     "http://examode.dei.unipd.it:7200/repositories/TUGraz_test",
@@ -81,6 +82,12 @@ def read_root():
 @app.post("/sparql")
 def sparql_query(query: SparqlQuery = Body(...)) -> list[dict[str, Any]]:
     return ontology_manager.q_to_df_values(query.query).to_dict(orient="records")
+
+
+@app.get("/sparql")
+def sparql_query_get(query: str = Query(...)) -> dict[str, Any]:
+    data = ontology_manager.q_to_df_values(query).to_dict(orient="records")
+    return {"results": {"bindings": data}}
 
 
 @app.post("/management/ontology")

@@ -1,11 +1,21 @@
 from __future__ import annotations
+from sentence_transformers import SentenceTransformer
+import torch
+from langchain_core.language_models import LLM
+from langchain_core.prompts import ChatPromptTemplate
+from bertopic import BERTopic
+from bertopic.representation import LangChain
+from hashlib import sha256
+import regex as re
+from sqlalchemy import text, inspect, create_engine, select, delete
+from sqlalchemy.orm import Session
+from tqdm import tqdm
+import pandas as pd
+
 from model import Subject
 from ontology import OntologyManager
-import regex as re
-from bertopic import BERTopic
-from bertopic.representation import MaximalMarginalRelevance, LlamaCPP
-from llama_cpp import Llama
-from hashlib import sha256
+from utils import llama_cpp_langchain_from_pretrained
+
 from explorative_model import (
     BasePostgres,
     TopicDB,
@@ -21,22 +31,16 @@ from explorative_model import (
     FuzzyQueryResults,
     Topic,
 )
-from sqlalchemy import text, inspect, create_engine, select, delete
-from sqlalchemy.orm import Session
-import torch as t
-import numpy as np
-from tqdm import tqdm
-import pandas as pd
 
 # System prompt describes information given to all conversations
 TOPIC_LLAMA3_PROMPT_SYSTEM = """
-<|begin_of_text|><|start_header_id|>system<|end_header_id|>
 
 You are a helpful, respectful and honest assistant for labeling topics. You should provide a short label for a topic based on the information provided about the topic. The topic is described by a set of documents and keywords. The label should be a short phrase that captures the essence of the topic. The label should be concise and informative, and should not contain any information that is not directly related to the topic.
 """
 
 # Example prompt demonstrating the output we are looking for
-TOPIC_LLAMA3_PROMPT_EXAMPLE = """<|eot_id|><|start_header_id|>user<|end_header_id|>
+TOPIC_LLAMA3_PROMPT_EXAMPLE = (
+    """
 I have a topic that contains the following documents:
 - Traditional diets in most cultures were primarily plant-based with a little meat on top, but with the rise of industrial style meat production and factory farming, meat has become a staple food.
 - Meat, but especially beef, is the word food in terms of emissions.
@@ -45,35 +49,25 @@ I have a topic that contains the following documents:
 The topic is described by the following keywords: 'meat, beef, eat, eating, emissions, steak, food, health, processed, chicken'.
 
 Based on the information about the topic above, please create a short label of this topic. Make sure you to only return the label and nothing more.
-
-<|eot_id|><|start_header_id|>assistant<|end_header_id|>
-Environmental impacts of eating meat<|eot_id|>
-"""
+""",
+    """
+Environmental impacts of eating meat
+""",
+)
 
 # Our main prompt with documents ([DOCUMENTS]) and keywords ([KEYWORDS]) tags
 TOPIC_LLAMA3_PROMPT_MAIN = """
-<|eot_id|><|start_header_id|>user<|end_header_id|>
 I have a topic that contains the following documents:
 [DOCUMENTS]
 
 The topic is described by the following keywords: '[KEYWORDS]'.
 
 Based on the information about the topic above, please create a short label of this topic. Make sure you to only return the label and nothing more.
-<|eot_id|><|start_header_id|>assistant<|end_header_id|>
 """
-
-TOPIC_LLAMA3_PROMPT = (
-    TOPIC_LLAMA3_PROMPT_SYSTEM + TOPIC_LLAMA3_PROMPT_EXAMPLE + TOPIC_LLAMA3_PROMPT_MAIN
-)
 
 
 def to_readable(s: str):
     return re.sub(r"([a-z])([A-Z])", r"\1 \2", s).replace("_", " ").lower()
-
-
-from sentence_transformers import SentenceTransformer
-import torch
-from sentence_transformers import SentenceTransformer
 
 
 class TopicModelling:
@@ -83,6 +77,7 @@ class TopicModelling:
         device=None,
         conn_str: str = "postgresql+psycopg://postgres:postgres@localhost:5434/onset",
         llm_model_id: str = "NousResearch/Hermes-3-Llama-3.1-8B-GGUF",
+        langchain_model: LLM = None,
         ctx_size=10000,
     ) -> None:
         self.oman = oman
@@ -98,6 +93,7 @@ class TopicModelling:
         # They are defined in `config_sentence_transformers.json`
         self.query_prompt_name = "s2p_query"
         self.llm_model_id = llm_model_id
+        self.langchain_model = langchain_model
         self.ctx_size = ctx_size
         self.engine = create_engine(conn_str)
         identifier_results = self.oman.onto.query(
@@ -115,19 +111,26 @@ class TopicModelling:
         self.__embedding_model = None
 
     @property
-    def llama_model(self):
+    def llama_model(self) -> LLM:
         if self.__lama_model is not None:
             return self.__lama_model
-        self.__lama_model = Llama.from_pretrained(
-            repo_id=self.llm_model_id,
-            filename="*.Q8_0.gguf",
-            n_batch=2048,
-            n_ubatch=512,
-            n_ctx=self.ctx_size,
-            n_gpu_layers=-1,
-            n_threads=6,
-            embedding=False,
-        )
+        print("Loading LLM model", self.llm_model_id, self.langchain_model)
+        if self.llm_model_id is None and self.langchain_model is None:
+            raise ValueError("No LLM model id specified")
+
+        if self.langchain_model is not None:
+            self.__lama_model = self.langchain_model
+        elif self.llm_model_id is not None:
+            self.__lama_model = llama_cpp_langchain_from_pretrained(
+                repo_id=self.llm_model_id,
+                filename="*.Q8_0.gguf",
+                n_batch=2048,
+                n_ubatch=512,
+                n_ctx=self.ctx_size,
+                n_gpu_layers=-1,
+                n_threads=6,
+                embedding=False,
+            )
         return self.__lama_model
 
     @property
@@ -284,13 +287,22 @@ WHERE {
         return pd.DataFrame(documents)
 
     def model_topics(self):
+        prompt = ChatPromptTemplate.from_messages(
+            [
+                ("system", TOPIC_LLAMA3_PROMPT_SYSTEM),
+                ("human", TOPIC_LLAMA3_PROMPT_EXAMPLE[0]),
+                ("ai", TOPIC_LLAMA3_PROMPT_EXAMPLE[1]),
+            ]
+        )
+        prompted_model = prompt | self.llama_model
+        representation_llama = LangChain(
+            prompted_model, TOPIC_LLAMA3_PROMPT_MAIN, diversity=0.3
+        )
         docs = self.build_docs()
         # Create an instance of the Llama class and load the model
 
         # Create the provider by passing the Llama class instance to the LlamaCppPythonProvider class
-        representation_llama = LlamaCPP(
-            self.llama_model, TOPIC_LLAMA3_PROMPT, diversity=0.3
-        )
+
         topic_model_llm = BERTopic(
             embedding_model=self.embedding_model,
             verbose=True,
@@ -614,8 +626,10 @@ WHERE {
                     .where(TopicDB.onto_hash == self.identifier)
                     .where(TopicDB.topic_id.in_(query.topic_ids))
                 ).all()
-                topic_embeddings = t.tensor([topic[0].embedding for topic in topics])
-                topic_embedding = t.mean(topic_embeddings, axis=0)
+                topic_embeddings = torch.tensor(
+                    [topic[0].embedding for topic in topics]
+                )
+                topic_embedding = torch.mean(topic_embeddings, axis=0)
                 if query_embedding is not None:
                     query_embedding = (
                         1 - query.mix_topic_factor
@@ -627,7 +641,7 @@ WHERE {
                 query.topic_ids is None or len(query.topic_ids) == 0
             ):
                 query_embedding = (
-                    t.ones(N_EMBEDDINGS) / N_EMBEDDINGS
+                    torch.ones(N_EMBEDDINGS) / N_EMBEDDINGS
                 )  # default to uniform
 
             results: list[FuzzyQueryResult] = []

@@ -166,12 +166,13 @@ def run_evals(queries: pd.DataFrame, llm_query: LLMQuery):
     return results
 
 
-# n_samples = 5
-n_samples = args.n_samples
-zero_shot = args.zero_shot
-print(f"zero_shot={zero_shot}, n_samples={n_samples}, llm_model_id={args.llm_model_id}")
-query_man = LLMQuery(topic_man, zero_shot=zero_shot)
-results = run_evals(generated_queries.iloc[:n_samples], llm_query=query_man)
-results.to_csv(
-    f"results/eval_results_{'zeroshot' if zero_shot else 'oneshot'}_{topic_man.llm_model_id.replace('/', '-')}.csv"
-)
+if __name__ == "__main__":
+    # n_samples = 5
+    n_samples = args.n_samples
+    zero_shot = args.zero_shot
+    print(f"zero_shot={zero_shot}, n_samples={n_samples}, llm_model_id={args.llm_model_id}")
+    query_man = LLMQuery(topic_man, zero_shot=zero_shot)
+    results = run_evals(generated_queries.iloc[:n_samples], llm_query=query_man)
+    results.to_csv(
+        f"results/eval_results_{'zeroshot' if zero_shot else 'oneshot'}_{topic_man.llm_model_id.replace('/', '-')}.csv"
+    )

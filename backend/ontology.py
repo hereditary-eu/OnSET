@@ -305,7 +305,7 @@ OPTIONAL {{?obj rdfs:label ?obj_lbl.}}
                 SELECT DISTINCT ?prop WHERE {{ 
                 ?prop rdf:type owl:{property_type}.
                 ?prop rdfs:domain {cls}.
-                }}"""
+                }} LIMIT 1000"""
                 )
             )
             props_mapped: list[Subject] = [

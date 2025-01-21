@@ -1,4 +1,4 @@
-data
+data/
 __pycache__
 .vscode
 *.db
@@ -9,5 +9,4 @@ pgdata
 *.pkl
 *.zip
 node_modules
-llama-cpp*
 .venv
