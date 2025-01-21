@@ -1,0 +1,33 @@
+{
+    "git-hash": "97c195",
+    "has-all-permutations": true,
+    "index-format-version": {
+        "date": "2024-10-22",
+        "pull-request-number": 1572
+    },
+    "locale": {
+        "country": "US",
+        "ignore-punctuation": false,
+        "language": "en"
+    },
+    "num-blank-nodes-total": 0,
+    "num-objects": {
+        "internal": 0,
+        "normal": 57740260
+    },
+    "num-predicates": {
+        "internal": 33498,
+        "normal": 54795
+    },
+    "num-subjects": {
+        "internal": 0,
+        "normal": 24503307
+    },
+    "num-triples": {
+        "internal": 132367938,
+        "normal": 293571312
+    },
+    "prefixes-external": [
+        ""
+    ]
+}

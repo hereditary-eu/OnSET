@@ -92,6 +92,15 @@ wheels = [
 ]
 
 [[package]]
+name = "argcomplete"
+version = "3.5.3"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/0c/be/6c23d80cb966fb8f83fb1ebfb988351ae6b0554d0c3a613ee4531c026597/argcomplete-3.5.3.tar.gz", hash = "sha256:c12bf50eded8aebb298c7b7da7a5ff3ee24dffd9f5281867dfe1424b58c55392", size = 72999 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/c4/08/2a4db06ec3d203124c967fc89295e85a202e5cbbcdc08fd6a64b65217d1e/argcomplete-3.5.3-py3-none-any.whl", hash = "sha256:2ab2c4a215c59fd6caaff41a869480a23e8f6a5f910b266c1808037f4e375b61", size = 43569 },
+]
+
+[[package]]
 name = "argon2-cffi"
 version = "23.1.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1817,6 +1826,7 @@ dependencies = [
     { name = "psycopg", extra = ["binary"] },
     { name = "python-multipart" },
     { name = "pyvis" },
+    { name = "qlever" },
     { name = "rdflib", extra = ["html", "lxml", "networkx", "orjson"] },
     { name = "redis-om" },
     { name = "sentence-transformers" },
@@ -1853,6 +1863,7 @@ requires-dist = [
     { name = "psycopg", extras = ["binary"] },
     { name = "python-multipart" },
     { name = "pyvis" },
+    { name = "qlever", specifier = ">=0.5.15" },
     { name = "rdflib", extras = ["networkx", "html", "lxml", "orjson"] },
     { name = "redis-om" },
     { name = "sentence-transformers" },
@@ -2354,6 +2365,19 @@ wheels = [
 ]
 
 [[package]]
+name = "qlever"
+version = "0.5.15"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "argcomplete" },
+    { name = "psutil" },
+    { name = "termcolor" },
+]
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/07/82/7536ffc1686b176b0b6bfdbb47c42fabc8c5966883a60099ad0a9bdd9c8c/qlever-0.5.15-py3-none-any.whl", hash = "sha256:dd3bc281faca2788740fe0baf474b0cafb9537852ff5e245532e01d464a371d1", size = 89720 },
+]
+
+[[package]]
 name = "rdflib"
 version = "7.1.2"
 source = { registry = "https://pypi.org/simple" }
@@ -2778,6 +2802,15 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/cd/94/91fccdb4b8110642462e653d5dcb27e7b674742ad68efd146367da7bdb10/tenacity-9.0.0.tar.gz", hash = "sha256:807f37ca97d62aa361264d497b0e31e92b8027044942bfa756160d908320d73b", size = 47421 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/b6/cb/b86984bed139586d01532a587464b5805f12e397594f19f931c4c2fbfa61/tenacity-9.0.0-py3-none-any.whl", hash = "sha256:93de0c98785b27fcf659856aa9f54bfbd399e29969b0621bc7f762bd441b4539", size = 28169 },
+]
+
+[[package]]
+name = "termcolor"
+version = "2.5.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/37/72/88311445fd44c455c7d553e61f95412cf89054308a1aa2434ab835075fc5/termcolor-2.5.0.tar.gz", hash = "sha256:998d8d27da6d48442e8e1f016119076b690d962507531df4890fcd2db2ef8a6f", size = 13057 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/7f/be/df630c387a0a054815d60be6a97eb4e8f17385d5d6fe660e1c02750062b4/termcolor-2.5.0-py3-none-any.whl", hash = "sha256:37b17b5fc1e604945c2642c872a3764b5d547a48009871aea3edd3afa180afb8", size = 7755 },
 ]
 
 [[package]]
