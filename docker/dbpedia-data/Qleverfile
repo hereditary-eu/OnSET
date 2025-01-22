@@ -7,7 +7,7 @@
 [data]
 NAME         = dbpedia
 DATABUS_URL  = https://databus.dbpedia.org/dbpedia/collections/latest-core
-GET_DATA_CMD = curl -X POST -H "Accept: text/csv" --data-urlencode "query=$$(curl -s -H "Accept:text/sparql" https://databus.dbpedia.org/dbpedia/collections/latest-core)" https://databus.dbpedia.org/sparql | tail -n+2 | sed 's/\r$$//' | sed 's/"//g' | while read -r file; do wget -P rdf-input $$file; done
+GET_DATA_CMD = cd rdf-input && sh download.sh
 DESCRIPTION  = RDF data from ${DATABUS_URL}
 
 [index]
