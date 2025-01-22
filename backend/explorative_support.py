@@ -193,7 +193,7 @@ class TopicModelling:
                 session.commit()
 
             # embed first, then model to make sure subjects are available for topics
-            self.__embed_relations()
+            self.embed_relations()
             self.model_topics()
 
     def __get_named_individuals_desc(self, c: Subject) -> dict[str, str]:
@@ -441,7 +441,7 @@ WHERE {
 
             return topic_tree(root_topic[0])
 
-    def __embed_relations(self):
+    def embed_relations(self):
         all_classes = self.oman.q_to_df(
             """
 SELECT ?s

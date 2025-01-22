@@ -17,3 +17,4 @@ graphdb-data
 *.gz
 *.tgz
 *.dat
+*.json
