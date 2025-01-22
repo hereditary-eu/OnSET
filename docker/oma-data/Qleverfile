@@ -13,7 +13,7 @@ DESCRIPTION  = RDF data from ${DATABUS_URL}
 [index]
 INPUT_FILES     = rdf-input/*
 CAT_INPUT_FILES = (cat rdf-input/oma.nt)
-SETTINGS_JSON   = { "ascii-prefixes-only": true, "num-triples-per-batch": 10000, "prefixes-external": [""] }
+SETTINGS_JSON   = { "ascii-prefixes-only": true, "num-triples-per-batch": 100000, "prefixes-external": [""] }
 WITH_TEXT_INDEX = false
 
 [server]

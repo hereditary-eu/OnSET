@@ -10,7 +10,7 @@ services:
     ports:
       - "5434:5432"
     volumes:
-      - ./pg-data/pg-data:/var/lib/postgresql/data 
+      - ./pg-data/pg-data:/var/lib/postgresql/data
   # nominatim:
   #   image: mediagis/nominatim:4.4
   #   restart: always
@@ -31,7 +31,7 @@ services:
       PGADMIN_LISTEN_PORT: 80
     ports:
       - "10002:80"
-    volumes:       
+    volumes:
       - ./servers.json:/pgadmin4/servers.json # preconfigured servers/connections
       - ./pgpass:/pgpass # passwords for the connections in this file
       # - ./pg-admin-data:/var/lib/pgadmin
@@ -43,27 +43,41 @@ services:
     ports:
       - "6379:6379"
       - 8005:8001
-  #TODO: qlever in compose
-  # graphdb:
-  #   image: ontotext/graphdb:10.8.0
-  #   restart: always
-  #   ports:
-  #     - "7200:7200"
-  #   volumes:
-  #     - ./graphdb-import:/root/graphdb-import
-  #     - ./graphdb-data:/opt/graphdb/home
-  # fuseki:
-  #   image: stain/jena-fuseki
-  #   restart: always
-  #   environment:
-  #     - TDB=2
-  #     - ADMIN_PASSWORD=fuseki_dbpedia
-  #     - JVM_ARGS=-Xmx16G
-  #   ports:
-  #     - "3030:3030"
-  #   volumes:
-  #     - ./fuseki-data:/fuseki
+    #TODO: qlever in compose
+    # graphdb:
+    #   image: ontotext/graphdb:10.8.0
+    #   restart: always
+    #   ports:
+    #     - "7200:7200"
+    #   volumes:
+    #     - ./graphdb-import:/root/graphdb-import
+    #     - ./graphdb-data:/opt/graphdb/home
+    # fuseki:
+    #   image: stain/jena-fuseki
+    #   restart: always
+    #   environment:
+    #     - TDB=2
+    #     - ADMIN_PASSWORD=fuseki_dbpedia
+    #     - JVM_ARGS=-Xmx16G
+    #   ports:
+    #     - "3030:3030"
+    #   volumes:
+    #     - ./fuseki-data:/fuseki
+  sparql-llm-vectordb:
+    # https://hub.docker.com/r/qdrant/qdrant/tags
+    image: docker.io/qdrant/qdrant:v1.11.3
+    # image: qdrant/qdrant:v1.9.2-unprivileged # Unprivileged don't work when mounting a volume
+    restart: unless-stopped
+    volumes:
+      - ./qdrant:/qdrant/storage
+      # - ./qdrant_config.yml:/qdrant/config/production.yaml
+    environment:
+      - QDRANT_ALLOW_RECOVERY_MODE=true
+    ports:
+      - 6333:6333
+      - 6334:6334
+    # command:
+    #   - ./qdrant --config-path /qdrant/config/production.yaml
 volumes:
   pg-data:
     external: false
-      

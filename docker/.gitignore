@@ -10,8 +10,10 @@ graphdb-data
 *.internal*
 *.partial-vocabulary*
 *.partial-internal*
+*.partial-ids-mmap*
 *.index*
 *.log
 *.txt
 *.gz
 *.tgz
+*.dat

@@ -36,6 +36,9 @@ dependencies = [
     "langchain-huggingface>=0.1.2",
     "langchain-community>=0.3.14",
     "qlever>=0.5.15",
+    "qdrant-client>=1.13.0",
+    "sparqlwrapper>=2.0.0",
+    "openai>=1.59.9",
 ]
 
 [tool.uv.sources]
