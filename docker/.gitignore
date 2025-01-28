@@ -18,3 +18,5 @@ graphdb-data
 *.tgz
 *.dat
 *.json
+qdrant
+*.ttl

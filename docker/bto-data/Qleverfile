@@ -1,0 +1,31 @@
+# Qleverfile for DBpedia, use with https://github.com/ad-freiburg/qlever-control
+#
+# qlever get-data  # ~14 GB, ~850 M triples (as of 30.07.2024)
+# qlever index     # ~20 min (on an AMD Ryzen 9 5900X)
+# qlever start     # ~3 sec
+
+[data]
+NAME         = bto
+DATABUS_URL  = https://zenodo.org/records/12789731/files/bto.ttl
+GET_DATA_CMD = sh download.sh
+DESCRIPTION  = RDF data from ${DATABUS_URL}
+
+[index]
+INPUT_FILES     = bto/*
+CAT_INPUT_FILES = ( cat bto/bto.nt )
+SETTINGS_JSON   = { "ascii-prefixes-only": false, "num-triples-per-batch": 1000000, "prefixes-external": [""] }
+WITH_TEXT_INDEX = false
+
+[server]
+PORT               = 7015
+ACCESS_TOKEN       = ${data:NAME}_nxZT9M9Rs7x23
+MEMORY_FOR_QUERIES = 4G
+CACHE_MAX_SIZE     = 2G
+
+[runtime]
+SYSTEM = docker
+IMAGE  = docker.io/adfreiburg/qlever:latest
+
+[ui]
+UI_CONFIG = bto
+UI_PORT = 8179
