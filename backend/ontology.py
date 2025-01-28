@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field
 from rdflib import Graph, URIRef, Literal
-from model import *
+from model import Instance, InstanceQuery, Property, PropertyValue, Subject
 import pandas as pd
 from rdflib.plugins.sparql import prepareQuery
 from tqdm import tqdm
@@ -216,12 +216,16 @@ class OntologyManager:
         return label_candidates
 
     def outgoing_edges_for(self, cls: str, edges: list[str] = []):
-        try:
+        if cls.startswith("_"):
+            print("Skipping", cls)
+            return {}
+        try:            
+            # print("Loading outgoing edges for", cls, edges)
             if edges and len(edges) > 0:
                 outgoing_edges = list(
                     self.onto.query(
                         f"""
-                    SELECT ?edge ?edge_lbl ?obj ?obj_lbl WHERE {{ {cls} ?edge ?obj. FILTER (?edge in ({", ".join(edges)})) 
+                    SELECT DISTINCT ?edge ?edge_lbl ?obj ?obj_lbl WHERE {{ {cls} ?edge ?obj. FILTER (?edge in ({", ".join(edges)})) 
 OPTIONAL {{?edge rdfs:label ?edge_label.}}
 OPTIONAL {{?obj rdfs:label ?obj_lbl.}}
                     }}"""
@@ -231,7 +235,7 @@ OPTIONAL {{?obj rdfs:label ?obj_lbl.}}
                 outgoing_edges = list(
                     self.onto.query(
                         f"""
-                    SELECT ?edge ?edge_lbl ?obj ?obj_lbl WHERE {{ {cls} ?edge ?obj. 
+                    SELECT DISTINCT ?edge ?edge_lbl ?obj ?obj_lbl WHERE {{ {cls} ?edge ?obj. 
 OPTIONAL {{?edge rdfs:label ?edge_label.}}
 OPTIONAL {{?obj rdfs:label ?obj_lbl.}}
   
@@ -294,29 +298,32 @@ OPTIONAL {{?obj rdfs:label ?obj_lbl.}}
             return 0
 
     def properties_for(
-        self, cls: str, property_type: str = "ObjectProperty"
+        self, cls: str, property_type: str = "ObjectProperty", n_props=64
     ) -> list[Subject]:
         if cls.startswith("_"):
+            print("Skipping", cls)
             return []
         try:
+            # print("Loading properties for", cls)
             properties = list(
                 self.onto.query(
                     f"""
                 SELECT DISTINCT ?prop WHERE {{ 
                 ?prop rdf:type owl:{property_type}.
                 ?prop rdfs:domain {cls}.
-                }} LIMIT 1000"""
+                }} LIMIT {n_props}"""
                 )
             )
+            # print("Loaded", len(properties), "properties for", cls)
             props_mapped: list[Subject] = [
                 self.enrich_subject(prop[0], subject_type="individual")
                 for prop in properties
             ]
-
             return props_mapped
         except Exception as e:
             print(traceback.format_exc())
-            return {}
+            print("Failed to load properties for", cls)
+            return []
 
     def enrich_subject(
         self, cls: str | None, subject_type="class", load_properties=False
@@ -325,6 +332,7 @@ OPTIONAL {{?obj rdfs:label ?obj_lbl.}}
             return None
         col_ref = cls.n3(self.onto.namespace_manager) if hasattr(cls, "n3") else cls
 
+        # print("Enriching", col_ref)
         outgoing_edges = self.outgoing_edges_for(
             col_ref,
             edges=["rdfs:label", "rdfs:range", "rdfs:subPropertyOf", "rdfs:subClassOf"],

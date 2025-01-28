@@ -2,6 +2,6 @@
 
 ## Setup instruction
 
-Download object and instances form DPEDIA
+Download object and instances form DBPEDIA
 
-* DPEDIA-Data: [ontologies](https://www.dbpedia.org/resources/ontology/)
+* DBPEDIA-Data: [ontologies](https://www.dbpedia.org/resources/ontology/)

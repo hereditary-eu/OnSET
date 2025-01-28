@@ -1,0 +1,31 @@
+# Qleverfile for DBpedia, use with https://github.com/ad-freiburg/qlever-control
+#
+# qlever get-data  # ~14 GB, ~850 M triples (as of 30.07.2024)
+# qlever index     # ~20 min (on an AMD Ryzen 9 5900X)
+# qlever start     # ~3 sec
+
+[data]
+NAME         = uniprot
+DATABUS_URL  = https://ftp.uniprot.org/pub/databases/uniprot/current_release/rdf/
+GET_DATA_CMD = wget https://ftp.uniprot.org/pub/databases/uniprot/current_release/rdf/core.owl -O owl/core.owl && riot owl/*.owl > owl/uniprot.nt
+DESCRIPTION  = RDF data from ${DATABUS_URL}
+
+[index]
+INPUT_FILES     = owl/*
+CAT_INPUT_FILES = (cat owl/*.nt)
+SETTINGS_JSON   = { "ascii-prefixes-only": true, "num-triples-per-batch": 1000000, "prefixes-external": [""] }
+WITH_TEXT_INDEX = false
+
+[server]
+PORT               = 7014
+ACCESS_TOKEN       = ${data:NAME}_nxZT9M9Rs7xx
+MEMORY_FOR_QUERIES = 2G
+CACHE_MAX_SIZE     = 1G
+
+[runtime]
+SYSTEM = docker
+IMAGE  = docker.io/adfreiburg/qlever:latest
+
+[ui]
+UI_CONFIG = uniprot
+UI_PORT  = 8177

@@ -3,8 +3,9 @@ from sentence_transformers import SentenceTransformer
 import torch
 from langchain_core.language_models import LLM
 from langchain_core.prompts import ChatPromptTemplate
+from llama_cpp import Llama
 from bertopic import BERTopic
-from bertopic.representation import LangChain
+from bertopic.representation import LangChain, LlamaCPP
 from hashlib import sha256
 import regex as re
 from sqlalchemy import text, inspect, create_engine, select, delete
@@ -34,13 +35,13 @@ from explorative_model import (
 
 # System prompt describes information given to all conversations
 TOPIC_LLAMA3_PROMPT_SYSTEM = """
+<|begin_of_text|><|start_header_id|>system<|end_header_id|>
 
 You are a helpful, respectful and honest assistant for labeling topics. You should provide a short label for a topic based on the information provided about the topic. The topic is described by a set of documents and keywords. The label should be a short phrase that captures the essence of the topic. The label should be concise and informative, and should not contain any information that is not directly related to the topic.
 """
 
 # Example prompt demonstrating the output we are looking for
-TOPIC_LLAMA3_PROMPT_EXAMPLE = (
-    """
+TOPIC_LLAMA3_PROMPT_EXAMPLE = """<|eot_id|><|start_header_id|>user<|end_header_id|>
 I have a topic that contains the following documents:
 - Traditional diets in most cultures were primarily plant-based with a little meat on top, but with the rise of industrial style meat production and factory farming, meat has become a staple food.
 - Meat, but especially beef, is the word food in terms of emissions.
@@ -49,21 +50,26 @@ I have a topic that contains the following documents:
 The topic is described by the following keywords: 'meat, beef, eat, eating, emissions, steak, food, health, processed, chicken'.
 
 Based on the information about the topic above, please create a short label of this topic. Make sure you to only return the label and nothing more.
-""",
-    """
-Environmental impacts of eating meat
-""",
-)
+
+<|eot_id|><|start_header_id|>assistant<|end_header_id|>
+Environmental impacts of eating meat<|eot_id|>
+"""
 
 # Our main prompt with documents ([DOCUMENTS]) and keywords ([KEYWORDS]) tags
 TOPIC_LLAMA3_PROMPT_MAIN = """
+<|eot_id|><|start_header_id|>user<|end_header_id|>
 I have a topic that contains the following documents:
 [DOCUMENTS]
 
 The topic is described by the following keywords: '[KEYWORDS]'.
 
 Based on the information about the topic above, please create a short label of this topic. Make sure you to only return the label and nothing more.
+<|eot_id|><|start_header_id|>assistant<|end_header_id|>
 """
+
+TOPIC_LLAMA3_PROMPT = (
+    TOPIC_LLAMA3_PROMPT_SYSTEM + TOPIC_LLAMA3_PROMPT_EXAMPLE + TOPIC_LLAMA3_PROMPT_MAIN
+)
 
 
 def to_readable(s: str):
@@ -111,7 +117,7 @@ class TopicModelling:
         self.__embedding_model = None
 
     @property
-    def llama_model(self) -> LLM:
+    def llama_model(self) -> Llama:
         if self.__lama_model is not None:
             return self.__lama_model
         print("Loading LLM model", self.llm_model_id, self.langchain_model)
@@ -121,7 +127,7 @@ class TopicModelling:
         if self.langchain_model is not None:
             self.__lama_model = self.langchain_model
         elif self.llm_model_id is not None:
-            self.__lama_model = llama_cpp_langchain_from_pretrained(
+            self.__lama_model = Llama.from_pretrained(
                 repo_id=self.llm_model_id,
                 filename="*.Q8_0.gguf",
                 n_batch=2048,
@@ -287,16 +293,8 @@ WHERE {
         return pd.DataFrame(documents)
 
     def model_topics(self):
-        prompt = ChatPromptTemplate.from_messages(
-            [
-                ("system", TOPIC_LLAMA3_PROMPT_SYSTEM),
-                ("human", TOPIC_LLAMA3_PROMPT_EXAMPLE[0]),
-                ("ai", TOPIC_LLAMA3_PROMPT_EXAMPLE[1]),
-            ]
-        )
-        prompted_model = prompt | self.llama_model
-        representation_llama = LangChain(
-            prompted_model, TOPIC_LLAMA3_PROMPT_MAIN, diversity=0.3
+        representation_llama = LlamaCPP(
+            self.llama_model, TOPIC_LLAMA3_PROMPT, diversity=0.3
         )
         docs = self.build_docs()
         # Create an instance of the Llama class and load the model

@@ -4,6 +4,9 @@
 [submodule "llama-cpp-agent"]
 	path = llama-cpp-agent
 	url = git@github.com:Dakantz/llama-cpp-agent.git
+[submodule "llama-cpp-python"]
+	path = llama-cpp-python
+	url = git@github.com:abetlen/llama-cpp-python.git
 [submodule "rdflib"]
 	path = rdflib
 	url = git@github.com:RDFLib/rdflib.git

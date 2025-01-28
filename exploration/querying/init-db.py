@@ -1,5 +1,6 @@
 import sys
 import os
+
 sys.path.insert(0, os.path.abspath("../.."))
 sys.path.append(os.path.abspath("../../backend"))
 sys.path.append(os.path.abspath(""))
@@ -18,9 +19,10 @@ from tqdm import tqdm
 import pandas as pd
 
 # %%
-from eval_config import DBPEDIA_CONFIGS, OMA_CONFIGS
+from eval_config import DBPEDIA_CONFIGS, OMA_CONFIGS, UNIPROT_CONFIGS
 
-db_setups = [DBPEDIA_CONFIGS[1], OMA_CONFIGS[1]]
+# db_setups = [DBPEDIA_CONFIGS[1], OMA_CONFIGS[1]]
+db_setups = [UNIPROT_CONFIGS[1]]
 if __name__ == "__main__":
     print("Starting")
     # %%
@@ -47,6 +49,3 @@ if __name__ == "__main__":
         topic_man.initialize_topics(force=True, delete_tables=True)
 
 # %%
-
-
-

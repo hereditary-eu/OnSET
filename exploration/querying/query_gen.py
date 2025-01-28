@@ -10,12 +10,14 @@ sys.path.append(os.path.abspath("../../backend"))
 sys.path.append(os.path.abspath(""))
 
 import networkx as nx
+
+from langchain_core.prompts import ChatPromptTemplate
 from typing import TypeVar
 from sqlalchemy.orm import aliased
 from sqlalchemy.sql import text
 from rdflib.plugins.stores.sparqlstore import SPARQLStore
 from backend.model import (
-    Session,
+    Session, Subject
 )
 
 from backend.ontology import OntologyManager, OntologyConfig, Graph
@@ -34,17 +36,12 @@ from backend.llm_query import (
 from tqdm import tqdm
 import pandas as pd
 
-store = SPARQLStore(
-    "http://localhost:7012/",
-    method="POST_FORM",
-    params={"infer": False, "sameAs": False},
-)
-graph = Graph(store=store)
+# %%
+from eval_config import DBPEDIA_CONFIGS, OMA_CONFIGS, UNIPROT_CONFIGS
 
-config = OntologyConfig()
+# db_setups = [DBPEDIA_CONFIGS[1], OMA_CONFIGS[1]]
+db_setups = [UNIPROT_CONFIGS[0]]
 
-ontology_manager = OntologyManager(config, graph)
-topic_man = TopicModelling(ontology_manager)
 
 # %%
 top_k = 100
@@ -56,11 +53,11 @@ SL = TypeVar("SL")
 
 
 class EnrichedDBEntity(Entity, arbitrary_types_allowed=True):
-    subject: SubjectInDB
+    subject: SubjectInDB | Subject | None
 
 
 class EnrichedDBRelation(Relation, arbitrary_types_allowed=True):
-    link: SubjectLinkDB
+    link: SubjectLinkDB | SubjectLink | None
 
 
 def safe_prob(probs: np.array):
@@ -94,7 +91,9 @@ def random_downgrade(cls: SubjectInDB, rs: np.random.RandomState) -> SubjectInDB
     return subclasses[choice]
 
 
-def choose_graph(max_nodes=4, top_k=top_k, seed=seed, max_tries=5):
+def choose_graph(
+    max_nodes=4, top_k=top_k, seed=seed, max_tries=5, topic_man: TopicModelling = None
+):
     rs = np.random.RandomState(seed)
     with Session(topic_man.engine) as session:
         session.execute(text("SET TRANSACTION READ ONLY"))
@@ -207,29 +206,19 @@ def choose_graph(max_nodes=4, top_k=top_k, seed=seed, max_tries=5):
             #     choice.label,
             # )
             if extending_to:
-                choice_downgraded.to_id = downgraded_extend.subject_id
-                choice_downgraded.to_subject = downgraded_extend
+                choice.to_id = downgraded_extend.subject_id
+                choice.to_subject = downgraded_extend
             else:
-                choice_downgraded.from_id = downgraded_extend.subject_id
-                choice_downgraded.from_subject = downgraded_extend
-            if extending_to:
-                current_links.append(
-                    EnrichedDBRelation(
-                        entity=choice.from_subject.label,
-                        relation=choice.label,
-                        target=choice_downgraded.to_subject.label,
-                        link=choice_downgraded,
-                    )
+                choice.from_id = downgraded_extend.subject_id
+                choice.from_subject = downgraded_extend
+            current_links.append(
+                EnrichedDBRelation(
+                    entity=choice.from_subject.label,
+                    relation=choice.label,
+                    target=choice.to_subject.label,
+                    link=choice,
                 )
-            else:
-                current_links.append(
-                    EnrichedDBRelation(
-                        entity=choice_downgraded.from_subject.label,
-                        relation=choice.label,
-                        target=choice.to_subject.label,
-                        link=choice_downgraded,
-                    )
-                )
+            )
             current_nodes.update(
                 {
                     subject.label: EnrichedDBEntity(
@@ -243,14 +232,14 @@ def choose_graph(max_nodes=4, top_k=top_k, seed=seed, max_tries=5):
         enriched_erl = EnrichedEntitiesRelations(
             entities=[
                 EnrichedEntity(
-                    subject=ontology_manager.enrich_subject(entity.subject.subject_id),
+                    subject=topic_man.oman.enrich_subject(entity.subject.subject_id),
                     **entity.model_dump(exclude=["subject"]),
                 )
                 for entity in current_nodes.values()
             ],
             relations=[
                 EnrichedRelation(
-                    link=SubjectLink.from_db(relation.link, ontology_manager),
+                    link=SubjectLink.from_db(relation.link, topic_man.oman),
                     **relation.model_dump(exclude=["link"]),
                 )
                 for relation in current_links
@@ -270,104 +259,124 @@ def reduce_erl(erl: EnrichedEntitiesRelations):
     reduced_erl = EntitiesRelations(entities=erl.entities, relations=erl.relations)
     return reduced_erl
 
+
+messages = [
+    {
+        "role": "system",
+        "content": """"You are a helpful assistant turning relational knowledge into natural language.""",
+    },
+    {
+        "role": "user",
+        "content": EntitiesRelations(
+            entities=[
+                Entity(
+                    identifier="person 1",
+                    type="person",
+                ),
+                Entity(
+                    identifier="place 1",
+                    type="place",
+                ),
+                Entity(
+                    identifier="company 1",
+                    type="person",
+                ),
+            ],
+            relations=[
+                Relation(
+                    entity="company 1",
+                    relation="employs",
+                    target="person 1",
+                ),
+                Relation(
+                    entity="person 1",
+                    relation="residence",
+                    target="place 1",
+                ),
+            ],
+        ).model_dump_json(),
+    },
+    {
+        "role": "assistant",
+        "content": "a person is employed by a company and the same person resides in a place",
+    },
+]
+
+
 if __name__ == "__main__":
-# %%
-    llama_model = topic_man.llama_model
-
     # %%
-    messages = [
-        {
-            "role": "system",
-            "content": """"You are a helpful assistant turning relational knowledge into natural language.""",
-        },
-        {
-            "role": "user",
-            "content": EntitiesRelations(
-                entities=[
-                    Entity(
-                        identifier="person 1",
-                        type="person",
-                    ),
-                    Entity(
-                        identifier="place 1",
-                        type="place",
-                    ),
-                    Entity(
-                        identifier="company 1",
-                        type="person",
-                    ),
-                ],
-                relations=[
-                    Relation(
-                        entity="company 1",
-                        relation="employs",
-                        target="person 1",
-                    ),
-                    Relation(
-                        entity="person 1",
-                        relation="residence",
-                        target="place 1",
-                    ),
-                ],
-            ).model_dump_json(),
-        },
-        {
-            "role": "assistant",
-            "content": "a person is employed by a company and the same person resides in a place",
-        },
-    ]
 
+    for setup in db_setups:
+        print("Generating for ", setup.name)
+        store = SPARQLStore(
+            setup.sparql_endpoint,
+            method="POST_FORM",
+            params={"infer": False, "sameAs": False},
+        )
+        graph = Graph(store=store)
 
-    # %%
-    n_examples = 300
-    n_nodes = [3, 5, 10]
-    resulting_examples = []
-    progress = tqdm(total=n_examples * len(n_nodes))
-    for n_node in n_nodes:
-        for i in range(n_examples):
-            try:
-                erl = choose_graph(seed=i, max_nodes=n_node)
-                reduced_erl = reduce_erl(erl)
-                response = llama_model.create_chat_completion(
-                    # grammar=self.grammar_erl,
-                    messages=messages
-                    + [
+        config = OntologyConfig()
+
+        ontology_manager = OntologyManager(config, graph)
+        topic_man = TopicModelling(
+            ontology_manager,
+            llm_model_id=setup.model_id,
+            conn_str=setup.conn_str,
+        )
+        llama_model = topic_man.llama_model
+
+        # %%
+
+        # %%
+        n_examples = 300
+        n_nodes = [3, 5, 10]
+        resulting_examples = []
+        progress = tqdm(total=n_examples * len(n_nodes))
+        for n_node in n_nodes:
+            for i in range(n_examples):
+                try:
+                    erl = choose_graph(seed=i, max_nodes=n_node, topic_man=topic_man)
+                    reduced_erl = reduce_erl(erl)
+                    reduced_erl = reduce_erl(erl)
+                    response = llama_model.create_chat_completion(
+                        # grammar=self.grammar_erl,
+                        messages=messages
+                        + [
+                            {
+                                "role": "user",
+                                "content": reduced_erl.model_dump_json(),
+                            }
+                        ],
+                        max_tokens=4096,
+                        temperature=0.7,  # get wild :)
+                    )
+                    templated_query = erl_to_templated_query(erl)
+                    progress.update(1)
+                    resulting_examples.append(
                         {
-                            "role": "user",
-                            "content": reduced_erl.model_dump_json(),
+                            "erl": erl.model_dump_json(),
+                            "response": response["choices"][0]["message"]["content"],
+                            "generator": "llama",
+                            "n_nodes": n_node,
+                            "seed": i,
                         }
-                    ],
-                    max_tokens=4096,
-                    temperature=0.7,  # get wild :)
-                )
-                templated_query = erl_to_templated_query(erl)
-                progress.update(1)
-                resulting_examples.append(
-                    {
-                        "erl": erl.model_dump_json(),
-                        "response": response["choices"][0]["message"]["content"],
-                        "generator": "llama",
-                        "n_nodes": n_node,
-                        "seed": i,
-                    }
-                )
-                resulting_examples.append(
-                    {
-                        "erl": erl.model_dump_json(),
-                        "response": templated_query,
-                        "generator": "templated",
-                        "n_nodes": n_node,
-                        "seed": i,
-                    }
-                )
-            except Exception as e:
-                print(e)
-                continue
-            resulting_examples_df = pd.DataFrame(resulting_examples)
-            resulting_examples_df.to_csv("llama_examples.csv")
+                    )
+                    resulting_examples.append(
+                        {
+                            "erl": erl.model_dump_json(),
+                            "response": templated_query,
+                            "generator": "templated",
+                            "n_nodes": n_node,
+                            "seed": i,
+                        }
+                    )
+                except Exception as e:
+                    print(e)
+                    continue
+                resulting_examples_df = pd.DataFrame(resulting_examples)
+                resulting_examples_df.to_csv(f"examples/examples_{setup.name}.csv")
 
     # %%
-
 
     # %% [markdown]
     #
