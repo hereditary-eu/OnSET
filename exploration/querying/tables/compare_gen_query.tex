@@ -1,22 +1,22 @@
 \begin{table}
-\caption{Comparison of query generation methods for LLama 3.1 8B on DBpedian with one shot prompts.}
+\caption{Comparison of query generation methods for LLama 3.1 8B on DBpedia with one shot prompts.}
 \label{tab:compare_gen_query}
 \begin{tabular}{llrr}
 \toprule
- &  & $F_1$ & $GED_{norm.}$ \\
-$n_{nodes}$ & Query Origin &  &  \\
+ &  & $F_1$ & $GED_{s}$ \\
+$m_{\text{nodes}}$ & Query Origin &  &  \\
 \midrule
 \multirow[t]{3}{*}{3} & human & 0.70 & 0.50 \\
- & llama & 0.77 & 0.56 \\
- & templated & 0.87 & 0.74 \\
+ & llama & 0.77 & 0.45 \\
+ & templated & 0.87 & 0.58 \\
 \cline{1-4}
-\multirow[t]{3}{*}{5} & human & 0.93 & 0.70 \\
- & llama & 0.73 & 0.44 \\
- & templated & 0.85 & 0.64 \\
+\multirow[t]{3}{*}{5} & human & 0.93 & 0.81 \\
+ & llama & 0.73 & 0.28 \\
+ & templated & 0.85 & 0.48 \\
 \cline{1-4}
-\multirow[t]{3}{*}{10} & human & 0.65 & 0.23 \\
- & llama & 0.67 & 0.29 \\
- & templated & 0.79 & 0.57 \\
+\multirow[t]{3}{*}{10} & human & 0.65 & 0.59 \\
+ & llama & 0.67 & 0.07 \\
+ & templated & 0.79 & 0.40 \\
 \cline{1-4}
 \bottomrule
 \end{tabular}

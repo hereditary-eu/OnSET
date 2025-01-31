@@ -7,7 +7,7 @@
 [data]
 NAME         = bto
 DATABUS_URL  = https://zenodo.org/records/12789731/files/bto.ttl
-GET_DATA_CMD = sh download.sh
+GET_DATA_CMD = zsh download.sh
 DESCRIPTION  = RDF data from ${DATABUS_URL}
 
 [index]

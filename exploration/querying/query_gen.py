@@ -37,10 +37,10 @@ from tqdm import tqdm
 import pandas as pd
 
 # %%
-from eval_config import DBPEDIA_CONFIGS, OMA_CONFIGS, UNIPROT_CONFIGS
+from eval_config import DBPEDIA_CONFIGS, OMA_CONFIGS, UNIPROT_CONFIGS, BTO_CONFIGS
 
-# db_setups = [DBPEDIA_CONFIGS[1], OMA_CONFIGS[1]]
-db_setups = [UNIPROT_CONFIGS[0]]
+# db_setups = [DBPEDIA_CONFIGS[1], UNIPROT_CONFIGS[1], BTO_CONFIGS[1]]
+db_setups = [BTO_CONFIGS[0]]
 
 
 # %%

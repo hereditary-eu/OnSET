@@ -10,3 +10,5 @@ pgdata
 *.zip
 node_modules
 .venv
+*.err
+*.out
