@@ -1,11 +1,26 @@
 \begin{table}
 \caption{Comparison of models for UniProt}
 \label{tab:compare_model_UniProt}
-\begin{tabular}{llrr}
+\begin{tabular}{lllrr}
 \toprule
- &  & $F_1$ & $GED_{norm.}$ \\
-Number of Nodes & Model &  &  \\
+ &  &  & $F_1$ & $GED_{s}$ \\
+$m_{\text{nodes}}$ & Prompt Type & Model &  &  \\
 \midrule
+\multirow[t]{3}{*}{3} & \multirow[t]{2}{*}{one shot} &  Hermes 3 Llama 3.1 8B  & 0.76 & 0.69 \\
+ &  &  Hermes 3 Llama 3.2 3B  & 0.81 & 0.61 \\
+\cline{2-5}
+ & zero shot &  Hermes 3 Llama 3.2 3B  & 0.70 & 0.50 \\
+\cline{1-5} \cline{2-5}
+\multirow[t]{3}{*}{5} & \multirow[t]{2}{*}{one shot} &  Hermes 3 Llama 3.1 8B  & 0.75 & 0.68 \\
+ &  &  Hermes 3 Llama 3.2 3B  & 0.81 & 0.58 \\
+\cline{2-5}
+ & zero shot &  Hermes 3 Llama 3.2 3B  & 0.68 & 0.51 \\
+\cline{1-5} \cline{2-5}
+\multirow[t]{3}{*}{10} & \multirow[t]{2}{*}{one shot} &  Hermes 3 Llama 3.1 8B  & 0.74 & 0.68 \\
+ &  &  Hermes 3 Llama 3.2 3B  & 0.79 & 0.56 \\
+\cline{2-5}
+ & zero shot &  Hermes 3 Llama 3.2 3B  & 0.68 & 0.48 \\
+\cline{1-5} \cline{2-5}
 \bottomrule
 \end{tabular}
 \end{table}

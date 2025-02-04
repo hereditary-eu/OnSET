@@ -28,14 +28,20 @@ import networkx as nx
 
 import argparse
 import glob
-from eval_config import DBPEDIA_CONFIGS, OMA_CONFIGS, UNIPROT_CONFIGS, EvalConfig
+from eval_config import (
+    DBPEDIA_CONFIGS,
+    OMA_CONFIGS,
+    UNIPROT_CONFIGS,
+    BTO_CONFIGS,
+    EvalConfig,
+)
 # %%
 
 parser = argparse.ArgumentParser()
 
 
 parser.add_argument(
-    "--dataset", type=str, choices=["dbpedia", "uniprot"], default="dbpedia"
+    "--dataset", type=str, choices=["dbpedia", "uniprot", "bto"], default="dbpedia"
 )
 parser.add_argument("--cfg_idx", type=int, default=0)
 parser.add_argument("--zero_shot", type=bool, default=False)
@@ -46,6 +52,7 @@ args = parser.parse_args()
 configs = {
     "dbpedia": DBPEDIA_CONFIGS,
     "uniprot": UNIPROT_CONFIGS,
+    "bto": BTO_CONFIGS,
 }
 setup: EvalConfig = configs[args.dataset][args.cfg_idx]
 setup_base = configs[args.dataset][0]
@@ -133,15 +140,18 @@ def run_eval(query: pd.Series, llm_query: LLMQuery):
         [ent.type for ent in progress.enriched_relations.entities],
     )
     target_graph = graph_from_erl(target_erl)
-    retrieved_grap = graph_from_erl(progress.enriched_relations)
+    retrieved_grah = graph_from_erl(progress.enriched_relations)
     ged = nx.graph_edit_distance(
         target_graph,
-        retrieved_grap,
+        retrieved_grah,
         edge_match=edge_match,
         node_match=node_match,
         timeout=20,
     )
-    normed_ged = 1 - ged / (len(target_graph.nodes) + len(target_graph.edges))
+    normed_ged = 1 - ged / (
+        max(len(target_graph.nodes), len(retrieved_grah.nodes))
+        + max(len(target_graph.edges), len(retrieved_grah.edges))
+    )
 
     return {
         "f1_score": f1_score_ents,

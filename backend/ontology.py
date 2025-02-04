@@ -130,12 +130,13 @@ class OntologyManager:
         ]
         return onto_classes
 
-    def get_named_individuals(self, cls: str) -> list[Subject]:
+    def get_named_individuals(self, cls: str, limit=128) -> list[Subject]:
         query = f"""SELECT ?ind
                     WHERE {{
                          ?ind rdf:type owl:NamedIndividual.
                          ?ind rdf:type {cls}.
                     }}
+                    LIMIT {limit}
                     """
         individuals = list(
             self.onto.query(
