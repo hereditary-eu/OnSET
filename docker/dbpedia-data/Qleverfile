@@ -19,8 +19,8 @@ WITH_TEXT_INDEX = false
 [server]
 PORT               = 7012
 ACCESS_TOKEN       = ${data:NAME}_nxZT9M9Rs7xx
-MEMORY_FOR_QUERIES = 16G
-CACHE_MAX_SIZE     = 12G
+MEMORY_FOR_QUERIES = 8G
+CACHE_MAX_SIZE     = 2G
 
 [runtime]
 SYSTEM = docker
