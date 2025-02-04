@@ -14,11 +14,12 @@ datasets=("dbpedia" "bto" "uniprot")
 
 dataset_id=$(($SLURM_ARRAY_TASK_ID % 3))
 zeroshot=$(($SLURM_ARRAY_TASK_ID / 3))
-cfg_idx=0
+cfg_idx=1
 selected_dataset=${datasets[$dataset_id]}
 echo "dataset_id: $dataset_id"
 echo "selected_dataset: $selected_dataset"
 echo "zeroshot: $zeroshot"
+echo "cfg_idx: $cfg_idx"
 
 
 if [ $zeroshot -eq 1 ]
