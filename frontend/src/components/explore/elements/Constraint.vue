@@ -19,18 +19,21 @@
                 <SubjectConstraintEditor v-if="(constraint.constraint_type == ConstraintType.SUBJECT)"
                     :constraint="(constraint as SubjectConstraint)" :node="node"
                     @open_search="emit('instanceSearchClicked', $event)" />
+                <BooleanConstraintEditor v-if="(constraint.constraint_type == ConstraintType.BOOLEAN)"
+                    :constraint="(constraint as BooleanConstraint)" />
             </div>
         </foreignObject>
     </g>
 </template>
 <script setup lang="ts">
-import { Constraint, ConstraintType, DateConstraint, SubjectNode, NumberConstraint, StringConstraint, SubjectConstraint } from '@/utils/sparql/representation';
+import { Constraint, ConstraintType, DateConstraint, SubjectNode, NumberConstraint, StringConstraint, SubjectConstraint, BooleanConstraint } from '@/utils/sparql/representation';
 import { defineProps, defineModel } from 'vue'
 import NumberConstraintEditor from './constraints/NumberConstraintEditor.vue';
 import StringConstraintEditor from './constraints/StringConstraintEditor.vue';
 import DateConstraintEditor from './constraints/DateConstraintEditor.vue';
 import SubjectConstraintEditor from './constraints/SubjectConstraintEditor.vue';
 import type { InstanceSelectorOpenEvent } from '@/utils/sparql/helpers';
+import BooleanConstraintEditor from './constraints/BooleanConstraintEditor.vue';
 const emit = defineEmits<{
     delete: [value: Constraint]
     instanceSearchClicked: [value: InstanceSelectorOpenEvent]

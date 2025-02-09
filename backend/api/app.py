@@ -18,7 +18,7 @@ from typing import Any
 from llm_query import LLMQuery, QueryProgress
 from eval_config import BTO_CONFIGS, DBPEDIA_CONFIGS, UNIPROT_CONFIGS
 
-db_config = BTO_CONFIGS[0]
+db_config = DBPEDIA_CONFIGS[0]
 
 base_path = "../data"
 onto_path = f"{base_path}/hero-ontology/hereditary_clinical.ttl"

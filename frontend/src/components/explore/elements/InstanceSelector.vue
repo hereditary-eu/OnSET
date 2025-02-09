@@ -30,7 +30,7 @@
 </template>
 <script setup lang="ts">
 import { ref, watch, reactive, computed, onMounted } from 'vue'
-import { Constraint, Link, MixedResponse, StringConstraint } from '@/utils/sparql/representation';
+import { Constraint, Link, StringConstraint } from '@/utils/sparql/representation';
 import LinkComp from './Link.vue';
 import NodeComp from './Node.vue';
 import { BACKEND_URL } from '@/utils/config';
@@ -61,7 +61,8 @@ const editor_data = reactive({
     q: '',
     query_id: 0,
     offset: 0,
-    reached_end: false
+    reached_end: false,
+    page_size: 20
 })
 const display = defineModel<boolean>()
 const selection_options = ref([] as Instance[])
@@ -125,18 +126,22 @@ const loadMore = async () => {
     const response = await api.classes.getNamedInstanceSearchClassesInstancesSearchGet({
         cls: selection_event.node.subject_id,
         q: editor_data.q,
-        skip: editor_data.offset
+        skip: editor_data.offset,
+        limit: editor_data.page_size
     })
     if (query_id != editor_data.query_id) {
         return
     }
-    if (response.data.length == 0) {
+    if (response.data.length < editor_data.page_size) {
         editor_data.reached_end = true
     }
     editor_data.offset += response.data.length
     editor_data.loading = false
     selection_options.value = selection_options.value.concat(response.data)
 }
+onMounted(() => {
+    loadMore()
+})
 </script>
 <style lang="scss">
 .selection_search {
