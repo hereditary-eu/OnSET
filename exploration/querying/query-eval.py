@@ -72,7 +72,7 @@ ontology_manager = OntologyManager(config, graph)
 topic_man = TopicModelling(
     ontology_manager,
     llm_model_id=setup.model_id,
-    ctx_size=4096,
+    ctx_size=6000,
     conn_str=setup.conn_str,
 )
 
@@ -185,7 +185,7 @@ if __name__ == "__main__":
     print(
         f"zero_shot={zero_shot}, n_samples={n_samples}, llm_model_id={setup.model_id}"
     )
-    query_man = LLMQuery(topic_man, zero_shot=zero_shot)
+    query_man = LLMQuery(topic_man, zero_shot=zero_shot, max_tokens=4096)
     results = run_evals(generated_queries.iloc[:n_samples], llm_query=query_man)
     results.to_csv(
         f"results/eval_results_{setup_base.name}_{'zeroshot' if zero_shot else 'oneshot'}_{topic_man.llm_model_id.replace('/', '-')}.csv"
