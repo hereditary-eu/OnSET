@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --job-name=run_eval
 #SBATCH -c 1
-#SBATCH --mem 6.5G
+#SBATCH --mem 6000M
 #SBATCH -a 0-6%2
 #SBATCH --account=bkantz
 #SBATCH --output=logs/eval_%A_%a.out
