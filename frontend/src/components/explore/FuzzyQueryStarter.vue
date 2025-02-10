@@ -51,14 +51,14 @@ const api = new Api({
 
 onBeforeMount(() => {
 
-    state.running_query = {
-        id: "query:2:2025-01-03T13:24:59.302482",
-        progress: 2,
-        max_steps: 10,
-        message: "TEST QUERY",
-        start_time: "2025-01-03T09:34:26.189876",
-    }
-    state.loading = true
+    // state.running_query = {
+    //     id: "query:2:2025-01-03T13:24:59.302482",
+    //     progress: 2,
+    //     max_steps: 10,
+    //     message: "TEST QUERY",
+    //     start_time: "2025-01-03T09:34:26.189876",
+    // }
+    // state.loading = true
 })
 
 watch(() => state.running_query, (new_val) => {

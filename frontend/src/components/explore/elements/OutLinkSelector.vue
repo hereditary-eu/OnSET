@@ -203,6 +203,7 @@ const edit_point_hover = (event: MouseEvent, state: boolean) => {
 const addLabelConstraint = () => {
     const link = new Link()
     link.from_id = selection_event.node.subject_id
+    link.from_internal_id = selection_event.node.internal_id
     link.from_subject = selection_event.node
     link.property_id = 'rdfs:label'
     link.to_proptype = 'xsd:string'
@@ -217,6 +218,7 @@ const addLabelConstraint = () => {
 const addInstanceConstraint = () => {
     const link = new Link()
     link.from_id = selection_event.node.subject_id
+    link.from_internal_id = selection_event.node.internal_id
     link.from_subject = selection_event.node
     link.to_proptype = 'owl:Thing'
 

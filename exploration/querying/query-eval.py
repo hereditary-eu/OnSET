@@ -28,7 +28,7 @@ import networkx as nx
 
 import argparse
 import glob
-from eval_config import (
+from backend.eval_config import (
     DBPEDIA_CONFIGS,
     OMA_CONFIGS,
     UNIPROT_CONFIGS,

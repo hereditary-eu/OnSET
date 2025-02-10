@@ -16,6 +16,9 @@ from explorative_model import (
 )
 from typing import Any
 from llm_query import LLMQuery, QueryProgress
+from eval_config import BTO_CONFIGS, DBPEDIA_CONFIGS, UNIPROT_CONFIGS
+
+db_config = DBPEDIA_CONFIGS[0]
 
 base_path = "../data"
 onto_path = f"{base_path}/hero-ontology/hereditary_clinical.ttl"
@@ -34,8 +37,10 @@ onto_path = f"{base_path}/hero-ontology/hereditary_clinical.ttl"
 #     method="POST_FORM",
 #     params={"infer": False, "sameAs": False},
 # )
+
+
 store = SPARQLStore(
-    "http://localhost:7012/",
+    db_config.sparql_endpoint,
     method="POST_FORM",
     params={"infer": False, "sameAs": False},
     timeout=300,
@@ -58,7 +63,9 @@ dataset_manager = DatasetManager(ontology_manager)
 
 # ontology_manager.load_full_graph()
 
-topic_man = TopicModelling(ontology_manager)
+topic_man = TopicModelling(
+    ontology_manager, conn_str=db_config.conn_str, llm_model_id=db_config.model_id
+)
 # topic_man.initialize_topics(force=False)
 
 llm_query = LLMQuery(topic=topic_man)
@@ -95,9 +102,9 @@ def load_ontology(
     ontology: UploadFile,
 ):
     brainteaser_graph = Graph().parse(ontology.file, format="turtle")
-    for prefix in config.ttl_prefixes:
+    for prefix in db_config.ttl_prefixes:
         brainteaser_graph.bind(prefix.ttl_prefix, prefix.uri)
-    return {"ontology": ontology.filename, "prefixes": config}
+    return {"ontology": ontology.filename, "prefixes": db_config}
 
 
 @app.get("/classes/full")
