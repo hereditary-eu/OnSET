@@ -76,7 +76,7 @@ def to_readable(s: str):
     return re.sub(r"([a-z])([A-Z])", r"\1 \2", s).replace("_", " ").lower()
 
 
-class TopicModelling:
+class GuidanceManager:
     def __init__(
         self,
         oman: OntologyManager,

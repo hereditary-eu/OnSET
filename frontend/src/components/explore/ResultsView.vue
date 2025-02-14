@@ -116,8 +116,9 @@ const loadMore = async () => {
 }
 
 .result_instance_element {
-    width: 95%;
-    height: 20%;
+    max-width: 95%;
+    max-height: 20%;
+    height: 10%;
     display: flex;
     justify-content: center;
     align-items: center;

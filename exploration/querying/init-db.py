@@ -9,7 +9,7 @@ from rdflib.plugins.stores.sparqlstore import SPARQLStore
 
 from backend.ontology import OntologyManager, OntologyConfig, Graph
 from backend.datasetmatcher import DatasetManager
-from backend.explorative_support import TopicModelling
+from backend.explorative_support import GuidanceManager
 from backend.llm_query import (
     EnrichedEntitiesRelations,
     LLMQuery,
@@ -41,7 +41,7 @@ if __name__ == "__main__":
         ontology_manager = OntologyManager(config, graph)
         dataset_manager = DatasetManager(ontology_manager)
         dataset_manager.initialise(glob_path="data/datasets/ALS/**/*.csv")
-        topic_man = TopicModelling(
+        topic_man = GuidanceManager(
             ontology_manager, conn_str=setup.conn_str, llm_model_id=setup.model_id
         )
         topic_man.llama_model

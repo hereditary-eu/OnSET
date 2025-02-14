@@ -6,7 +6,7 @@ from rdflib.plugins.stores.sparqlstore import SPARQLStore
 from model import Subject, SparseOutLinks, Instance, Property
 from ontology import OntologyManager, OntologyConfig, Graph, InstanceQuery
 from datasetmatcher import DatasetManager
-from explorative_support import TopicModelling
+from explorative_support import GuidanceManager
 from explorative_model import (
     SparqlQuery,
     Topic,
@@ -63,7 +63,7 @@ dataset_manager = DatasetManager(ontology_manager)
 
 # ontology_manager.load_full_graph()
 
-topic_man = TopicModelling(
+topic_man = GuidanceManager(
     ontology_manager, conn_str=db_config.conn_str, llm_model_id=db_config.model_id
 )
 # topic_man.initialize_topics(force=False)

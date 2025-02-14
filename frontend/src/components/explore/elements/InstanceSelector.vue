@@ -120,6 +120,9 @@ const edit_point_hover = (event: MouseEvent, state: boolean) => {
     editor_data.show_editpoints = state
 }
 const loadMore = async () => {
+    if (display.value == false) {
+        return
+    }
     editor_data.loading = true
     let query_id = ++editor_data.query_id
     console.log('Loading more!', query_id, editor_data.q, editor_data.offset)

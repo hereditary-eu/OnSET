@@ -14,7 +14,7 @@ import networkx as nx
 from rdflib.plugins.stores.sparqlstore import SPARQLStore
 
 from backend.ontology import OntologyManager, OntologyConfig, Graph
-from backend.explorative_support import TopicModelling
+from backend.explorative_support import GuidanceManager
 from backend.llm_query import (
     EnrichedEntitiesRelations,
     LLMQuery,
@@ -69,7 +69,7 @@ graph = Graph(store=store)
 config = OntologyConfig()
 
 ontology_manager = OntologyManager(config, graph)
-topic_man = TopicModelling(
+topic_man = GuidanceManager(
     ontology_manager,
     llm_model_id=setup.model_id,
     ctx_size=6000,

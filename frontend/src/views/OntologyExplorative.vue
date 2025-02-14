@@ -28,10 +28,6 @@
             <div class="query_build_view">
                 <QueryBuilder :store="store"></QueryBuilder>
                 <ResultsView :query_string="query_string" :store="store"></ResultsView>
-                <div id="threed_minimap">
-                    <Loading v-if="ui_state.loading"></Loading>
-                    <div id="threed_graph"></div>
-                </div>
             </div>
         </div>
         <div>
@@ -60,9 +56,6 @@ import type { MixedResponse, NodeLinkRepository } from '@/utils/sparql/store';
 import SelectorGroup from '@/components/ui/SelectorGroup.vue';
 import FuzzyQueryStarter from '@/components/explore/FuzzyQueryStarter.vue';
 
-const api = new Api({
-    baseURL: BACKEND_URL
-})
 
 // window.Prism = window.Prism || {};
 // window.Prism.manual = true;
@@ -83,16 +76,6 @@ const ui_state = reactive({
 const store = ref(null as NodeLinkRepository | null)
 watch(() => selected_start, () => {
 }, { deep: false })
-const overviewBox = new OverviewCircles('#threed_graph')
-watch(() => query_string, () => {
-    if (!selected_start.value) {
-        return
-    }
-    if (overviewBox.nodes.length == 0 && overviewBox.renderer) {
-        return
-    }
-    overviewBox.updateLinks(store.value)
-}, { deep: true })
 watch(() => selected_topic_ids, () => {
     console.log('selected_topic_ids changed!', selected_topic_ids.value)
 }, { deep: true })
@@ -117,36 +100,6 @@ const selected_root = (root: MixedResponse) => {
 }
 
 
-onBeforeMount(() => {
-    // circleman.clicked_node = (node: NodeType) => {
-    //     console.log('clicked_node', node)
-    //     api.classes.getLinksClassesLinksGet({
-    //         subject_id: node.subject_id
-    //     }).then(resp => {
-    //         console.log('resp', resp)
-    //         circleman.removeLinks()
-    //         const links = resp.data
-    //         for (const out of links.targets) {
-    //             circleman.addLink(links.source.subject_id, out.target.subject_id, out.count)
-    //         }
-    //     }).catch(console.error)
-    // }
-    (async () => {
-        ui_state.loading = true
-        const resp_classes = await api.classes.getFullClassesClassesFullGet()
-        ui_state.loading = false
-        overviewBox.nodes = resp_classes.data as SubjectInCircle[]
-        overviewBox.initPackedCircles()
-        if (selected_start.value) {
-            overviewBox.updateLinks(selected_start.value.store)
-        }
-    })().catch((e) => {
-        console.error(e)
-        ui_state.loading = false
-    })
-
-    // .style('background-color', 'red')
-})
 </script>
 <style lang="scss" scoped>
 .query_build_view {
@@ -172,23 +125,6 @@ onBeforeMount(() => {
     border-bottom: 1px solid #e0e0e0;
     margin: 0.5rem;
     padding: 0.5rem;
-}
-
-#threed_graph {
-    width: 100%;
-    height: 100%;
-}
-
-#threed_minimap {
-    aspect-ratio: 1;
-    height: 20vh;
-    position: absolute;
-    translate: 9vh 40vh;
-    z-index: 20;
-    background-color: #ffffff;
-    border: 1px solid #8fa88f;
-    padding: 4px;
-    margin: 5px;
 }
 
 .mode_selector {

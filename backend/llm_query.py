@@ -1,5 +1,5 @@
 from llama_cpp.llama import Llama, LlamaGrammar
-from explorative_support import TopicModelling
+from explorative_support import GuidanceManager
 from explorative_model import (
     FuzzyQuery,
     RETURN_TYPE,
@@ -15,12 +15,14 @@ from pydantic import BaseModel, Field, create_model
 from enum import Enum
 import datetime
 from fastapi import BackgroundTasks
+import numpy as np
 
 # has to be installed from fork until merged!
 from llama_cpp_agent.gbnf_grammar_generator.gbnf_grammar_from_pydantic_models import (
     generate_gbnf_grammar_from_pydantic_models,
 )
 from redis_cache import RedisCache
+from llm_query_gen import choose_graph, erl_to_templated_query, reduce_erl
 
 
 class Constraint(BaseModel):
@@ -195,12 +197,12 @@ RAG_PROMPT_EXAMPLE = (
 
 class LLMQuery:
     def __init__(
-        self, topic: TopicModelling, zero_shot=False, temperature=0.3, max_tokens=2048
+        self, topic: GuidanceManager, zero_shot=False, temperature=0.3, max_tokens=2048
     ):
         self.max_tokens = max_tokens
         self.zero_shot = zero_shot
         self.temperature = temperature
-        self.topic_man = topic
+        self.guidance_man = topic
         self.gbnf_erl = generate_gbnf_grammar_from_pydantic_models(
             [EntitiesRelations], "EntitiesRelations", add_inner_thoughts=False
         )
@@ -266,7 +268,7 @@ class LLMQuery:
 
     @property
     def model(self) -> Llama:
-        return self.topic_man.llama_model
+        return self.guidance_man.llama_model
 
     def query_erl(self, query: str) -> EntitiesRelations:
         messages = [
@@ -328,7 +330,7 @@ class LLMQuery:
         constraint_candidates: list[CandidateConstraint] = []
         entity_candidates: list[CandidateEntity] = []
         for relation in erl.relations:
-            top_results = self.topic_man.search_fuzzy(
+            top_results = self.guidance_man.search_fuzzy(
                 query=FuzzyQuery(
                     q=f"A {relation.entity} is {relation.relation} of {relation.target}",
                     limit=example_limit,
@@ -350,7 +352,7 @@ class LLMQuery:
             )
 
         for entity in erl.entities:
-            top_results = self.topic_man.search_fuzzy(
+            top_results = self.guidance_man.search_fuzzy(
                 query=FuzzyQuery(
                     q=f"A {entity.type}",
                     limit=example_limit,
@@ -370,7 +372,7 @@ class LLMQuery:
             candidate_ids = [c.subject.subject_id for c in candidates]
             entity_candidates.extend(candidates)
             for constraint in entity.constraints:
-                top_results = self.topic_man.search_fuzzy(
+                top_results = self.guidance_man.search_fuzzy(
                     query=FuzzyQuery(
                         q=f"The {constraint.property} of is {constraint.modifier} {constraint.value}",
                         limit=example_limit,
@@ -457,7 +459,7 @@ class LLMQuery:
     def enrich_entities_relations(
         self, erl: EntitiesRelations
     ) -> EnrichedEntitiesRelations:
-        with Session(self.topic_man.engine) as session:
+        with Session(self.guidance_man.engine) as session:
             session.execute(text("SET TRANSACTION READ ONLY"))
             session.autoflush = False
 
@@ -470,7 +472,7 @@ class LLMQuery:
                     .limit(1)
                 ).first()
                 return EnrichedRelation(
-                    link=SubjectLink.from_db(link_db[0], self.topic_man.oman),
+                    link=SubjectLink.from_db(link_db[0], self.guidance_man.oman),
                     **relation.model_dump(),
                 )
 
@@ -483,7 +485,7 @@ class LLMQuery:
                     .limit(1)
                 ).first()
                 return EnrichedConstraint(
-                    constraint=SubjectLink.from_db(link_db[0], self.topic_man.oman),
+                    constraint=SubjectLink.from_db(link_db[0], self.guidance_man.oman),
                     **constraint.model_dump(),
                 )
 
@@ -496,7 +498,7 @@ class LLMQuery:
                     .limit(1)
                 ).first()
                 return EnrichedEntity(
-                    subject=self.topic_man.oman.enrich_subject(
+                    subject=self.guidance_man.oman.enrich_subject(
                         subject_db[0].subject_id
                     ),
                     constraints=[enrich_constraint(c) for c in entity.constraints],
@@ -536,3 +538,15 @@ class LLMQuery:
                         )
 
             return erl_enriched
+
+    def init_sampled_queries(self, force=False, n_queries=10, k_min=3, k_max=5):
+        rs = np.random.RandomState(42)
+        k_s = rs.randint(k_min, k_max, n_queries)
+        queries: list[EnrichedEntitiesRelations] = []
+        for k in k_s:
+            queries.append(choose_graph(k, guidance_man=self.guidance_man))
+
+        with Session(self.guidance_man.engine) as session:
+            # session.execute(text("SET TRANSACTION READ ONLY"))
+            session.autoflush = True
+            
