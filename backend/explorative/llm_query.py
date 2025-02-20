@@ -1,6 +1,17 @@
 from llama_cpp.llama import Llama, LlamaGrammar
+
+from sqlalchemy import select, text, func
+from sqlalchemy.orm import Session
+from pydantic import BaseModel, Field, create_model
+from enum import Enum
+import datetime
+from fastapi import BackgroundTasks
+import numpy as np
+import tqdm
+
+
 from explorative.explorative_support import GuidanceManager
-from explorative.explorative_model import (
+from explorative.exp_model import (
     FuzzyQuery,
     RETURN_TYPE,
     RELATION_TYPE,
@@ -12,15 +23,7 @@ from explorative.explorative_model import (
     GraphEntityDB,
     BasePostgres,
 )
-from model import Subject
-from sqlalchemy import select, text, func
-from sqlalchemy.orm import Session
-from pydantic import BaseModel, Field, create_model
-from enum import Enum
-import datetime
-from fastapi import BackgroundTasks
-import numpy as np
-import tqdm
+from explorative.exp_model import Subject
 
 # has to be installed from fork until merged!
 from llama_cpp_agent.gbnf_grammar_generator.gbnf_grammar_from_pydantic_models import (
@@ -576,3 +579,28 @@ class LLMQuery(Initationatable):
                 session.add(sampled_graph)
                 session.commit()
         return queries
+
+    def get_examples(self, n=10) -> list[EnrichedEntitiesRelations]:
+        with Session(self.guidance_man.engine) as sess:
+            graphs = (
+                sess.query(SampledGraphDB)
+                .filter(SampledGraphDB.onto_hash == self.guidance_man.identifier)
+                .all()
+            )
+            examples = []
+            for graph in graphs:
+                query_graph = EnrichedEntitiesRelations()
+                for entity in graph.graph_entities:
+                    enriched_entity = EnrichedEntity()
+                    enriched_entity.subject = self.guidance_man.oman.enrich_subject(
+                        entity.subject.subject_id
+                    )
+                    query_graph.entities.append(enriched_entity)
+                for link in graph.graph_links:
+                    enriched_relation = EnrichedRelation()
+                    enriched_relation.link = SubjectLink.from_db(
+                        link.subject_link, self.guidance_man
+                    )
+                    query_graph.relations.append(enriched_relation)
+                examples.append(query_graph)
+            return examples

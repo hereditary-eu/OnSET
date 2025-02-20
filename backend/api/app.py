@@ -1,20 +1,20 @@
 from fastapi import FastAPI, Query, File, UploadFile, Body, Form, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 
+from typing import Any
 from rdflib.plugins.stores.sparqlstore import SPARQLStore
 
 from model import Subject, SparseOutLinks, Instance, Property
 from ontology import OntologyManager, OntologyConfig, Graph, InstanceQuery
 from datasetmatcher import DatasetManager
 from explorative.explorative_support import GuidanceManager
-from explorative.explorative_model import (
+from explorative.exp_model import (
     SparqlQuery,
     Topic,
     SubjectLink,
     FuzzyQuery,
     FuzzyQueryResults,
 )
-from typing import Any
 from explorative.llm_query import LLMQuery, QueryProgress
 from eval_config import BTO_CONFIGS, DBPEDIA_CONFIGS, UNIPROT_CONFIGS
 from initiator import InitatorManager
@@ -185,3 +185,9 @@ def get_llm_results_running(
     query_id: str = Query(),
 ) -> QueryProgress | None:
     return llm_query.query_progress(query_id)
+
+@app.get("/classes/search/llm/examples")
+def get_llm_examples(
+    query_id: str = Query(),
+) -> QueryProgress | None:
+    return llm_query.get_examples()

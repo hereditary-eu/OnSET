@@ -7,6 +7,7 @@ from sqlalchemy import ForeignKey
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship, Session
 
 
+
 class Base(DeclarativeBase):
     pass
 
@@ -59,6 +60,7 @@ class Subject(BaseModel):
                 if subclass.value == subject_id:
                     return True
         return self.subject_id == subject_id
+
 
 
 class MatchDB(Base):

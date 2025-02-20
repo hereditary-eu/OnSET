@@ -102,10 +102,16 @@ export interface EnrichedConstraint {
 
 /** EnrichedEntitiesRelations */
 export interface EnrichedEntitiesRelations {
-  /** Relations */
-  relations: EnrichedRelation[];
-  /** Entities */
-  entities: EnrichedEntity[];
+  /**
+   * Relations
+   * @default []
+   */
+  relations?: EnrichedRelation[];
+  /**
+   * Entities
+   * @default []
+   */
+  entities?: EnrichedEntity[];
   /**
    * Message
    * @default "Found Relations and Entities"
@@ -119,8 +125,11 @@ export interface EnrichedEntity {
   identifier: string;
   /** Type */
   type: string;
-  /** Constraints */
-  constraints: EnrichedConstraint[];
+  /**
+   * Constraints
+   * @default []
+   */
+  constraints?: EnrichedConstraint[];
   subject: Subject;
 }
 
@@ -686,6 +695,28 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         format: "json",
         ...params,
       }),
+
+    /**
+     * No description
+     *
+     * @name SparqlQueryGetSparqlGet
+     * @summary Sparql Query Get
+     * @request GET:/sparql
+     */
+    sparqlQueryGetSparqlGet: (
+      query: {
+        /** Query */
+        query: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<object, HTTPValidationError>({
+        path: `/sparql`,
+        method: "GET",
+        query: query,
+        format: "json",
+        ...params,
+      }),
   };
   management = {
     /**
@@ -942,6 +973,28 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
     ) =>
       this.request<QueryProgress | null, HTTPValidationError>({
         path: `/classes/search/llm/running`,
+        method: "GET",
+        query: query,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @name GetLlmExamplesClassesSearchLlmExamplesGet
+     * @summary Get Llm Examples
+     * @request GET:/classes/search/llm/examples
+     */
+    getLlmExamplesClassesSearchLlmExamplesGet: (
+      query: {
+        /** Query Id */
+        query_id: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<QueryProgress | null, HTTPValidationError>({
+        path: `/classes/search/llm/examples`,
         method: "GET",
         query: query,
         format: "json",

@@ -10,6 +10,7 @@ from rdflib.plugins.stores.sparqlstore import SPARQLStore
 from backend.ontology import OntologyManager, OntologyConfig, Graph
 from backend.datasetmatcher import DatasetManager
 from backend.explorative.explorative_support import GuidanceManager
+from backend.explorative.topic_init import TopicInitator
 from backend.explorative.llm_query import (
     EnrichedEntitiesRelations,
     LLMQuery,
@@ -19,7 +20,12 @@ from tqdm import tqdm
 import pandas as pd
 
 # %%
-from backend.eval_config import DBPEDIA_CONFIGS, OMA_CONFIGS, UNIPROT_CONFIGS, BTO_CONFIGS
+from backend.eval_config import (
+    DBPEDIA_CONFIGS,
+    OMA_CONFIGS,
+    UNIPROT_CONFIGS,
+    BTO_CONFIGS,
+)
 
 # db_setups = [DBPEDIA_CONFIGS[1], UNIPROT_CONFIGS[1], BTO_CONFIGS[1]]
 db_setups = [BTO_CONFIGS[1]]
@@ -41,11 +47,13 @@ if __name__ == "__main__":
         ontology_manager = OntologyManager(config, graph)
         dataset_manager = DatasetManager(ontology_manager)
         dataset_manager.initialise(glob_path="data/datasets/ALS/**/*.csv")
-        topic_man = GuidanceManager(
+        guidance_manager = GuidanceManager(
             ontology_manager, conn_str=setup.conn_str, llm_model_id=setup.model_id
         )
-        topic_man.llama_model
-        print(topic_man.identifier)
-        topic_man.initialize_topics(force=True, delete_tables=True)
-
+        initiator = TopicInitator(ontology_manager)
+        llm_man = LLMQuery(guidance_manager)
+        guidance_manager.llama_model
+        print(guidance_manager.identifier)
+        initiator.initate(force=True, delete_tables=True)
+        llm_man.initate(force=True, delete_tables=True)
 # %%

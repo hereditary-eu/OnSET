@@ -28,7 +28,7 @@ dependencies = [
     "redis-om",
     "matplotlib",
     "llama-cpp-python==0.3.4",
-    "llvmlite",
+    "llvmlite>=0.44.0",
     "llama-cpp-agent",
     "seqeval",
     "sparql-llm>=0.0.3",
@@ -39,17 +39,19 @@ dependencies = [
     "qdrant-client>=1.13.0",
     "sparqlwrapper>=2.0.0",
     "openai>=1.59.9",
-    "onnxruntime-gpu",
-    "fastembed-gpu",
+    # "onnxruntime-gpu",
+    # "fastembed-gpu",
+]
+
+[project.optional-dependencies]
+dev = [
+    "tuna>=0.5.11",
 ]
 
 [tool.uv.sources]
 llama-cpp-python = [
     { index = "llama-metal", marker = "platform_system == 'Darwin'" },
     { index = "llama-gpu", marker = "platform_system == 'Linux'" },
-]
-onnxruntime-gpu = [
-    { index = "onnxruntime-gpu", marker = "platform_system == 'Linux'" },
 ]
 llama-cpp-agent = [
     { git = "https://github.com/Dakantz/llama-cpp-agent.git", branch = "fix-gbnf-generation-trailing-bracket" },
@@ -66,7 +68,3 @@ name = "llama-gpu"
 url = "https://abetlen.github.io/llama-cpp-python/whl/cu124/"
 explicit = true
 
-[[tool.uv.index]]
-name = "onnxruntime-gpu"
-url = "https://aiinfra.pkgs.visualstudio.com/PublicPackages/_packaging/onnxruntime-cuda-12/pypi/simple/"
-explicit = true
