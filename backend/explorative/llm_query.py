@@ -1,108 +1,51 @@
 from llama_cpp.llama import Llama, LlamaGrammar
-from explorative_support import GuidanceManager
-from explorative_model import (
+from explorative.explorative_support import GuidanceManager
+from explorative.explorative_model import (
     FuzzyQuery,
     RETURN_TYPE,
     RELATION_TYPE,
     SubjectLink,
     SubjectLinkDB,
     SubjectInDB,
+    SampledGraphDB,
+    GraphLinkDB,
+    GraphEntityDB,
+    BasePostgres,
 )
 from model import Subject
-from sqlalchemy import select, text
+from sqlalchemy import select, text, func
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, Field, create_model
 from enum import Enum
 import datetime
 from fastapi import BackgroundTasks
 import numpy as np
+import tqdm
 
 # has to be installed from fork until merged!
 from llama_cpp_agent.gbnf_grammar_generator.gbnf_grammar_from_pydantic_models import (
     generate_gbnf_grammar_from_pydantic_models,
 )
 from redis_cache import RedisCache
-from llm_query_gen import choose_graph, erl_to_templated_query, reduce_erl
-
-
-class Constraint(BaseModel):
-    property: str
-    value: str | None
-    modifier: str | None
-
-
-class Entity(BaseModel):
-    identifier: str
-    type: str
-    constraints: list[Constraint] = Field([])
-
-
-class Relation(BaseModel):
-    entity: str
-    relation: str
-    target: str
-
-
-class EntitiesRelations(BaseModel):
-    relations: list[Relation]
-    entities: list[Entity]
-    message: str = Field("Found Relations and Entities")
-
-
-class CandidateRelation(Relation):
-    score: float
-    link: SubjectLink | None = Field(None)
-
-
-class CandidateConstraint(Constraint):
-    score: float
-    type: str
-    property: str
-    entity: str
-    link: SubjectLink | None = Field(None)
-
-
-class CandidateEntity(Entity):
-    score: float
-    type: str
-    subject: Subject | None = Field(None)
-
-
-class Candidates(EntitiesRelations):
-    relations: list[CandidateRelation]
-    entities: list[CandidateEntity]
-    constraints: list[CandidateConstraint]
-
-
-class EnrichedConstraint(Constraint):
-    constraint: SubjectLink | None
-
-
-class EnrichedEntity(Entity):
-    subject: Subject
-    constraints: list[EnrichedConstraint] = Field([])
-
-
-class EnrichedRelation(Relation):
-    link: SubjectLink | None
-
-
-class EnrichedEntitiesRelations(EntitiesRelations):
-    relations: list[EnrichedRelation] = Field([])
-    entities: list[EnrichedEntity] = Field([])
-
-
-class QueryProgress(BaseModel):
-    id: str
-    start_time: str
-    progress: int = Field(0)
-    max_steps: int
-    message: str = Field("")
-    relations_steps: list[
-        EntitiesRelations | Candidates | EnrichedEntitiesRelations
-    ] = Field([])
-    enriched_relations: EnrichedEntitiesRelations | None = None
-
+from explorative.llm_query_gen import (
+    choose_graph,
+    erl_to_templated_query,
+    reduce_erl,
+    Entity,
+    EntitiesRelations,
+    Constraint,
+    Relation,
+    EnrichedEntitiesRelations,
+    EnrichedEntity,
+    EnrichedRelation,
+    EnrichedConstraint,
+    Candidates,
+    CandidateEntity,
+    CandidateRelation,
+    CandidateConstraint,
+    QueryProgress,
+)
+from initiator import Initationatable
 
 # System prompt describes information given to all conversations
 ERL_PROMPT_SYSTEM = """
@@ -130,6 +73,8 @@ ERL_PROMPT_EXAMPLE = (
     "the birth place of an author of a work where the author is born after 1990",
     ERL_SAMPLE.model_dump_json(),
 )
+
+ERL_PROMPT_QUERY_GEN = """You are a helpful assistant turning relational knowledge into natural language."""
 
 RAG_PROMPT_EXAMPLE_CANDIDATES = Candidates(
     relations=[
@@ -195,7 +140,7 @@ RAG_PROMPT_EXAMPLE = (
 )
 
 
-class LLMQuery:
+class LLMQuery(Initationatable):
     def __init__(
         self, topic: GuidanceManager, zero_shot=False, temperature=0.3, max_tokens=2048
     ):
@@ -539,14 +484,95 @@ class LLMQuery:
 
             return erl_enriched
 
-    def init_sampled_queries(self, force=False, n_queries=10, k_min=3, k_max=5):
+    def initiate(self, force=False, n_queries=10, k_min=3, k_max=5):
+        do_init = False
+        if force:
+            do_init = True
+        else:
+            with Session(self.guidance_man.engine) as session:
+                count = session.execute(
+                    select(func.count(SampledGraphDB.graph_id)).where(
+                        SampledGraphDB.onto_hash == self.guidance_man.identifier
+                    )
+                ).scalar()
+                if count == 0:
+                    do_init = True
+        if not do_init:
+            return None
         rs = np.random.RandomState(42)
         k_s = rs.randint(k_min, k_max, n_queries)
-        queries: list[EnrichedEntitiesRelations] = []
-        for k in k_s:
-            queries.append(choose_graph(k, guidance_man=self.guidance_man))
+        queries: list[tuple[str, EnrichedEntitiesRelations]] = []
+        for i, k in enumerate(tqdm.tqdm(k_s)):
+            query_graph = choose_graph(k, guidance_man=self.guidance_man, seed=i)
+            query_graph_reduced = reduce_erl(query_graph)
+            query_response = self.guidance_man.llama_model.create_chat_completion(
+                # grammar=self.grammar_erl,
+                messages=[
+                    {
+                        "role": "system",
+                        "content": ERL_PROMPT_QUERY_GEN,
+                    },
+                    {
+                        "role": "user",
+                        "content": ERL_PROMPT_EXAMPLE[1],
+                    },
+                    {
+                        "role": "assistant",
+                        "content": ERL_PROMPT_EXAMPLE[0],
+                    },
+                    {
+                        "role": "user",
+                        "content": query_graph_reduced.model_dump_json(),
+                    },
+                ],
+                max_tokens=4096,
+                temperature=0.7,  # get wild :)
+            )
+            query_str = query_response["choices"][0]["message"]["content"]
+            queries.append((query_str, query_graph))
 
+        BasePostgres.metadata.create_all(self.guidance_man.engine, checkfirst=True)
         with Session(self.guidance_man.engine) as session:
             # session.execute(text("SET TRANSACTION READ ONLY"))
             session.autoflush = True
-            
+
+            for query_str, query_graph in queries:
+                sampled_graph = SampledGraphDB(
+                    graph_name=f"k={len(query_graph.entities)}",
+                    graph_query=query_str,
+                    onto_hash=self.guidance_man.identifier,
+                    instance_count=-1,
+                )
+                subject_ids = [e.subject.subject_id for e in query_graph.entities]
+
+                entities: dict[str, GraphEntityDB] = {}
+
+                for subject_id in subject_ids:
+                    subject_link = session.execute(
+                        select(SubjectInDB)
+                        .where(SubjectInDB.subject_id == subject_id)
+                        .limit(1)
+                    ).first()
+                    if subject_link:
+                        entity = GraphEntityDB(
+                            subject_id=subject_link[0].subject_id,
+                        )
+                        entity.graph = sampled_graph
+                        entities[subject_id] = entity
+                        session.add(entity)
+                links: dict[int, SubjectLinkDB] = {}
+                for rel in query_graph.relations:
+                    link = GraphLinkDB(
+                        subject_link_id=rel.link.link_id,
+                    )
+                    link.graph = sampled_graph
+                    from_entity = entities[rel.link.from_id]
+                    to_entity = entities[rel.link.to_id]
+
+                    link.from_entity = from_entity
+                    link.to_entity = to_entity
+                    links[rel.link.link_id] = link
+                    session.add(link)
+                session.add(sampled_graph)
+                session.commit()
+        return queries

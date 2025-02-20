@@ -16,16 +16,11 @@ from sqlalchemy.orm import aliased
 from sqlalchemy.sql import text
 from rdflib.plugins.stores.sparqlstore import SPARQLStore
 from model import Session, Subject
+from pydantic import BaseModel, Field, create_model
 
 from ontology import OntologyManager, OntologyConfig, Graph
-from explorative_support import GuidanceManager, select
-from llm_query import (
-    Entity,
-    Relation,
-    EntitiesRelations,
-    EnrichedEntity,
-    EnrichedRelation,
-    EnrichedEntitiesRelations,
+from explorative.explorative_support import GuidanceManager, select
+from explorative.explorative_model import (
     SubjectLink,
     SubjectInDB,
     SubjectLinkDB,
@@ -37,6 +32,86 @@ SL = TypeVar("SL")
 
 top_k = 100
 seed = 42
+
+
+
+class Constraint(BaseModel):
+    property: str
+    value: str | None
+    modifier: str | None
+
+
+class Entity(BaseModel):
+    identifier: str
+    type: str
+    constraints: list[Constraint] = Field([])
+
+
+class Relation(BaseModel):
+    entity: str
+    relation: str
+    target: str
+
+
+class EntitiesRelations(BaseModel):
+    relations: list[Relation]
+    entities: list[Entity]
+    message: str = Field("Found Relations and Entities")
+
+
+class CandidateRelation(Relation):
+    score: float
+    link: SubjectLink | None = Field(None)
+
+
+class CandidateConstraint(Constraint):
+    score: float
+    type: str
+    property: str
+    entity: str
+    link: SubjectLink | None = Field(None)
+
+
+class CandidateEntity(Entity):
+    score: float
+    type: str
+    subject: Subject | None = Field(None)
+
+
+class Candidates(EntitiesRelations):
+    relations: list[CandidateRelation]
+    entities: list[CandidateEntity]
+    constraints: list[CandidateConstraint]
+
+
+class EnrichedConstraint(Constraint):
+    constraint: SubjectLink | None
+
+
+class EnrichedEntity(Entity):
+    subject: Subject
+    constraints: list[EnrichedConstraint] = Field([])
+
+
+class EnrichedRelation(Relation):
+    link: SubjectLink | None
+
+
+class EnrichedEntitiesRelations(EntitiesRelations):
+    relations: list[EnrichedRelation] = Field([])
+    entities: list[EnrichedEntity] = Field([])
+
+
+class QueryProgress(BaseModel):
+    id: str
+    start_time: str
+    progress: int = Field(0)
+    max_steps: int
+    message: str = Field("")
+    relations_steps: list[
+        EntitiesRelations | Candidates | EnrichedEntitiesRelations
+    ] = Field([])
+    enriched_relations: EnrichedEntitiesRelations | None = None
 
 
 class EnrichedDBEntity(Entity, arbitrary_types_allowed=True):

@@ -9,8 +9,8 @@ from rdflib.plugins.stores.sparqlstore import SPARQLStore
 
 from backend.ontology import OntologyManager, OntologyConfig, Graph
 from backend.datasetmatcher import DatasetManager
-from backend.explorative_support import GuidanceManager
-from backend.llm_query import (
+from backend.explorative.explorative_support import GuidanceManager
+from backend.explorative.llm_query import (
     EnrichedEntitiesRelations,
     LLMQuery,
     QueryProgress,

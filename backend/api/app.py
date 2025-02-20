@@ -6,8 +6,8 @@ from rdflib.plugins.stores.sparqlstore import SPARQLStore
 from model import Subject, SparseOutLinks, Instance, Property
 from ontology import OntologyManager, OntologyConfig, Graph, InstanceQuery
 from datasetmatcher import DatasetManager
-from explorative_support import GuidanceManager
-from explorative_model import (
+from explorative.explorative_support import GuidanceManager
+from explorative.explorative_model import (
     SparqlQuery,
     Topic,
     SubjectLink,
@@ -15,9 +15,9 @@ from explorative_model import (
     FuzzyQueryResults,
 )
 from typing import Any
-from llm_query import LLMQuery, QueryProgress
+from explorative.llm_query import LLMQuery, QueryProgress
 from eval_config import BTO_CONFIGS, DBPEDIA_CONFIGS, UNIPROT_CONFIGS
-
+from initiator import InitatorManager
 db_config = DBPEDIA_CONFIGS[0]
 
 base_path = "../data"
@@ -63,12 +63,17 @@ dataset_manager = DatasetManager(ontology_manager)
 
 # ontology_manager.load_full_graph()
 
-topic_man = GuidanceManager(
+guidance_man = GuidanceManager(
     ontology_manager, conn_str=db_config.conn_str, llm_model_id=db_config.model_id
 )
 # topic_man.initialize_topics(force=False)
 
-llm_query = LLMQuery(topic=topic_man)
+llm_query = LLMQuery(topic=guidance_man)
+
+initatior = InitatorManager()
+initatior.register(guidance_man)
+initatior.register(llm_query)
+
 
 app = FastAPI(title="Ontology Provenance API", version="0.1.0")
 
@@ -140,8 +145,8 @@ def get_named_instance_properties(instance_id: str = Query()) -> dict[str, Prope
 
 @app.get("/topics/root")
 def get_topics_root(force_initialize: bool = Query(False)) -> Topic:
-    topic_man.initialize_topics(force_initialize)
-    return topic_man.get_topic_tree()
+    guidance_man.initialize_topics(force_initialize)
+    return guidance_man.get_topic_tree()
 
 
 @app.get("/classes/links")
@@ -155,7 +160,7 @@ def get_links(subject_id: str = Query()) -> SparseOutLinks:
 def search_classes(
     q: FuzzyQuery = Body("working field of person"),
 ) -> FuzzyQueryResults:
-    return topic_man.search_fuzzy(q)
+    return guidance_man.search_fuzzy(q)
 
 
 @app.get("/classes/relations")
@@ -164,7 +169,7 @@ def get_relations(
     from_id: str | None = Query(None),
     to_id: str | None = Query(None),
 ) -> list[SubjectLink]:
-    return topic_man.search_links(q, from_id, to_id)
+    return guidance_man.search_links(q, from_id, to_id)
 
 
 @app.get("/classes/search/llm")

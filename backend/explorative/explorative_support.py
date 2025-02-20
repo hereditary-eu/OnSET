@@ -13,11 +13,12 @@ from sqlalchemy.orm import Session
 from tqdm import tqdm
 import pandas as pd
 
+from eval_config import EvalConfig
 from model import Subject
 from ontology import OntologyManager
 from utils import llama_cpp_langchain_from_pretrained
 
-from explorative_model import (
+from explorative.explorative_model import (
     BasePostgres,
     TopicDB,
     SubjectLinkDB,
@@ -32,6 +33,8 @@ from explorative_model import (
     FuzzyQueryResults,
     Topic,
 )
+
+from initiator import Initationatable, InitatorManager
 
 # System prompt describes information given to all conversations
 TOPIC_LLAMA3_PROMPT_SYSTEM = """
@@ -76,7 +79,7 @@ def to_readable(s: str):
     return re.sub(r"([a-z])([A-Z])", r"\1 \2", s).replace("_", " ").lower()
 
 
-class GuidanceManager:
+class GuidanceManager(Initationatable):
     def __init__(
         self,
         oman: OntologyManager,
@@ -115,6 +118,7 @@ class GuidanceManager:
         ).hexdigest()
         self.__lama_model = None
         self.__embedding_model = None
+
 
     @property
     def llama_model(self) -> Llama:
@@ -157,8 +161,11 @@ class GuidanceManager:
         # ).to(device)
         return self.__embedding_model
 
-    def initialize_topics(self, force: bool = False, delete_tables: bool = False):
+    def initate(
+        self, reset=True, config: EvalConfig = None, force=True, *args, **kwargs
+    ):
         init_topics = False
+        delete_tables = reset
         with Session(self.engine) as session:
             insp = inspect(self.engine)
             if not insp.has_table("topics", schema="public") or not insp.has_table(

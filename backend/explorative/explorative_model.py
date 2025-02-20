@@ -29,27 +29,8 @@ class SampledGraphDB(BasePostgres):
     graph_links: Mapped[list[GraphLinkDB]] = relationship(
         "GraphLinkDB", back_populates="graph"
     )
-    graph_subjects: Mapped[list[GraphEntityDB]] = relationship(
+    graph_entities: Mapped[list[GraphEntityDB]] = relationship(
         "GraphEntityDB", back_populates="graph"
-    )
-
-
-class GraphEntityDB(BasePostgres):
-    __tablename__ = "graph_entity"
-    entity_id: Mapped[int] = mapped_column(primary_key=True)
-    graph_id: Mapped[int] = mapped_column(ForeignKey("sampled_graphs.graph_id"))
-    subject_id: Mapped[int] = mapped_column(ForeignKey("subjects.subject_id"))
-
-    subject: Mapped[SubjectInDB] = relationship("SubjectInDB")
-
-    graph: Mapped[SampledGraphDB] = relationship(
-        "SampledGraphDB", back_populates="graph_entity"
-    )
-    from_links: Mapped[list[GraphLinkDB]] = relationship(
-        "GraphLinkDB", back_populates="from_entity"
-    )
-    to_links: Mapped[list[GraphLinkDB]] = relationship(
-        "GraphLinkDB", back_populates="to_entity"
     )
 
 
@@ -63,7 +44,10 @@ class GraphLinkDB(BasePostgres):
     to_entity_id: Mapped[int] = mapped_column(ForeignKey("graph_entity.entity_id"))
 
     from_entity: Mapped[GraphEntityDB] = relationship(
-        "GraphEntityDB", back_populates="from_links"
+        "GraphEntityDB", back_populates="from_links", foreign_keys=[from_entity_id]
+    )
+    to_entity: Mapped[GraphEntityDB] = relationship(
+        "GraphEntityDB", back_populates="to_links", foreign_keys=[to_entity_id]
     )
 
     graph: Mapped[SampledGraphDB] = relationship(
@@ -71,6 +55,29 @@ class GraphLinkDB(BasePostgres):
     )
     subject_link: Mapped[SubjectLinkDB] = relationship(
         "SubjectLinkDB", back_populates="graph_links"
+    )
+
+
+class GraphEntityDB(BasePostgres):
+    __tablename__ = "graph_entity"
+    entity_id: Mapped[int] = mapped_column(primary_key=True)
+    graph_id: Mapped[int] = mapped_column(ForeignKey("sampled_graphs.graph_id"))
+    subject_id: Mapped[int] = mapped_column(ForeignKey("subjects.subject_id"))
+
+    subject: Mapped[SubjectInDB] = relationship("SubjectInDB")
+
+    graph: Mapped[SampledGraphDB] = relationship(
+        "SampledGraphDB", back_populates="graph_entities"
+    )
+    from_links: Mapped[list[GraphLinkDB]] = relationship(
+        "GraphLinkDB",
+        back_populates="from_entity",
+        primaryjoin=entity_id == GraphLinkDB.from_entity_id,
+    )
+    to_links: Mapped[list[GraphLinkDB]] = relationship(
+        "GraphLinkDB",
+        back_populates="to_entity",
+        primaryjoin=entity_id == GraphLinkDB.to_entity_id,
     )
 
 
