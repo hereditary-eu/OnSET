@@ -1,5 +1,5 @@
 from hashlib import sha512
-from ontology import *
+from ontology import OntologyManager
 import regex as re
 import pandas as pd
 import numpy as np
@@ -20,19 +20,22 @@ from sqlalchemy.orm import (
 )
 from dataclasses import dataclass
 
-from model import *
+from model import (
+    Base,
+    BaseModel,
+    Subject,
+    Property,
+    PropertyValue,
+    MatchDB,
+    Match,
+    PathElementDB,
+    RelationsFoundDB,
+    RelationsFound,
+    OutLink,
+    SparseOutLinks,
+)
 
-
-def make_readable(txt: str, split_chars=["_", "-", "/", ":", "."]):
-    if txt is None:
-        return ""
-    txt = re.sub(r"([a-z])([A-Z])", r"\1 \2", txt)
-    txt = re.sub(r"([A-Z])([A-Z][a-z])", r"\1 \2", txt)
-    txt = re.sub(r"([a-z])([0-9])", r"\1 \2", txt)
-    txt = re.sub(r"([0-9])([a-z])", r"\1 \2", txt)
-    for split_char in split_chars:
-        txt = " ".join(txt.split(split_char))
-    return txt
+from utils import to_readable_camelcase
 
 
 def is_postive(series: pd.Series):  # TODO improve positive check?
@@ -82,7 +85,7 @@ class DataSetRepresentation:
     def cols_readable(self):
         index_name = self.df.index.name
         col_names_flipped = [
-            f"{make_readable(col)} {make_readable( index_name )} {make_readable(self.paths[0])}"
+            f"{to_readable_camelcase(col)} {to_readable_camelcase(index_name)} {to_readable_camelcase(self.paths[0])}"
             for col in self.df.columns
         ]
         return col_names_flipped
@@ -352,13 +355,10 @@ class DatasetManager:
         #     ]
         # ].to_csv("all_relations_filtered.csv", index=False)
 
-    def relation_row_to_relation_found(
-        self, row: pd.Series,  top_k=5
-    ):
+    def relation_row_to_relation_found(self, row: pd.Series, top_k=5):
         matches = []
         repr_idx, col_idx = unwrap_idx(row["best_match_idx"])
         for idx, match in row["rankings"].iloc[:top_k].iterrows():
-
             m_repr_idx, m_col_idx = unwrap_idx(match["idx"])
             m_repr = self.representations_merged[m_repr_idx]
             matches.append(
@@ -378,7 +378,6 @@ class DatasetManager:
     def target_outlinks(
         self, target_id: str = "<http://data.europa.eu/esco/isco/C0>", top_k=1
     ):
-
         source_repr: RelationsFoundDB = None
         with Session(self.engine) as session:
             stmt = (

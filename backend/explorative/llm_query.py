@@ -9,6 +9,7 @@ from fastapi import BackgroundTasks
 import numpy as np
 import tqdm
 
+from utils import escape_sparql_var
 
 from explorative.explorative_support import GuidanceManager
 from explorative.exp_model import (
@@ -487,7 +488,7 @@ class LLMQuery(Initationatable):
 
             return erl_enriched
 
-    def initiate(self, force=False, n_queries=10, k_min=3, k_max=5):
+    def initiate(self, force=False, n_queries=10, k_min=2, k_max=4):
         do_init = False
         if force:
             do_init = True
@@ -506,7 +507,7 @@ class LLMQuery(Initationatable):
         k_s = rs.randint(k_min, k_max, n_queries)
         queries: list[tuple[str, EnrichedEntitiesRelations]] = []
         for i, k in enumerate(tqdm.tqdm(k_s)):
-            query_graph = choose_graph(k, guidance_man=self.guidance_man, seed=i)
+            query_graph = choose_graph(k, guidance_man=self.guidance_man, seed=i, top_k=10)
             query_graph_reduced = reduce_erl(query_graph)
             query_response = self.guidance_man.llama_model.create_chat_completion(
                 # grammar=self.grammar_erl,
@@ -589,17 +590,25 @@ class LLMQuery(Initationatable):
             )
             examples = []
             for graph in graphs:
-                query_graph = EnrichedEntitiesRelations()
+                query_graph = EnrichedEntitiesRelations(message=graph.graph_query)
                 for entity in graph.graph_entities:
-                    enriched_entity = EnrichedEntity()
-                    enriched_entity.subject = self.guidance_man.oman.enrich_subject(
-                        entity.subject.subject_id
+                    enriched_entity = EnrichedEntity(
+                        identifier=f"{escape_sparql_var(entity.subject.subject_id)}_{entity.entity_id}",
+                        constraints=[],
+                        type=entity.subject.subject_id,
+                        subject=self.guidance_man.oman.enrich_subject(
+                            entity.subject.subject_id
+                        ),
                     )
                     query_graph.entities.append(enriched_entity)
                 for link in graph.graph_links:
-                    enriched_relation = EnrichedRelation()
-                    enriched_relation.link = SubjectLink.from_db(
-                        link.subject_link, self.guidance_man
+                    enriched_relation = EnrichedRelation(
+                        entity=f"{escape_sparql_var(link.from_entity.subject.subject_id)}_{link.from_entity.entity_id}",
+                        relation=link.subject_link.property_id,
+                        target=f"{escape_sparql_var(link.to_entity.subject.subject_id)}_{link.to_entity.entity_id}",
+                        link=SubjectLink.from_db(
+                            link.subject_link, self.guidance_man.oman
+                        ),
                     )
                     query_graph.relations.append(enriched_relation)
                 examples.append(query_graph)

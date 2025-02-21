@@ -13,8 +13,17 @@
                 <h3>{{ state.updated_query.message }}</h3>
             </div>
             <div v-if="updated_steps && state.updated_query.relations_steps.length > 0" class="query_steps">
-                <FuzzyQueryIntermediate :erl="step" v-for="step in updated_steps" :last_one="step == updated_steps[updated_steps.length - 1]">
+                <FuzzyQueryIntermediate :erl="step" v-for="step in updated_steps"
+                    :last_one="step == updated_steps[updated_steps.length - 1]">
                 </FuzzyQueryIntermediate>
+            </div>
+
+            <h3>Example queries:</h3>
+            <Loading v-if="state.loading_example_queries"></Loading>
+            <div class="example_query_box">
+                <div class="example_query" v-for="example in state.example_queries" @click="selected_example(example)">
+                    {{ example.message }}
+                </div>
             </div>
         </div>
 
@@ -23,10 +32,9 @@
 </template>
 
 <script setup lang="ts">
-import { Api, type Candidates, type QueryProgress } from '@/api/client.ts/Api';
+import { Api, type Candidates, type QueryProgress, type EntitiesRelations, type EnrichedEntitiesRelations } from '@/api/client.ts/Api';
 import { BACKEND_URL } from '@/utils/config';
 import { ref, watch, reactive, computed, onMounted, onBeforeMount } from 'vue'
-import { ca, fa, fr } from 'vuetify/locale';
 import OnsetProgress from '../ui/OnsetProgress.vue';
 import OnsetBtn from '../ui/OnsetBtn.vue';
 import { MixedResponse, NodeLinkRepository } from '@/utils/sparql/store';
@@ -42,15 +50,15 @@ const state = reactive({
     running_query: null as QueryProgress | null,
     updated_query: null as QueryProgress | null,
     running_timer: null as number | null,
-    loading: false
-
+    loading: false,
+    loading_example_queries: false,
+    example_queries: [] as EnrichedEntitiesRelations[]
 })
 const api = new Api({
     baseURL: BACKEND_URL
 })
 
-onBeforeMount(() => {
-
+onMounted(() => {
     // state.running_query = {
     //     id: "query:2:2025-01-03T13:24:59.302482",
     //     progress: 2,
@@ -58,7 +66,16 @@ onBeforeMount(() => {
     //     message: "TEST QUERY",
     //     start_time: "2025-01-03T09:34:26.189876",
     // }
-    // state.loading = true
+
+    (async () => {
+        const response = await api.classes.getLlmExamplesClassesSearchLlmExamplesGet()
+        state.example_queries = response.data
+        state.loading_example_queries = false
+    })().catch((e) => {
+        console.error(e)
+        state.loading_example_queries = false
+    })
+    state.loading_example_queries = true
 })
 
 watch(() => state.running_query, (new_val) => {
@@ -110,6 +127,23 @@ const updated_steps = computed(() => {
 
 
 })
+const selected_example = (example: EnrichedEntitiesRelations) => {
+    state.query_string = example.message
+    state.updated_query = {
+        progress: 1,
+        max_steps: 1,
+        id: '-1',
+        start_time: new Date().toISOString(),
+        message: 'Example query',
+        relations_steps: [{ ...example, message: "" }]
+    }
+    clearInterval(state.running_timer)
+    let store = mapERLToStore(example)
+    let response = new MixedResponse()
+    response.store = store
+    emit('query_complete', response)
+    state.loading = false
+}
 </script>
 <style lang="css" scoped>
 .input_step {
@@ -145,7 +179,8 @@ const updated_steps = computed(() => {
     align-items: center;
     width: 50vw;
 }
-.query_steps{
+
+.query_steps {
     display: flex;
     flex-direction: row;
     justify-content: center;
@@ -154,5 +189,28 @@ const updated_steps = computed(() => {
     padding: 1rem;
     margin: 1rem;
     overflow-x: auto;
+}
+
+.example_query_box {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    padding: 1rem;
+    margin: 1rem;
+    overflow-x: auto;
+    overflow-y: auto;
+    max-height: 20rem;
+}
+
+.example_query {
+    padding: 0.5rem;
+    margin: 0.5rem;
+    border: 1px solid #8fa88f;
+    cursor: pointer;
+    word-wrap: break-word;
+    max-width: 25rem;
 }
 </style>

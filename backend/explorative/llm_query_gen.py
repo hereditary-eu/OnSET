@@ -53,8 +53,8 @@ class Relation(BaseModel):
 
 
 class EntitiesRelations(BaseModel):
-    relations: list[Relation]
-    entities: list[Entity]
+    relations: list[Relation] = Field([])
+    entities: list[Entity] = Field([])
     message: str = Field("Found Relations and Entities")
 
 
@@ -78,9 +78,9 @@ class CandidateEntity(Entity):
 
 
 class Candidates(EntitiesRelations):
-    relations: list[CandidateRelation]
-    entities: list[CandidateEntity]
-    constraints: list[CandidateConstraint]
+    relations: list[CandidateRelation] = Field([])
+    entities: list[CandidateEntity] = Field([])
+    constraints: list[CandidateConstraint] = Field([])
 
 
 class EnrichedConstraint(Constraint):

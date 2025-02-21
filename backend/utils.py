@@ -5,6 +5,7 @@ import json
 from typing import Any, List, Optional, Union, Literal
 import os
 from pathlib import Path
+import regex as re
 
 
 def llama_cpp_langchain_from_pretrained(
@@ -128,3 +129,60 @@ def llama_cpp_langchain_from_pretrained(
     else:
         model_path = os.path.join(local_dir, filename)
     return LlamaCpp(model_path=model_path, **kwargs)
+
+
+def to_readable(s: str):
+    return re.sub(r"([a-z])([A-Z])", r"\1 \2", s).replace("_", " ").lower()
+
+
+def to_readable_camelcase(txt: str, split_chars=["_", "-", "/", ":", "."]):
+    if txt is None:
+        return ""
+    txt = re.sub(r"([a-z])([A-Z])", r"\1 \2", txt)
+    txt = re.sub(r"([A-Z])([A-Z][a-z])", r"\1 \2", txt)
+    txt = re.sub(r"([a-z])([0-9])", r"\1 \2", txt)
+    txt = re.sub(r"([0-9])([a-z])", r"\1 \2", txt)
+    for split_char in split_chars:
+        txt = " ".join(txt.split(split_char))
+    return txt
+
+
+def escape_sparql_var(
+    var: str,
+    replace_chars=[
+        "<",
+        ">",
+        "(",
+        ")",
+        "{",
+        "}",
+        "[",
+        "]",
+        "|",
+        "?",
+        "*",
+        "+",
+        ".",
+        "^",
+        "$",
+        "\\",
+        "/",
+        "!",
+        '"',
+        "'",
+        "`",
+        "~",
+        "@",
+        "#",
+        "%",
+        "&",
+        "=",
+        ";",
+        ":",
+        ",",
+        " ",
+    ],
+) -> str:
+    for char in replace_chars:
+        var = var.replace(char, "_")
+    return var

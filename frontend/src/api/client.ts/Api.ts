@@ -66,17 +66,26 @@ export interface CandidateRelation {
 
 /** Candidates */
 export interface Candidates {
-  /** Relations */
-  relations: CandidateRelation[];
-  /** Entities */
-  entities: CandidateEntity[];
+  /**
+   * Relations
+   * @default []
+   */
+  relations?: CandidateRelation[];
+  /**
+   * Entities
+   * @default []
+   */
+  entities?: CandidateEntity[];
   /**
    * Message
    * @default "Found Relations and Entities"
    */
   message?: string;
-  /** Constraints */
-  constraints: CandidateConstraint[];
+  /**
+   * Constraints
+   * @default []
+   */
+  constraints?: CandidateConstraint[];
 }
 
 /** Constraint */
@@ -146,10 +155,16 @@ export interface EnrichedRelation {
 
 /** EntitiesRelations */
 export interface EntitiesRelations {
-  /** Relations */
-  relations: Relation[];
-  /** Entities */
-  entities: Entity[];
+  /**
+   * Relations
+   * @default []
+   */
+  relations?: Relation[];
+  /**
+   * Entities
+   * @default []
+   */
+  entities?: Entity[];
   /**
    * Message
    * @default "Found Relations and Entities"
@@ -986,17 +1001,10 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @summary Get Llm Examples
      * @request GET:/classes/search/llm/examples
      */
-    getLlmExamplesClassesSearchLlmExamplesGet: (
-      query: {
-        /** Query Id */
-        query_id: string;
-      },
-      params: RequestParams = {},
-    ) =>
-      this.request<QueryProgress | null, HTTPValidationError>({
+    getLlmExamplesClassesSearchLlmExamplesGet: (params: RequestParams = {}) =>
+      this.request<EnrichedEntitiesRelations[], any>({
         path: `/classes/search/llm/examples`,
         method: "GET",
-        query: query,
         format: "json",
         ...params,
       }),

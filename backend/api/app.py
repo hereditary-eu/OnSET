@@ -15,9 +15,10 @@ from explorative.exp_model import (
     FuzzyQuery,
     FuzzyQueryResults,
 )
-from explorative.llm_query import LLMQuery, QueryProgress
+from explorative.llm_query import LLMQuery, QueryProgress, EnrichedEntitiesRelations
 from eval_config import BTO_CONFIGS, DBPEDIA_CONFIGS, UNIPROT_CONFIGS
 from initiator import InitatorManager
+
 db_config = DBPEDIA_CONFIGS[0]
 
 base_path = "../data"
@@ -186,8 +187,7 @@ def get_llm_results_running(
 ) -> QueryProgress | None:
     return llm_query.query_progress(query_id)
 
+
 @app.get("/classes/search/llm/examples")
-def get_llm_examples(
-    query_id: str = Query(),
-) -> QueryProgress | None:
+def get_llm_examples() -> list[EnrichedEntitiesRelations]:
     return llm_query.get_examples()

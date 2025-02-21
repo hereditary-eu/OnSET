@@ -14,7 +14,7 @@ from explorative.exp_model import TopicDB, SubjectLinkDB, SubjectInDB, BasePostg
 from explorative.explorative_support import GuidanceManager
 
 from initiator import Initationatable, InitatorManager
-
+from utils import to_readable
 # System prompt describes information given to all conversations
 TOPIC_LLAMA3_PROMPT_SYSTEM = """
 <|begin_of_text|><|start_header_id|>system<|end_header_id|>
@@ -53,9 +53,6 @@ TOPIC_LLAMA3_PROMPT = (
     TOPIC_LLAMA3_PROMPT_SYSTEM + TOPIC_LLAMA3_PROMPT_EXAMPLE + TOPIC_LLAMA3_PROMPT_MAIN
 )
 
-
-def to_readable(s: str):
-    return re.sub(r"([a-z])([A-Z])", r"\1 \2", s).replace("_", " ").lower()
 
 
 class TopicInitator:
