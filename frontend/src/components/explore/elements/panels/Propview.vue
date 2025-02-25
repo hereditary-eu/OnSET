@@ -27,7 +27,7 @@
 </template>
 <script setup lang="ts">
 import { ref, watch, reactive, computed, onMounted } from 'vue'
-import { Constraint } from '@/utils/sparql/representation';
+import { SubQuery } from '@/utils/sparql/representation';
 import { BACKEND_URL } from '@/utils/config';
 import { Api, RELATION_TYPE, RETURN_TYPE, type Property } from '@/api/client.ts/Api';
 import { LINK_WIDTH, NODE_HEIGHT, NODE_WIDTH, NodeSide, OutlinkSelectorOpenEvent } from '@/utils/sparql/helpers';

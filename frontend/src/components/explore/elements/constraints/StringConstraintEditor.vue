@@ -9,7 +9,7 @@
     </div>
 </template>
 <script setup lang="ts">
-import { Constraint, StringConstraint, StringConstraintType } from '@/utils/sparql/representation';
+import { SubQuery, StringConstraint, StringConstraintType } from '@/utils/sparql/representation';
 import { defineProps, defineModel, computed } from 'vue'
 
 const { constraint } = defineProps({

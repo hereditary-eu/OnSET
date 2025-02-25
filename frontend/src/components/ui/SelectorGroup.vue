@@ -1,7 +1,7 @@
 <template>
     <div class="selection_group">
         <OnsetBtn v-for="option in options_selections" :key="option.value" :toggleable="true" :value="option.value"
-            :label="option.label" v-model="option.selected" @click="selection = option.value">
+            :label="option.label" v-model="option.selected" @click="selection = option.value" :btn_width="width" :btn_height="height">
             {{ option.label }}
         </OnsetBtn>
     </div>
@@ -22,6 +22,16 @@ const { options } = defineProps({
         type: String,
         required: false,
         default: ''
+    },
+    width: {
+        type: String,
+        required: false,
+        default: '20rem'
+    },
+    height: {
+        type: String,
+        required: false,
+        default: '2rem'
     }
 })
 const options_selections = computed(() => options.map(option => {

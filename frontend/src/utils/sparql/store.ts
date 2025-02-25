@@ -1,7 +1,7 @@
 import type { FuzzyQueryResult, Subject } from "@/api/client.ts/Api";
 import { registerClass } from "../parsing";
 import { NodeSide } from "./helpers";
-import { Link, QuerySet, SubjectConstraint, SubjectNode } from "./representation";
+import { Link, QueryProp, QuerySet, SubjectConstraint, SubjectNode } from "./representation";
 
 
 @registerClass
@@ -168,6 +168,9 @@ export class NodeLinkRepository<N extends SubjectNode = SubjectNode, L extends L
                 if (constraint.instance) {
                     query += `\nFILTER(${from.output_id()}=${constraint.instance.id})`
                 }
+            } else if (constraint instanceof QueryProp) {
+                let constrained_id = `?prop_${constraint.link.link_id}`
+                query += `\n${from.output_id()} ${constraint.link.property_id} ${constrained_id}.`
             } else {
                 let constrained_id = `?prop_${constraint.link.link_id}`
                 query += `\n${from.output_id()} ${constraint.link.property_id} ${constrained_id}.
@@ -191,7 +194,7 @@ export class NodeLinkRepository<N extends SubjectNode = SubjectNode, L extends L
         set.link_triplets = []
         for (let node of this.nodes) {
             set.nodes[node.internal_id] = node
-            set.filter.push(...node.property_constraints)
+            set.filter.push(...node.subqueries)
         }
         for (let link of this.links) {
             let from = this.from(link)

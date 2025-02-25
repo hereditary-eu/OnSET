@@ -1,7 +1,11 @@
 <template>
     <div class="results_view">
         <div class="result_instance_header">Results</div>
-        <div class="results_instance_container">
+
+        <SelectorGroup v-model="ui_state.result_mode" :options="Object.keys(ResultMode).map(qm => {
+                return { value: ResultMode[qm], label: ResultMode[qm] }
+            })" :width='"7rem"' :height='"1.2rem"'></SelectorGroup>
+        <div v-if="ui_state.result_mode == ResultMode.MINI" class="results_instance_container" >
             <div class="result_instance_element" v-for="store of mapped_stores">
                 <Result :store="store" :expanded="false" :scale="ui_state.scale" :offset="ui_state.offset">
                 </Result>
@@ -10,6 +14,9 @@
             <OnsetBtn v-if="mapped_stores.length > 0 && !ui_state.paging_end" @click="loadMore" btn_width="100%"
                 :toggleable="false">Load more</OnsetBtn>
             <div class="result_instance_element" ref="view_container" v-show="mapped_stores.length == 0"></div>
+        </div>
+        <div v-else>
+            
         </div>
     </div>
 </template>
@@ -25,7 +32,11 @@ import Loading from '../ui/Loading.vue';
 import Result from '../explore/Result.vue';
 import OnsetBtn from '../ui/OnsetBtn.vue';
 import type { NodeLinkRepository } from '@/utils/sparql/store';
-
+import SelectorGroup from '../ui/SelectorGroup.vue';
+enum ResultMode {
+    MINI = 'Miniatures',
+    PROP = 'Properties',
+}
 const { store, query_string } = defineProps({
     store: {
         type: Object as () => NodeLinkRepository,
@@ -50,7 +61,8 @@ const ui_state = reactive({
     prop_open: false,
     prop_open_event: null as PropertiesOpenEvent | null,
     paging_offset: 0,
-    paging_end: false
+    paging_end: false,
+    result_mode: ResultMode.MINI
 })
 watch(() => query_string, () => {
 

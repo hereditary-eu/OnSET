@@ -19,11 +19,11 @@
             </text>
             <g v-if="mode == DisplayMode.EDIT" v-for="constr_info in constraint_list_mapped"
                 :transform="`translate(${subject.width / 2},${constr_info.y})`">
-                <Constraint :constraint="constr_info.constraint" :extend_path="constr_info.extend_path"
+                <Sublink :subquery="constr_info.subquery" :extend_path="constr_info.extend_path"
                     :show_editpoints="editor_data.show_editpoints" :node="subject" @delete="deleteConstraint"
                     @instance-search-clicked="emit('instanceSearchClicked', $event)">
 
-                </Constraint>
+                </Sublink>
             </g>
 
             <g v-show="mode == DisplayMode.RESULT_INTERACTIVE && editor_data.show_editpoints">
@@ -56,7 +56,7 @@ import { type Subject } from '@/api/client.ts/Api';
 import { SubjectNode as NodeRepr, NodeState } from '@/utils/sparql/representation';
 import LinkComp from './Link.vue';
 import { CONSTRAINT_PADDING, CONSTRAINT_WIDTH, DisplayMode, InstanceSelectorOpenEvent, NodeSide, OutlinkSelectorOpenEvent } from '@/utils/sparql/helpers';
-import Constraint from './Constraint.vue';
+import Sublink from './Subquery.vue';
 import type { InstanceNode, PropertiesOpenEvent } from '@/utils/sparql/querymapper';
 import type { NodeLinkRepository } from '@/utils/sparql/store';
 const emit = defineEmits<{
@@ -106,12 +106,12 @@ const mouse_move_node = (event: MouseEvent) => {
     }
 }
 const constraint_list_mapped = computed(() => {
-    if (!subject.property_constraints) {
+    if (!subject.subqueries) {
         return []
     }
-    let constraints = subject.property_constraints.filter(constr => constr != null).map((constraint) => {
+    let constraints = subject.subqueries.filter(constr => constr != null).map((subquery) => {
         return {
-            constraint: constraint,
+            subquery: subquery,
             y: 0,
             extend_path: 0
         }
@@ -123,18 +123,18 @@ const constraint_list_mapped = computed(() => {
     let last_height = 0
     for (let constr of constraints) {
         constr.y = y_pos
-        y_pos += constr.constraint.height + CONSTRAINT_PADDING
+        y_pos += constr.subquery.height + CONSTRAINT_PADDING
         if (last_height == 0) {
             constr.extend_path = CONSTRAINT_PADDING
         } else {
             constr.extend_path = last_height / 2 + CONSTRAINT_PADDING
         }
-        last_height = constr.constraint.height
+        last_height = constr.subquery.height
     }
     return constraints
 })
 const constraints_height = computed(() => {
-    return constraint_list_mapped.value.reduce((acc, constr) => acc + constr.extend_path + constr.constraint.height / 2, 0)
+    return constraint_list_mapped.value.reduce((acc, constr) => acc + constr.extend_path + constr.subquery.height / 2, 0)
 })
 const node_statestyle = computed(() => {
     switch (subject.state) {
@@ -165,7 +165,7 @@ const edit_point_hover = (event: MouseEvent, state: boolean) => {
     editor_data.show_editpoints = state
 }
 const deleteConstraint = (constraint) => {
-    subject.property_constraints = subject.property_constraints.filter((constr) => constr != constraint)
+    subject.subqueries = subject.subqueries.filter((constr) => constr != constraint)
 }
 const result_subject = computed(() => subject as InstanceNode)
 onMounted(() => {

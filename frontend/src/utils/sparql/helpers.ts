@@ -1,5 +1,5 @@
 import type { Candidates, EnrichedEntity, EnrichedRelation, EntitiesRelations, Entity, Relation } from "@/api/client.ts/Api";
-import { Constraint, Link, SubjectNode, type SubjectConstraint } from "./representation";
+import { SubQuery, Link, SubjectNode, type SubjectConstraint } from "./representation";
 import { NodeLinkRepository } from "./store";
 import { reactive } from "vue";
 
@@ -103,7 +103,7 @@ export function mapERLToStore(step: EntitiesRelations) {
                     from_subject: constrained_node,
                     to_subject: null
                 })
-                constrained_node.property_constraints.push(Constraint.construct(constraint_link))
+                constrained_node.subqueries.push(SubQuery.construct(constraint_link))
             }
         })
     }

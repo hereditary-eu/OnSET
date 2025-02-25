@@ -12,7 +12,7 @@
 import OnsetBtn from '@/components/ui/OnsetBtn.vue';
 import { CONSTRAINT_HEIGHT, type InstanceSelectorOpenEvent } from '@/utils/sparql/helpers';
 import { readableName } from '@/utils/sparql/querymapper';
-import { Constraint, SubjectNode, StringConstraint, StringConstraintType, SubjectConstraint } from '@/utils/sparql/representation';
+import { SubQuery, SubjectNode, StringConstraint, StringConstraintType, SubjectConstraint } from '@/utils/sparql/representation';
 import { defineProps, defineModel, computed, defineEmits, watch } from 'vue'
 const emits = defineEmits<{
     open_search: [value: InstanceSelectorOpenEvent]

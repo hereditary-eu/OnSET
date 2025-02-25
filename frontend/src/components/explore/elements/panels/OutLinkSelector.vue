@@ -12,16 +12,24 @@
                         <input type="text" placeholder="Search..." v-model="editor_data.q" />
                     </div>
                     <div class="selection_element_container">
-                        <div class="selection_element" v-for="option of selected_options_filtered"
-                            @click="select_option(option, $event)" @mouseenter.capture="editor_data.hover_add = option"
-                            @mousemove.capture="editor_data.hover_add = option"
-                            @mouseleave.capture="editor_data.hover_add = null"
-                            :key="option.link?.property_id || option.subject?.subject_id">
-                            <svg :width="NODE_WIDTH + LINK_WIDTH" :height="NODE_HEIGHT + 15">
-                                <g @click="">
-                                    <GraphView :store="option.store" :display-mode="DisplayMode.SELECT"></GraphView>
-                                </g>
-                            </svg>
+                        <div class="selection_element_wrapper" v-for="option of selected_options_filtered">
+                            <div class="selection_element" @click="select_option(option, $event)" @mouseenter.capture="editor_data.hover_add =
+                                option" @mousemove.capture="editor_data.hover_add = option"
+                                @mouseleave.capture="editor_data.hover_add = null"
+                                :key="option.link?.property_id || option.subject?.subject_id">
+                                <svg :width="editor_data.select_width" :height="NODE_HEIGHT + 15">
+                                    <g @click="">
+                                        <GraphView :store="option.store" :display-mode="DisplayMode.SELECT"></GraphView>
+                                    </g>
+                                </svg>
+
+                            </div>
+                            <div v-if="selection_event.side == NodeSide.PROP">
+                                <OnsetBtn :btn_width="'1.5rem'" :toggleable="false"
+                                    @click="select_prop(option, $event)">
+                                    <v-icon icon="mdi-tag"></v-icon>
+                                </OnsetBtn>
+                            </div>
                         </div>
                         <Loading v-if="editor_data.loading"></Loading>
                         <OnsetBtn @click="loadMore" btn_width="100%"
@@ -40,7 +48,7 @@
 </template>
 <script setup lang="ts">
 import { ref, watch, reactive, computed, onMounted } from 'vue'
-import { Constraint, Link, SubjectNode, StringConstraint, SubjectConstraint } from '@/utils/sparql/representation';
+import { SubQuery, Link, SubjectNode, StringConstraint, SubjectConstraint, QueryProp } from '@/utils/sparql/representation';
 import LinkComp from '../Link.vue';
 import NodeComp from '../Node.vue';
 import { BACKEND_URL } from '@/utils/config';
@@ -80,6 +88,7 @@ const editor_data = reactive({
     offset: 0,
     reached_end: false,
     hover_add: null as MixedResponse<SubjectNode> | null,
+    select_width: LINK_WIDTH + NODE_WIDTH
 
 })
 const display = defineModel<boolean>()
@@ -91,6 +100,14 @@ const update_selection_options = async () => {
             selection_options.value = []
             editor_data.offset = 0
             console.log('fetching selection options', selection_event, 'offset', editor_data.offset)
+            switch (selection_event.side) {
+                case NodeSide.PROP:
+                    editor_data.select_width = NODE_WIDTH
+                    break
+                default:
+                    editor_data.select_width = LINK_WIDTH + NODE_WIDTH
+                    break
+            }
             await loadMore()
         })().catch((e) => {
             console.error('Error fetching selection options', e)
@@ -104,6 +121,7 @@ const update_selection_options = async () => {
 watch(() => selection_event, () => {
     editor_data.q = ''
     update_selection_options()
+
 }, { deep: false })
 watch(() => editor_data.q, update_selection_options, { deep: false })
 
@@ -133,7 +151,7 @@ const loadMore = async () => {
             to.x = LINK_WIDTH
             from.x = -NODE_WIDTH
         } else if (selection_event.side == NodeSide.PROP) {
-            to.x = LINK_WIDTH + NODE_WIDTH
+            to.x = NODE_WIDTH
             from.x = -from.width
         } else {
             to.x = LINK_WIDTH + NODE_WIDTH
@@ -179,24 +197,34 @@ const select_option = (selected_option: MixedResponse<SubjectNode>, event: Mouse
             break
         case NodeSide.PROP:
             selected_option.link.from_internal_id = selection_event.node.internal_id
-            let constraint = Constraint.construct(selected_option.link)
-            if (!selection_event.node.property_constraints) {
-                selection_event.node.property_constraints = []
+            let constraint = SubQuery.construct(selected_option.link)
+            if (!selection_event.node.subqueries) {
+                selection_event.node.subqueries = []
             }
             // if (!selection_event.node.property_constraints[selected_option.link.property_id]) {
             //     selection_event.node.property_constraints[selected_option.link.property_id] = []
             // }
-            selection_event.node.property_constraints.push(constraint)
+            selection_event.node.subqueries.push(constraint)
             //TODO: property constraints
             // selection_event.node.property_constraints.push(option.link)
             break
     }
     emit('select', selected_option)
 }
+const select_prop = (option: MixedResponse<SubjectNode>, event: MouseEvent) => {
+    display.value = false
+    option.link.from_internal_id = selection_event.node.internal_id
+    let query_prop = QueryProp.construct(option.link)
+    if (selection_event.node.subqueries) {
+        selection_event.node.subqueries.push(query_prop)
+    } else {
+        selection_event.node.subqueries = [query_prop]
+    }
+}
 const selected_options_filtered = computed(() => {
     if (selection_event.side == NodeSide.PROP) {
         return selection_options.value.filter((option) => {
-            return Constraint.construct(option.link) != null
+            return SubQuery.construct(option.link) != null
         })
     }
     return selection_options.value
@@ -213,11 +241,11 @@ const addLabelConstraint = () => {
     link.property_id = 'rdfs:label'
     link.to_proptype = 'xsd:string'
     link.label = 'Label'
-    const constraint = Constraint.construct(link)
-    if (!selection_event.node.property_constraints) {
-        selection_event.node.property_constraints = []
+    const constraint = SubQuery.construct(link)
+    if (!selection_event.node.subqueries) {
+        selection_event.node.subqueries = []
     }
-    selection_event.node.property_constraints.push(constraint)
+    selection_event.node.subqueries.push(constraint)
     display.value = false
 }
 const addInstanceConstraint = () => {
@@ -229,10 +257,10 @@ const addInstanceConstraint = () => {
 
     const constraint = new SubjectConstraint()
     constraint.link = link
-    if (!selection_event.node.property_constraints) {
-        selection_event.node.property_constraints = []
+    if (!selection_event.node.subqueries) {
+        selection_event.node.subqueries = []
     }
-    selection_event.node.property_constraints.push(constraint)
+    selection_event.node.subqueries.push(constraint)
     display.value = false
 }
 watch(editor_data, (editor_data) => {
@@ -242,10 +270,10 @@ watch(editor_data, (editor_data) => {
             let target = prepareTarget(hover_target)
             let link = store.prepareLink(editor_data.hover_add.link, selection_event.node, target, selection_event.side)
             emit('hover_option', link)
-        } 
-        
+        }
+
     }
-    if(!editor_data.hover_add){
+    if (!editor_data.hover_add) {
         emit('hover_option', null)
     }
 }, { deep: true })
@@ -285,12 +313,20 @@ watch(display, (new_val) => {
     overflow-y: auto;
 }
 
-.selection_element {
+.selection_element_wrapper {
     padding: 2px;
-    cursor: pointer;
     display: flex;
+    flex-direction: row;
     justify-items: center;
     align-items: center;
+
+    // width: v-bind("editor_data.select_width")px;
+}
+
+.selection_element {
+    cursor: pointer;
+    margin: 5px;
+
 }
 
 .selection_element:hover {

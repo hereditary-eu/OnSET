@@ -5,7 +5,7 @@
     </div>
 </template>
 <script setup lang="ts">
-import { Constraint, BooleanConstraint } from '@/utils/sparql/representation';
+import { SubQuery, BooleanConstraint } from '@/utils/sparql/representation';
 import { defineProps, defineModel, computed } from 'vue'
 
 const { constraint } = defineProps({

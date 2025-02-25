@@ -12,19 +12,21 @@ export enum NodeState {
     ADDED = "ADDED",
 }
 
-export enum ConstraintType {
+export enum SubQueryType {
     STRING = "string",
     NUMBER = "number",
     BOOLEAN = "boolean",
     DATE = "date",
-    SUBJECT = "subject"
+    SUBJECT = "subject",
+    QUERY_PROP = "query_prop"
 }
+
 @registerClass
-export class Constraint {
+export class SubQuery {
     link: Link;
     height: number
     width: number
-    constraint_type: ConstraintType;
+    constraint_type: SubQueryType;
     constructor() {
         this.height = CONSTRAINT_HEIGHT / 2
         this.width = CONSTRAINT_WIDTH
@@ -32,7 +34,7 @@ export class Constraint {
     static validPropType(propType: string): boolean {
         return false;
     }
-    static construct(link: Link): Constraint {
+    static construct(link: Link): SubQuery {
         let constraint = null
 
         if (StringConstraint.validPropType(link.to_proptype)) {
@@ -56,14 +58,30 @@ export class Constraint {
         return this.filterExpression(property);
     }
 }
+
 @registerClass
-export class SubjectConstraint extends Constraint {
+export class QueryProp extends SubQuery {
+    property_id: string
+    constructor() {
+        super();
+        this.constraint_type = SubQueryType.QUERY_PROP
+    }
+    static construct(link: Link): QueryProp {
+        let query_prop = new QueryProp();
+        query_prop.link = link;
+        query_prop.property_id = link.property_id;
+        return query_prop;
+    }
+}
+
+@registerClass
+export class SubjectConstraint extends SubQuery {
     instance: Instance;
     constructor() {
         super();
         this.height = CONSTRAINT_HEIGHT / 2
         this.instance = null;
-        this.constraint_type = ConstraintType.SUBJECT
+        this.constraint_type = SubQueryType.SUBJECT
     }
     filterExpression(property: string): string {
         return `${property} = "${this.instance.id}"`;
@@ -80,7 +98,7 @@ export enum StringConstraintType {
     REGEX = "regex",
 }
 @registerClass
-export class StringConstraint extends Constraint {
+export class StringConstraint extends SubQuery {
     value: string;
     type: StringConstraintType;
     constructor(value: string = null, type: StringConstraintType = StringConstraintType.CONTAINS) {
@@ -88,7 +106,7 @@ export class StringConstraint extends Constraint {
         this.height = CONSTRAINT_HEIGHT / 1.3
         this.value = value;
         this.type = type;
-        this.constraint_type = ConstraintType.STRING
+        this.constraint_type = SubQueryType.STRING
     }
     filterExpression(property: string): string {
         switch (this.type) {
@@ -117,14 +135,14 @@ export enum NumberConstraintType {
     GREATER = "greater",
 }
 @registerClass
-export class NumberConstraint extends Constraint {
+export class NumberConstraint extends SubQuery {
     value: number;
     type: NumberConstraintType;
     constructor(value: number = 0, type: NumberConstraintType = NumberConstraintType.GREATER) {
         super();
         this.value = value;
         this.type = type;
-        this.constraint_type = ConstraintType.NUMBER
+        this.constraint_type = SubQueryType.NUMBER
     }
     filterExpression(property: string): string {
         let filter_cond = ""
@@ -158,12 +176,12 @@ export class NumberConstraint extends Constraint {
 }
 
 @registerClass
-export class BooleanConstraint extends Constraint {
+export class BooleanConstraint extends SubQuery {
     value: boolean;
     constructor(value: boolean = false) {
         super();
         this.value = value;
-        this.constraint_type = ConstraintType.BOOLEAN
+        this.constraint_type = SubQueryType.BOOLEAN
     }
     filterExpression(property: string): string {
         return `${property} = ${this.value}`;
@@ -173,14 +191,14 @@ export class BooleanConstraint extends Constraint {
     }
 }
 @registerClass
-export class DateConstraint extends Constraint {
+export class DateConstraint extends SubQuery {
     value: Date;
     type: NumberConstraintType;
     constructor(value: Date = new Date(), type: NumberConstraintType = NumberConstraintType.GREATER) {
         super();
         this.value = value;
         this.type = type;
-        this.constraint_type = ConstraintType.DATE
+        this.constraint_type = SubQueryType.DATE
     }
     valueExpression(): string {
         return `"${this.value.toISOString()}"^^xsd:dateTime`
@@ -213,7 +231,7 @@ export class QuerySet {
     nodes: Record<string, SubjectNode>;
     link_triplets: LinkTriplet[];
 
-    filter: Constraint[];
+    filter: SubQuery[];
 
     constructor() {
         this.nodes = {};
@@ -242,7 +260,7 @@ export class SubjectNode implements Subject {
 
 
 
-    property_constraints?: Constraint[];
+    subqueries?: SubQuery[];
     internal_id: string;
     internal_id_cnt: number;
     unknown: boolean;
@@ -255,7 +273,7 @@ export class SubjectNode implements Subject {
             this.height = NODE_HEIGHT
             this.width = NODE_WIDTH
             this.unknown = false;
-            this.property_constraints = [];
+            this.subqueries = [];
             this.state = NodeState.NORMAL;
             this.internal_id_cnt = ++internal_id_counter;
             this.internal_id = `node_${this.internal_id_cnt}`;
@@ -277,10 +295,10 @@ export class SubjectNode implements Subject {
 
     computeConstraintOffsets(padding: number) {
 
-        if (!this.property_constraints) {
+        if (!this.subqueries) {
             return []
         }
-        let constraints = this.property_constraints.filter(constr => constr != null).map((constraint) => {
+        let constraints = this.subqueries.filter(constr => constr != null).map((constraint) => {
             return {
                 constraint: constraint,
                 y: 0,

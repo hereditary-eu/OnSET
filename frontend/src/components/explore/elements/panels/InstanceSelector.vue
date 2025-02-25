@@ -30,7 +30,7 @@
 </template>
 <script setup lang="ts">
 import { ref, watch, reactive, computed, onMounted } from 'vue'
-import { Constraint, Link, StringConstraint } from '@/utils/sparql/representation';
+import { SubQuery, Link, StringConstraint } from '@/utils/sparql/representation';
 import LinkComp from '../Link.vue';
 import NodeComp from '../Node.vue';
 import { BACKEND_URL } from '@/utils/config';

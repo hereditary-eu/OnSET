@@ -100,14 +100,14 @@ export class QueryMapper {
         })
 
         let offset = bbox.tl.clone().multiplyScalar(-1)
-        let scale_x = this.target_size.x / (bbox.br.x - bbox.tl.x)
-        let scale_y = this.target_size.y / (bbox.br.y - bbox.tl.y)
-        let scale = Math.min(scale_x, scale_y)
+        let size = bbox.br.clone().sub(bbox.tl)
+        let scale_vec=new Vector2(this.target_size.x / size.x, this.target_size.y / size.y)
+        let scale = Math.max(scale_vec.x, scale_vec.y)
         console.log(bbox, offset, this.target_size, scale)
         offset.multiplyScalar(scale)
         bbox.tl.multiplyScalar(scale)
         bbox.br.multiplyScalar(scale)
-        let size = bbox.br.clone().sub(bbox.tl)
+        size = bbox.br.clone().sub(bbox.tl)
         return { mapped_stores, offset, scale, size }
     }
 
