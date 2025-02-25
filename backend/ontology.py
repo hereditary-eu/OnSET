@@ -220,7 +220,7 @@ class OntologyManager:
         if cls.startswith("_"):
             print("Skipping", cls)
             return {}
-        try:            
+        try:
             # print("Loading outgoing edges for", cls, edges)
             if edges and len(edges) > 0:
                 outgoing_edges = list(
@@ -299,7 +299,7 @@ OPTIONAL {{?obj rdfs:label ?obj_lbl.}}
             return 0
 
     def properties_for(
-        self, cls: str, property_type: str = "ObjectProperty", n_props=64
+        self, cls: str, property_type: str = "ObjectProperty", n_props=None
     ) -> list[Subject]:
         if cls.startswith("_"):
             print("Skipping", cls)
@@ -312,7 +312,7 @@ OPTIONAL {{?obj rdfs:label ?obj_lbl.}}
                 SELECT DISTINCT ?prop WHERE {{ 
                 ?prop rdf:type owl:{property_type}.
                 ?prop rdfs:domain {cls}.
-                }} LIMIT {n_props}"""
+                }} {f"LIMIT {n_props}" if n_props else ""}"""
                 )
             )
             # print("Loaded", len(properties), "properties for", cls)

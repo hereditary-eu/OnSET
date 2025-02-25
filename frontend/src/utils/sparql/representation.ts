@@ -4,7 +4,13 @@ import { CONSTRAINT_HEIGHT, CONSTRAINT_WIDTH, NODE_HEIGHT, NODE_WIDTH } from "./
 import { registerClass } from "../parsing";
 import { NodeLinkRepository } from "./store";
 
-
+export enum NodeState {
+    NORMAL = "normal",
+    SELECTED = "selected",
+    HOVERED = "hovered",
+    DELETION_IMMINENT = "deletion_imminent",
+    ADDED = "ADDED",
+}
 
 export enum ConstraintType {
     STRING = "string",
@@ -121,14 +127,21 @@ export class NumberConstraint extends Constraint {
         this.constraint_type = ConstraintType.NUMBER
     }
     filterExpression(property: string): string {
+        let filter_cond = ""
         switch (this.type) {
+            default:
             case NumberConstraintType.EQUALS:
-                return `${property} = ${this.value}`;
+                filter_cond = `${property} = `;
+                break;
             case NumberConstraintType.LESS:
-                return `${property} < ${this.value}`;
+                filter_cond = `${property} < `;
+                break;
             case NumberConstraintType.GREATER:
-                return `${property} > ${this.value}`;
+                filter_cond = `${property} > `;
+                break;
         }
+        filter_cond = `${filter_cond} "${this.value}"^^${this.link.to_proptype}`;
+        return filter_cond;
     }
     static validPropType(propType: string): boolean {
         return propType == 'xsd:double' ||
@@ -233,7 +246,7 @@ export class SubjectNode implements Subject {
     internal_id: string;
     internal_id_cnt: number;
     unknown: boolean;
-    deletion_imminent: boolean
+    state: NodeState = NodeState.NORMAL
 
     constructor(node?: SubjectNode | Subject) {
         if (!(node instanceof SubjectNode)) {
@@ -243,7 +256,7 @@ export class SubjectNode implements Subject {
             this.width = NODE_WIDTH
             this.unknown = false;
             this.property_constraints = [];
-            this.deletion_imminent = false;
+            this.state = NodeState.NORMAL;
             this.internal_id_cnt = ++internal_id_counter;
             this.internal_id = `node_${this.internal_id_cnt}`;
         }

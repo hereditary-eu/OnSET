@@ -2,8 +2,8 @@
 
 import * as THREE from 'three'
 import { CircleMan3D, SubjectInCircle } from './CircleMan3D';
-import type { Link, SubjectNode } from '../sparql/representation';
-import type { NodeLinkRepository } from '../sparql/store';
+import { Link, type SubjectNode } from '../sparql/representation';
+import type { MixedResponse, NodeLinkRepository } from '../sparql/store';
 // 3D circle packing based upon https://observablehq.com/@analyzer2004/3d-circle-packing
 
 export class LinkCircles {
@@ -29,6 +29,12 @@ export class OverviewCircles extends CircleMan3D {
         height_factor: 0.5,
         min_height: 25
     }
+
+    preview_link? = {
+        link: null as Link,
+        tube_mesh: null as THREE.Mesh
+    }
+
     constructor(query_renderer: string) {
         super(query_renderer)
     }
@@ -105,5 +111,42 @@ export class OverviewCircles extends CircleMan3D {
             this.renderer.clear()
         }
         this.renderer.render(this.scene, this.camera);
+    }
+    previewLink(link: Link) {
+        this.hidePreview()
+        let from = this.subjects_by_id[link.from_id]
+        let to = this.subjects_by_id[link.to_id]
+        if (!from || !to) {
+            console.error("Missing subjects for link", link)
+            return
+        }
+        let height = from.position.distanceTo(to.position) * this.link_params.height_factor + this.link_params.min_height
+        let curve_up = new THREE.QuadraticBezierCurve3(from.position.clone(),
+            from.position.clone().add(to.position).divideScalar(2).add(new THREE.Vector3(0, height, 0)),
+            to.position.clone())
+        let geometry = new THREE.TubeGeometry(curve_up, this.link_params.segments,
+            this.link_params.radius,
+            this.link_params.radial_segments,
+            false);
+        let material = new THREE.MeshBasicMaterial({
+            color: "rgb(240, 240, 0)",
+            transparent: true,
+            opacity: 0.7
+        });
+        let tube_mesh = new THREE.Mesh(geometry, material);
+
+        this.preview_link = {
+            link: link,
+            tube_mesh: tube_mesh
+        }
+        this.scene.add(tube_mesh)
+    }
+    hidePreview() {
+        if (this.preview_link) {
+            if (this.scene) {
+                this.scene.remove(this.preview_link.tube_mesh)
+            }
+            this.preview_link = null
+        }
     }
 }

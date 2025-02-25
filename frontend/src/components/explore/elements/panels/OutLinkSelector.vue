@@ -13,7 +13,9 @@
                     </div>
                     <div class="selection_element_container">
                         <div class="selection_element" v-for="option of selected_options_filtered"
-                            @click="select_option(option, $event)"
+                            @click="select_option(option, $event)" @mouseenter.capture="editor_data.hover_add = option"
+                            @mousemove.capture="editor_data.hover_add = option"
+                            @mouseleave.capture="editor_data.hover_add = null"
                             :key="option.link?.property_id || option.subject?.subject_id">
                             <svg :width="NODE_WIDTH + LINK_WIDTH" :height="NODE_HEIGHT + 15">
                                 <g @click="">
@@ -39,18 +41,20 @@
 <script setup lang="ts">
 import { ref, watch, reactive, computed, onMounted } from 'vue'
 import { Constraint, Link, SubjectNode, StringConstraint, SubjectConstraint } from '@/utils/sparql/representation';
-import LinkComp from './Link.vue';
-import NodeComp from './Node.vue';
+import LinkComp from '../Link.vue';
+import NodeComp from '../Node.vue';
 import { BACKEND_URL } from '@/utils/config';
 import { Api, RELATION_TYPE, RETURN_TYPE } from '@/api/client.ts/Api';
 import { DisplayMode, LINK_WIDTH, NODE_HEIGHT, NODE_WIDTH, NodeSide, OutlinkSelectorOpenEvent } from '@/utils/sparql/helpers';
 import Loading from '@/components/ui/Loading.vue';
 import OnsetBtn from '@/components/ui/OnsetBtn.vue';
 import { MixedResponse, type NodeLinkRepository } from '@/utils/sparql/store';
-import GraphView from './GraphView.vue';
+import GraphView from '../GraphView.vue';
+import { jsonClone } from '@/utils/parsing';
 
 const emit = defineEmits<{
-    select: [value: MixedResponse]
+    select: [value: MixedResponse],
+    hover_option: [value: Link | null]
 }>()
 const api = new Api({
     baseURL: BACKEND_URL
@@ -74,7 +78,9 @@ const editor_data = reactive({
     q: '',
     query_id: 0,
     offset: 0,
-    reached_end: false
+    reached_end: false,
+    hover_add: null as MixedResponse<SubjectNode> | null,
+
 })
 const display = defineModel<boolean>()
 const selection_options = ref([] as MixedResponse<SubjectNode>[])
@@ -153,23 +159,22 @@ const attachment_pt = computed(() => {
             return { x: selection_event.node.x + selection_event.node.width / 2, y: selection_event.node.y + selection_event.node.height }
     }
 })
-
+const prepareTarget = (link: Link<SubjectNode>) => {
+    let target = selection_event.side == NodeSide.TO ? link.to_subject : link.from_subject
+    if (selection_event.side == NodeSide.TO) {
+        target.x = selection_event.node.x + selection_event.node.width + LINK_WIDTH
+    } else {
+        target.x = selection_event.node.x - (target.width + LINK_WIDTH)
+    }
+    target.y = selection_event.node.y
+    return target
+}
 const select_option = (selected_option: MixedResponse<SubjectNode>, event: MouseEvent) => {
     display.value = false
-
-
-
     switch (selection_event.side) {
         case NodeSide.TO:
         case NodeSide.FROM:
-            let target = selection_event.side == NodeSide.TO ? selected_option.link.to_subject : selected_option.link.from_subject
-            if (selection_event.side == NodeSide.TO) {
-                target.x = selection_event.node.x + selection_event.node.width + LINK_WIDTH
-            } else {
-                target.x = selection_event.node.x - (target.width + LINK_WIDTH)
-            }
-            target.y = selection_event.node.y
-
+            let target = prepareTarget(selected_option.link)
             store.addOutlink(selected_option.link, selection_event.node, target, selection_event.side)
             break
         case NodeSide.PROP:
@@ -230,6 +235,26 @@ const addInstanceConstraint = () => {
     selection_event.node.property_constraints.push(constraint)
     display.value = false
 }
+watch(editor_data, (editor_data) => {
+    if (selection_event.side != NodeSide.PROP) {
+        if (editor_data.hover_add) {
+            let hover_target = jsonClone(editor_data.hover_add.link)
+            let target = prepareTarget(hover_target)
+            let link = store.prepareLink(editor_data.hover_add.link, selection_event.node, target, selection_event.side)
+            emit('hover_option', link)
+        } 
+        
+    }
+    if(!editor_data.hover_add){
+        emit('hover_option', null)
+    }
+}, { deep: true })
+watch(display, (new_val) => {
+    if (!new_val) {
+        console.log('Clearing hover')
+        editor_data.hover_add = null
+    }
+})
 </script>
 <style lang="scss">
 .selection_search {

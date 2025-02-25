@@ -67,6 +67,10 @@ export class NodeLinkRepository<N extends SubjectNode = SubjectNode, L extends L
         if (this.nodes.filter(node => node === target).length === 0) {
             this.nodes.push(target)
         }
+        link = this.prepareLink(link, origin, target, side)
+        this.links.push(link)
+    }
+    prepareLink(link: L, origin: N, target: N, side: NodeSide) {
         switch (side) {
             case NodeSide.FROM:
                 link.from_internal_id = target.internal_id
@@ -79,7 +83,7 @@ export class NodeLinkRepository<N extends SubjectNode = SubjectNode, L extends L
             default:
                 throw new Error("Invalid side")
         }
-        this.links.push(link)
+        return link
     }
     subElementsRecursive(node: SubjectNode, visited: SubjectNode[] = []) {
         let subNodes: SubjectNode[] = []

@@ -5,7 +5,7 @@
             <GraphView :store="store" :display-mode="DisplayMode.EDIT" @edit-point-clicked="clicked_outlink($event)"
                 @instance-search-clicked="clicked_instance($event)"></GraphView>
             <OutLinkSelector :selection_event="ui_state.outlink_event" v-model="ui_state.outlink_display"
-                :store="store">
+                :store="store" @hover_option="preview_link($event)">
             </OutLinkSelector>
             <InstanceSelector :selection_event="ui_state.instance_event" v-model="ui_state.instance_display">
             </InstanceSelector>
@@ -22,10 +22,10 @@
 import { ref, watch, reactive, computed, onMounted, defineProps, onBeforeMount } from 'vue'
 import { SubjectNode, Link } from '@/utils/sparql/representation';
 import NodeComp from './elements/Node.vue';
-import OutLinkSelector from './elements/OutLinkSelector.vue';
+import OutLinkSelector from './elements/panels/OutLinkSelector.vue';
 import { DisplayMode, InstanceSelectorOpenEvent, type NodeSide, type OutlinkSelectorOpenEvent } from '@/utils/sparql/helpers';
-import InstanceSelector from './elements/InstanceSelector.vue';
-import type { NodeLinkRepository } from '@/utils/sparql/store';
+import InstanceSelector from './elements/panels/InstanceSelector.vue';
+import type { MixedResponse, NodeLinkRepository } from '@/utils/sparql/store';
 import GraphView from './elements/GraphView.vue';
 import { OverviewCircles } from '@/utils/three-man/OverviewCircles';
 import { fa } from 'vuetify/locale';
@@ -111,6 +111,16 @@ onBeforeMount(() => {
 
     // .style('background-color', 'red')
 })
+const preview_link = (l: Link | null) => {
+    console.log('Preview link', l)
+    if(l){
+        overviewBox.previewLink(l)
+    } else {
+        overviewBox.hidePreview()
+    }
+
+
+}
 </script>
 <style lang="scss" scoped>
 .query_builder {

@@ -23,6 +23,9 @@ export function stringifyJSON<T>(obj: T): string {
 export function parseJSON<T>(json: string): T {
     return parse(json, reviveRegisteredClasses);
 }
+export function jsonClone<T>(obj: T): T {
+    return parseJSON(stringifyJSON(obj));
+}
 export function registerClass<C extends { new(): {} }>(constructor: C) {
     constructor.prototype.__parseregister = constructor.name
     registeredClasses[constructor.name] = new RegisterEntry(constructor.name, constructor)

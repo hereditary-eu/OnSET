@@ -63,7 +63,7 @@ class TopicInitator:
         representation_llama = LlamaCPP(
             self.guidance_man.llama_model, TOPIC_LLAMA3_PROMPT, diversity=0.3
         )
-        docs = self.guidance_man.build_docs()
+        docs = self.build_docs()
         # Create an instance of the Llama class and load the model
 
         # Create the provider by passing the Llama class instance to the LlamaCppPythonProvider class

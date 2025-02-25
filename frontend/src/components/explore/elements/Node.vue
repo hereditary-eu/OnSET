@@ -8,8 +8,8 @@
 
             </rect>
             <rect :width="`${subject.width}px`" :height="`${subject.height}px`"
-                :class="`${subject.deletion_imminent ? 'node_deletion_imminent' : null}`" class="node"
-                @mousedown="mouse_down_node" @mousemove="mouse_move_node" @mouseup="mouse_up_node"
+                :class="node_statestyle"
+                class="node" @mousedown="mouse_down_node" @mousemove="mouse_move_node" @mouseup="mouse_up_node"
                 @mouseleave="mouse_up_node">
             </rect>
             <text :x="`${subject.width / 2}px`" :y="`${subject.height / 2}px`" class=node_text>
@@ -53,7 +53,7 @@
 <script setup lang="ts">
 import { ref, watch, reactive, computed, onMounted, defineProps, onBeforeUpdate, type Prop, onUpdated, onRenderTriggered } from 'vue'
 import { type Subject } from '@/api/client.ts/Api';
-import { SubjectNode as NodeRepr } from '@/utils/sparql/representation';
+import { SubjectNode as NodeRepr, NodeState } from '@/utils/sparql/representation';
 import LinkComp from './Link.vue';
 import { CONSTRAINT_PADDING, CONSTRAINT_WIDTH, DisplayMode, InstanceSelectorOpenEvent, NodeSide, OutlinkSelectorOpenEvent } from '@/utils/sparql/helpers';
 import Constraint from './Constraint.vue';
@@ -136,17 +136,27 @@ const constraint_list_mapped = computed(() => {
 const constraints_height = computed(() => {
     return constraint_list_mapped.value.reduce((acc, constr) => acc + constr.extend_path + constr.constraint.height / 2, 0)
 })
-watch(() => subject.deletion_imminent, () => {
-    if(!store){
+const node_statestyle = computed(() => {
+    switch (subject.state) {
+        case NodeState.DELETION_IMMINENT:
+            return 'node_deletion_imminent'
+        case NodeState.ADDED:
+            return 'node_added'
+        default:
+            return null
+    }
+})
+watch(() => subject.state, () => {
+    if (!store) {
         return
     }
     let subElements = store.subElements(subject)
     for (let node of subElements.nodes) {
-        node.deletion_imminent = subject.deletion_imminent
+        node.state = subject.state
     }
 }, { deep: true })
 const hover_deletion = (state: boolean) => {
-    subject.deletion_imminent = state
+    subject.state = state ? NodeState.DELETION_IMMINENT : NodeState.NORMAL
 }
 const do_deletion = () => {
     store.deleteWithSubnodes(subject)
@@ -164,7 +174,7 @@ onMounted(() => {
 </script>
 <style lang="scss">
 .node {
-    cursor: auto;
+    cursor: pointer;
     fill: #ccc;
     stroke: #000;
     stroke-width: 1.5px;
@@ -175,6 +185,12 @@ onMounted(() => {
     fill: #f2b56c;
     stroke-dasharray: 5, 5;
 }
+
+.node_added {
+    fill: #b0f2bb;
+    stroke-dasharray: 10, 1, 10;
+}
+
 
 .node_text {
     font-size: 10px;

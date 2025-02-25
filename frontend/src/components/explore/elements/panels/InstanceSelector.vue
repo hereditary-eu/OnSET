@@ -31,8 +31,8 @@
 <script setup lang="ts">
 import { ref, watch, reactive, computed, onMounted } from 'vue'
 import { Constraint, Link, StringConstraint } from '@/utils/sparql/representation';
-import LinkComp from './Link.vue';
-import NodeComp from './Node.vue';
+import LinkComp from '../Link.vue';
+import NodeComp from '../Node.vue';
 import { BACKEND_URL } from '@/utils/config';
 import { Api, RELATION_TYPE, RETURN_TYPE, type Instance } from '@/api/client.ts/Api';
 import { CONSTRAINT_PADDING, InstanceSelectorOpenEvent, LINK_WIDTH, NODE_HEIGHT, NODE_WIDTH, NodeSide, OutlinkSelectorOpenEvent } from '@/utils/sparql/helpers';

@@ -146,7 +146,7 @@ def get_named_instance_properties(instance_id: str = Query()) -> dict[str, Prope
 
 @app.get("/topics/root")
 def get_topics_root(force_initialize: bool = Query(False)) -> Topic:
-    guidance_man.initialize_topics(force_initialize)
+    # guidance_man.initialize_topics(force_initialize)
     return guidance_man.get_topic_tree()
 
 

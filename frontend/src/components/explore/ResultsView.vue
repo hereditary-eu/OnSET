@@ -17,7 +17,7 @@
 import { ref, watch, reactive, computed, onMounted, defineProps } from 'vue'
 import { SubjectNode, Link } from '@/utils/sparql/representation';
 import NodeComp from './elements/Node.vue';
-import Propview from './elements/Propview.vue';
+import Propview from './elements/panels/Propview.vue';
 import { InstanceNode, PropertiesOpenEvent, QueryMapper, type InstanceNodeLinkRepository } from '@/utils/sparql/querymapper';
 import { Vector2, type Vector2Like } from 'three';
 import { DisplayMode } from '@/utils/sparql/helpers';

@@ -1,5 +1,5 @@
 <template>
-    <g v-if="store">
+    <g v-if="store" class="graph_view">
         <g v-for="link in store.links">
             <LinkComp :link="link" :store="store" />
         </g>
@@ -37,4 +37,8 @@ const { store } = defineProps({
 })
 
 </script>
-<style lang="css" scoped></style>
+<style lang="css" scoped>
+.graph_view {
+    user-select: none;
+}
+</style>
