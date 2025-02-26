@@ -31,6 +31,9 @@ export class SubQuery {
         this.height = CONSTRAINT_HEIGHT / 2
         this.width = CONSTRAINT_WIDTH
     }
+    propVar(): string {
+        return this.link.outputId()
+    }
     static validPropType(propType: string): boolean {
         return false;
     }
@@ -286,10 +289,10 @@ export class SubjectNode implements Subject {
 
     }
 
-    label_id(): string {
+    labelId(): string {
         return `?lbl_${this.internal_id}`
     }
-    output_id(): string {
+    outputId(): string {
         return `?${this.internal_id}`
     }
 
@@ -372,8 +375,8 @@ export class Link<N extends Subject = Subject> implements SubjectLink {
     }
     instance_count: number;
     label: string;
-    output_id(): string {
-        return `?prop_${this.link_id}`
+    outputId(): string {
+        return `?prop_${this.link_id}_${this.from_internal_id}`
     }
     identifier(): string {
         return `${this.from_internal_id}-${this.link_id}-${this.to_internal_id}`

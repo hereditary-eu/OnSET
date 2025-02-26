@@ -28,8 +28,8 @@ export class InstanceNode extends NodeRepr {
     constructor(base_node?: NodeRepr | InstanceNode, instance_data?: Record<string, string>) {
         super(base_node)
         this.instance_data = instance_data || (base_node as InstanceNode).instance_data || {}
-        this.instance_id = this.instance_data[this.output_id().replace('?', '')]
-        this.instance_label = this.instance_data[this.label_id().replace('?', '')]
+        this.instance_id = this.instance_data[this.outputId().replace('?', '')]
+        this.instance_label = this.instance_data[this.labelId().replace('?', '')]
         this.instance_label = readableName(this.instance_id, this.instance_label)
     }
 }

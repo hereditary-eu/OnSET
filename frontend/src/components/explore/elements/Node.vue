@@ -169,7 +169,7 @@ const deleteConstraint = (constraint) => {
 }
 const result_subject = computed(() => subject as InstanceNode)
 onMounted(() => {
-    console.log('subject', subject)
+    // console.log('subject', subject)
 })
 </script>
 <style lang="scss">

@@ -51,6 +51,20 @@ class OntologyConfig(BaseModel):
     )
 
 
+INT_COMPATIBLE_TYPES = [
+    "http://www.w3.org/2001/XMLSchema#integer",
+    "http://www.w3.org/2001/XMLSchema#decimal",
+    "http://www.w3.org/2001/XMLSchema#positiveInteger",
+    "http://www.w3.org/2001/XMLSchema#nonNegativeInteger",
+]
+FLOAT_COMPATIBLE_TYPES = [
+    "http://www.w3.org/2001/XMLSchema#float",
+    "http://www.w3.org/2001/XMLSchema#double",
+    "http://www.w3.org/2001/XMLSchema#decimal",
+    # kilogram, seconds
+]
+
+
 class OntologyManager:
     def __init__(self, config: OntologyConfig, brainteaser_graph: Graph):
         self.config = config
@@ -185,7 +199,23 @@ class OntologyManager:
 
     def to_readable(self, cls: str | Literal | URIRef):
         if isinstance(cls, Literal):
-            return cls.value
+            value = cls.title()
+            if cls.datatype is not None:
+                try:
+                    if cls.datatype in INT_COMPATIBLE_TYPES:
+                        value = int(value)
+                    elif (
+                        cls.datatype in FLOAT_COMPATIBLE_TYPES
+                        or "kilogram" in cls.datatype
+                        or "seconds" in cls.datatype
+                        or "metre" in cls.datatype
+                    ):
+                        value = float(value)
+                except Exception as e:
+                    print(traceback.format_exc())
+                    print("Failed to convert", value, "to int or float", e)
+            return value
+
         elif isinstance(cls, URIRef) or hasattr(cls, "n3"):
             return cls.n3(self.onto.namespace_manager)
         else:

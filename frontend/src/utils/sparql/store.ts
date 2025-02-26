@@ -145,9 +145,9 @@ export class NodeLinkRepository<N extends SubjectNode = SubjectNode, L extends L
 
     generateQuery(limit: number | null = 100, skip: number | null = null): string {
         let set = this.querySet()
-        let output_names = Object.values(set.nodes).map(nd => nd.output_id())
-        let output_labels = Object.values(set.nodes).map(nd => nd.label_id())
-        output_labels.push(...set.filter.map((constraint) => constraint.link.output_id()))
+        let output_names = Object.values(set.nodes).map(nd => nd.outputId())
+        let output_labels = Object.values(set.nodes).map(nd => nd.labelId())
+        output_labels.push(...set.filter.map((constraint) => constraint.link.outputId()))
         let query = `SELECT DISTINCT ${output_names.join(" ")} ${output_labels.join(" ")} WHERE {`
 
         for (let link of set.link_triplets) {
@@ -157,23 +157,22 @@ export class NodeLinkRepository<N extends SubjectNode = SubjectNode, L extends L
         for (let node of Object.values(set.nodes)) {
             if (set.nodes.hasOwnProperty(node.internal_id)) {
                 // console.log(internal_id, set.internal_ids[internal_id])
-                query += `\n${node.output_id()} a ${node.subject_id}.
-    OPTIONAL {${node.output_id()} rdfs:label ${node.label_id()}.}`
-                query += `\nOPTIONAL {${node.output_id()} foaf:name ${node.label_id()}.}`
+                query += `\n${node.outputId()} a ${node.subject_id}.
+    OPTIONAL {${node.outputId()} rdfs:label ${node.labelId()}.}`
+                query += `\nOPTIONAL {${node.outputId()} foaf:name ${node.labelId()}.}`
             }
         }
         for (let constraint of set.filter) {
             let from = this.from(constraint.link)
+            let constrained_id = constraint.propVar()
             if (constraint instanceof SubjectConstraint) {
                 if (constraint.instance) {
-                    query += `\nFILTER(${from.output_id()}=${constraint.instance.id})`
+                    query += `\nFILTER(${from.outputId()}=${constraint.instance.id})`
                 }
             } else if (constraint instanceof QueryProp) {
-                let constrained_id = `?prop_${constraint.link.link_id}`
-                query += `\n${from.output_id()} ${constraint.link.property_id} ${constrained_id}.`
+                query += `\n${from.outputId()} ${constraint.link.property_id} ${constrained_id}.`
             } else {
-                let constrained_id = `?prop_${constraint.link.link_id}`
-                query += `\n${from.output_id()} ${constraint.link.property_id} ${constrained_id}.
+                query += `\n${from.outputId()} ${constraint.link.property_id} ${constrained_id}.
         FILTER(${constraint.expression(constrained_id)})`
             }
         }
@@ -200,9 +199,9 @@ export class NodeLinkRepository<N extends SubjectNode = SubjectNode, L extends L
             let from = this.from(link)
             let to = this.to(link)
             set.link_triplets.push({
-                from_id: from.output_id(),
+                from_id: from.outputId(),
                 link_id: link.property_id,
-                to_id: to.output_id()
+                to_id: to.outputId()
             })
         }
         return set

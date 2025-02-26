@@ -118,8 +118,6 @@ const preview_link = (l: Link | null) => {
     } else {
         overviewBox.hidePreview()
     }
-
-
 }
 </script>
 <style lang="scss" scoped>

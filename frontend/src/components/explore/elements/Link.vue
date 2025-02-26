@@ -1,5 +1,5 @@
 <template>
-    <g>
+    <g v-if="from && to">
         <path :d="`M ${from.x + from.width},${from.y + from.height / 2} 
                 C ${to.x},${from.y + from.height / 2} 
                 ${from.x + from.width},${to.y + to.height / 2} 

@@ -3,9 +3,9 @@
         <div class="result_instance_header">Results</div>
 
         <SelectorGroup v-model="ui_state.result_mode" :options="Object.keys(ResultMode).map(qm => {
-                return { value: ResultMode[qm], label: ResultMode[qm] }
-            })" :width='"7rem"' :height='"1.2rem"'></SelectorGroup>
-        <div v-if="ui_state.result_mode == ResultMode.MINI" class="results_instance_container" >
+            return { value: ResultMode[qm], label: ResultMode[qm] }
+        })" :width='"7rem"' :height='"1.2rem"'></SelectorGroup>
+        <div v-if="ui_state.result_mode == ResultMode.MINI" class="results_instance_container">
             <div class="result_instance_element" v-for="store of mapped_stores">
                 <Result :store="store" :expanded="false" :scale="ui_state.scale" :offset="ui_state.offset">
                 </Result>
@@ -15,8 +15,8 @@
                 :toggleable="false">Load more</OnsetBtn>
             <div class="result_instance_element" ref="view_container" v-show="mapped_stores.length == 0"></div>
         </div>
-        <div v-else>
-            
+        <div v-else class="results_instance_container">
+            <ResultPlot :store="store" :query_string="query_string"></ResultPlot>
         </div>
     </div>
 </template>
@@ -30,6 +30,7 @@ import { Vector2, type Vector2Like } from 'three';
 import { DisplayMode } from '@/utils/sparql/helpers';
 import Loading from '../ui/Loading.vue';
 import Result from '../explore/Result.vue';
+import ResultPlot from '../explore/ResultPlot.vue';
 import OnsetBtn from '../ui/OnsetBtn.vue';
 import type { NodeLinkRepository } from '@/utils/sparql/store';
 import SelectorGroup from '../ui/SelectorGroup.vue';
@@ -110,7 +111,7 @@ const loadMore = async () => {
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
+    justify-content: start;
     height: 70vh;
     width: 30%;
     border-left: 1px solid rgb(192, 213, 191);

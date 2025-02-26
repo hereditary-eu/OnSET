@@ -266,9 +266,9 @@ const addInstanceConstraint = () => {
 watch(editor_data, (editor_data) => {
     if (selection_event.side != NodeSide.PROP) {
         if (editor_data.hover_add) {
-            let hover_target = jsonClone(editor_data.hover_add.link)
-            let target = prepareTarget(hover_target)
-            let link = store.prepareLink(editor_data.hover_add.link, selection_event.node, target, selection_event.side)
+            let hover_target = jsonClone(editor_data.hover_add)
+            let target = prepareTarget(hover_target.link)
+            let link = store.prepareLink(hover_target.link, selection_event.node, target, selection_event.side)
             emit('hover_option', link)
         }
 
