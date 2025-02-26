@@ -1,7 +1,6 @@
 <template>
     <div class="query_builder">
         <svg class="query_build_wrapper">
-
             <GraphView :store="store" :display-mode="DisplayMode.EDIT" @edit-point-clicked="clicked_outlink($event)"
                 @instance-search-clicked="clicked_instance($event)"></GraphView>
             <OutLinkSelector :selection_event="ui_state.outlink_event" v-model="ui_state.outlink_display"

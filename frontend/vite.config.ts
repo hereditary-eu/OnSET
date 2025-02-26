@@ -19,7 +19,9 @@ export default defineConfig({
   ],
   resolve: {
     alias: {
-      '@': fileURLToPath(new URL('./src', import.meta.url))
+      '@': fileURLToPath(new URL('./src', import.meta.url)),
+      "plotly.js-basic-dist": fileURLToPath(new URL("node_modules/plotly.js-dist/plotly.js", import.meta.url))
+
     }
   }
 })

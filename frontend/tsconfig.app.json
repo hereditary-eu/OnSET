@@ -3,8 +3,10 @@
   "include": [
     "env.d.ts",
     "src/**/*",
-    "src/**/*.vue"
-, "src/utils/d3-man/.ts", "src/utils/three-man/.ts"  ],
+    "src/**/*.vue",
+    "src/utils/d3-man/.ts",
+    "src/utils/three-man/.ts"
+  ],
   "exclude": [
     "src/**/__tests__/*"
   ],
@@ -18,6 +20,9 @@
     "paths": {
       "@/*": [
         "./src/*"
+      ],
+      "plotly.js-basic-dist": [
+        "node_modules/@types/plotly.js"
       ]
     }
   }

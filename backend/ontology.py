@@ -53,7 +53,6 @@ class OntologyConfig(BaseModel):
 
 INT_COMPATIBLE_TYPES = [
     "http://www.w3.org/2001/XMLSchema#integer",
-    "http://www.w3.org/2001/XMLSchema#decimal",
     "http://www.w3.org/2001/XMLSchema#positiveInteger",
     "http://www.w3.org/2001/XMLSchema#nonNegativeInteger",
 ]
@@ -202,13 +201,17 @@ class OntologyManager:
             value = cls.title()
             if cls.datatype is not None:
                 try:
-                    if cls.datatype in INT_COMPATIBLE_TYPES:
+                    cls_dtype=str(cls.datatype)
+                    if cls_dtype in INT_COMPATIBLE_TYPES:
                         value = int(value)
                     elif (
-                        cls.datatype in FLOAT_COMPATIBLE_TYPES
+                        cls_dtype in FLOAT_COMPATIBLE_TYPES
                         or "kilogram" in cls.datatype
-                        or "seconds" in cls.datatype
                         or "metre" in cls.datatype
+                        or "seconds" in cls.datatype
+                        or "minute" in cls.datatype
+                        or "hour" in cls.datatype
+                        or "day" in cls.datatype
                     ):
                         value = float(value)
                 except Exception as e:

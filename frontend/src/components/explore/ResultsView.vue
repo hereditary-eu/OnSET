@@ -22,7 +22,7 @@
 </template>
 <script setup lang="ts">
 import { ref, watch, reactive, computed, onMounted, defineProps } from 'vue'
-import { SubjectNode, Link } from '@/utils/sparql/representation';
+import { SubjectNode, Link, SubQueryType } from '@/utils/sparql/representation';
 import NodeComp from './elements/Node.vue';
 import Propview from './elements/panels/Propview.vue';
 import { InstanceNode, PropertiesOpenEvent, QueryMapper, type InstanceNodeLinkRepository } from '@/utils/sparql/querymapper';
@@ -68,6 +68,17 @@ const ui_state = reactive({
 watch(() => query_string, () => {
 
     console.log('Query string changed!', query_string, root_subject.value)
+
+    if (!store) {
+        return
+    }
+    let query_props = store.nodes.flatMap(n => n.subqueries.filter(sq => sq.constraint_type == SubQueryType.QUERY_PROP))
+    if (query_props.length > 0) {
+        ui_state.result_mode = ResultMode.PROP
+    } else {
+        ui_state.result_mode = ResultMode.MINI
+    }
+
     if (mapped_stores.value.length == 0) {
         ui_state.initial_size.x = view_container.value?.clientWidth || 0
         ui_state.initial_size.y = view_container.value?.clientHeight || 0
@@ -126,6 +137,7 @@ const loadMore = async () => {
     height: 100%;
     overflow: auto;
     padding: 5px;
+    margin-top: 10px;
 }
 
 .result_instance_element {
@@ -154,6 +166,7 @@ const loadMore = async () => {
     padding: 5px;
     border-bottom: 1px solid rgb(192, 213, 191);
     width: 100%;
+    margin-bottom: 12px;
 }
 
 .result_instance_overview_header {
