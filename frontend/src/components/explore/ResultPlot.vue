@@ -41,6 +41,15 @@ class BucketSpecifier {
     id() {
         return `${this.prop.query_id}~${this.lower}-${this.upper}`
     }
+    display() {
+        if (this.lower == this.upper) {
+            return `${this.lower}`
+        }
+        if (this.prop.prop_specific_type == PropSpecificType.DATE) {
+            return `${new Date(this.lower).toLocaleDateString()} - ${new Date(this.upper).toLocaleDateString()}`
+        }
+        return `${this.lower} - ${this.upper} `
+    }
 }
 interface AnalyzedProp {
     prop: QueryProp,
@@ -139,19 +148,20 @@ const aggregateData = (props: AnalyzedProp[]) => {
                     }
                     return acc
                 }, {} as Record<string, number>) as Record<string, number>
-                bucket_prop.push(...Object.keys(value_counts).map((key) => {
+                let sorted_keys = Object.keys(value_counts).sort((a, b) => value_counts[b] - value_counts[a])
+                bucket_prop.push(...sorted_keys.splice(0, ui_data.buckets).map((key) => {
                     return new BucketSpecifier(key, key, value_counts[key], prop)
                 }))
                 break
         }
         //convert bucket lower and upper to string if date
-        if (prop.prop_specific_type == PropSpecificType.DATE) {
-            bucket_prop = bucket_prop.map((bucket) => {
-                return new BucketSpecifier(new Date(bucket.lower).toLocaleDateString(), new Date(bucket.upper).toLocaleDateString(), bucket.count, bucket.prop)
-            })
-        }
+        // if (prop.prop_specific_type == PropSpecificType.DATE) {
+        //     bucket_prop = bucket_prop.map((bucket) => {
+        //         return new BucketSpecifier(new Date(bucket.lower).toLocaleDateString(), new Date(bucket.upper).toLocaleDateString(), bucket.count, bucket.prop)
+        //     })
+        // }
         buckets[prop.query_id] = bucket_prop
-    }   
+    }
     console.log('Buckets', buckets)
     return buckets
 
@@ -235,7 +245,7 @@ const loadData = async () => {
                     text: prop.prop.link.label
                 },
                 xaxis: {
-                    
+
                     title: {
                         text: prop.prop.link.label
                     }
@@ -247,91 +257,88 @@ const loadData = async () => {
                 }
             } as Plotly.Layout
             let buckets = aggregateData(analyzed_props)
-            trace.x = buckets[prop.query_id].map((bucket) => bucket.lower)
+            trace.x = buckets[prop.query_id].map((bucket) => bucket.display())
             trace.y = buckets[prop.query_id].map((bucket) => bucket.count)
             chart_data.value = [trace]
             break
         case 2: {
             ui_data.chart_mode = ChartMode.SCATTER
             let trace = {} as Plotly.PlotData
-            switch (continous_props.length) {
-                case 2:
-                    //TODO: Add background distribution/switch to heatmap beyond 1000 points
-                    chart_options.value = {
+            if (continous_props.length == 2 && continous_props[0].prop_data.length < 128) {
+                //TODO: Add background distribution/switch to heatmap beyond 1000 points
+                chart_options.value = {
+                    title: {
+                        text: `${continous_props[0].prop.link.label} vs ${continous_props[1].prop.link.label}`
+                    },
+                    xaxis: {
                         title: {
-                            text: `${continous_props[0].prop.link.label} vs ${continous_props[1].prop.link.label}`
-                        },
-                        xaxis: {
-                            title: {
-                                text: continous_props[0].prop.link.label
-                            }
-                        },
-                        yaxis: {
-                            title: {
-                                text: continous_props[1].prop.link.label
-                            }
+                            text: continous_props[0].prop.link.label
                         }
-                    } as Plotly.Layout
-                    trace.type = 'scatter'
-                    trace.mode = 'markers'
-                    trace.x = continous_props[0].prop_data
-                    trace.y = continous_props[1].prop_data
-                    trace.marker = {
-                        color: '#8fa88f',
-                    }
-                    break
-                case 1:
-                case 0:
-                default:
-
-                    ui_data.chart_mode = ChartMode.HEATMAP
-                    chart_options.value = {
+                    },
+                    yaxis: {
                         title: {
-                            text: `${analyzed_props[0].prop.link.label} vs ${analyzed_props[1].prop.link.label}`
-                        },
-                        xaxis: {
-                            title: {
-                                text: analyzed_props[0].prop.link.label
-                            }
-                        },
-                        yaxis: {
-                            title: {
-                                text: analyzed_props[1].prop.link.label
-                            }
-                        }
-                    } as Plotly.Layout
-                    let buckets = aggregateData(analyzed_props)
-                    let x_buckets = buckets[analyzed_props[0].query_id]
-                    let y_buckets = buckets[analyzed_props[1].query_id]
-                    trace.x = x_buckets.map((bucket) => bucket.lower)
-                    trace.y = y_buckets.map((bucket) => bucket.lower)
-                    let heatmap_data = new Array(trace.x.length).fill(0).map(() => new Array(trace.y.length).fill(0))
-                    trace.type = 'heatmap'
-                    for (let row of result_set.value) {
-                        let bucket_assocs = Object.entries(buckets).map((bucket_prop) => {
-                            let value = row[bucket_prop[0]]
-                            let buckets = bucket_prop[1]
-                            let value_bucket = null as BucketSpecifier | null
-                            switch (buckets[0].prop.prop_type) {
-                                case PropType.CONTINOUS:
-                                    value_bucket = buckets.find((bucket) => bucket.lower <= value && bucket.upper > value)
-                                    break
-                                case PropType.DISCRETE:
-                                    value_bucket = buckets.find((bucket) => bucket.lower == value)
-                                    break
-                            }
-                            return value_bucket
-                        })
-                        let x_idx = x_buckets.findIndex((bucket) => bucket.id() == bucket_assocs[0]?.id())
-                        let y_idx = y_buckets.findIndex((bucket) => bucket.id() == bucket_assocs[1]?.id())
-
-                        if (x_idx >= 0 && y_idx >= 0) {
-                            heatmap_data[x_idx][y_idx] += 1
+                            text: continous_props[1].prop.link.label
                         }
                     }
-                    trace.z = heatmap_data
-                    break
+                } as Plotly.Layout
+                trace.type = 'scatter'
+                trace.mode = 'markers'
+                trace.x = continous_props[0].prop_data
+                trace.y = continous_props[1].prop_data
+                trace.marker = {
+                    color: '#8fa88f',
+                }
+            } else {
+
+                ui_data.chart_mode = ChartMode.HEATMAP
+                chart_options.value = {
+                    title: {
+                        text: `${analyzed_props[0].prop.link.label} vs ${analyzed_props[1].prop.link.label}`
+                    },
+                    xaxis: {
+                        title: {
+                            text: analyzed_props[0].prop.link.label
+                        }
+                    },
+                    yaxis: {
+                        title: {
+                            text: analyzed_props[1].prop.link.label
+                        }
+                    }
+                } as Plotly.Layout
+                let buckets = aggregateData(analyzed_props)
+                let x_buckets = buckets[analyzed_props[0].query_id]
+                let y_buckets = buckets[analyzed_props[1].query_id]
+                trace.x = x_buckets.map((bucket) => bucket.display())
+                trace.y = y_buckets.map((bucket) => bucket.display())
+                let heatmap_data = new Array(trace.x.length).fill(0).map(() => new Array(trace.y.length).fill(0))
+                trace.type = 'heatmap'
+                for (let row of result_set.value) {
+                    let bucket_assocs = Object.entries(buckets).map((bucket_prop) => {
+                        let value = row[bucket_prop[0]]
+                        let buckets = bucket_prop[1]
+                        if (buckets[0].prop.prop_specific_type == PropSpecificType.DATE)
+                            value = new Date(value).getTime()
+                        let value_bucket = null as number | null
+                        switch (buckets[0].prop.prop_type) {
+                            case PropType.CONTINOUS:
+                                value_bucket = buckets.findIndex((bucket) => bucket.lower <= value && bucket.upper > value)
+                                break
+                            case PropType.DISCRETE:
+                                value_bucket = buckets.findIndex((bucket) => bucket.lower === value)
+                                break
+                        }
+                        return value_bucket
+                    })
+                    // console.log(bucket_assocs) 
+                    if (bucket_assocs[0] !== null && bucket_assocs[1] !== null
+                        && bucket_assocs[0] >= 0 && bucket_assocs[1] >= 0) {
+                        heatmap_data[bucket_assocs[0]][bucket_assocs[1]] += 1
+                    }
+                }
+                trace.z = heatmap_data
             }
+            console.log('Trace', trace)
             chart_data.value = [trace]
             break
         }
