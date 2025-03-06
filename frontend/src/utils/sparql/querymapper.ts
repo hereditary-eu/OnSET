@@ -53,9 +53,40 @@ export class QueryMapper {
         )
 
     }
+    scalingFactors() {
+        let querySet = this.store.querySet()
+
+        let bbox = { br: new Vector2(0, 0), tl: new Vector2(Infinity, Infinity) }
+
+        Object.values(querySet.nodes).forEach((node) => {
+            if (node.x < bbox.tl.x) {
+                bbox.tl.x = node.x
+            }
+            if (node.y < bbox.tl.y) {
+                bbox.tl.y = node.y
+            }
+            if (node.x + node.width > bbox.br.x) {
+                bbox.br.x = node.x + node.width
+            }
+            if (node.y + node.height > bbox.br.y) {
+                bbox.br.y = node.y + node.height
+            }
+        })
+
+        let offset = bbox.tl.clone().multiplyScalar(-1)
+        let size = bbox.br.clone().sub(bbox.tl)
+        let scale_vec = new Vector2(this.target_size.x / size.x, this.target_size.y / size.y)
+        let scale = Math.min(scale_vec.x, scale_vec.y)
+        console.log(bbox, offset, this.target_size, scale)
+        offset.multiplyScalar(scale)
+        bbox.tl.multiplyScalar(scale)
+        bbox.br.multiplyScalar(scale)
+        size = bbox.br.clone().sub(bbox.tl)
+        return { offset, scale, size }
+    }
     async runAndMap(query: string, skip: number = 0, limit: number = 20) {
         if (!this.store) {
-            return { mapped_nodes: [], offset: new Vector2(0, 0), scale: 1 }
+            return []
         }
         const response = await this.api.sparql.sparqlQuerySparqlPost({
             query: this.store.generateQuery(limit, skip),
@@ -80,35 +111,8 @@ export class QueryMapper {
                 node.interactive_clone = new InstanceNode(node)
             })
         })
-        let querySet = this.store.querySet()
 
-        let bbox = { br: new Vector2(0, 0), tl: new Vector2(Infinity, Infinity) }
-
-        Object.values(querySet.nodes).forEach((node) => {
-            if (node.x < bbox.tl.x) {
-                bbox.tl.x = node.x
-            }
-            if (node.y < bbox.tl.y) {
-                bbox.tl.y = node.y
-            }
-            if (node.x + node.width > bbox.br.x) {
-                bbox.br.x = node.x + node.width
-            }
-            if (node.y + node.height > bbox.br.y) {
-                bbox.br.y = node.y + node.height
-            }
-        })
-
-        let offset = bbox.tl.clone().multiplyScalar(-1)
-        let size = bbox.br.clone().sub(bbox.tl)
-        let scale_vec=new Vector2(this.target_size.x / size.x, this.target_size.y / size.y)
-        let scale = Math.max(scale_vec.x, scale_vec.y)
-        console.log(bbox, offset, this.target_size, scale)
-        offset.multiplyScalar(scale)
-        bbox.tl.multiplyScalar(scale)
-        bbox.br.multiplyScalar(scale)
-        size = bbox.br.clone().sub(bbox.tl)
-        return { mapped_stores, offset, scale, size }
+        return mapped_stores
     }
 
 

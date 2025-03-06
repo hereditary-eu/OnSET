@@ -82,8 +82,8 @@ watch(() => query_string, () => {
     if (mapped_stores.value.length == 0) {
         ui_state.initial_size.x = view_container.value?.clientWidth || 0
         ui_state.initial_size.y = view_container.value?.clientHeight || 0
-        ui_state.initial_size.x -= 50
-        ui_state.initial_size.y -= 50
+        // ui_state.initial_size.x -= 50
+        // ui_state.initial_size.y -= 50
     }
     mapper.value = new QueryMapper(store, ui_state.initial_size)
     ui_state.paging_offset = 0
@@ -94,22 +94,28 @@ watch(() => query_string, () => {
         ui_state.loading = false
     })
 }, { deep: true })
-
+const updateSize = () => {
+    if (view_container.value) {
+        ui_state.computed_size.x = view_container.value?.clientWidth || 0
+        ui_state.computed_size.y = view_container.value?.clientHeight || 0
+    }
+}
 const loadMore = async () => {
     let query_id = ui_state.last_query_id + 1
     ui_state.last_query_id = query_id
     ui_state.loading = true
-    const results = await mapper.value.runAndMap(query_string, ui_state.paging_offset)
-
-    console.log('Mapped results!', results, query_id, ui_state.last_query_id)
+    const retrieved_stores = await mapper.value.runAndMap(query_string, ui_state.paging_offset)
+    updateSize()
+    const scalings = mapper.value.scalingFactors()
+    console.log('Mapped results!', mapped_stores, query_id, ui_state.last_query_id)
     if (query_id == ui_state.last_query_id) {
-        ui_state.scale = results.scale
-        ui_state.offset = results.offset
-        ui_state.computed_size = results.size
+        ui_state.scale = scalings.scale
+        ui_state.offset = scalings.offset
+        ui_state.computed_size = scalings.size
 
-        ui_state.paging_offset += results.mapped_stores.length
-        mapped_stores.value = mapped_stores.value.concat(results.mapped_stores)
-        if (results.mapped_stores.length == 0) {
+        ui_state.paging_offset += retrieved_stores.length
+        mapped_stores.value = mapped_stores.value.concat(retrieved_stores)
+        if (retrieved_stores.length == 0) {
             ui_state.paging_end = true
         }
         ui_state.loading = false
