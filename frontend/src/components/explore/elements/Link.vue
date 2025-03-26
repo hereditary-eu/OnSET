@@ -11,11 +11,12 @@
     </g>
 </template>
 <script setup lang="ts">
+import type { NodeLinkRepositoryDiff } from '@/utils/sparql/diff';
 import type { Link } from '@/utils/sparql/representation';
 import type { NodeLinkRepository } from '@/utils/sparql/store';
 import { ref, watch, reactive, computed, onMounted, defineProps } from 'vue'
 
-const { link, store } = defineProps({
+const { link, store, diff } = defineProps({
     link: {
         type: Object as () => Link,
         required: true
@@ -23,10 +24,26 @@ const { link, store } = defineProps({
     store: {
         type: Object as () => NodeLinkRepository,
         required: true
+    },
+    diff: {
+        type: Object as () => NodeLinkRepositoryDiff | null,
+        default: null
     }
 })
-let from = computed(() => store.from(link))
-let to = computed(() => store.to(link))
+let from = computed(() => {
+    let from_node = store.from(link)
+    if (!from_node) {
+        return diff?.diff_nodes.removed.find(n => n.internal_id == link.from_internal_id)
+    }
+    return from_node
+})
+let to = computed(() => {
+    let to_node = store.to(link)
+    if (!to_node) {
+        return diff?.diff_nodes.removed.find(n => n.internal_id == link.to_internal_id)
+    }
+    return to_node
+})
 watch(() => link, () => {
 }, { deep: true })
 onMounted(() => {

@@ -3,6 +3,10 @@ import { CONSTRAINT_HEIGHT, CONSTRAINT_WIDTH, NODE_HEIGHT, NODE_WIDTH } from "./
 
 import { registerClass } from "../parsing";
 import { NodeLinkRepository } from "./store";
+import type { Diffable } from "./diff";
+
+
+
 
 export enum NodeState {
     NORMAL = "normal",
@@ -10,6 +14,7 @@ export enum NodeState {
     HOVERED = "hovered",
     DELETION_IMMINENT = "deletion_imminent",
     ADDED = "ADDED",
+    REMOVED = "REMOVED"
 }
 
 export enum SubQueryType {
@@ -22,14 +27,20 @@ export enum SubQueryType {
 }
 
 @registerClass
-export class SubQuery {
+export class SubQuery implements Diffable {
     link: Link;
     height: number
     width: number
     constraint_type: SubQueryType;
+    id: string | number;
+    static id_counter: number = 0;
     constructor() {
         this.height = CONSTRAINT_HEIGHT / 2
         this.width = CONSTRAINT_WIDTH
+        this.id = SubQuery.id_counter++
+    }
+    changed(other: Diffable): boolean {
+        throw new Error("Method not implemented.");
     }
     propVar(): string {
         return this.link.outputId()
@@ -244,7 +255,7 @@ export class QuerySet {
 }
 let internal_id_counter: number = 0;
 @registerClass
-export class SubjectNode implements Subject {
+export class SubjectNode implements Subject, Diffable {
     subject_id: string;
     label: string;
     spos?: Record<string, Property>;
@@ -325,6 +336,20 @@ export class SubjectNode implements Subject {
         }
         return constraints
     }
+
+    changed(other: this): boolean {
+        return this.subject_id != other.subject_id ||
+            this.label != other.label ||
+            this.spos != other.spos ||
+            this.subject_type != other.subject_type ||
+            this.refcount != other.refcount ||
+            this.descendants != other.descendants ||
+            this.total_descendants != other.total_descendants ||
+            this.properties != other.properties;
+    }
+    get id(): string | number {
+        return this.internal_id
+    }
 }
 @registerClass
 export class UnknownNode extends SubjectNode {
@@ -343,7 +368,8 @@ export class UnknownNode extends SubjectNode {
     }
 }
 @registerClass
-export class Link<N extends Subject = Subject> implements SubjectLink {
+export class Link<N extends Subject = Subject> implements SubjectLink, Diffable {
+
     link_id: number;
     from_id: string;
     link_type: string;
@@ -380,6 +406,16 @@ export class Link<N extends Subject = Subject> implements SubjectLink {
     }
     identifier(): string {
         return `${this.from_internal_id}-${this.link_id}-${this.to_internal_id}`
+    }
+    changed(other: this): boolean {
+        return this.from_id != other.from_id ||
+            this.to_id != other.to_id ||
+            this.link_type != other.link_type ||
+            this.to_proptype != other.to_proptype ||
+            this.property_id != other.property_id;
+    }
+    get id(): string | number {
+        return this.link_id
     }
 }
 export type FuzzyQueryRequest = Parameters<typeof Api.prototype.classes.searchClassesClassesSearchPost>[0]

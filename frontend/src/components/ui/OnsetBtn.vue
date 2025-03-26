@@ -70,6 +70,7 @@ function update(evt) {
     display: flex;
     justify-content: center;
     align-items: center;
+    padding: 2px;
 }
 #btnControl {
     display: none;

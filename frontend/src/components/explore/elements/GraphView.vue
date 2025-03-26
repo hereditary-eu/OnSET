@@ -1,13 +1,24 @@
 <template>
     <g v-if="store" class="graph_view">
         <g v-for="link in store.links">
-            <LinkComp :link="link" :store="store" />
+            <LinkComp :link="link" :store="store" :diff="diff" />
         </g>
         <g v-for="node in store.nodes" :key="node.internal_id">
-            <NodeComp :subject="node" :store="store" :mode="displayMode"
+            <NodeComp :subject="node" :store="store" :mode="displayMode" :diff="diff"
                 @edit-point-clicked="emit('editPointClicked', $event)"
                 @prop-point-clicked="emit('propPointClicked', $event)"
                 @instance-search-clicked="emit('instanceSearchClicked', $event)" />
+        </g>
+        <g v-if="diff">
+            <g v-for="link in diff.diff_links.removed">
+                <LinkComp :link="link" :store="store" :diff="diff" />
+            </g>
+            <g v-for="node in diff.diff_nodes.removed" :key="node.internal_id">
+                <NodeComp :subject="node" :store="store" :mode="displayMode" :diff="diff"
+                    @edit-point-clicked="emit('editPointClicked', $event)"
+                    @prop-point-clicked="emit('propPointClicked', $event)"
+                    @instance-search-clicked="emit('instanceSearchClicked', $event)" />
+            </g>
         </g>
     </g>
 </template>
@@ -19,13 +30,14 @@ import LinkComp from './Link.vue';
 import type { NodeLinkRepository } from '@/utils/sparql/store';
 import { DisplayMode, InstanceSelectorOpenEvent, OutlinkSelectorOpenEvent } from '@/utils/sparql/helpers';
 import type { PropertiesOpenEvent } from '@/utils/sparql/querymapper';
+import type { NodeLinkRepositoryDiff } from '@/utils/sparql/diff';
 const emit = defineEmits<{
     editPointClicked: [value: OutlinkSelectorOpenEvent]
     propPointClicked: [value: PropertiesOpenEvent]
     instanceSearchClicked: [value: InstanceSelectorOpenEvent]
 }>()
 
-const { store } = defineProps({
+const { store, diff, displayMode } = defineProps({
     store: {
         type: Object as () => NodeLinkRepository,
         required: true
@@ -33,6 +45,10 @@ const { store } = defineProps({
     displayMode: {
         type: String as () => DisplayMode,
         default: DisplayMode.SELECT
+    },
+    diff: {
+        type: Object as () => NodeLinkRepositoryDiff | null,
+        default: null
     }
 })
 

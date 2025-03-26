@@ -7,9 +7,8 @@
                 :height="`${constraints_height + subject.height + editor_data.editpoint_r * 2}px`" fill-opacity="0">
 
             </rect>
-            <rect :width="`${subject.width}px`" :height="`${subject.height}px`"
-                :class="node_statestyle"
-                class="node" @mousedown="mouse_down_node" @mousemove="mouse_move_node" @mouseup="mouse_up_node"
+            <rect :width="`${subject.width}px`" :height="`${subject.height}px`" :class="node_statestyle" class="node"
+                @mousedown="mouse_down_node" @mousemove="mouse_move_node" @mouseup="mouse_up_node"
                 @mouseleave="mouse_up_node">
             </rect>
             <text :x="`${subject.width / 2}px`" :y="`${subject.height / 2}px`" class=node_text>
@@ -52,20 +51,20 @@
 </template>
 <script setup lang="ts">
 import { ref, watch, reactive, computed, onMounted, defineProps, onBeforeUpdate, type Prop, onUpdated, onRenderTriggered } from 'vue'
-import { type Subject } from '@/api/client.ts/Api';
 import { SubjectNode as NodeRepr, NodeState } from '@/utils/sparql/representation';
-import LinkComp from './Link.vue';
 import { CONSTRAINT_PADDING, CONSTRAINT_WIDTH, DisplayMode, InstanceSelectorOpenEvent, NodeSide, OutlinkSelectorOpenEvent } from '@/utils/sparql/helpers';
 import Sublink from './Subquery.vue';
 import type { InstanceNode, PropertiesOpenEvent } from '@/utils/sparql/querymapper';
 import type { NodeLinkRepository } from '@/utils/sparql/store';
+import type { NodeLinkRepositoryDiff } from '@/utils/sparql/diff';
+
 const emit = defineEmits<{
     editPointClicked: [value: OutlinkSelectorOpenEvent]
     propPointClicked: [value: PropertiesOpenEvent]
     instanceSearchClicked: [value: InstanceSelectorOpenEvent]
 }>()
 
-const { subject, mode, store } = defineProps({
+const { subject, mode, store, diff } = defineProps({
     subject: {
         type: Object as () => NodeRepr,
         required: true
@@ -77,6 +76,10 @@ const { subject, mode, store } = defineProps({
     mode: {
         type: String as () => DisplayMode,
         default: DisplayMode.SELECT
+    },
+    diff: {
+        type: Object as () => NodeLinkRepositoryDiff | null,
+        default: null
     }
 })
 const editor_data = reactive({
@@ -85,7 +88,8 @@ const editor_data = reactive({
     mouse_y: 0,
     constraint_padding: 5,
     show_editpoints: false,
-    editpoint_r: 7
+    editpoint_r: 7,
+    hover_deletion: false
 })
 const mouse_down_node = (event: MouseEvent) => {
     if (mode == DisplayMode.EDIT || mode == DisplayMode.RESULT_INTERACTIVE) {
@@ -136,27 +140,58 @@ const constraint_list_mapped = computed(() => {
 const constraints_height = computed(() => {
     return constraint_list_mapped.value.reduce((acc, constr) => acc + constr.extend_path + constr.subquery.height / 2, 0)
 })
-const node_statestyle = computed(() => {
-    switch (subject.state) {
-        case NodeState.DELETION_IMMINENT:
-            return 'node_deletion_imminent'
-        case NodeState.ADDED:
-            return 'node_added'
-        default:
-            return null
-    }
+watch(() => diff, () => {
+    updateNodeState()
+}, {
+    deep: true
 })
 watch(() => subject.state, () => {
+    updateNodeState()
+}, { deep: true })
+watch(() => editor_data.hover_deletion, () => {
     if (!store) {
         return
     }
     let subElements = store.subElements(subject)
+
+    let target_state = editor_data.hover_deletion ? NodeState.DELETION_IMMINENT : NodeState.NORMAL
+    subject.state = target_state
     for (let node of subElements.nodes) {
-        node.state = subject.state
+        node.state = target_state
     }
 }, { deep: true })
+
+const node_statestyle = computed(() => {
+    console.log('subject.state', subject.state)
+    let state = subject.state.toLowerCase()
+    if (!subject.state) {
+        return ''
+    }
+    return `node_${state.toLowerCase()}`
+})
+
+
+const updateNodeState = () => {
+    if (subject.state == NodeState.DELETION_IMMINENT) {
+        return
+    }
+    if (diff) {
+        let diff_node = diff.diff_nodes.added.find((node) => node.internal_id == subject.internal_id)
+        if (diff_node) {
+            subject.state = NodeState.ADDED
+            return
+        }
+        let diff_node_del = diff.diff_nodes.removed.find((node) => node.internal_id == subject.internal_id)
+        if (diff_node_del) {
+            subject.state = NodeState.REMOVED
+            return
+        }
+    }
+    subject.state = NodeState.NORMAL
+}
+
 const hover_deletion = (state: boolean) => {
-    subject.state = state ? NodeState.DELETION_IMMINENT : NodeState.NORMAL
+    editor_data.hover_deletion = state
 }
 const do_deletion = () => {
     store.deleteWithSubnodes(subject)
@@ -170,6 +205,7 @@ const deleteConstraint = (constraint) => {
 const result_subject = computed(() => subject as InstanceNode)
 onMounted(() => {
     // console.log('subject', subject)
+    updateNodeState()
 })
 </script>
 <style lang="scss">
@@ -188,7 +224,12 @@ onMounted(() => {
 
 .node_added {
     fill: #b0f2bb;
-    stroke-dasharray: 10, 1, 10;
+    stroke-dasharray: 10, 1, 10, 1;
+}
+
+.node_removed {
+    fill: #f26c6c;
+    stroke-dasharray: 10, 1, 10, 1;
 }
 
 

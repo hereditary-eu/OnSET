@@ -67,7 +67,7 @@ const ui_state = reactive({
 })
 watch(() => query_string, () => {
 
-    console.log('Query string changed!', query_string, root_subject.value)
+    // console.log('Query string changed!', query_string, root_subject.value)
 
     if (!store) {
         return
@@ -107,7 +107,7 @@ const loadMore = async () => {
     const retrieved_stores = await mapper.value.runAndMap(query_string, ui_state.paging_offset)
     updateSize()
     const scalings = mapper.value.scalingFactors()
-    console.log('Mapped results!', mapped_stores, query_id, ui_state.last_query_id)
+    // console.log('Mapped results!', mapped_stores, query_id, ui_state.last_query_id)
     if (query_id == ui_state.last_query_id) {
         ui_state.scale = scalings.scale
         ui_state.offset = scalings.offset

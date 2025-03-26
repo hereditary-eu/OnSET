@@ -1,7 +1,7 @@
 <template>
     <div class="query_builder">
         <svg class="query_build_wrapper">
-            <GraphView :store="store" :display-mode="DisplayMode.EDIT" @edit-point-clicked="clicked_outlink($event)"
+            <GraphView :store="store" :display-mode="DisplayMode.EDIT" @edit-point-clicked="clicked_outlink($event)" :diff="diff"
                 @instance-search-clicked="clicked_instance($event)"></GraphView>
             <OutLinkSelector :selection_event="ui_state.outlink_event" v-model="ui_state.outlink_display"
                 :store="store" @hover_option="preview_link($event)">
@@ -32,6 +32,7 @@ import { Api } from '@/api/client.ts/Api';
 import { BACKEND_URL } from '@/utils/config';
 import type { SubjectInCircle } from '@/utils/d3-man/CircleMan';
 import Loading from '../ui/Loading.vue';
+import type { NodeLinkRepositoryDiff } from '@/utils/sparql/diff';
 
 const api = new Api({
     baseURL: BACKEND_URL
@@ -40,6 +41,10 @@ const { store } = defineProps({
     store: {
         type: Object as () => NodeLinkRepository,
         required: true
+    },
+    diff: {
+        type: Object as () => NodeLinkRepositoryDiff | null,
+        default: null
     }
 })
 const ui_state = reactive({
@@ -63,12 +68,12 @@ const clicked_instance = (evt: InstanceSelectorOpenEvent) => {
 }
 const root_subject = ref(null as SubjectNode | null)
 watch(() => store, () => {
-    console.log('Store changed!', store)
+    // console.log('Store changed!', store)
     if (!store) {
         return
     }
     let query_string = store.generateQuery()
-    console.log('Query string', query_string)
+    // console.log('Query string', query_string)
     if (query_string != ui_state.query_string) {
         ui_state.query_string = query_string
     }
@@ -111,7 +116,7 @@ onBeforeMount(() => {
     // .style('background-color', 'red')
 })
 const preview_link = (l: Link | null) => {
-    console.log('Preview link', l)
+    // console.log('Preview link', l)
     if(l){
         overviewBox.previewLink(l)
     } else {
@@ -155,7 +160,7 @@ const preview_link = (l: Link | null) => {
     width: 20vw;
     position: relative;
     left: calc(100% - 20vw - 20px);
-    bottom: calc(20vw + 20px);
+    bottom: calc(5vw + 20px);
     // translate: calc(100%) calc(80%);
     z-index: 20;
     background-color: #ffffff;

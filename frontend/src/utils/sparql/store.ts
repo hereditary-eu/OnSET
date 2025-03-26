@@ -1,7 +1,8 @@
 import type { FuzzyQueryResult, Subject } from "@/api/client.ts/Api";
-import { registerClass } from "../parsing";
+import { jsonClone, registerClass } from "../parsing";
 import { NodeSide } from "./helpers";
-import { Link, QueryProp, QuerySet, SubjectConstraint, SubjectNode } from "./representation";
+import { Link, QueryProp, QuerySet, SubjectConstraint, SubjectNode, SubQuery } from "./representation";
+import type { Diffable } from "./diff";
 
 
 @registerClass
@@ -36,14 +37,19 @@ export class MixedResponse<N extends Subject = Subject> implements FuzzyQueryRes
 
 }
 
-
 @registerClass
-export class NodeLinkRepository<N extends SubjectNode = SubjectNode, L extends Link = Link> {
+export class NodeLinkRepository<N extends SubjectNode = SubjectNode, L extends Link = Link> implements Diffable {
     nodes: N[] = []
     links: L[] = []
+    private static internal_id_cnt = 0
+    id: number
     constructor(nodes: N[] = [], links: L[] = []) {
         this.nodes = nodes
         this.links = links
+        this.id = NodeLinkRepository.internal_id_cnt++
+    }
+    changed(other: NodeLinkRepository): boolean {
+        return this.id !== other.id
     }
     fromLinks(node: SubjectNode): L[] {
         return this.links.filter(link => link.from_internal_id === node.internal_id)
@@ -206,4 +212,5 @@ export class NodeLinkRepository<N extends SubjectNode = SubjectNode, L extends L
         }
         return set
     }
+
 }

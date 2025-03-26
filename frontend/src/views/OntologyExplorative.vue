@@ -26,8 +26,14 @@
         <div class="input_step">
             <h3 v-if="store">.. and start querying!</h3>
             <div class="query_build_view">
-                <QueryBuilder :store="store"></QueryBuilder>
+                <QueryBuilder :store="store" :diff="ui_state.diff"></QueryBuilder>
                 <ResultsView :query_string="query_string" :store="store"></ResultsView>
+            </div>
+            <div class="diff_controls">
+                <OnsetBtn :toggleable="false" @click="ui_state.diff_active = !ui_state.diff_active">{{
+                    !ui_state.diff_active ? "Start Change Tracking" :
+                        "Apply Changes" }} </OnsetBtn>
+                <OnsetBtn @click="clearDiff()" v-if="ui_state.diff_active">Clear Changes</OnsetBtn>
             </div>
         </div>
         <div>
@@ -52,9 +58,11 @@ import { Api } from '@/api/client.ts/Api';
 import { BACKEND_URL } from '@/utils/config';
 import type { SubjectInCircle } from '@/utils/d3-man/CircleMan';
 import OnsetBtn from '@/components/ui/OnsetBtn.vue';
-import type { MixedResponse, NodeLinkRepository } from '@/utils/sparql/store';
+import { type MixedResponse, type NodeLinkRepository } from '@/utils/sparql/store';
 import SelectorGroup from '@/components/ui/SelectorGroup.vue';
 import FuzzyQueryStarter from '@/components/explore/FuzzyQueryStarter.vue';
+import { jsonClone } from '@/utils/parsing';
+import { NodeLinkRepositoryDiff } from '@/utils/sparql/diff';
 
 
 // window.Prism = window.Prism || {};
@@ -71,9 +79,13 @@ enum QueryMode {
 const ui_state = reactive({
     loading: false,
     show_query: false,
-    query_mode: QueryMode.FUZZY
+    query_mode: QueryMode.FUZZY,
+    diff: null as NodeLinkRepositoryDiff | null,
+    diff_active: false,
 })
 const store = ref(null as NodeLinkRepository | null)
+const old_store = ref(null as NodeLinkRepository | null)
+
 watch(() => selected_start, () => {
 }, { deep: false })
 watch(() => selected_topic_ids, () => {
@@ -87,6 +99,7 @@ watch(() => selected_start, () => {
     }
     let new_query_string = store.value.generateQuery()
     if (query_string.value != new_query_string) {
+        updateDiff()
         query_string.value = new_query_string
         query_string_html.value = Prism.highlight(
             query_string.value,
@@ -98,7 +111,27 @@ const selected_root = (root: MixedResponse) => {
     // console.log('selected_root', root)
     selected_start.value = root
 }
-
+watch(() => ui_state.diff_active, (new_val) => {
+    if (ui_state.diff_active) {
+        console.log('Starting diff')
+        old_store.value = jsonClone(store.value)
+        updateDiff()
+    } else {
+        console.log('Applying diff')
+        ui_state.diff_active = false
+        ui_state.diff = null
+    }
+}, { deep: false })
+const updateDiff = () => {
+    if (ui_state.diff_active && old_store.value) {
+        ui_state.diff = new NodeLinkRepositoryDiff(old_store.value, store.value)
+    }
+}
+const clearDiff = () => {
+    ui_state.diff_active = false
+    store.value = old_store.value
+    ui_state.diff = null
+}
 
 </script>
 <style lang="scss" scoped>
@@ -115,6 +148,15 @@ const selected_root = (root: MixedResponse) => {
         width: 25%;
         height: 100%;
     }
+}
+
+.diff_controls {
+    display: flex;
+    justify-items: start;
+    justify-items: start;
+    align-items: center;
+    flex-direction: row;
+    margin: 20px;
 }
 
 .input_step {
