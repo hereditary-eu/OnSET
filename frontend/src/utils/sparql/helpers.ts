@@ -29,8 +29,10 @@ export const CONSTRAINT_PADDING = 5
 export enum DisplayMode {
     SELECT = 'select',
     EDIT = 'edit',
+    EDIT_NO_ADD = 'edit_no_add',
     RESULTS = 'results',
     RESULT_INTERACTIVE = 'result_interactive',
+
 }
 function toVar(v: string) {
     return v.replace(/[_ &]/, '_')

@@ -33,14 +33,14 @@ const { link, store, diff } = defineProps({
 let from = computed(() => {
     let from_node = store.from(link)
     if (!from_node) {
-        return diff?.diff_nodes.removed.find(n => n.internal_id == link.from_internal_id)
+        return diff?.diff_nodes.removed.find(n => n.left.internal_id == link.from_internal_id)?.left
     }
     return from_node
 })
 let to = computed(() => {
     let to_node = store.to(link)
     if (!to_node) {
-        return diff?.diff_nodes.removed.find(n => n.internal_id == link.to_internal_id)
+        return diff?.diff_nodes.removed.find(n => n.left.internal_id == link.to_internal_id)?.left
     }
     return to_node
 })

@@ -7,7 +7,7 @@
                 :height="`${constraints_height + subject.height + editor_data.editpoint_r * 2}px`" fill-opacity="0">
 
             </rect>
-            <rect :width="`${subject.width}px`" :height="`${subject.height}px`" :class="node_statestyle" class="node"
+            <rect :width="`${subject.width}px`" :height="`${subject.height}px`" class="node" :class="node_statestyle"
                 @mousedown="mouse_down_node" @mousemove="mouse_move_node" @mouseup="mouse_up_node"
                 @mouseleave="mouse_up_node">
             </rect>
@@ -18,7 +18,7 @@
             </text>
             <g v-if="mode == DisplayMode.EDIT" v-for="constr_info in constraint_list_mapped"
                 :transform="`translate(${subject.width / 2},${constr_info.y})`">
-                <Sublink :subquery="constr_info.subquery" :extend_path="constr_info.extend_path"
+                <Sublink :subquery="constr_info.subquery" :extend_path="constr_info.extend_path" :diff="diff_node"
                     :show_editpoints="editor_data.show_editpoints" :node="subject" @delete="deleteConstraint"
                     @instance-search-clicked="emit('instanceSearchClicked', $event)">
 
@@ -51,7 +51,7 @@
 </template>
 <script setup lang="ts">
 import { ref, watch, reactive, computed, onMounted, defineProps, onBeforeUpdate, type Prop, onUpdated, onRenderTriggered } from 'vue'
-import { SubjectNode as NodeRepr, NodeState } from '@/utils/sparql/representation';
+import { SubjectNode as NodeRepr, NodeState, SubQuery } from '@/utils/sparql/representation';
 import { CONSTRAINT_PADDING, CONSTRAINT_WIDTH, DisplayMode, InstanceSelectorOpenEvent, NodeSide, OutlinkSelectorOpenEvent } from '@/utils/sparql/helpers';
 import Sublink from './Subquery.vue';
 import type { InstanceNode, PropertiesOpenEvent } from '@/utils/sparql/querymapper';
@@ -89,10 +89,11 @@ const editor_data = reactive({
     constraint_padding: 5,
     show_editpoints: false,
     editpoint_r: 7,
-    hover_deletion: false
+    hover_deletion: false,
+    state: NodeState.NORMAL
 })
 const mouse_down_node = (event: MouseEvent) => {
-    if (mode == DisplayMode.EDIT || mode == DisplayMode.RESULT_INTERACTIVE) {
+    if (mode == DisplayMode.EDIT || mode == DisplayMode.RESULT_INTERACTIVE || mode == DisplayMode.EDIT_NO_ADD) {
         editor_data.mouse_down = true
         editor_data.mouse_x = event.clientX
         editor_data.mouse_y = event.clientY
@@ -109,17 +110,24 @@ const mouse_move_node = (event: MouseEvent) => {
         editor_data.mouse_y = event.clientY
     }
 }
+class SubQueryDisplay {
+    subquery: SubQuery | null = null
+    y: number = 0
+    extend_path: number = 0
+    constructor(subquery: SubQuery, state: NodeState = NodeState.NORMAL) {
+        this.subquery = subquery
+    }
+}
 const constraint_list_mapped = computed(() => {
     if (!subject.subqueries) {
         return []
     }
-    let constraints = subject.subqueries.filter(constr => constr != null).map((subquery) => {
-        return {
-            subquery: subquery,
-            y: 0,
-            extend_path: 0
-        }
-    })
+
+    let constraints = subject.subqueries.filter(constr => constr != null).map((subquery) => new SubQueryDisplay(subquery))
+    if (diff_node.value) {
+        constraints = constraints.concat(diff_node.value.diff_subqueries.removed.map((subquery) => new SubQueryDisplay(subquery.left, NodeState.REMOVED)))
+    }
+    constraints = constraints.concat()
     // if (constraints.length > 0) {
     //     constraints[0].first_prop = true
     // }
@@ -162,32 +170,50 @@ watch(() => editor_data.hover_deletion, () => {
 }, { deep: true })
 
 const node_statestyle = computed(() => {
-    console.log('subject.state', subject.state)
-    let state = subject.state.toLowerCase()
-    if (!subject.state) {
+    // console.log('subject.state', subject.state)
+    let state = editor_data.state.toLowerCase()
+    if (!state) {
         return ''
     }
     return `node_${state.toLowerCase()}`
 })
+const diff_node = computed(() => {
+    if (diff) {
+        let diff_node_added = diff.diff_nodes.added.find((node) => node.right.internal_id == subject.internal_id)
+        if (diff_node_added) {
+            return diff_node_added
+        }
+        let diff_node_removed = diff.diff_nodes.removed.find((node) => node.left.internal_id == subject.internal_id)
+        if (diff_node_removed) {
+            return diff_node_removed
+        }
+        let diff_node_changed = diff.diff_nodes.changed.find((node) => node.left.internal_id == subject.internal_id)
+        if (diff_node_changed) {
+            return diff_node_changed
+        }
 
+    }
+    return null
+})
 
 const updateNodeState = () => {
     if (subject.state == NodeState.DELETION_IMMINENT) {
+        editor_data.state = NodeState.DELETION_IMMINENT
         return
     }
     if (diff) {
-        let diff_node = diff.diff_nodes.added.find((node) => node.internal_id == subject.internal_id)
+        let diff_node = diff.diff_nodes.added.find((node) => node.right.internal_id == subject.internal_id)
         if (diff_node) {
-            subject.state = NodeState.ADDED
+            editor_data.state = NodeState.ADDED
             return
         }
-        let diff_node_del = diff.diff_nodes.removed.find((node) => node.internal_id == subject.internal_id)
+        let diff_node_del = diff.diff_nodes.removed.find((node) => node.left.internal_id == subject.internal_id)
         if (diff_node_del) {
-            subject.state = NodeState.REMOVED
+            editor_data.state = NodeState.REMOVED
             return
         }
     }
-    subject.state = NodeState.NORMAL
+    editor_data.state = NodeState.NORMAL
 }
 
 const hover_deletion = (state: boolean) => {
@@ -211,7 +237,7 @@ onMounted(() => {
 <style lang="scss">
 .node {
     cursor: pointer;
-    fill: #ccc;
+    // fill: #ccc;
     stroke: #000;
     stroke-width: 1.5px;
 
@@ -221,17 +247,6 @@ onMounted(() => {
     fill: #f2b56c;
     stroke-dasharray: 5, 5;
 }
-
-.node_added {
-    fill: #b0f2bb;
-    stroke-dasharray: 10, 1, 10, 1;
-}
-
-.node_removed {
-    fill: #f26c6c;
-    stroke-dasharray: 10, 1, 10, 1;
-}
-
 
 .node_text {
     font-size: 10px;

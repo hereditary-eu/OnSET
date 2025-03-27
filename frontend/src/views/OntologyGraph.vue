@@ -82,7 +82,7 @@ async function loadSubClasses(parent: SubjectInGraph,) {
     applyDescendants(parent, child_subjects, "subClassOf")
 }
 async function loadNIs(parent: SubjectInGraph) {
-    const resp = await api.classes.getNamedIndividualsClassesNamedIndividualsGet({
+    const resp = await api.classes.getNamedInstanceClassesInstancesGet({
         cls: parent.subject_id
     })//TODO: implement descendant_type
     // console.log('resp', resp)

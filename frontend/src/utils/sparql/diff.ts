@@ -13,6 +13,10 @@ export class InstanceDiff<T extends Diffable> {
     constructor(left: T, right: T) {
         this.left = jsonClone(left)
         this.right = jsonClone(right)
+        if (!left || !right) {
+            this.change_set = {}
+            return
+        }
         for (let key in right) {
             let left_data = stringifyJSON(left[key])
             let right_data = stringifyJSON(right[key])
@@ -27,23 +31,14 @@ export class SubQueryDiff extends InstanceDiff<SubQuery> {
 export class LinkDiff<L extends Link = Link> extends InstanceDiff<L> {
 
 }
-export class NodeDiff<N extends SubjectNode = SubjectNode> extends InstanceDiff<N> {
-
-    diff_constraints: DiffList<SubQuery> = null
-
-    constructor(left: N, right: N) {
-        super(left, right)
-        this.diff_constraints = new DiffList(left.subqueries, right.subqueries, SubQueryDiff)
-    }
-}
 export class DiffList<T extends Diffable, D extends InstanceDiff<T> = InstanceDiff<T>> {
-    added: T[] = []
-    removed: T[] = []
+    added: D[] = []
+    removed: D[] = []
     changed: D[] = []
 
     constructor(left: T[], right: T[], diff_class: new (left: T, right: T) => D) {
-        this.added = right.filter(r => left.filter(l => l.id == r.id).length === 0)
-        this.removed = left.filter(l => right.filter(r => l.id == r.id).length === 0)
+        this.added = right.filter(r => left.filter(l => l.id == r.id).length === 0).map(r => new diff_class(null, r))
+        this.removed = left.filter(l => right.filter(r => l.id == r.id).length === 0).map(l => new diff_class(l, null))
         this.changed = right.map(r => {
             let l = left.find(l => l.id == r.id);
             return l === undefined ? null : {
@@ -52,6 +47,16 @@ export class DiffList<T extends Diffable, D extends InstanceDiff<T> = InstanceDi
                 changed: l.changed(r)
             }
         }).filter(lr => lr !== null).filter(lr => lr.changed).map(lr => new diff_class(lr.left, lr.right))
+    }
+}
+export class NodeDiff<N extends SubjectNode = SubjectNode> extends InstanceDiff<N> {
+
+    diff_subqueries: DiffList<SubQuery> = null
+
+    constructor(left: N, right: N) {
+        super(left, right)
+        this.diff_subqueries = new DiffList(left?.subqueries || [],
+            right?.subqueries || [], SubQueryDiff)
     }
 }
 

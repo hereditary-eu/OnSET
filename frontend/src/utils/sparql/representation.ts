@@ -13,8 +13,9 @@ export enum NodeState {
     SELECTED = "selected",
     HOVERED = "hovered",
     DELETION_IMMINENT = "deletion_imminent",
-    ADDED = "ADDED",
-    REMOVED = "REMOVED"
+    ADDED = "added",
+    REMOVED = "removed",
+    CHANGED = "changed"
 }
 
 export enum SubQueryType {
@@ -40,7 +41,8 @@ export class SubQuery implements Diffable {
         this.id = SubQuery.id_counter++
     }
     changed(other: Diffable): boolean {
-        throw new Error("Method not implemented.");
+        const testvar = "?test"
+        return this.filterExpression(testvar) != (other as SubQuery).filterExpression(testvar)!;
     }
     propVar(): string {
         return this.link.outputId()
