@@ -9,6 +9,107 @@
  * ---------------------------------------------------------------
  */
 
+/** AssistantLink */
+export interface AssistantLink {
+  /**
+   * Type
+   * @default "link"
+   */
+  type?: "link";
+  /** From Id */
+  from_id: string;
+  /** To Id */
+  to_id: string;
+  /** From Internal Id */
+  from_internal_id: string;
+  /** To Internal Id */
+  to_internal_id: string;
+  /** Link Id */
+  link_id: string;
+}
+
+/** AssistantSubQuery */
+export interface AssistantSubQuery {
+  /**
+   * Type
+   * @default "subquery"
+   */
+  type?: "subquery";
+  constraint_type: AssistantSubQueryType;
+  /** Field */
+  field: string;
+  /** From Internal Id */
+  from_internal_id: string;
+  /** From Id */
+  from_id: string;
+}
+
+/** AssistantSubQueryType */
+export enum AssistantSubQueryType {
+  String = "string",
+  Number = "number",
+  Boolean = "boolean",
+  Date = "date",
+  Subject = "subject",
+  QueryProp = "query_prop",
+}
+
+/** AssistantSubject */
+export interface AssistantSubjectInput {
+  /**
+   * Type
+   * @default "subject"
+   */
+  type?: "subject";
+  /** Subject Id */
+  subject_id: string;
+  /** Internal Id */
+  internal_id: string;
+  /**
+   * Subqueries
+   * @default []
+   */
+  subqueries?: AssistantSubQuery[];
+  /**
+   * X
+   * @default 0
+   */
+  x?: number;
+  /**
+   * Y
+   * @default 0
+   */
+  y?: number;
+}
+
+/** AssistantSubject */
+export interface AssistantSubjectOutput {
+  /**
+   * Type
+   * @default "subject"
+   */
+  type?: "subject";
+  /** Subject Id */
+  subject_id: string;
+  /** Internal Id */
+  internal_id: string;
+  /**
+   * Subqueries
+   * @default []
+   */
+  subqueries?: AssistantSubQuery[];
+  /**
+   * X
+   * @default 0
+   */
+  x?: number;
+  /**
+   * Y
+   * @default 0
+   */
+  y?: number;
+}
+
 /** Body_load_ontology_management_ontology_post */
 export interface BodyLoadOntologyManagementOntologyPost {
   /**
@@ -290,6 +391,28 @@ export interface Match {
   rank?: number;
 }
 
+/** Operation */
+export interface Operation {
+  operation: OperationType;
+  /** Data */
+  data: AssistantLink | AssistantSubjectOutput | AssistantSubQuery;
+}
+
+/** OperationType */
+export enum OperationType {
+  Add = "add",
+  Remove = "remove",
+}
+
+/** Operations */
+export interface Operations {
+  /**
+   * Operations
+   * @default []
+   */
+  operations?: Operation[];
+}
+
 /** OutLink */
 export interface OutLink {
   target?: RelationsFound;
@@ -327,6 +450,20 @@ export interface PropertyValue {
   value: null;
   /** Label */
   label: string | null;
+}
+
+/** QueryGraph */
+export interface QueryGraph {
+  /**
+   * Subjects
+   * @default []
+   */
+  subjects?: AssistantSubjectInput[];
+  /**
+   * Links
+   * @default []
+   */
+  links?: AssistantLink[];
 }
 
 /** QueryProgress */
@@ -885,11 +1022,11 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
     /**
      * No description
      *
-     * @name GetLinksClassesLinksGet
-     * @summary Get Links
-     * @request GET:/classes/links
+     * @name GetOutlinksClassesOutlinksGet
+     * @summary Get Outlinks
+     * @request GET:/classes/outlinks
      */
-    getLinksClassesLinksGet: (
+    getOutlinksClassesOutlinksGet: (
       query: {
         /** Subject Id */
         subject_id: string;
@@ -897,6 +1034,50 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       params: RequestParams = {},
     ) =>
       this.request<SparseOutLinks, HTTPValidationError>({
+        path: `/classes/outlinks`,
+        method: "GET",
+        query: query,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @name GetSubjectClassesSubjectsGet
+     * @summary Get Subject
+     * @request GET:/classes/subjects
+     */
+    getSubjectClassesSubjectsGet: (
+      query: {
+        /** Subject Id */
+        subject_id: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<Subject | null, HTTPValidationError>({
+        path: `/classes/subjects`,
+        method: "GET",
+        query: query,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @name GetLinkClassesLinksGet
+     * @summary Get Link
+     * @request GET:/classes/links
+     */
+    getLinkClassesLinksGet: (
+      query: {
+        /** Link Id */
+        link_id: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<SubjectLink | null, HTTPValidationError>({
         path: `/classes/links`,
         method: "GET",
         query: query,
@@ -1005,6 +1186,34 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       this.request<EnrichedEntitiesRelations[], any>({
         path: `/classes/search/llm/examples`,
         method: "GET",
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @name GetAssistantResultsClassesSearchAssistantPost
+     * @summary Get Assistant Results
+     * @request POST:/classes/search/assistant
+     */
+    getAssistantResultsClassesSearchAssistantPost: (
+      data: QueryGraph,
+      query?: {
+        /**
+         * Q
+         * @default "working field of person"
+         */
+        q?: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<Operations, HTTPValidationError>({
+        path: `/classes/search/assistant`,
+        method: "POST",
+        query: query,
+        body: data,
+        type: ContentType.Json,
         format: "json",
         ...params,
       }),

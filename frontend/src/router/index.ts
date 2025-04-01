@@ -1,7 +1,8 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '@/views/HomeView.vue'
 import OntologyGraph from '@/views/OntologyGraph.vue'
-import OntologyCircles from '@/views/OntologyCircles.vue'
+import OntologyCircles from '@/views/3D-Circles.vue'
+import LinkedCircles from '@/views/LinkedOntology.vue'
 import OntologyExplorative from '@/views/OntologyExplorative.vue'
 
 const router = createRouter({
@@ -23,9 +24,14 @@ const router = createRouter({
       component: OntologyGraph
     },
     {
-      path: '/circles',
-      name: 'circles',
+      path: '/3d-circles',
+      name: '3d-circles',
       component: OntologyCircles
+    },
+    {
+      path: '/linked-circles',
+      name: 'linked-circles',
+      component: LinkedCircles
     },
     {
       path: '/about',

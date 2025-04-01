@@ -12,7 +12,8 @@ import HelloWorld from './components/HelloWorld.vue'
         <nav>
           <RouterLink to="/">Home</RouterLink>
           <RouterLink to="/explorative">Explore!</RouterLink>
-          <RouterLink to="/circles">Overview</RouterLink>
+          <RouterLink to="/3d-circles">Class Tree</RouterLink>
+          <RouterLink to="/linked-circles">Linked Data</RouterLink>
           <RouterLink to="/graph">Graph</RouterLink>
           <RouterLink to="/about">About</RouterLink>
         </nav>

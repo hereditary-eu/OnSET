@@ -27,7 +27,9 @@ from explorative.exp_model import (
     RELATION_TYPE,
     FuzzyQueryResult,
     SubjectLinkDB,
+    SubjectLink,
     SubjectInDB,
+    Subject,
 )
 from typing import Literal
 from enum import Enum
@@ -553,15 +555,36 @@ class IterativeAssistant:
 
         return ops
 
+    def __simplify_graph(self, graph: QueryGraph):
+        simple_graph = QueryGraph.model_validate_json(graph.model_dump_json())
+        for subject in simple_graph.subjects:
+            full_subject = self.guidance.oman.enrich_subject(subject.subject_id)
+            subject.subject_id = full_subject.label
+        with Session(self.guidance.engine) as session:
+            for link in simple_graph.links:
+                full_link = (
+                    session.query(SubjectLinkDB)
+                    .filter(SubjectLinkDB.label == link.link_id)
+                    .first()
+                )
+                if full_link is None:
+                    continue
+                full_link = SubjectLink.from_db(full_link, self.guidance.oman)
+                link.from_id = full_link.from_subject.label
+                link.to_id = full_link.to_subject.label
+                link.link_id = full_link.label
+        return simple_graph
+
     def run_query(self, query: str, graph: QueryGraph):
+        simple_graph = self.__simplify_graph(graph)
         # Step 1: Initial Operations
-        initial_ops = self.__initial_ops(query, graph)
+        initial_ops = self.__initial_ops(query, simple_graph)
         print("Initial Ops", initial_ops)
         # Step 2: Candidate Operations
         candidate_ops = self.__candidates_ops(query, initial_ops)
         print("Candidate Ops", candidate_ops)
         # Step 3: Constrained Operations
-        finalized_ops = self.__constrained_ops(query, graph, candidate_ops)
+        finalized_ops = self.__constrained_ops(query, simple_graph, candidate_ops)
         print("Constrained Ops", candidate_ops)
         # Step 4: Correct Operations
         corrected_ops = self.__correct_ops(finalized_ops, graph=graph)

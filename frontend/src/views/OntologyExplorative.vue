@@ -34,6 +34,9 @@
                     !ui_state.diff_active ? "Start Change Tracking" :
                         "Apply Changes" }} </OnsetBtn>
                 <OnsetBtn @click="clearDiff()" v-if="ui_state.diff_active">Clear Changes</OnsetBtn>
+                <input type="text" v-model="ui_state.assistant_query" @keypress="submit_assistant"
+                    placeholder="Tell me what to change ..." class="query_input" />
+
             </div>
         </div>
         <div>
@@ -54,7 +57,7 @@ import QueryBuilder from '@/components/explore/QueryBuilder.vue';
 import ResultsView from '@/components/explore/ResultsView.vue';
 import Loading from '@/components/ui/Loading.vue';
 import { OverviewCircles } from '@/utils/three-man/OverviewCircles';
-import { Api } from '@/api/client.ts/Api';
+import { Api, OperationType, type AssistantLink, type AssistantSubjectInput } from '@/api/client.ts/Api';
 import { BACKEND_URL } from '@/utils/config';
 import type { SubjectInCircle } from '@/utils/d3-man/CircleMan';
 import OnsetBtn from '@/components/ui/OnsetBtn.vue';
@@ -63,7 +66,12 @@ import SelectorGroup from '@/components/ui/SelectorGroup.vue';
 import FuzzyQueryStarter from '@/components/explore/FuzzyQueryStarter.vue';
 import { jsonClone } from '@/utils/parsing';
 import { NodeLinkRepositoryDiff } from '@/utils/sparql/diff';
+import { Link, SubjectNode } from '@/utils/sparql/representation';
 
+
+const api = new Api({
+    baseURL: BACKEND_URL
+})
 
 // window.Prism = window.Prism || {};
 // window.Prism.manual = true;
@@ -82,6 +90,7 @@ const ui_state = reactive({
     query_mode: QueryMode.FUZZY,
     diff: null as NodeLinkRepositoryDiff | null,
     diff_active: false,
+    assistant_query: '',
 })
 const store = ref(null as NodeLinkRepository | null)
 const old_store = ref(null as NodeLinkRepository | null)
@@ -113,15 +122,18 @@ const selected_root = (root: MixedResponse) => {
 }
 watch(() => ui_state.diff_active, (new_val) => {
     if (ui_state.diff_active) {
-        console.log('Starting diff')
-        old_store.value = jsonClone(store.value)
-        updateDiff()
+        startDiff()
     } else {
         console.log('Applying diff')
         ui_state.diff_active = false
         ui_state.diff = null
     }
 }, { deep: false })
+const startDiff = () => {
+    console.log('Starting diff')
+    old_store.value = jsonClone(store.value)
+    updateDiff()
+}
 const updateDiff = () => {
     if (ui_state.diff_active && old_store.value) {
         ui_state.diff = new NodeLinkRepositoryDiff(old_store.value, store.value)
@@ -131,6 +143,62 @@ const clearDiff = () => {
     ui_state.diff_active = false
     store.value = old_store.value
     ui_state.diff = null
+}
+const submit_assistant = () => {
+    if (ui_state.assistant_query.length == 0) {
+        return
+    }
+    console.log('Assistant query', ui_state.assistant_query);
+
+    (async () => {
+        ui_state.loading = true
+        const graph = store.value.toQueryGraph()
+        const response = await api.classes.getAssistantResultsClassesSearchAssistantPost(graph, {
+            q: ui_state.assistant_query,
+        })
+        ui_state.loading = false
+        ui_state.diff_active = true
+        ui_state.assistant_query = ''
+        startDiff()
+        for (const step of response.data.operations) {
+            if (step.operation == OperationType.Add) {
+                switch (step.data.type) {
+                    case 'subject':
+                        const op_subject = step.data as AssistantSubjectInput
+                        const full_subject = await api.classes.getSubjectClassesSubjectsGet({
+                            subject_id: op_subject.subject_id
+                        })
+                        const subject = full_subject.data
+                        const new_subject = new SubjectNode(subject)
+                        store.value.nodes.push(new_subject)
+                        break
+                }
+            } else if (step.operation == OperationType.Remove) {
+                switch (step.data.type) {
+                    case 'subject':
+                        const op_subject = step.data as AssistantSubjectInput
+                        const subject = store.value.nodes.find((s) => s.id == op_subject.subject_id)
+                        store.value.deleteWithSubnodes(subject)
+                        break
+                }
+            }
+        }
+        for (const step of response.data.operations) {
+            if (step.operation == OperationType.Add) {
+                switch (step.data.type) {
+                    case 'link':
+                        const op_link = step.data as AssistantLink
+                        const full_link = await api.classes.getLinkClassesLinksGet({
+                            link_id: op_link.link_id
+                        })
+                        const link = full_link.data
+                        const new_link = new Link(link)
+                        store.value.links.push(new_link)
+                        break
+                }
+            }
+        }
+    })().catch(console.error)
 }
 
 </script>
@@ -175,5 +243,14 @@ const clearDiff = () => {
     justify-content: center;
     align-items: center;
     border-bottom: 1px solid #e0e0e0;
+}
+
+.query_input {
+    width: 20vw;
+    height: 2.8rem;
+    font-size: 1rem;
+    padding: 0.5rem;
+    margin: 0.5rem;
+    border: 1px solid #8fa88f;
 }
 </style>
