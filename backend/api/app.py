@@ -18,6 +18,8 @@ from explorative.exp_model import (
 from explorative.llm_query import LLMQuery, QueryProgress, EnrichedEntitiesRelations
 from eval_config import BTO_CONFIGS, DBPEDIA_CONFIGS, UNIPROT_CONFIGS
 from initiator import InitatorManager
+from assistant.model import QueryGraph, Operations
+from assistant.iterative_assistant import IterativeAssistant
 
 db_config = DBPEDIA_CONFIGS[0]
 
@@ -74,6 +76,8 @@ llm_query = LLMQuery(topic=guidance_man)
 initatior = InitatorManager()
 initatior.register(guidance_man)
 initatior.register(llm_query)
+
+iterative_assistant = IterativeAssistant(guidance=guidance_man)
 
 
 app = FastAPI(title="Ontology Provenance API", version="0.1.0")
@@ -150,11 +154,29 @@ def get_topics_root(force_initialize: bool = Query(False)) -> Topic:
     return guidance_man.get_topic_tree()
 
 
-@app.get("/classes/links")
-def get_links(subject_id: str = Query()) -> SparseOutLinks:
+@app.get("/classes/outlinks")
+def get_outlinks(subject_id: str = Query()) -> SparseOutLinks:
     if not hasattr(dataset_manager, "engine"):
         dataset_manager.initialise(glob_path=f"{base_path}/datasets/ALS/**/*.csv")
     return dataset_manager.target_outlinks(subject_id)
+
+
+@app.get("/classes/subjects")
+def get_subject(
+    subject_id: str = Query(),
+) -> Subject | None:
+    return ontology_manager.enrich_subject(subject_id)
+
+
+@app.get("/classes/links")
+def get_link(
+    link_id: str = Query(),
+) -> SubjectLink | None:
+    with ontology_manager.session() as session:
+        link = session.query(SubjectLink).filter(SubjectLink.link_id == link_id).first()
+        if link is None:
+            return None
+        return SubjectLink.from_db(link, ontology_manager)
 
 
 @app.post("/classes/search")
@@ -191,3 +213,11 @@ def get_llm_results_running(
 @app.get("/classes/search/llm/examples")
 def get_llm_examples() -> list[EnrichedEntitiesRelations]:
     return llm_query.get_examples()
+
+
+@app.post("/classes/search/assistant")
+def get_assistant_results(
+    q: str = Query("working field of person"),
+    graph: QueryGraph = Body(...),
+) -> Operations:
+    return iterative_assistant.run_query(q, graph)

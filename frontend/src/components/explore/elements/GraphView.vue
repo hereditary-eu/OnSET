@@ -14,7 +14,7 @@
                 <LinkComp :link="link.left" :store="store" :diff="diff" />
             </g>
             <g v-for="node in diff.diff_nodes.removed" :key="node.left.internal_id">
-                <NodeComp :subject="node.left" :store="store" :mode="DisplayMode.EDIT_NO_ADD" :diff="diff"
+                <NodeComp :subject="node.left" :store="store" :mode="DisplayMode.SELECT" :diff="diff"
                     @edit-point-clicked="emit('editPointClicked', $event)"
                     @prop-point-clicked="emit('propPointClicked', $event)"
                     @instance-search-clicked="emit('instanceSearchClicked', $event)" />

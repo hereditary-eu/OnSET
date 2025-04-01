@@ -3,7 +3,8 @@ import { Link, SubjectNode as NodeRepr } from "./representation";
 import { BACKEND_URL } from "../config";
 import { Vector2, type Vector2Like } from "three";
 import { parseJSON, registerClass, stringifyJSON } from "../parsing";
-import type { NodeLinkRepository as NodeLinkRepository } from "./store";
+import { NodeLinkRepository as NodeLinkRepository } from "./store";
+import { DiffList, InstanceDiff, NodeLinkRepositoryDiff, type Diffable } from "./diff";
 export function readableName(uri?: string, label?: string) {
 
     uri = uri || "-"
@@ -32,17 +33,50 @@ export class InstanceNode extends NodeRepr {
         this.instance_label = this.instance_data[this.labelId().replace('?', '')]
         this.instance_label = readableName(this.instance_id, this.instance_label)
     }
+    get id() {
+        return this.instance_id
+    }
 }
 @registerClass
 export class InstanceLink extends Link {
+    instance_id: string = null
     constructor(base_link: Link = null, public instance_data: Record<string, string> = null) {
         super(base_link)
+
+    }
+    get id() {
+        return this.link_id
     }
 }
 export class PropertiesOpenEvent {
     node: InstanceNode;
 }
-export type InstanceNodeLinkRepository = NodeLinkRepository<InstanceNode, InstanceLink>
+export class InstanceNodeLinkRepository extends NodeLinkRepository<InstanceNode, InstanceLink> {
+
+    constructor(links: InstanceLink[], nodes: InstanceNode[]) {
+        super();
+        this.links = links
+        this.nodes = nodes
+        let node_ids = nodes.map(n => n.instance_id).reduce((p, c) => `${p}-${c}`, '')
+        this.id = node_ids
+    }
+
+}
+export class DiffInstanceNodeLinkRepository extends NodeLinkRepositoryDiff<InstanceNode, InstanceLink> {
+    constructor(left: InstanceNodeLinkRepository, right: InstanceNodeLinkRepository) {
+        super(left, right)
+    }
+}
+export class ResultList implements Diffable {
+    id: number = 0;
+    private static id_cntr = 0
+    constructor(public instances: InstanceNodeLinkRepository[] = []) {
+        this.id = ResultList.id_cntr
+    }
+    changed(other: this): boolean {
+        return other.id != this.id
+    }
+}
 export class QueryMapper {
     api: Api<unknown> = null;
     constructor(public store: NodeLinkRepository, public target_size: Vector2Like) {
@@ -84,9 +118,9 @@ export class QueryMapper {
         size = bbox.br.clone().sub(bbox.tl)
         return { offset, scale, size }
     }
-    async runAndMap(query: string, skip: number = 0, limit: number = 20) {
+    async runAndMap(query: string, skip: number = 0, limit: number = 2000) {
         if (!this.store) {
-            return []
+            return new ResultList([])
         }
         const response = await this.api.sparql.sparqlQuerySparqlPost({
             query: this.store.generateQuery(limit, skip),
@@ -112,7 +146,7 @@ export class QueryMapper {
             })
         })
 
-        return mapped_stores
+        return new ResultList(mapped_stores)
     }
 
 

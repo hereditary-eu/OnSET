@@ -85,7 +85,7 @@ watch(() => ui_state.query_string, (new_val) => {
     overviewBox.updateLinks(store)
 }, { deep: false })
 
-onBeforeMount(() => {
+onMounted(() => {
     // circleman.clicked_node = (node: NodeType) => {
     //     console.log('clicked_node', node)
     //     api.classes.getLinksClassesLinksGet({

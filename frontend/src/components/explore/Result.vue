@@ -18,7 +18,7 @@
         <template v-slot:trigger>
             <svg class="result_instance_svg">
                 <g :transform="`translate(${offset.x},${offset.y}) scale(${scale})`">
-                    <GraphView :store="store" :display-mode="DisplayMode.RESULTS"></GraphView>
+                    <GraphView :store="store" :display-mode="DisplayMode.RESULTS" :diff="diff"></GraphView>
                 </g>
             </svg>
         </template>
@@ -27,7 +27,7 @@
 <script setup lang="ts">
 import { ref, watch, reactive, computed, onMounted, defineProps } from 'vue'
 import Propview from './elements/panels/Propview.vue';
-import { InstanceNode, PropertiesOpenEvent, QueryMapper, type InstanceNodeLinkRepository } from '@/utils/sparql/querymapper';
+import { DiffInstanceNodeLinkRepository, InstanceNode, PropertiesOpenEvent, QueryMapper, type InstanceNodeLinkRepository } from '@/utils/sparql/querymapper';
 import { Vector2, type Vector2Like } from 'three';
 import { DisplayMode } from '@/utils/sparql/helpers';
 import Loading from '../ui/Loading.vue';
@@ -51,6 +51,11 @@ const { store, scale, offset } = defineProps({
         type: Object as () => Vector2Like,
         required: true
     },
+    diff: {
+        type: Object as () => DiffInstanceNodeLinkRepository | null,
+        required: false,
+        default: null
+    }
 })
 const expanded = ref(false)
 const ui_state = reactive({

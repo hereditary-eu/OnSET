@@ -1,4 +1,5 @@
 import { jsonClone, stringifyJSON } from "../parsing"
+import { DiffInstanceNodeLinkRepository, type InstanceNodeLinkRepository, type ResultList } from "./querymapper"
 import type { Link, SubjectNode, SubQuery } from "./representation"
 import type { NodeLinkRepository } from "./store"
 
@@ -73,4 +74,12 @@ export class NodeLinkRepositoryDiff<N extends SubjectNode = SubjectNode, L exten
         this.diff_links = new DiffList(left.links, right.links, LinkDiff)
     }
 
+}
+
+export class ResultListDiff extends InstanceDiff<ResultList> {
+    diff_instances: DiffList<InstanceNodeLinkRepository, DiffInstanceNodeLinkRepository>
+    constructor(left: ResultList, right: ResultList) {
+        super(left, right)
+        this.diff_instances = new DiffList(left.instances, right.instances, DiffInstanceNodeLinkRepository)
+    }
 }

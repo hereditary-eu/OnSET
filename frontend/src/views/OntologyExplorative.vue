@@ -27,7 +27,7 @@
             <h3 v-if="store">.. and start querying!</h3>
             <div class="query_build_view">
                 <QueryBuilder :store="store" :diff="ui_state.diff"></QueryBuilder>
-                <ResultsView :query_string="query_string" :store="store"></ResultsView>
+                <ResultsView :query_string="query_string" :store="store" :diff="ui_state.diff"></ResultsView>
             </div>
             <div class="diff_controls">
                 <OnsetBtn :toggleable="false" @click="ui_state.diff_active = !ui_state.diff_active">{{

@@ -40,6 +40,8 @@ class Property(BaseModel):
         return ""
 
 
+    
+
 class Subject(BaseModel):
     subject_id: str
     label: str
@@ -50,6 +52,7 @@ class Subject(BaseModel):
     total_descendants: int = 0
     properties: dict[str, list[Subject]] = Field({})
     instance_count: int = 0
+
 
     def is_of_type(self, subject_id: str):
         if self.subject_id == subject_id:

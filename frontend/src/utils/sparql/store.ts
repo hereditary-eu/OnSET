@@ -42,7 +42,7 @@ export class NodeLinkRepository<N extends SubjectNode = SubjectNode, L extends L
     nodes: N[] = []
     links: L[] = []
     private static internal_id_cnt = 0
-    id: number
+    id: string | number
     constructor(nodes: N[] = [], links: L[] = []) {
         this.nodes = nodes
         this.links = links

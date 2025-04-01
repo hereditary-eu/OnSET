@@ -6,14 +6,15 @@
             return { value: ResultMode[qm], label: ResultMode[qm] }
         })" :width='"7rem"' :height='"1.2rem"'></SelectorGroup>
         <div v-if="ui_state.result_mode == ResultMode.MINI" class="results_instance_container">
-            <div class="result_instance_element" v-for="store of mapped_stores">
+            <div class="result_instance_element" v-for="store of mapped_stores.instances">
                 <Result :store="store" :expanded="false" :scale="ui_state.scale" :offset="ui_state.offset">
                 </Result>
             </div>
             <Loading v-if="ui_state.loading"></Loading>
-            <OnsetBtn v-if="mapped_stores.length > 0 && !ui_state.paging_end" @click="loadMore" btn_width="100%"
-                :toggleable="false">Load more</OnsetBtn>
-            <div class="result_instance_element" ref="view_container" v-show="mapped_stores.length == 0"></div>
+            <OnsetBtn v-if="mapped_stores.instances.length > 0 && !ui_state.paging_end" @click="loadMore"
+                btn_width="100%" :toggleable="false">Load more</OnsetBtn>
+            <div class="result_instance_element" ref="view_container" v-show="mapped_stores.instances.length == 0">
+            </div>
         </div>
         <div v-else class="results_instance_container">
             <ResultPlot :store="store" :query_string="query_string"></ResultPlot>
@@ -25,7 +26,7 @@ import { ref, watch, reactive, computed, onMounted, defineProps } from 'vue'
 import { SubjectNode, Link, SubQueryType } from '@/utils/sparql/representation';
 import NodeComp from './elements/Node.vue';
 import Propview from './elements/panels/Propview.vue';
-import { InstanceNode, PropertiesOpenEvent, QueryMapper, type InstanceNodeLinkRepository } from '@/utils/sparql/querymapper';
+import { InstanceNode, PropertiesOpenEvent, QueryMapper, ResultList, type InstanceNodeLinkRepository } from '@/utils/sparql/querymapper';
 import { Vector2, type Vector2Like } from 'three';
 import { DisplayMode } from '@/utils/sparql/helpers';
 import Loading from '../ui/Loading.vue';
@@ -34,11 +35,12 @@ import ResultPlot from '../explore/ResultPlot.vue';
 import OnsetBtn from '../ui/OnsetBtn.vue';
 import type { NodeLinkRepository } from '@/utils/sparql/store';
 import SelectorGroup from '../ui/SelectorGroup.vue';
+import type { NodeLinkRepositoryDiff } from '@/utils/sparql/diff';
 enum ResultMode {
     MINI = 'Miniatures',
     PROP = 'Properties',
 }
-const { store, query_string } = defineProps({
+const { store, query_string, diff } = defineProps({
     store: {
         type: Object as () => NodeLinkRepository,
         required: true
@@ -46,10 +48,14 @@ const { store, query_string } = defineProps({
     query_string: {
         type: String,
         required: true
+    },
+    diff: {
+        type: Object as () => NodeLinkRepositoryDiff | null,
+        default: null
     }
 })
 const mapper = ref(null as QueryMapper | null)
-const mapped_stores = ref([] as InstanceNodeLinkRepository[])
+const mapped_stores = ref(new ResultList())
 const view_container = ref(null as SVGSVGElement | null)
 const root_subject = ref(null as SubjectNode | null)
 const ui_state = reactive({
@@ -79,7 +85,7 @@ watch(() => query_string, () => {
         ui_state.result_mode = ResultMode.MINI
     }
 
-    if (mapped_stores.value.length == 0) {
+    if (mapped_stores.value.instances.length == 0) {
         ui_state.initial_size.x = view_container.value?.clientWidth || 0
         ui_state.initial_size.y = view_container.value?.clientHeight || 0
         // ui_state.initial_size.x -= 50
@@ -88,7 +94,7 @@ watch(() => query_string, () => {
     mapper.value = new QueryMapper(store, ui_state.initial_size)
     ui_state.paging_offset = 0
     ui_state.paging_end = false
-    mapped_stores.value = []
+    mapped_stores.value = new ResultList()
     loadMore().catch((err) => {
         console.error('Error while mapping query!', err)
         ui_state.loading = false
@@ -113,9 +119,9 @@ const loadMore = async () => {
         ui_state.offset = scalings.offset
         ui_state.computed_size = scalings.size
 
-        ui_state.paging_offset += retrieved_stores.length
-        mapped_stores.value = mapped_stores.value.concat(retrieved_stores)
-        if (retrieved_stores.length == 0) {
+        ui_state.paging_offset += retrieved_stores.instances.length
+        mapped_stores.value.instances = mapped_stores.value.instances.concat(retrieved_stores.instances)
+        if (retrieved_stores.instances.length == 0) {
             ui_state.paging_end = true
         }
         ui_state.loading = false
