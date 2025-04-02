@@ -44,7 +44,7 @@ class IterativeAssistant:
         """
         self.top_k = 5
         self.max_tokens = 2048
-        self.temperature = 0.3
+        self.temperature = 0.1
 
     def __initial_ops(self, query: str, graph: QueryGraph):
         query = query.strip()
@@ -207,55 +207,20 @@ class IterativeAssistant:
                 )
         return candidate_ops
 
-    def __build_constrained_model(self, candidate_ops: Operations):
-        models = []
-        print(candidate_ops)
-        # Build the model based on the candidate operations
-        allowed_subject_ids: set[str] = set()
-        allowed_link_ids: set[tuple[str, str, str]] = set()
-        allowed_subquery_ids: set[tuple[str, str]] = set()
-        for candidate_op in candidate_ops.operations:
-            if candidate_op.operation == OperationType.REMOVE:
-                continue
-            if candidate_op.data.type == "link":
-                allowed_link_ids.add(
-                    (
-                        candidate_op.data.from_id,
-                        candidate_op.data.link_id,
-                        candidate_op.data.to_id,
-                    )
-                )
-            elif candidate_op.data.type == "subject":
-                allowed_subject_ids.add(candidate_op.data.subject_id)
-            elif candidate_op.data.type == "subquery":
-                allowed_subquery_ids.add(
-                    (
-                        candidate_op.data.from_id,
-                        candidate_op.data.field,
-                    )
-                )
-        # Generate the grammar based on the allowed operations
+    def __build_constrained_model_from_allowed_ids(
+        self,
+        allowed_subject_ids: set[str],
+        allowed_link_ids: set[tuple[str, str, str]],
+        allowed_subquery_ids: set[tuple[str, str]],
+        allowed_internal_ids: set[str] = None,
+    ):
+        internal_ids_type = str
+        if allowed_internal_ids is not None:
+            internal_ids_type = Enum(
+                "InternalID",
+                {internal_id: internal_id for internal_id in allowed_internal_ids},
+            )
         data_model = None
-        if len(allowed_subject_ids) > 0:
-            subject_id_enum = Enum(
-                "SubjectID",
-                {subject_id: subject_id for subject_id in allowed_subject_ids},
-            )
-            subject_model = create_model(
-                "ConstrainedAssistantSubject",
-                **{
-                    "type": (Literal["subject"], "subject"),
-                    "subject_id": (subject_id_enum, ...),
-                    "internal_id": (str, ...),
-                    "subqueries": (list[AssistantSubQuery], Field([])),
-                    "x": (float, 0.0),
-                    "y": (float, 0.0),
-                },
-            )
-            if data_model is None:
-                data_model = subject_model
-            else:
-                data_model = data_model | subject_model
         if len(allowed_link_ids) > 0:
             link_id_enum = Enum(
                 "LinkID",
@@ -268,8 +233,8 @@ class IterativeAssistant:
                 "ConstrainedAssistantLink",
                 **{
                     "type": (Literal["link"], "link"),
-                    "from_internal_id": (str, ...),
-                    "to_internal_id": (str, ...),
+                    "from_internal_id": (internal_ids_type, ...),
+                    "to_internal_id": (internal_ids_type, ...),
                     "link_id": (link_id_enum, ...),
                 },
             )
@@ -278,6 +243,7 @@ class IterativeAssistant:
                 data_model = link_model
             else:
                 data_model = data_model | link_model
+        subquery_model = None
         if len(allowed_subquery_ids) > 0:
             subquery_id_enum = Enum(
                 "SubQueryID",
@@ -289,7 +255,7 @@ class IterativeAssistant:
             constrained_base_props = {
                 "type": (Literal["subquery"], "subquery"),
                 "field_id": (subquery_id_enum, ...),
-                "from_internal_id": (str, ...),
+                "from_internal_id": (internal_ids_type, ...),
             }
             string_subquery_model = create_model(
                 "ConstrainedStringSubQuery",
@@ -348,6 +314,93 @@ class IterativeAssistant:
                 data_model = subquery_model
             else:
                 data_model = data_model | subquery_model
+
+        if len(allowed_subject_ids) > 0:
+            subject_id_enum = Enum(
+                "SubjectID",
+                {subject_id: subject_id for subject_id in allowed_subject_ids},
+            )
+            subquery_model = (
+                subquery_model if subquery_model is not None else AssistantSubQuery
+            )
+            subject_model = create_model(
+                "ConstrainedAssistantSubject",
+                **{
+                    "type": (Literal["subject"], "subject"),
+                    "subject_id": (subject_id_enum, ...),
+                    "internal_id": (internal_ids_type, ...),
+                    "subqueries": (list[subquery_model], Field([])),
+                    "x": (float, 0.0),
+                    "y": (float, 0.0),
+                },
+            )
+            if data_model is None:
+                data_model = subject_model
+            else:
+                data_model = data_model | subject_model
+        return data_model
+
+    def __build_constrained_model_from_graph(self, graph: QueryGraph):
+        # Build the model based on the candidate operations
+        allowed_subject_ids: set[str] = set()
+        allowed_link_ids: set[tuple[str, str, str]] = set()
+        allowed_subquery_ids: set[tuple[str, str]] = set()
+        allowed_internal_ids: set[str] = set()
+        for subject in graph.subjects:
+            allowed_subject_ids.add(subject.subject_id)
+            allowed_internal_ids.add(subject.internal_id)
+        for link in graph.links:
+            allowed_link_ids.add(
+                (
+                    link.from_id,
+                    link.link_id,
+                    link.to_id,
+                )
+            )
+
+        return self.__build_constrained_model_from_allowed_ids(
+            allowed_subject_ids=allowed_subject_ids,
+            allowed_link_ids=allowed_link_ids,
+            allowed_subquery_ids=allowed_subquery_ids,
+            allowed_internal_ids=allowed_internal_ids,
+        )
+
+    def __build_constrained_model(self, candidate_ops: Operations, graph: QueryGraph):
+        print(candidate_ops)
+        # Build the model based on the candidate operations
+        allowed_subject_ids: set[str] = set()
+        allowed_link_ids: set[tuple[str, str, str]] = set()
+        allowed_subquery_ids: set[tuple[str, str]] = set()
+        for candidate_op in candidate_ops.operations:
+            if candidate_op.operation == OperationType.REMOVE:
+                continue
+            if candidate_op.data.type == "link":
+                allowed_link_ids.add(
+                    (
+                        candidate_op.data.from_id,
+                        candidate_op.data.link_id,
+                        candidate_op.data.to_id,
+                    )
+                )
+            elif candidate_op.data.type == "subject":
+                allowed_subject_ids.add(candidate_op.data.subject_id)
+            elif candidate_op.data.type == "subquery":
+                allowed_subquery_ids.add(
+                    (
+                        candidate_op.data.from_id,
+                        candidate_op.data.field,
+                    )
+                )
+        # Generate the grammar based on the allowed operations
+        data_model = self.__build_constrained_model_from_allowed_ids(
+            allowed_subject_ids=allowed_subject_ids,
+            allowed_link_ids=allowed_link_ids,
+            allowed_subquery_ids=allowed_subquery_ids,
+        )
+        if data_model is None:
+            # if the data model is None, we constrain on the existing graph
+            print("Constraining on the existing graph...")
+            data_model = self.__build_constrained_model_from_graph(graph)
         constrained_operation_model = create_model(
             "ConstrainedOperation",
             **{
@@ -424,7 +477,7 @@ class IterativeAssistant:
     def __constrained_ops(
         self, query: str, graph: QueryGraph, candidate_ops: Operations
     ):
-        ConstrainedOperations = self.__build_constrained_model(candidate_ops)
+        ConstrainedOperations = self.__build_constrained_model(candidate_ops, graph)
         grammar_gbnf = generate_gbnf_grammar_from_pydantic_models(
             [ConstrainedOperations],
             "ConstrainedOperations",
@@ -495,7 +548,7 @@ class IterativeAssistant:
                     if db_link is not None:
                         link.from_id = db_link.from_id
                         link.to_id = db_link.to_id
-                        link.link_id = db_link.link_id
+                        link.link_id = db_link.property_id
                 if op.data.type == "subject":
                     subject: AssistantSubject = op.data
                     db_subject = (
@@ -516,10 +569,24 @@ class IterativeAssistant:
                         subquery.from_id = db_link.from_id
                         subquery.field = db_link.link_id
             # find link targets - if not present, add them
+            # and remove related links if only subjects are removed
             for op in ops.operations:
                 if op.operation == OperationType.REMOVE:
-                    continue
-                if op.data.type == "link":
+                    if op.data.type =="subject":
+                        # remove the link if the subject is removed
+                        for link in graph.links:
+                            if (
+                                link.from_internal_id == op.data.internal_id
+                                or link.to_internal_id == op.data.internal_id
+                            ):
+                                print("Removing link", link)
+                                ops.operations.append(
+                                    Operation(
+                                        operation=OperationType.REMOVE,
+                                        data=link,
+                                    )
+                                )
+                elif op.data.type == "link":
                     subjects_to_add = [
                         (op.data.from_id, op.data.from_internal_id),
                         (op.data.to_id, op.data.to_internal_id),
@@ -552,7 +619,47 @@ class IterativeAssistant:
                                     data=subj,
                                 )
                             )
-
+                            print("Adding subject to complete link", subj)
+            for op in ops.operations:
+                if op.operation == OperationType.REMOVE:
+                    continue
+                if op.data.type == "link":
+                    # switch internal ids if the from_id and to_id do not match
+                    link: AssistantLink = op.data
+                    internal_ids = [
+                        link.from_internal_id,
+                        link.to_internal_id,
+                    ]
+                    subjects: list[AssistantSubject] = []
+                    for internal_id in internal_ids:
+                        subj: AssistantSubject | None = next(
+                            filter(
+                                lambda subj: subj.internal_id == internal_id,
+                                graph.subjects,
+                            ),
+                            None,
+                        )
+                        if subj is None:
+                            subj = next(
+                                filter(
+                                    lambda subj: subj.type == "subject"
+                                    and subj.internal_id == internal_id,
+                                    [op.data for op in ops.operations],
+                                ),
+                                None,
+                            )
+                        if subj is not None:
+                            subjects.append(subj)
+                    if len(subjects) == 2:
+                        if (
+                            subjects[0].subject_id != link.from_id
+                            or subjects[1].subject_id != link.to_id
+                        ):
+                            print("Switching link internal ids", link, subjects)
+                            link.from_internal_id, link.to_internal_id = (
+                                link.to_internal_id,
+                                link.from_internal_id,
+                            )
         return ops
 
     def __simplify_graph(self, graph: QueryGraph):
@@ -587,6 +694,7 @@ class IterativeAssistant:
         finalized_ops = self.__constrained_ops(query, simple_graph, candidate_ops)
         print("Constrained Ops", candidate_ops)
         # Step 4: Correct Operations
+        print(" -- Correcting Ops -- ")
         corrected_ops = self.__correct_ops(finalized_ops, graph=graph)
         print("Corrected Ops", corrected_ops)
         # TODO: correct ops if they are missing links, subjects, ...

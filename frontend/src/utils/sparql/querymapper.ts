@@ -118,7 +118,7 @@ export class QueryMapper {
         size = bbox.br.clone().sub(bbox.tl)
         return { offset, scale, size }
     }
-    async runAndMap(query: string, skip: number = 0, limit: number = 2000) {
+    async runAndMap(query: string, skip: number = 0, limit: number = 50) {
         if (!this.store) {
             return new ResultList([])
         }

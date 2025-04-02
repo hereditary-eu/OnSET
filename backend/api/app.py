@@ -12,6 +12,7 @@ from explorative.exp_model import (
     SparqlQuery,
     Topic,
     SubjectLink,
+    SubjectLinkDB,
     FuzzyQuery,
     FuzzyQueryResults,
 )
@@ -20,7 +21,8 @@ from eval_config import BTO_CONFIGS, DBPEDIA_CONFIGS, UNIPROT_CONFIGS
 from initiator import InitatorManager
 from assistant.model import QueryGraph, Operations
 from assistant.iterative_assistant import IterativeAssistant
-
+from redis_cache import RedisCache
+from sqlalchemy.orm import Session
 db_config = DBPEDIA_CONFIGS[0]
 
 base_path = "../data"
@@ -78,6 +80,13 @@ initatior.register(guidance_man)
 initatior.register(llm_query)
 
 iterative_assistant = IterativeAssistant(guidance=guidance_man)
+
+
+
+assistant_cache = RedisCache(
+    redis_url="redis://localhost:6379/1",
+    model=Operations,
+)
 
 
 app = FastAPI(title="Ontology Provenance API", version="0.1.0")
@@ -172,8 +181,8 @@ def get_subject(
 def get_link(
     link_id: str = Query(),
 ) -> SubjectLink | None:
-    with ontology_manager.session() as session:
-        link = session.query(SubjectLink).filter(SubjectLink.link_id == link_id).first()
+    with Session(guidance_man.engine) as session:
+        link = session.query(SubjectLinkDB).filter(SubjectLinkDB.property_id == link_id).first()
         if link is None:
             return None
         return SubjectLink.from_db(link, ontology_manager)
@@ -215,9 +224,18 @@ def get_llm_examples() -> list[EnrichedEntitiesRelations]:
     return llm_query.get_examples()
 
 
+
+
 @app.post("/classes/search/assistant")
 def get_assistant_results(
     q: str = Query("working field of person"),
     graph: QueryGraph = Body(...),
 ) -> Operations:
-    return iterative_assistant.run_query(q, graph)
+    key = f"{q}_{graph.model_dump_json()}"
+    cache = assistant_cache[key]
+    if cache:
+        return cache
+    else:
+        operations = iterative_assistant.run_query(q, graph)
+        assistant_cache[key] = operations
+        return operations

@@ -1,6 +1,6 @@
 <template>
     <div class="loading_wrapper">
-        <svg width="150" height="67" viewBox="0 0 150 67">
+        <svg width="150" :height="height" viewBox="0 0 150 67">
             <g>
                 <rect v-for="(node, i) of nodes" class="node_loading" :x="node.x" :y="node.y" :width="node.width"
                     :style="`animation-delay: ${i / nodes.length}s;`" :height="node.height">
@@ -17,6 +17,16 @@
 <script setup lang="ts">
 
 import { ref, watch, reactive, computed, onMounted, defineProps, defineEmits } from 'vue'
+
+const { height, width } = defineProps({
+    height: {
+        type: String,
+        default: "67px"
+    }, width: {
+        type: String,
+        default: "100%"
+    }
+})
 class NodeLoading {
     x: number
     y: number
@@ -84,8 +94,8 @@ const links = ref([new LinkLoading(nodes.value[0], nodes.value[1]), new
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 67px;
-    width: 100%;
+    height: v-bind(height);
+    width: v-bind(width);
     min-width: 150px;
     margin: 0.5rem;
 }

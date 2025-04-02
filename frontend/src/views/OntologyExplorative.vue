@@ -34,9 +34,13 @@
                     !ui_state.diff_active ? "Start Change Tracking" :
                         "Apply Changes" }} </OnsetBtn>
                 <OnsetBtn @click="clearDiff()" v-if="ui_state.diff_active">Clear Changes</OnsetBtn>
-                <input type="text" v-model="ui_state.assistant_query" @keypress="submit_assistant"
-                    placeholder="Tell me what to change ..." class="query_input" />
+                <div class="vertical_line">
 
+                </div>
+                <input type="text" v-model="assistant_state.query_string" placeholder="Tell me what to change ..."
+                    class="query_input" />
+                <Loading v-if="assistant_state.loading" :height="'2.8rem'" :width="'3rem'"></Loading>
+                <OnsetBtn @click="submit_assistant()" :toggleable="false" btn_width="4rem">Start</OnsetBtn>
             </div>
         </div>
         <div>
@@ -84,13 +88,16 @@ enum QueryMode {
     FUZZY = 'Fuzzy',
     TOPICS = 'Topics',
 }
+const assistant_state = reactive({
+    query_string: '',
+    loading: false,
+})
 const ui_state = reactive({
     loading: false,
     show_query: false,
     query_mode: QueryMode.FUZZY,
     diff: null as NodeLinkRepositoryDiff | null,
     diff_active: false,
-    assistant_query: '',
 })
 const store = ref(null as NodeLinkRepository | null)
 const old_store = ref(null as NodeLinkRepository | null)
@@ -122,10 +129,14 @@ const selected_root = (root: MixedResponse) => {
 }
 watch(() => ui_state.diff_active, (new_val) => {
     if (ui_state.diff_active) {
-        startDiff()
+        if (!old_store.value) {
+            console.log('Starting diff based on watcher')
+            startDiff()
+        }
     } else {
         console.log('Applying diff')
         ui_state.diff_active = false
+        old_store.value = null
         ui_state.diff = null
     }
 }, { deep: false })
@@ -136,30 +147,33 @@ const startDiff = () => {
 }
 const updateDiff = () => {
     if (ui_state.diff_active && old_store.value) {
+        console.log('Updating diff')
         ui_state.diff = new NodeLinkRepositoryDiff(old_store.value, store.value)
     }
 }
 const clearDiff = () => {
     ui_state.diff_active = false
     store.value = old_store.value
+    old_store.value = null
     ui_state.diff = null
 }
 const submit_assistant = () => {
-    if (ui_state.assistant_query.length == 0) {
+    if (assistant_state.query_string.length == 0) {
         return
     }
-    console.log('Assistant query', ui_state.assistant_query);
+    console.log('Assistant query', assistant_state.query_string);
 
     (async () => {
-        ui_state.loading = true
+        assistant_state.loading = true
         const graph = store.value.toQueryGraph()
         const response = await api.classes.getAssistantResultsClassesSearchAssistantPost(graph, {
-            q: ui_state.assistant_query,
+            q: assistant_state.query_string,
         })
-        ui_state.loading = false
-        ui_state.diff_active = true
-        ui_state.assistant_query = ''
-        startDiff()
+        assistant_state.loading = false
+        if (!ui_state.diff_active) {
+            ui_state.diff_active = true
+            startDiff()
+        }
         for (const step of response.data.operations) {
             if (step.operation == OperationType.Add) {
                 switch (step.data.type) {
@@ -170,6 +184,8 @@ const submit_assistant = () => {
                         })
                         const subject = full_subject.data
                         const new_subject = new SubjectNode(subject)
+                        new_subject.internal_id = op_subject.internal_id
+                        console.log('new_subject', new_subject)
                         store.value.nodes.push(new_subject)
                         break
                 }
@@ -178,7 +194,12 @@ const submit_assistant = () => {
                     case 'subject':
                         const op_subject = step.data as AssistantSubjectInput
                         const subject = store.value.nodes.find((s) => s.id == op_subject.subject_id)
-                        store.value.deleteWithSubnodes(subject)
+                        store.value.nodes.splice(store.value.nodes.indexOf(subject), 1)
+                        break
+                    case 'link':
+                        const op_link = step.data as AssistantLink
+                        const link = store.value.links.find((l) => l.id == op_link.link_id)
+                        store.value.links.splice(store.value.links.indexOf(link), 1)
                         break
                 }
             }
@@ -193,11 +214,14 @@ const submit_assistant = () => {
                         })
                         const link = full_link.data
                         const new_link = new Link(link)
+                        new_link.from_internal_id = op_link.from_internal_id
+                        new_link.to_internal_id = op_link.to_internal_id
                         store.value.links.push(new_link)
                         break
                 }
             }
         }
+        console.log('store after changes', store.value)
     })().catch(console.error)
 }
 
@@ -252,5 +276,12 @@ const submit_assistant = () => {
     padding: 0.5rem;
     margin: 0.5rem;
     border: 1px solid #8fa88f;
+}
+
+.vertical_line {
+    width: 1px;
+    height: 2.8rem;
+    background-color: #8fa88f;
+    margin: 0 10px;
 }
 </style>
