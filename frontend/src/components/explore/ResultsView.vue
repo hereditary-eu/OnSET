@@ -17,7 +17,7 @@
             </div>
         </div>
         <div v-else class="results_instance_container">
-            <ResultPlot :store="store" :query_string="query_string"></ResultPlot>
+            <ResultPlot :store="store" :query_string="query_string" :diff="diff"></ResultPlot>
         </div>
     </div>
 </template>

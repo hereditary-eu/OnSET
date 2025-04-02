@@ -217,7 +217,16 @@ export class DateConstraint extends SubQuery {
         this.constraint_type = SubQueryType.DATE
     }
     valueExpression(): string {
-        return `"${this.value.toISOString()}"^^xsd:dateTime`
+        let date_str: string | Date = this.value
+        if (!(this.value instanceof String)) {
+            if(this.value.toISOString instanceof Function){
+                date_str = this.value.toISOString()
+            }else{
+                console.log("Date value is not a string", this.value)
+            }
+
+        }
+        return `"${date_str}"^^xsd:dateTime`
     }
     filterExpression(property: string): string {
         //TODO: test!!

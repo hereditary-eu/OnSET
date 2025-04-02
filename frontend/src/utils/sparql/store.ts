@@ -171,11 +171,12 @@ export class NodeLinkRepository<N extends SubjectNode = SubjectNode, L extends L
         for (let constraint of set.filter) {
             let from = this.from(constraint.link)
             let constrained_id = constraint.propVar()
+            let expression = constraint.expression(constrained_id)
             if (constraint instanceof SubjectConstraint) {
                 if (constraint.instance) {
                     query += `\nFILTER(${from.outputId()}=${constraint.instance.id})`
                 }
-            } else if (constraint instanceof QueryProp) {
+            } else if (constraint instanceof QueryProp || !expression || expression.length === 0) {
                 query += `\n${from.outputId()} ${constraint.link.property_id} ${constrained_id}.`
             } else {
                 query += `\n${from.outputId()} ${constraint.link.property_id} ${constrained_id}.

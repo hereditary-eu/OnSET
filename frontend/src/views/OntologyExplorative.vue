@@ -102,8 +102,6 @@ const ui_state = reactive({
 const store = ref(null as NodeLinkRepository | null)
 const old_store = ref(null as NodeLinkRepository | null)
 
-watch(() => selected_start, () => {
-}, { deep: false })
 watch(() => selected_topic_ids, () => {
     console.log('selected_topic_ids changed!', selected_topic_ids.value)
 }, { deep: true })
@@ -113,6 +111,8 @@ watch(() => selected_start, () => {
     } else {
         store.value = selected_start.value.store
     }
+}, { deep: true })
+watch(() => store, () => {
     let new_query_string = store.value.generateQuery()
     if (query_string.value != new_query_string) {
         updateDiff()
