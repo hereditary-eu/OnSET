@@ -1,5 +1,5 @@
 import type { NodeLinkRepository } from "../sparql/store";
-import type { ChartMode } from "./plot-data";
+import type { AnalyzedProp, ChartMode } from "./plot-data";
 
 export class PlotCacheEntry {
     traces: Plotly.PlotData[]
@@ -7,6 +7,7 @@ export class PlotCacheEntry {
     chart_mode: ChartMode
     chart_options: Plotly.Layout
     store: NodeLinkRepository
+    analyzed_props: AnalyzedProp[]
 }
 export class PlotCache {
     private cache: Map<string, PlotCacheEntry> = new Map();

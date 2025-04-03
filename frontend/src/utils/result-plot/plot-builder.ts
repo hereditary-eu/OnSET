@@ -1,5 +1,6 @@
 import type { QueryProp } from "../sparql/representation";
-import { BucketSpecifier, ChartMode, PropSpecificType, PropType, type AnalyzedProp } from "./plot-data";
+import type { PlotCacheEntry } from "./plot-cache";
+import { BucketSpecifier, ChartMode, ContinuousBucketSpecifier, DiscreteBucketSpecifier, PropSpecificType, PropType, type AnalyzedProp } from "./plot-data";
 
 //https://stackoverflow.com/questions/12303989/cartesian-product-of-multiple-arrays-in-javascript
 function cartesianProduct<T>(arr: T[][]): T[][] {
@@ -11,7 +12,7 @@ function cartesianProduct<T>(arr: T[][]): T[][] {
         }).reduce(function (a, b) { return a.concat(b) }, [])
     }, [[]])
 }
-export function aggregateData(props: AnalyzedProp[], n_buckets = 20) {
+export function bucketizeData(props: AnalyzedProp[], n_buckets = 20) {
     let buckets: Record<string, BucketSpecifier[]> = {}
 
     for (let i = 0; i < props.length; i++) {
@@ -34,7 +35,7 @@ export function aggregateData(props: AnalyzedProp[], n_buckets = 20) {
                     let lower = min + i * step
                     let upper = min + (i + 1) * step
 
-                    bucket_prop.push(new BucketSpecifier(lower, upper, continous_data.filter((val) => val >= lower && val < upper).length, prop))
+                    bucket_prop.push(new ContinuousBucketSpecifier(lower, upper, continous_data.filter((val) => val >= lower && val < upper).length, prop))
                 }
                 break
             default:
@@ -49,7 +50,7 @@ export function aggregateData(props: AnalyzedProp[], n_buckets = 20) {
                 }, {} as Record<string, number>) as Record<string, number>
                 let sorted_keys = Object.keys(value_counts).sort((a, b) => value_counts[b] - value_counts[a])
                 bucket_prop.push(...sorted_keys.splice(0, n_buckets).map((key) => {
-                    return new BucketSpecifier(key, key, value_counts[key], prop)
+                    return new DiscreteBucketSpecifier(key, value_counts[key], prop)
                 }))
                 break
         }
@@ -144,7 +145,7 @@ export function buildChartTraces(analyzed_props: AnalyzedProp[], result_set: Rec
                     }
                 }
             } as Plotly.Layout
-            let buckets = aggregateData(analyzed_props)
+            let buckets = bucketizeData(analyzed_props)
             trace.x = buckets[prop.query_id].map((bucket) => bucket.display())
             trace.y = buckets[prop.query_id].map((bucket) => bucket.count)
             trace.marker = {
@@ -195,7 +196,7 @@ export function buildChartTraces(analyzed_props: AnalyzedProp[], result_set: Rec
                         }
                     }
                 } as Plotly.Layout
-                let buckets = aggregateData(analyzed_props)
+                let buckets = bucketizeData(analyzed_props)
                 let x_buckets = buckets[analyzed_props[0].query_id]
                 let y_buckets = buckets[analyzed_props[1].query_id]
                 trace.x = x_buckets.map((bucket) => bucket.display())
@@ -241,4 +242,67 @@ export function buildChartTraces(analyzed_props: AnalyzedProp[], result_set: Rec
         chart_mode: chart_mode,
         chart_options: chart_options
     }
+}
+
+export function combineTraces(caches: PlotCacheEntry[]) {
+    let guiding_cache = caches[0]
+    let combined_props: AnalyzedProp[] = guiding_cache.analyzed_props.map((prop) => {
+        let prop_data = []
+        for (let cache of caches) {
+            let prop_data_cache = cache.analyzed_props.find((p) => p.query_id == prop.query_id)
+            if (prop_data_cache) {
+                prop_data.push(...prop_data_cache.prop_data)
+            }
+        }
+        return {
+            ...prop,
+            prop_data: prop_data
+        }
+    })
+    let traces = [] as Plotly.PlotData[]
+    let chart_mode = caches[0].chart_mode
+    let chart_options = caches[0].chart_options
+    switch (guiding_cache.chart_mode) {
+        case ChartMode.BAR:
+            let combined_buckets = bucketizeData(combined_props)
+            for (let i = 0; i < caches.length; i++) {
+                let cache = caches[i]
+                let prop = combined_props[0]
+
+                let trace = {} as Plotly.PlotData
+                trace.type = 'bar'
+                trace.x = combined_buckets[prop.query_id].map((bucket) => bucket.display())
+                trace.y = combined_buckets[prop.query_id].map((bucket) => {
+                    return cache.results.filter((row) => bucket.inside(row[prop.query_id])).length
+                })
+                trace.name = cache.store.generateQuery()
+                trace.marker = {
+                    color: '#8fa88f',
+                }
+                traces.push(trace)
+            }
+            break;
+        case ChartMode.SCATTER:
+            traces = caches.map((cache) => {
+                let trace = {} as Plotly.PlotData
+                trace.type = 'scatter'
+                trace.mode = 'markers'
+                trace.x = cache.analyzed_props[0].prop_data
+                trace.y = cache.analyzed_props[1].prop_data
+                trace.name = cache.store.generateQuery()
+                trace.marker = {
+                    color: '#8fa88f',
+                }
+                return trace
+            })
+            break
+    }
+
+
+    return {
+        traces,
+        chart_mode: chart_mode,
+        chart_options: chart_options
+    }
+
 }

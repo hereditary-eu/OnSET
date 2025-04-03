@@ -30,6 +30,13 @@
                 <ResultsView :query_string="query_string" :store="store" :diff="ui_state.diff"></ResultsView>
             </div>
             <div class="diff_controls">
+                <OnsetBtn @click="saveState()" :height="'2.8rem'" :width="'3rem'" :toggleable="false">Save
+                </OnsetBtn>
+                <OnsetBtn @click="loadState()" :height="'2.8rem'" :width="'3rem'" :toggleable="false">Load
+                </OnsetBtn>
+                <div class="vertical_line">
+
+                </div>
                 <OnsetBtn :toggleable="false" @click="ui_state.diff_active = !ui_state.diff_active">{{
                     !ui_state.diff_active ? "Start Change Tracking" :
                         "Apply Changes" }} </OnsetBtn>
@@ -65,10 +72,10 @@ import { Api, OperationType, type AssistantLink, type AssistantSubjectInput } fr
 import { BACKEND_URL } from '@/utils/config';
 import type { SubjectInCircle } from '@/utils/d3-man/CircleMan';
 import OnsetBtn from '@/components/ui/OnsetBtn.vue';
-import { type MixedResponse, type NodeLinkRepository } from '@/utils/sparql/store';
+import { NodeLinkRepository, type MixedResponse } from '@/utils/sparql/store';
 import SelectorGroup from '@/components/ui/SelectorGroup.vue';
 import FuzzyQueryStarter from '@/components/explore/FuzzyQueryStarter.vue';
-import { jsonClone } from '@/utils/parsing';
+import { jsonClone, parseJSON, stringifyJSON } from '@/utils/parsing';
 import { NodeLinkRepositoryDiff } from '@/utils/sparql/diff';
 import { Link, SubjectNode } from '@/utils/sparql/representation';
 
@@ -223,6 +230,24 @@ const submit_assistant = () => {
         }
         console.log('store after changes', store.value)
     })().catch(console.error)
+}
+
+const saveState = () => {
+    if (!store.value) {
+        return
+    }
+    const store_json = stringifyJSON(store.value)
+    localStorage.setItem('store', store_json)
+    console.log('Saved store', store_json)
+}
+const loadState = () => {
+    const store_json = localStorage.getItem('store')
+    if (!store_json) {
+        return
+    }
+    const store_obj = parseJSON<NodeLinkRepository>(store_json)
+    store.value = store_obj
+    console.log('Loaded store', store.value)
 }
 
 </script>

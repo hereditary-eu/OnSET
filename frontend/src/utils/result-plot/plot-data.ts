@@ -14,7 +14,7 @@ export enum ChartMode {
     SCATTER = 'scatter',
     HEATMAP = 'heatmap'
 }
-export class BucketSpecifier {
+export abstract class BucketSpecifier {
     constructor(public lower: number | string,
         public upper: number | string,
         public count: number,
@@ -30,6 +30,30 @@ export class BucketSpecifier {
             return `${new Date(this.lower).toLocaleDateString()} - ${new Date(this.upper).toLocaleDateString()}`
         }
         return `${this.lower} - ${this.upper} `
+    }
+    inside(value: number | string) {
+        return false
+    }
+}
+export class DiscreteBucketSpecifier extends BucketSpecifier {
+    constructor(public val: string | number,
+        count: number,
+        prop: AnalyzedProp) {
+        super(val, val, count, prop)
+    }
+    inside(value: string | number) {
+        return this.val == value
+    }
+}
+export class ContinuousBucketSpecifier extends BucketSpecifier {
+    constructor(public lower: number,
+        public upper: number,
+        public count: number,
+        public prop: AnalyzedProp) {
+        super(lower, upper, count, prop)
+    }
+    inside(value: number) {
+        return value >= this.lower && value <= this.upper
     }
 }
 export interface AnalyzedProp {

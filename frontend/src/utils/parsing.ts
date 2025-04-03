@@ -9,8 +9,11 @@ function reviveRegisteredClasses(key: string, value: any) {
     if (value && value.__parseregister) {
         let entry = registeredClasses[value.__parseregister]
         if (entry) {
-            let obj = new entry.cnstr()
+            let obj = new entry.cnstr() as any
             Object.assign(obj, value)
+            if (typeof obj.postConstruct === 'function') {
+                obj.postConstruct()
+            }
             return obj
         }
     }

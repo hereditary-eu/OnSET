@@ -210,18 +210,28 @@ export class BooleanConstraint extends SubQuery {
 export class DateConstraint extends SubQuery {
     value: Date;
     type: NumberConstraintType;
-    constructor(value: Date = new Date(), type: NumberConstraintType = NumberConstraintType.GREATER) {
+    constructor(value: Date | string = new Date(), type: NumberConstraintType = NumberConstraintType.GREATER) {
         super();
-        this.value = value;
+        if (typeof value == 'string') {
+            this.value = new Date(value as string)
+        } else {
+            this.value = value as Date;
+        }
         this.type = type;
         this.constraint_type = SubQueryType.DATE
+    }
+    postConstruct() {
+        console.log("Postconstruct date constraint", this.value)
+        if (typeof this.value == 'string') {
+            this.value = new Date(this.value as unknown as string)
+        }
     }
     valueExpression(): string {
         let date_str: string | Date = this.value
         if (!(this.value instanceof String)) {
-            if(this.value.toISOString instanceof Function){
+            if (this.value.toISOString instanceof Function) {
                 date_str = this.value.toISOString()
-            }else{
+            } else {
                 console.log("Date value is not a string", this.value)
             }
 

@@ -21,7 +21,7 @@ import type * as  Plotly from 'plotly.js';
 import { VuePlotly } from '@clalarco/vue3-plotly';
 import type { NodeLinkRepositoryDiff } from '@/utils/sparql/diff';
 import { ChartMode, PropSpecificType, PropType } from '@/utils/result-plot/plot-data';
-import { aggregateData, analyzeProps, buildChartTraces } from '@/utils/result-plot/plot-builder';
+import { bucketizeData, analyzeProps, buildChartTraces, combineTraces } from '@/utils/result-plot/plot-builder';
 import { PlotCache, PlotCacheEntry } from '@/utils/result-plot/plot-cache';
 import { jsonClone } from '@/utils/parsing';
 const api = new Api(
@@ -77,21 +77,6 @@ const ui_data = reactive({
     buckets: 20
 })
 const addDiffData = (cache_result: PlotCacheEntry) => {
-    if (cache_result.chart_mode != chart_mode.value) {
-        ui_data.message = "Chart mode mismatch, no diff added..."
-    }
-    let cached_trace = cache_result.traces[0]
-    let existing_trace = chart_data.value[0] as Plotly.PlotData
-    existing_trace.name = "Current"
-    if (existing_trace.marker) {
-        existing_trace.marker.opacity = 0.5
-    }
-    cached_trace.name = "Previous"
-    if (cached_trace.marker) {
-        cached_trace.marker.color = "red"
-        cached_trace.marker.opacity = 0.5
-    }
-    chart_data.value.push(cached_trace)
 }
 const loadData = async () => {
     ui_data.loading = true
@@ -119,27 +104,49 @@ const loadData = async () => {
         chart_data.value = [trace]
         ui_data.message = null
         console.log("setting cache for", query_limitless)
-        diff_options.plot_cache.set(query_limitless, {
+        let new_cache_entry = {
             results: data.data,
             chart_mode: mode,
             chart_options: options,
             traces: [trace],
-            store: jsonClone(store)
-        })
+            store: jsonClone(store),
+            analyzed_props
+        }
+        diff_options.plot_cache.set(query_limitless, new_cache_entry)
+        if (diff) {
+            let old_query = diff.left.generateQuery(null, null)
+            console.log('Diff enabled, loading cache for', old_query)
+            let cache_result = diff_options.plot_cache.get(old_query)
+            if (cache_result) {
+                console.log('Diff enabled, found cache results', cache_result)
+                if (cache_result.chart_mode != chart_mode.value) {
+                    ui_data.message = "Chart mode mismatch, no diff added..."
+                } else {
+                    let combined_traces = combineTraces([cache_result, new_cache_entry])
+
+                    let cached_trace = combined_traces.traces[0]
+                    let new_trace= combined_traces.traces[1]
+                    new_trace.name = "Current"
+                    if (new_trace.marker) {
+                        new_trace.marker.opacity = 0.5
+                    }
+                    cached_trace.name = "Previous"
+                    if (cached_trace.marker) {
+                        cached_trace.marker.color = "red"
+                        cached_trace.marker.opacity = 0.5
+                    }
+                    chart_data.value = [cached_trace, new_trace]
+                    chart_options.value = combined_traces.chart_options
+                    ui_data.chart_mode = combined_traces.chart_mode
+                    ui_data.message = null
+                }
+            } else {
+                ui_data.message = "No diff data found for this query"
+            }
+        }
     } catch (error) {
         console.error('Error analyzing props', error)
         ui_data.message = error.message
-    }
-    if (diff) {
-        let old_query = diff.left.generateQuery(null, null)
-        console.log('Diff enabled, loading cache for', old_query)
-        let cache_result = diff_options.plot_cache.get(old_query)
-        if (cache_result) {
-            console.log('Diff enabled, found cache results', cache_result)
-            addDiffData(cache_result)
-        } else {
-            ui_data.message = "No diff data found for this query"
-        }
     }
     ui_data.loading = false
 }
@@ -159,7 +166,7 @@ watch(() => query_string, () => {
 })
 watch(() => diff, () => {
     if (!diff && chart_data.value.length > 1) {
-        chart_data.value.splice(1, chart_data.value.length - 1)
+        chart_data.value.splice(0, chart_data.value.length - 1)
         let current_trace = chart_data.value[0] as Plotly.PlotData
         current_trace.name = "Current"
         if (current_trace.marker) {

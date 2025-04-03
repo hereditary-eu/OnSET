@@ -18,6 +18,7 @@ const { constraint } = defineProps({
         required: true
     }
 })
+console.log('DateConstraintEditor', constraint)
 const date_value = ref(constraint.value ? constraint.value.toISOString().split('T')[0] : "")
 
 const operator_options = [
