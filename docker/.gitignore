@@ -20,3 +20,4 @@ graphdb-data
 *.json
 qdrant
 *.ttl
+*.log

@@ -42,14 +42,17 @@ export class NodeLinkRepository<N extends SubjectNode = SubjectNode, L extends L
     nodes: N[] = []
     links: L[] = []
     private static internal_id_cnt = 0
-    id: string | number
+    _id: string | number
     constructor(nodes: N[] = [], links: L[] = []) {
         this.nodes = nodes
         this.links = links
-        this.id = NodeLinkRepository.internal_id_cnt++
+        this._id = NodeLinkRepository.internal_id_cnt++
+    }
+    get id() {
+        return this._id
     }
     changed(other: NodeLinkRepository): boolean {
-        return this.id !== other.id
+        return this._id !== other._id
     }
     fromLinks(node: SubjectNode): L[] {
         return this.links.filter(link => link.from_internal_id === node.internal_id)

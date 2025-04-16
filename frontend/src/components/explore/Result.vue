@@ -33,6 +33,7 @@ import { DisplayMode } from '@/utils/sparql/helpers';
 import Loading from '../ui/Loading.vue';
 import Expandable from '../ui/Expandable.vue';
 import GraphView from './elements/GraphView.vue';
+import type { NodeLinkRepositoryDiff, ResultListDiff } from '@/utils/sparql/diff';
 
 const { store, scale, offset } = defineProps({
     store: {
@@ -52,7 +53,7 @@ const { store, scale, offset } = defineProps({
         required: true
     },
     diff: {
-        type: Object as () => DiffInstanceNodeLinkRepository | null,
+        type: Object as () => NodeLinkRepositoryDiff | null,
         required: false,
         default: null
     }

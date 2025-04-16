@@ -57,8 +57,10 @@ export class InstanceNodeLinkRepository extends NodeLinkRepository<InstanceNode,
         super();
         this.links = links
         this.nodes = nodes
-        let node_ids = nodes.map(n => n.instance_id).reduce((p, c) => `${p}-${c}`, '')
-        this.id = node_ids
+    }
+    get id() {
+        let node_ids = this.nodes.map(n => n.label).reduce((p, c) => `${p}-${c}`, '')
+        return node_ids as string | number
     }
 
 }
