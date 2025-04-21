@@ -4,6 +4,7 @@
             <VuePlotly :data="chart_data" :layout="chart_options" :config="{
                 displayModeBar: false,
             }"></VuePlotly>
+            <OnsetBtn @click="initDownloadData">Download Data</OnsetBtn>
         </div>
         <h3 v-if="ui_data.message">{{ ui_data.message }}</h3>
         <Loading v-if="ui_data.loading"></Loading>
@@ -21,9 +22,10 @@ import type * as  Plotly from 'plotly.js';
 import { VuePlotly } from '@clalarco/vue3-plotly';
 import type { NodeLinkRepositoryDiff } from '@/utils/sparql/diff';
 import { ChartMode, PropSpecificType, PropType } from '@/utils/result-plot/plot-data';
-import { bucketizeData, analyzeProps, buildChartTraces, combineTraces } from '@/utils/result-plot/plot-builder';
+import { bucketizeData, analyzeProps, buildChartTraces, combineTraces, downloadDataAsCSV } from '@/utils/result-plot/plot-builder';
 import { PlotCache, PlotCacheEntry } from '@/utils/result-plot/plot-cache';
 import { jsonClone } from '@/utils/parsing';
+import OnsetBtn from '@/components/ui/OnsetBtn.vue';
 const api = new Api(
     {
         baseURL: BACKEND_URL
@@ -76,8 +78,6 @@ const ui_data = reactive({
     message: null as string | null,
     buckets: 20
 })
-const addDiffData = (cache_result: PlotCacheEntry) => {
-}
 const loadData = async () => {
     ui_data.loading = true
     let query_limitless = store.generateQuery(null, null);
@@ -125,7 +125,7 @@ const loadData = async () => {
                     let combined_traces = combineTraces([cache_result, new_cache_entry])
 
                     let cached_trace = combined_traces.traces[0]
-                    let new_trace= combined_traces.traces[1]
+                    let new_trace = combined_traces.traces[1]
                     new_trace.name = "Current"
                     if (new_trace.marker) {
                         new_trace.marker.opacity = 0.5
@@ -150,6 +150,13 @@ const loadData = async () => {
     }
     ui_data.loading = false
 }
+const initDownloadData = () => {
+    let cache_result = diff_options.plot_cache.get(store.generateQuery(null, null))
+    if (cache_result) {
+        downloadDataAsCSV(cache_result)
+    }
+}
+
 onMounted(() => {
     loadData().catch((e) => {
         console.error(e)

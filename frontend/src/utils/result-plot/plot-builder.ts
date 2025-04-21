@@ -306,3 +306,27 @@ export function combineTraces(caches: PlotCacheEntry[]) {
     }
 
 }
+import { saveAs } from 'file-saver';
+
+export function downloadDataAsCSV(entry: PlotCacheEntry) {
+    let combined_props = entry.analyzed_props
+    let csv = combined_props.map((prop) => prop.prop.link.label).join(',') + '\n'
+    for (let i = 0; i < entry.results.length; i++) {
+        let row = entry.results[i]
+        let prop_data = combined_props.map((prop) => {
+            let value = row[prop.query_id]
+            if (prop.prop_specific_type == PropSpecificType.DATE) {
+                value = new Date(value).toLocaleDateString()
+            } else if (prop.prop_specific_type == PropSpecificType.NUMBER) {
+                value = parseFloat(value).toLocaleString()
+            } else if (prop.prop_specific_type == PropSpecificType.STRING) {
+                value = value.replace(/,/g, ';')
+            }
+            return value
+        })
+        csv += prop_data.join(',') + '\n'
+    }
+    let blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+    let filename = `data_${new Date().toISOString()}.csv`
+    saveAs(blob, filename)
+}
