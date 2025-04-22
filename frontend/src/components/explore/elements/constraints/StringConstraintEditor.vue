@@ -20,6 +20,7 @@ const { constraint } = defineProps({
 })
 const operator_options = [
     { value: StringConstraintType.EQUALS, label: '=' },
+    { value: StringConstraintType.NEQUALS, label: '!=' },
     { value: StringConstraintType.CONTAINS, label: 'contains' },
     { value: StringConstraintType.ENDSWITH, label: 'ends with' },
     { value: StringConstraintType.STARTSWITH, label: 'starts with' },

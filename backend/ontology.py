@@ -52,6 +52,7 @@ class OntologyConfig(BaseModel):
 
 
 INT_COMPATIBLE_TYPES = [
+    "http://www.w3.org/2001/XMLSchema#int",
     "http://www.w3.org/2001/XMLSchema#integer",
     "http://www.w3.org/2001/XMLSchema#positiveInteger",
     "http://www.w3.org/2001/XMLSchema#nonNegativeInteger",
@@ -68,6 +69,7 @@ class OntologyManager:
     def __init__(self, config: OntologyConfig, brainteaser_graph: Graph):
         self.config = config
         self.onto = brainteaser_graph  # TODO enable dynamic loading
+        self.__label_cache: dict[str, str] = {}
 
     def q_to_df(self, q: str):
         results = list(self.onto.query(q))
@@ -185,23 +187,25 @@ class OntologyManager:
         ]
 
     def label_for(self, subject: str):
-        try:
-            return list(
-                self.onto.query(
-                    f"""SELECT ?label WHERE {{ {subject} rdfs:label ?label }}
-                """
-                )
-            )[0][0].value
-        except Exception as e:
-            print(traceback.format_exc())
-            return subject
-
+        if subject in self.__label_cache:
+            return self.__label_cache[subject]
+        labels = self.outgoing_edges_for(subject, ["rdfs:label"])
+        if len(labels) == 0:
+            label = subject
+        else:
+            label = labels["rdfs:label"].first_value()
+        if label is None:
+            label = subject
+        if isinstance(label, Literal):
+            label = label.value
+        self.__label_cache[subject] = label
+        return label
     def to_readable(self, cls: str | Literal | URIRef):
         if isinstance(cls, Literal):
             value = cls.title()
             if cls.datatype is not None:
                 try:
-                    cls_dtype=str(cls.datatype)
+                    cls_dtype = str(cls.datatype)
                     if cls_dtype in INT_COMPATIBLE_TYPES:
                         value = int(value)
                     elif (
@@ -359,6 +363,19 @@ OPTIONAL {{?obj rdfs:label ?obj_lbl.}}
             print("Failed to load properties for", cls)
             return []
 
+    def open_properties(self):
+        open_properties = list(
+            self.onto.query(
+                """SELECT DISTINCT ?prop WHERE {
+                    ?prop rdf:type rdf:Property .
+                    MINUS {
+                        ?prop rdfs:domain ?o .
+                    }
+                }"""
+            )
+        )
+        return [prop[0].n3(self.onto.namespace_manager) for prop in open_properties]
+
     def enrich_subject(
         self, cls: str | None, subject_type="class", load_properties=False
     ):
@@ -369,7 +386,7 @@ OPTIONAL {{?obj rdfs:label ?obj_lbl.}}
         # print("Enriching", col_ref)
         outgoing_edges = self.outgoing_edges_for(
             col_ref,
-            edges=["rdfs:label", "rdfs:range", "rdfs:subPropertyOf", "rdfs:subClassOf"],
+            edges=["rdfs:label", "rdfs:range", "rdfs:subPropertyOf", "rdfs:subClassOf", "rdf:type"],
         )
         label_prop: Property = outgoing_edges.get(
             "rdfs:label",
@@ -432,9 +449,9 @@ OPTIONAL {{?obj rdfs:label ?obj_lbl.}}
         )[0][0].value
 
     def property_count(self, cls: str):
-        return self.q_to_df(
+        return list(self.onto.query(
             f"SELECT DISTINCT (COUNT(?s) as ?count) WHERE {{?s {cls} ?o}}"
-        )[0][0].value
+        ))[0][0].value
 
     def get_parents(self, cls: str) -> list[str]:
         parents = self.q_to_df_values(

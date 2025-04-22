@@ -170,7 +170,7 @@ class SubjectLinkDB(BasePostgres):
     link_id: Mapped[int] = mapped_column(primary_key=True)
     # do not enforce foreign key constraints
 
-    from_id: Mapped[str] = mapped_column(ForeignKey("subjects.subject_id"))
+    from_id: Mapped[str | None] = mapped_column(ForeignKey("subjects.subject_id"))
     link_type: Mapped[str] = mapped_column()
     # none means no specific target
     to_id: Mapped[str | None] = mapped_column(ForeignKey("subjects.subject_id"))
@@ -183,7 +183,8 @@ class SubjectLinkDB(BasePostgres):
         ForeignKey("topics.topic_id", deferrable=True)
     )
 
-    embedding: Mapped[Vector] = mapped_column(Vector(N_EMBEDDINGS))
+    description: Mapped[str | None] = mapped_column()
+    embedding: Mapped[Vector | None] = mapped_column(Vector(N_EMBEDDINGS))
 
     onto_hash: Mapped[str | None] = mapped_column()
 
@@ -209,7 +210,7 @@ class SubjectLink(BaseModel):
     link_id: int
     label: str | None
 
-    from_id: str
+    from_id: str | None
     link_type: str
     to_id: str | None
     to_proptype: str | None

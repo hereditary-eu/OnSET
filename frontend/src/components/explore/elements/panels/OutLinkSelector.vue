@@ -278,6 +278,7 @@ watch(editor_data, (editor_data) => {
     }
 }, { deep: true })
 watch(display, (new_val) => {
+    editor_data.reached_end = false
     if (!new_val) {
         console.log('Clearing hover')
         editor_data.hover_add = null

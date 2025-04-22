@@ -153,8 +153,8 @@ export function buildChartTraces(analyzed_props: AnalyzedProp[], result_set: Rec
             }
             break
         case 2: {
-            chart_mode = ChartMode.SCATTER
-            if (continous_props.length == 2 && continous_props[0].prop_data.length < 128) {
+            if (continous_props.length == 2 && continous_props[0].prop_data.length < 1024) {
+                chart_mode = ChartMode.SCATTER
                 //TODO: Add background distribution/switch to heatmap beyond 1000 points
                 chart_options = {
                     title: {
@@ -179,7 +179,7 @@ export function buildChartTraces(analyzed_props: AnalyzedProp[], result_set: Rec
                     color: '#8fa88f',
                 }
             } else {
-
+                console.log("Using heatmap", continous_props)
                 chart_mode = ChartMode.HEATMAP
                 chart_options = {
                     title: {
@@ -308,12 +308,15 @@ export function combineTraces(caches: PlotCacheEntry[]) {
 }
 import { saveAs } from 'file-saver';
 
-export function downloadDataAsCSV(entry: PlotCacheEntry) {
+export function downloadDataAsCSV(entry: PlotCacheEntry, old?: PlotCacheEntry) {
     let combined_props = entry.analyzed_props
-    let csv = combined_props.map((prop) => prop.prop.link.label).join(',') + '\n'
-    for (let i = 0; i < entry.results.length; i++) {
-        let row = entry.results[i]
-        let prop_data = combined_props.map((prop) => {
+    let prop_labels = combined_props.map((prop) => prop.prop.link.label)
+    if (old) {
+        prop_labels = ["previous", ...prop_labels]
+    }
+    let csv = prop_labels.join(',') + '\n'
+    const rowToString = (row: Record<string, any>, props: AnalyzedProp[]) => {
+        let prop_data = props.map((prop) => {
             let value = row[prop.query_id]
             if (prop.prop_specific_type == PropSpecificType.DATE) {
                 value = new Date(value).toLocaleDateString()
@@ -322,9 +325,26 @@ export function downloadDataAsCSV(entry: PlotCacheEntry) {
             } else if (prop.prop_specific_type == PropSpecificType.STRING) {
                 value = value.replace(/,/g, ';')
             }
-            return value
+            return value as string
         })
-        csv += prop_data.join(',') + '\n'
+        return prop_data
+    }
+    for (let i = 0; i < entry.results.length; i++) {
+        let row = entry.results[i]
+        let row_strings = rowToString(row, combined_props)
+        if (old) {
+            row_strings = ["false", ...row_strings]
+        }
+        csv += row_strings.join(",") + '\n'
+    }
+
+    if (old) {
+        for (let i = 0; i < old.results.length; i++) {
+            let row = old.results[i]
+            let row_strings = rowToString(row, combined_props)
+            row_strings = ["true", ...row_strings]
+            csv += row_strings.join(",") + '\n'
+        }
     }
     let blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
     let filename = `data_${new Date().toISOString()}.csv`

@@ -15,6 +15,7 @@ from explorative.explorative_support import GuidanceManager
 
 from initiator import Initationatable, InitatorManager
 from utils import to_readable
+
 # System prompt describes information given to all conversations
 TOPIC_LLAMA3_PROMPT_SYSTEM = """
 <|begin_of_text|><|start_header_id|>system<|end_header_id|>
@@ -54,10 +55,30 @@ TOPIC_LLAMA3_PROMPT = (
 )
 
 
-
 class TopicInitator:
     def __init__(self, guidance_man: GuidanceManager):
         self.guidance_man = guidance_man
+        self.__all_classes = None
+        self.__prop_range_label_cache = {}
+
+    @property
+    def all_classes(self):
+        if self.__all_classes is not None:
+            return self.__all_classes
+        all_classes = self.guidance_man.oman.q_to_df(
+            """
+    SELECT ?s
+    WHERE {
+        ?s rdf:type owl:Class.
+    }
+    """
+        )[0].to_list()
+        all_classes = {
+            c: self.guidance_man.oman.enrich_subject(c, load_properties=True)
+            for c in tqdm(all_classes, desc="Enriching classes")
+        }
+        self.__all_classes = all_classes
+        return all_classes
 
     def model_topics(self):
         representation_llama = LlamaCPP(
@@ -82,7 +103,9 @@ class TopicInitator:
             # https://stackoverflow.com/a/48057795
             # defer for *current* transaction!
             session.execute(text("SET CONSTRAINTS ALL DEFERRED"))
-            session.execute(delete(TopicDB).where(TopicDB.onto_hash == self.guidance_man.identifier))
+            session.execute(
+                delete(TopicDB).where(TopicDB.onto_hash == self.guidance_man.identifier)
+            )
             topic_map: dict[int, TopicDB] = {}
             for i, topic in topics.iterrows():
                 topic_id = topic["Topic"]
@@ -180,25 +203,66 @@ class TopicInitator:
             ]
             session.commit()
 
-    def embed_relations(self):
-        all_classes = self.guidance_man.oman.q_to_df(
-            """
-SELECT ?s
-WHERE {
-    ?s rdf:type owl:Class.
-}
-"""
-        )[0].to_list()
-        all_classes = {
-            c: self.guidance_man.oman.enrich_subject(c, load_properties=True)
-            for c in tqdm(all_classes, desc="Enriching classes")
-        }
+    def embed_property(self, p: Subject, cls: Subject) -> SubjectLinkDB:
+        prop_range = (
+            p.spos["rdfs:range"].first_value() if "rdfs:range" in p.spos else ""
+        )
+        prop = p.spos["rdf:type"].first_value() if "rdf:type" in p.spos else ""
+        prop_range_desc = f"A {cls.label} is defined by {to_readable(p.label)}."
+        if len(prop_range) > 0:
+            prop_range_label = self.guidance_man.oman.label_for(prop_range)
+            if prop == "ObjectProperty":
+                prop_range_desc = f"A {cls.label} is {to_readable(p.label)} of {to_readable(prop_range_label)}."
+            else:
+                prop_range_desc = f"A {cls.label} has {to_readable(p.label)} of type {to_readable(prop_range_label)}."
+            # print(prop_range_desc)
+        superprop = (
+            p.spos["rdfs:subPropertyOf"].first_value()
+            if "rdfs:subPropertyOf" in p.spos
+            else ""
+        )
+        superprop_desc = ""
+        if len(superprop) > 0:
+            superprop_label = self.guidance_man.oman.label_for(superprop)
+            if not superprop_label.startswith("<"):
+                superprop_desc = f"{to_readable(p.label)} is a subproperty of {to_readable(superprop_label)}."
 
+        prop_desc = f"{prop_range_desc} {superprop_desc}"
+        to_id = p.spos["rdfs:range"].first_value() if "rdfs:range" in p.spos else None
+        to_proptype = None
+        return SubjectLinkDB(
+            from_id=cls.subject_id,
+            to_id=to_id,
+            to_proptype=to_proptype,
+            property_id=p.subject_id,
+            description=prop_desc,
+            link_type=prop,
+            onto_hash=self.guidance_man.identifier,
+            # embedding=prop_embedding,
+            label=p.label,
+            instance_count=self.guidance_man.oman.property_count(p.subject_id),
+        )
+
+    def embed_relations(self):
         with Session(self.guidance_man.engine) as session:
             session.execute(text("SET CONSTRAINTS ALL DEFERRED"))
             session.execute(text("SET session_replication_role = replica"))
+
+            anonymous_props = self.guidance_man.oman.open_properties()
+            thing = self.guidance_man.oman.enrich_subject("owl:Thing")
+
+            for i, prop in enumerate(
+                tqdm(anonymous_props, desc="Saving anonymous properties")
+            ):
+                enriched_prop = self.guidance_man.oman.enrich_subject(prop)
+                subject_link = self.embed_property(enriched_prop, thing)
+                subject_link.to_proptype = subject_link.to_id
+                subject_link.to_id = None
+                session.add(subject_link)
+                if i % 100 == 0:
+                    session.commit()
             cls_descs: dict[str, str] = {}
-            for cls in tqdm(all_classes.values(), desc="Embedding classes"):
+            for cls in tqdm(self.all_classes.values(), desc="Saving classes"):
                 comment = (
                     cls.spos["rdfs:comment"].first_value()
                     if "rdfs:comment" in cls.spos
@@ -211,7 +275,7 @@ WHERE {
                 )
                 subcls_desc = ""
                 if len(subcls) > 0:
-                    parent_cls = all_classes.get(
+                    parent_cls = self.all_classes.get(
                         subcls, self.guidance_man.oman.enrich_subject(subcls)
                     )
                     subcls_desc = (
@@ -219,11 +283,7 @@ WHERE {
                         if len(subcls) == 0
                         else f"A {cls.label} is a {parent_cls.label}."
                     )
-                properties_desc = "\n".join(self.__get_properties_desc(cls))
                 desc_short = f"""A {cls.label} is a {cls.subject_type}. {subcls_desc} {comment}
-                    """
-                desc = f"""{desc_short}
-                    {properties_desc}
                     """
                 cls_descs[cls.subject_id] = desc_short
                 embedding = self.guidance_man.embedding_model.encode(desc_short)
@@ -240,69 +300,46 @@ WHERE {
                     )
                 )
             session.commit()
-            for cls in tqdm(all_classes.values(), desc="Embedding relations"):
+
+            for cls in tqdm(self.all_classes.values(), desc="Saving relations"):
                 for prop in cls.properties.keys():
                     for p in cls.properties[prop]:
-                        prop_range = (
-                            p.spos["rdfs:range"].first_value()
-                            if "rdfs:range" in p.spos
-                            else ""
-                        )
-                        prop_range_desc = (
-                            f"A {cls.label} is defined by {to_readable(p.label)}."
-                        )
-                        if len(prop_range) > 0:
-                            prop_range_cls = all_classes.get(
-                                prop_range, self.guidance_man.oman.enrich_subject(prop_range)
-                            )
-                            if prop == "ObjectProperty":
-                                prop_range_desc = f"A {cls.label} is {to_readable(p.label)} of {to_readable(prop_range_cls.label)}."
-                            else:
-                                prop_range_desc = f"A {cls.label} has {to_readable(p.label)} of type {to_readable(prop_range_cls.label)}."
-                            # print(prop_range_desc)
-                        superprop = (
-                            p.spos["rdfs:subPropertyOf"].first_value()
-                            if "rdfs:subPropertyOf" in p.spos
-                            else ""
-                        )
-                        superprop_desc = ""
-                        if len(superprop) > 0:
-                            superprop_cls = self.guidance_man.oman.enrich_subject(superprop)
-                            if not superprop_cls.label.startswith("<"):
-                                superprop_desc = f"{to_readable(p.label)} is a subproperty of {to_readable(superprop_cls.label)}."
-
-                        prop_desc = f"{prop_range_desc} {superprop_desc}"
-                        prop_embedding = self.guidance_man.embedding_model.encode(prop_desc)
-                        to_id = (
-                            p.spos["rdfs:range"].first_value()
-                            if "rdfs:range" in p.spos
-                            else None
-                        )
-                        to_proptype = None
-                        if to_id is not None:
+                        subject_link = self.embed_property(p, cls)
+                        if subject_link.to_id is not None:
                             class_exists = session.execute(
                                 select(SubjectInDB)
-                                .where(SubjectInDB.subject_id == to_id)
+                                .where(SubjectInDB.subject_id == subject_link.to_id)
                                 .limit(1)
                             ).first()
                             if class_exists is None:
-                                to_proptype = to_id
-                                to_id = None
-                                # print(f"Class {to_id} does not exist, skipping")
-                        session.add(
-                            SubjectLinkDB(
-                                from_id=cls.subject_id,
-                                to_id=to_id,
-                                to_proptype=to_proptype,
-                                property_id=p.subject_id,
-                                link_type=prop,
-                                onto_hash=self.guidance_man.identifier,
-                                embedding=prop_embedding,
-                                label=p.label,
-                                instance_count=self.guidance_man.oman.property_count(p.subject_id),
-                            )
-                        )
+                                subject_link.to_proptype = subject_link.to_id
+                                subject_link.to_id = None
+                        session.add(subject_link)
+                        # print(f"Class {to_id} does not exist, skipping")
             session.commit()
+
+            # now do the embeddings in batches
+            batch_size = 64
+            total = session.query(SubjectLinkDB).count()
+            iter = tqdm("Embedding links", total=total // batch_size)
+            all_links = session.query(SubjectLinkDB).yield_per(batch_size).all()
+            offset = 0
+            has_more = True
+            while has_more:
+                # get the next batch of links
+                links = all_links[offset : offset + batch_size]
+                if len(links) == 0:
+                    has_more = False
+                    break
+                offset += len(links)
+                # get the embeddings for the links
+                descs = [link.description for link in links]
+                embeddings = self.guidance_man.embedding_model.encode(descs)
+                # update the links with the embeddings
+                for i, link in enumerate(links):
+                    link.embedding = embeddings[i]
+                session.commit()
+                iter.update(len(links) // batch_size)
 
     def initate(
         self, reset=True, config: EvalConfig = None, force=True, *args, **kwargs
@@ -336,10 +373,14 @@ WHERE {
             with Session(self.guidance_man.engine) as session:
                 session.execute(text("SET CONSTRAINTS ALL DEFERRED"))
                 session.execute(
-                    delete(TopicDB).where(TopicDB.onto_hash == self.guidance_man.identifier)
+                    delete(TopicDB).where(
+                        TopicDB.onto_hash == self.guidance_man.identifier
+                    )
                 )
                 session.execute(
-                    delete(SubjectInDB).where(SubjectInDB.onto_hash == self.guidance_man.identifier)
+                    delete(SubjectInDB).where(
+                        SubjectInDB.onto_hash == self.guidance_man.identifier
+                    )
                 )
                 session.execute(
                     delete(SubjectLinkDB).where(
@@ -387,26 +428,17 @@ WHERE {
     def __get_subclass_desc(self, c: Subject) -> list[str]:
         cls_doc = f"{c.label}"
         if "rdfs:subClassOf" in c.spos:
-            subcls = self.guidance_man.oman.enrich_subject(c.spos["rdfs:subClassOf"].first_value())
+            subcls = self.guidance_man.oman.enrich_subject(
+                c.spos["rdfs:subClassOf"].first_value()
+            )
             if subcls.label.startswith("<"):
                 return []
             cls_doc += f" is subclass of  {subcls.label}\n"
         return [cls_doc]
 
     def build_docs(self):
-        classes = self.guidance_man.oman.q_to_df(
-            """
-SELECT ?s
-WHERE {
-    ?s rdf:type owl:Class.
-}
-"""
-        )[0].to_list()
-        classes_enriched = [
-            self.guidance_man.oman.enrich_subject(c, load_properties=True)
-            for c in tqdm(classes, desc="Enriching classes")
-        ]
-
+        classes_enriched = self.all_classes
+        classes_enriched = [v for v in classes_enriched.values() if v.label is not None]
         documents: list[dict[str, str]] = []
         for c in classes_enriched[1:]:
             if c.label.startswith("<"):

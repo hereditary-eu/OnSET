@@ -4,7 +4,8 @@
             <VuePlotly :data="chart_data" :layout="chart_options" :config="{
                 displayModeBar: false,
             }"></VuePlotly>
-            <OnsetBtn @click="initDownloadData">Download Data</OnsetBtn>
+            <div class="spacer"></div>
+            <OnsetBtn @click="initDownloadData" :toggleable="false">Download Data</OnsetBtn>
         </div>
         <h3 v-if="ui_data.message">{{ ui_data.message }}</h3>
         <Loading v-if="ui_data.loading"></Loading>
@@ -102,7 +103,7 @@ const loadData = async () => {
         ui_data.chart_mode = mode
         chart_options.value = options
         chart_data.value = [trace]
-        ui_data.message = null
+        ui_data.message = ""
         console.log("setting cache for", query_limitless)
         let new_cache_entry = {
             results: data.data,
@@ -119,11 +120,12 @@ const loadData = async () => {
             let cache_result = diff_options.plot_cache.get(old_query)
             if (cache_result) {
                 console.log('Diff enabled, found cache results', cache_result)
-                if (cache_result.chart_mode != chart_mode.value) {
+                if (cache_result.chart_mode != mode) {
+                    console.log('Chart mode mismatch', cache_result.chart_mode, mode)
                     ui_data.message = "Chart mode mismatch, no diff added..."
                 } else {
                     let combined_traces = combineTraces([cache_result, new_cache_entry])
-
+                    console.log('Combined traces', combined_traces)
                     let cached_trace = combined_traces.traces[0]
                     let new_trace = combined_traces.traces[1]
                     new_trace.name = "Current"
@@ -153,7 +155,11 @@ const loadData = async () => {
 const initDownloadData = () => {
     let cache_result = diff_options.plot_cache.get(store.generateQuery(null, null))
     if (cache_result) {
-        downloadDataAsCSV(cache_result)
+        let old_cache_result = null
+        if (diff) {
+            old_cache_result = diff_options.plot_cache.get(diff.left.generateQuery(null, null))
+        }
+        downloadDataAsCSV(cache_result, old_cache_result)
     }
 }
 
@@ -197,5 +203,8 @@ watch(() => diff, () => {
 .result_plot_container {
     width: 100%;
     height: 100%;
+}
+.spacer{
+    margin: 10px;
 }
 </style>

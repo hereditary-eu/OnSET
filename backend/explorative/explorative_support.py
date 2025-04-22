@@ -5,7 +5,7 @@ from langchain_core.language_models import LLM
 from llama_cpp import Llama
 from hashlib import sha256
 import regex as re
-from sqlalchemy import text, inspect, create_engine, select, delete
+from sqlalchemy import text, inspect, create_engine, select, delete, or_
 from sqlalchemy.orm import Session
 from tqdm import tqdm
 import pandas as pd
@@ -27,8 +27,6 @@ from explorative.exp_model import (
     FuzzyQueryResults,
     Topic,
 )
-
-
 
 
 class GuidanceManager:
@@ -71,7 +69,6 @@ class GuidanceManager:
         self.__lama_model = None
         self.__embedding_model = None
 
-
     @property
     def llama_model(self) -> Llama:
         if self.__lama_model is not None:
@@ -112,8 +109,6 @@ class GuidanceManager:
         #     "paraphrase-MiniLM-L6-v2",
         # ).to(device)
         return self.__embedding_model
-
-
 
     def get_topic_tree(self) -> list[Topic]:
         with Session(self.engine) as session:
@@ -268,7 +263,10 @@ class GuidanceManager:
                         item for sublist in from_parents for item in sublist
                     ]
                     query_link = query_link.where(
-                        SubjectLinkDB.from_id.in_(from_parents)
+                        or_(
+                            SubjectLinkDB.from_id.in_(from_parents),
+                            SubjectLinkDB.from_id == None,
+                        )
                     )
                 if query.to_id is not None:
                     to_parents = self.oman.get_parents(query.to_id) + [query.to_id]

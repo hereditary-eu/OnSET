@@ -108,6 +108,7 @@ export class SubjectConstraint extends SubQuery {
 }
 export enum StringConstraintType {
     EQUALS = "equals",
+    NEQUALS = "!=",
     CONTAINS = "contains",
     STARTSWITH = "startswith",
     ENDSWITH = "endswith",
@@ -128,6 +129,8 @@ export class StringConstraint extends SubQuery {
         switch (this.type) {
             case StringConstraintType.EQUALS:
                 return `${property} ="${this.value}"`;
+            case StringConstraintType.NEQUALS:
+                return `${property} != "${this.value}"`;
             case StringConstraintType.CONTAINS:
                 return `CONTAINS(${property},"${this.value}")`;
             case StringConstraintType.STARTSWITH:

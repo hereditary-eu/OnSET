@@ -41,6 +41,7 @@ dependencies = [
     "openai>=1.59.9",
     # "onnxruntime-gpu",
     # "fastembed-gpu",
+    "line-profiler>=4.2.0",
 ]
 
 [project.optional-dependencies]
