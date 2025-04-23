@@ -4,7 +4,8 @@
 
         <div v-if="combined_stores.instances.length > 0" class="result_instance_element"
             v-for="s of combined_stores.instances">
-            <Result :store="s" :expanded="false" :scale="ui_state.scale" :offset="ui_state.offset">
+            <Result :store="s" :expanded="false" :scale="ui_state.scale" :offset="ui_state.offset"
+                :miniature-type="miniatureType(s)" :diff="diff">
             </Result>
         </div>
         <div v-else class="result_instance_element" v-for="s of mapped_stores.instances">
@@ -20,14 +21,15 @@
 </template>
 <script setup lang="ts">
 import { ref, watch, reactive, onMounted, defineProps } from 'vue'
-import { PropertiesOpenEvent, QueryMapper, ResultList } from '@/utils/sparql/querymapper';
+import { InstanceNodeLinkRepository, PropertiesOpenEvent, QueryMapper, ResultList } from '@/utils/sparql/querymapper';
 import { Vector2 } from 'three';
-import Loading from '../ui/Loading.vue';
-import Result from '../explore/Result.vue';
-import OnsetBtn from '../ui/OnsetBtn.vue';
+import Loading from '../../ui/Loading.vue';
+import Result from './Miniature.vue';
+import OnsetBtn from '../../ui/OnsetBtn.vue';
 import type { NodeLinkRepository } from '@/utils/sparql/store';
 import { ResultListDiff, type NodeLinkRepositoryDiff } from '@/utils/sparql/diff';
 import { instance } from 'three/webgpu';
+import { MiniatureType } from '@/utils/result-plot/plot-types';
 const { store, query_string, diff } = defineProps({
     store: {
         type: Object as () => NodeLinkRepository,
@@ -90,6 +92,19 @@ const updateSize = () => {
         ui_state.computed_size.y = view_container.value?.clientHeight || 0
     }
     mapper.value.target_size = ui_state.computed_size
+}
+const miniatureType = (s: InstanceNodeLinkRepository) => {
+    // console.log('Diff!', s, results_diff.value.diff_instances)
+    if (diff) {
+        if (results_diff.value.diff_instances.removed.find((r) => r.left.id == s.id)) {
+            // console.log('Left removed!', s)
+            return MiniatureType.LEFT
+        } else if (results_diff.value.diff_instances.added.find((r) => r.right.id == s.id)) {
+            // console.log('Right added!', s)
+            return MiniatureType.RIGHT
+        }
+    }
+    return MiniatureType.BOTH
 }
 const loadMore = async () => {
     let query_id = ui_state.last_query_id + 1

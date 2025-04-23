@@ -14,6 +14,7 @@ export enum ChartMode {
     SCATTER = 'scatter',
     HEATMAP = 'heatmap'
 }
+
 export abstract class BucketSpecifier {
     constructor(public lower: number | string,
         public upper: number | string,
@@ -62,4 +63,10 @@ export interface AnalyzedProp {
     prop_type: PropType,
     prop_specific_type: PropSpecificType,
     query_id: string
+}
+
+export enum MiniatureType {
+    BOTH = 'both',
+    LEFT = 'left',
+    RIGHT = 'right'
 }

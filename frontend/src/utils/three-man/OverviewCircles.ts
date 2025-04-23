@@ -116,8 +116,8 @@ export class OverviewCircles extends CircleMan3D {
         this.hidePreview()
         let from = this.subjects_by_id[link.from_id]
         let to = this.subjects_by_id[link.to_id]
-        if (!from || !to) {
-            console.error("Missing subjects for link", link)
+        if (!from || !to || !this.scene || !from.position || !to.position) {
+            // console.error("Missing subjects for link", link)
             return
         }
         let height = from.position.distanceTo(to.position) * this.link_params.height_factor + this.link_params.min_height

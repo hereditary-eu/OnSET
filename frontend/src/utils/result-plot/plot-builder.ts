@@ -1,6 +1,6 @@
 import type { QueryProp } from "../sparql/representation";
 import type { PlotCacheEntry } from "./plot-cache";
-import { BucketSpecifier, ChartMode, ContinuousBucketSpecifier, DiscreteBucketSpecifier, PropSpecificType, PropType, type AnalyzedProp } from "./plot-data";
+import { BucketSpecifier, ChartMode, ContinuousBucketSpecifier, DiscreteBucketSpecifier, PropSpecificType, PropType, type AnalyzedProp } from "./plot-types";
 
 //https://stackoverflow.com/questions/12303989/cartesian-product-of-multiple-arrays-in-javascript
 function cartesianProduct<T>(arr: T[][]): T[][] {

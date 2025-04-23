@@ -11,10 +11,10 @@
             <use xlink:href="#outlink_selector"></use>
             <use xlink:href="#instance_selector"></use>
         </svg>
-        <div id="threed_minimap">
+        <!-- <div id="threed_minimap">
             <Loading v-if="ui_state.loading"></Loading>
             <div id="threed_graph"></div>
-        </div>
+        </div> -->
     </div>
 </template>
 <script setup lang="ts">
