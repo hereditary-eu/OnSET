@@ -146,7 +146,7 @@ onMounted(() => {
     loadMore()
 })
 </script>
-<style lang="scss">
+<style lang="scss" scoped>
 .selection_search {
     padding: 5px;
 

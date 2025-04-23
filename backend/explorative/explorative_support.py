@@ -262,11 +262,9 @@ class GuidanceManager:
                     from_parents = [
                         item for sublist in from_parents for item in sublist
                     ]
+                    from_parents.append("owl:Thing")
                     query_link = query_link.where(
-                        or_(
-                            SubjectLinkDB.from_id.in_(from_parents),
-                            SubjectLinkDB.from_id == None,
-                        )
+                        SubjectLinkDB.from_id.in_(from_parents),
                     )
                 if query.to_id is not None:
                     to_parents = self.oman.get_parents(query.to_id) + [query.to_id]

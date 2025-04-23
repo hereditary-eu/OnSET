@@ -6,6 +6,8 @@
                 <div class="selection_div_container" :style="{ 'height': `${NODE_HEIGHT * 8 + 10}px` }">
                     <div class="selection_defaults" v-if="selection_event.side == NodeSide.PROP">
                         <OnsetBtn @click="addLabelConstraint()" btn_width="100%">Filter Label</OnsetBtn>
+                        <OnsetBtn @click="addLabelProp()" btn_width="100%"><v-icon icon="mdi-tag"></v-icon> Label
+                        </OnsetBtn>
                         <OnsetBtn @click="addInstanceConstraint()" btn_width="100%">Select Instance</OnsetBtn>
                     </div>
                     <div class="selection_search">
@@ -99,6 +101,7 @@ const update_selection_options = async () => {
         (async () => {
             selection_options.value = []
             editor_data.offset = 0
+            editor_data.reached_end = false
             console.log('fetching selection options', selection_event, 'offset', editor_data.offset)
             switch (selection_event.side) {
                 case NodeSide.PROP:
@@ -211,6 +214,21 @@ const select_option = (selected_option: MixedResponse<SubjectNode>, event: Mouse
     }
     emit('select', selected_option)
 }
+const addLabelProp = () => {
+    const link = new Link()
+    link.from_id = selection_event.node.subject_id
+    link.from_internal_id = selection_event.node.internal_id
+    link.from_subject = selection_event.node
+    link.property_id = 'rdfs:label'
+    link.to_proptype = 'xsd:string'
+    link.label = selection_event.node.label
+    const constraint = QueryProp.construct(link)
+    if (!selection_event.node.subqueries) {
+        selection_event.node.subqueries = []
+    }
+    selection_event.node.subqueries.push(constraint)
+    display.value = false
+}
 const select_prop = (option: MixedResponse<SubjectNode>, event: MouseEvent) => {
     display.value = false
     option.link.from_internal_id = selection_event.node.internal_id
@@ -285,7 +303,7 @@ watch(display, (new_val) => {
     }
 })
 </script>
-<style lang="scss">
+<style lang="scss" scoped>
 .selection_search {
     padding: 5px;
 
@@ -336,10 +354,11 @@ watch(display, (new_val) => {
 
 .selection_defaults {
     display: flex;
-    justify-content: space-around;
-    flex-direction: column;
+    justify-content: center;
+    flex-direction: row;
+    flex-wrap: wrap;
     width: 100%;
-    padding: 4px;
+    padding: 3px;
 }
 
 .edit_point {

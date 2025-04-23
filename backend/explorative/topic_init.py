@@ -207,7 +207,11 @@ class TopicInitator:
         prop_range = (
             p.spos["rdfs:range"].first_value() if "rdfs:range" in p.spos else ""
         )
-        prop = p.spos["rdf:type"].first_value() if "rdf:type" in p.spos else ""
+        prop = (
+            (p.spos["rdf:type"].values[-1].value if len(p.spos["rdf:type"].values) > 0 else "")
+            if "rdf:type" in p.spos
+            else ""
+        )
         prop_range_desc = f"A {cls.label} is defined by {to_readable(p.label)}."
         if len(prop_range) > 0:
             prop_range_label = self.guidance_man.oman.label_for(prop_range)
@@ -248,6 +252,7 @@ class TopicInitator:
             session.execute(text("SET CONSTRAINTS ALL DEFERRED"))
             session.execute(text("SET session_replication_role = replica"))
 
+          
             anonymous_props = self.guidance_man.oman.open_properties()
             thing = self.guidance_man.oman.enrich_subject("owl:Thing")
 
@@ -256,11 +261,12 @@ class TopicInitator:
             ):
                 enriched_prop = self.guidance_man.oman.enrich_subject(prop)
                 subject_link = self.embed_property(enriched_prop, thing)
-                subject_link.to_proptype = subject_link.to_id
-                subject_link.to_id = None
                 session.add(subject_link)
-                if i % 100 == 0:
+                if i % 1000 == 0:
                     session.commit()
+            
+            session.commit()
+            
             cls_descs: dict[str, str] = {}
             for cls in tqdm(self.all_classes.values(), desc="Saving classes"):
                 comment = (
@@ -300,23 +306,33 @@ class TopicInitator:
                     )
                 )
             session.commit()
-
+            
+                    
             for cls in tqdm(self.all_classes.values(), desc="Saving relations"):
                 for prop in cls.properties.keys():
                     for p in cls.properties[prop]:
                         subject_link = self.embed_property(p, cls)
-                        if subject_link.to_id is not None:
-                            class_exists = session.execute(
-                                select(SubjectInDB)
-                                .where(SubjectInDB.subject_id == subject_link.to_id)
-                                .limit(1)
-                            ).first()
-                            if class_exists is None:
-                                subject_link.to_proptype = subject_link.to_id
-                                subject_link.to_id = None
                         session.add(subject_link)
                         # print(f"Class {to_id} does not exist, skipping")
             session.commit()
+
+            all_links = session.query(SubjectLinkDB).yield_per(100).all()
+            for i, link in enumerate(tqdm(all_links, desc="Fixing props links")):
+                if link.to_id is not None:
+                    class_exists = session.execute(
+                        select(SubjectInDB)
+                        .where(SubjectInDB.subject_id == link.to_id)
+                        .limit(1)
+                    ).first()
+                    if class_exists is None:
+                        link.to_proptype = link.to_id
+                        link.to_id = None
+                
+                if i % 1000 == 0:
+                    session.commit()
+
+            session.commit()
+                    
 
             # now do the embeddings in batches
             batch_size = 64

@@ -50,7 +50,7 @@ if __name__ == "__main__":
         guidance_manager = GuidanceManager(
             ontology_manager, conn_str=setup.conn_str, llm_model_id=setup.model_id
         )
-        initiator = TopicInitator(ontology_manager)
+        initiator = TopicInitator(guidance_manager)
         llm_man = LLMQuery(guidance_manager)
         guidance_manager.llama_model
         print(guidance_manager.identifier)
