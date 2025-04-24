@@ -19,13 +19,13 @@ import { SubjectNode, Link, SubQueryType } from '@/utils/sparql/representation';
 import { PropertiesOpenEvent, QueryMapper, ResultList } from '@/utils/sparql/querymapper';
 import { Vector2, type Vector2Like } from 'three';
 import Loading from '../ui/Loading.vue';
-import Result from '../explore/Result.vue';
-import ResultPlot from '../explore/ResultPlot.vue';
+import Result from './results/Miniature.vue';
+import ResultPlot from './results/Plot.vue';
 import OnsetBtn from '../ui/OnsetBtn.vue';
 import type { NodeLinkRepository } from '@/utils/sparql/store';
 import SelectorGroup from '../ui/SelectorGroup.vue';
 import type { NodeLinkRepositoryDiff } from '@/utils/sparql/diff';
-import ResultMinitatures from './ResultMinitatures.vue';
+import ResultMinitatures from './results/MinitatureList.vue';
 enum ResultMode {
     MINI = 'Miniatures',
     PROP = 'Properties',

@@ -28,7 +28,11 @@ export class InstanceNode extends NodeRepr {
     instance_data: Record<string, string> = null
     constructor(base_node?: NodeRepr | InstanceNode, instance_data?: Record<string, string>) {
         super(base_node)
-        this.instance_data = instance_data || (base_node as InstanceNode).instance_data || {}
+        if (!base_node) {
+            this.instance_data = instance_data || {}
+        } else {
+            this.instance_data = instance_data || (base_node as InstanceNode).instance_data || {}
+        }
         this.instance_id = this.instance_data[this.outputId().replace('?', '')]
         this.instance_label = this.instance_data[this.labelId().replace('?', '')]
         this.instance_label = readableName(this.instance_id, this.instance_label)
@@ -51,15 +55,17 @@ export class InstanceLink extends Link {
 export class PropertiesOpenEvent {
     node: InstanceNode;
 }
+@registerClass
 export class InstanceNodeLinkRepository extends NodeLinkRepository<InstanceNode, InstanceLink> {
 
-    constructor(links: InstanceLink[], nodes: InstanceNode[]) {
+    constructor(links?: InstanceLink[], nodes?: InstanceNode[]) {
         super();
-        this.links = links
-        this.nodes = nodes
+        this.links = links || []
+        this.nodes = nodes || []
     }
     get id() {
-        let node_ids = this.nodes.map(n => n.label).reduce((p, c) => `${p}-${c}`, '')
+        let node_ids = this.nodes.map(n => n.instance_id).reduce((p, c) => `${p}-${c}`, '')
+        // console.log("ID", node_ids)
         return node_ids as string | number
     }
 
@@ -136,9 +142,7 @@ export class QueryMapper {
             let mapped_links = copied_store.links.map((link) => {
                 return new InstanceLink(link, instance_data as Record<string, string>)
             })
-            copied_store.nodes = mapped_nodes
-            copied_store.links = mapped_links
-
+            copied_store = new InstanceNodeLinkRepository(mapped_links, mapped_nodes)
             return copied_store
         })
 

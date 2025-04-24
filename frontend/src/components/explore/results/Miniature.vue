@@ -4,7 +4,7 @@
             <div class="result_instance_overview_header">{{ store.nodes[0].instance_label }}</div>
         </template>
         <template v-slot:content>
-            <svg class="result_interact_svg">
+            <svg class="result_instance_svg">
                 <g :transform="`translate(${offset.x},${offset.y})`">
                     <GraphView :store="store" :display-mode="DisplayMode.RESULT_INTERACTIVE"
                         @prop-point-clicked="ui_state.prop_open_event = $event; ui_state.prop_open = true"></GraphView>
@@ -16,7 +16,7 @@
             </svg>
         </template>
         <template v-slot:trigger>
-            <svg class="result_instance_svg">
+            <svg  :class="miniatureClass">
                 <g :transform="`translate(${offset.x},${offset.y}) scale(${scale})`">
                     <GraphView :store="store" :display-mode="DisplayMode.RESULTS" :diff="diff"></GraphView>
                 </g>
@@ -26,16 +26,17 @@
 </template>
 <script setup lang="ts">
 import { ref, watch, reactive, computed, onMounted, defineProps } from 'vue'
-import Propview from './elements/panels/Propview.vue';
+import Propview from '../elements/panels/Propview.vue';
 import { DiffInstanceNodeLinkRepository, InstanceNode, PropertiesOpenEvent, QueryMapper, type InstanceNodeLinkRepository } from '@/utils/sparql/querymapper';
 import { Vector2, type Vector2Like } from 'three';
 import { DisplayMode } from '@/utils/sparql/helpers';
-import Loading from '../ui/Loading.vue';
-import Expandable from '../ui/Expandable.vue';
-import GraphView from './elements/GraphView.vue';
+import Loading from '../../ui/Loading.vue';
+import Expandable from '../../ui/Expandable.vue';
+import GraphView from '../elements/GraphView.vue';
 import type { NodeLinkRepositoryDiff, ResultListDiff } from '@/utils/sparql/diff';
+import { MiniatureType } from '@/utils/result-plot/plot-types';
 
-const { store, scale, offset } = defineProps({
+const { store, scale, offset, diff, miniatureType } = defineProps({
     store: {
         type: Object as () => InstanceNodeLinkRepository,
         required: true
@@ -56,12 +57,33 @@ const { store, scale, offset } = defineProps({
         type: Object as () => NodeLinkRepositoryDiff | null,
         required: false,
         default: null
+    },
+    miniatureType: {
+        type: String as () => MiniatureType,
+        required: false,
+        default: MiniatureType.BOTH
     }
 })
 const expanded = ref(false)
 const ui_state = reactive({
     prop_open: false,
     prop_open_event: null as PropertiesOpenEvent | null
+})
+const miniatureClass = computed(() => {
+    // switch (miniatureType) {
+    //     case MiniatureType.LEFT:
+    //         return 'result_instance_left'
+    //     case MiniatureType.RIGHT:
+    //         return 'result_instance_right'
+    //     case MiniatureType.BOTH:
+    //     default:
+    //         return ''
+    // }
+    return {
+        'result_instance_left': miniatureType == MiniatureType.LEFT,
+        'result_instance_right': miniatureType == MiniatureType.RIGHT,
+        'result_interact_svg': true
+    }
 })
 </script>
 <style lang="scss">
@@ -98,6 +120,14 @@ const ui_state = reactive({
 .result_instance_svg {
     width: 100%;
     height: 100%;
+}
+
+.result_instance_right {
+    background-color: rgba(228, 119, 119, 0.506);
+}
+
+.result_instance_left {
+    background-color: rgba(109, 209, 109, 0.188);
 }
 
 .result_interact_svg {

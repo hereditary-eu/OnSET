@@ -1,5 +1,5 @@
 import type { NodeLinkRepository } from "../sparql/store";
-import type { AnalyzedProp, ChartMode } from "./plot-data";
+import type { AnalyzedProp, ChartMode } from "./plot-types";
 
 export class PlotCacheEntry {
     traces: Plotly.PlotData[]

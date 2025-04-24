@@ -70,8 +70,8 @@ export class NodeLinkRepositoryDiff<N extends SubjectNode = SubjectNode, L exten
 
     constructor(left: NodeLinkRepository<N, L>, right: NodeLinkRepository<N, L>) {
         super(left, right)
-        this.diff_nodes = new DiffList(left.nodes, right.nodes, NodeDiff)
-        this.diff_links = new DiffList(left.links, right.links, LinkDiff)
+        this.diff_nodes = new DiffList(left ? left.nodes : [], right ? right.nodes : [], NodeDiff)
+        this.diff_links = new DiffList(left ? left.links : [], right ? right.links : [], LinkDiff)
     }
 
 }
