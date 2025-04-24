@@ -201,7 +201,7 @@ export function buildChartTraces(analyzed_props: AnalyzedProp[], result_set: Rec
                 let y_buckets = buckets[analyzed_props[1].query_id]
                 trace.x = x_buckets.map((bucket) => bucket.display())
                 trace.y = y_buckets.map((bucket) => bucket.display())
-                let heatmap_data = new Array(trace.x.length).fill(0).map(() => new Array(trace.y.length).fill(0))
+                let heatmap_data = new Array(trace.y.length).fill(0).map(() => new Array(trace.x.length).fill(0))
                 trace.type = 'heatmap'
                 for (let row of result_set) {
                     let bucket_assocs = Object.entries(buckets).map((bucket_prop) => {
@@ -223,7 +223,7 @@ export function buildChartTraces(analyzed_props: AnalyzedProp[], result_set: Rec
                     // console.log(bucket_assocs) 
                     if (bucket_assocs[0] !== null && bucket_assocs[1] !== null
                         && bucket_assocs[0] >= 0 && bucket_assocs[1] >= 0) {
-                        heatmap_data[bucket_assocs[0]][bucket_assocs[1]] += 1
+                        heatmap_data[bucket_assocs[1]][bucket_assocs[0]] += 1
                     }
                 }
                 trace.z = heatmap_data

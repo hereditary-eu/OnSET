@@ -65,7 +65,7 @@ watch(() => query_string, () => {
     flex-direction: column;
     align-items: center;
     justify-content: start;
-    height: 70vh;
+    height: 95%;
     width: 30%;
     border-left: 1px solid rgb(192, 213, 191);
 }

@@ -127,7 +127,7 @@ const preview_link = (l: Link | null) => {
 <style lang="scss" scoped>
 .query_builder {
     width: 80%;
-    height: 70%;
+    height: 95%;
 }
 
 .query_build_wrapper {

@@ -259,7 +259,7 @@ const loadState = () => {
     flex-direction: row;
     width: 100%;
     overflow: auto;
-    height: 70vh;
+    height: 50vh;
 
     pre {
         width: 25%;
