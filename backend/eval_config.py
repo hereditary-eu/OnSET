@@ -76,3 +76,19 @@ BTO_CONFIGS = [
         selection_distribution=SelectionDistribution.UNIFORM,
     ),
 ]
+DNB_CONFIGS = [
+    EvalConfig(
+        model_id="NousResearch/Hermes-3-Llama-3.1-8B-GGUF",
+        conn_str="postgresql+psycopg://postgres:postgres@localhost:5434/onset-dnb",
+        sparql_endpoint="http://localhost:7035",
+        name="DNB",
+        selection_distribution=SelectionDistribution.UNIFORM,
+    ),
+    EvalConfig(
+        model_id="NousResearch/Hermes-3-Llama-3.2-3B-GGUF",
+        conn_str="postgresql+psycopg://postgres:postgres@localhost:5434/onset-dnb",
+        sparql_endpoint="http://localhost:7035",
+        name="DNB small",
+        selection_distribution=SelectionDistribution.UNIFORM,
+    ),
+]

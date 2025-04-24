@@ -1413,7 +1413,7 @@ wheels = [
 [[package]]
 name = "llama-cpp-agent"
 version = "0.2.35"
-source = { git = "https://github.com/Dakantz/llama-cpp-agent.git?branch=fix-gbnf-generation-trailing-bracket#c0f1f03edf22b1fed72dee4e23f70b70dc237915" }
+source = { git = "https://github.com/Dakantz/llama-cpp-agent.git?branch=add-literal-support#96553d70e857107af9525ead3aec7f4b388bfa67" }
 dependencies = [
     { name = "aiohttp" },
     { name = "docstring-parser" },
@@ -1993,7 +1993,7 @@ requires-dist = [
     { name = "langchain-community", specifier = ">=0.3.14" },
     { name = "langchain-huggingface", specifier = ">=0.1.2" },
     { name = "line-profiler", specifier = ">=4.2.0" },
-    { name = "llama-cpp-agent", git = "https://github.com/Dakantz/llama-cpp-agent.git?branch=fix-gbnf-generation-trailing-bracket" },
+    { name = "llama-cpp-agent", git = "https://github.com/Dakantz/llama-cpp-agent.git?branch=add-literal-support" },
     { name = "llama-cpp-python", marker = "sys_platform != 'darwin' and sys_platform != 'linux'", specifier = "==0.3.4" },
     { name = "llama-cpp-python", marker = "sys_platform == 'darwin'", specifier = "==0.3.4", index = "https://abetlen.github.io/llama-cpp-python/whl/metal/" },
     { name = "llama-cpp-python", marker = "sys_platform == 'linux'", specifier = "==0.3.4", index = "https://abetlen.github.io/llama-cpp-python/whl/cu124/" },

@@ -17,14 +17,14 @@ from explorative.exp_model import (
     FuzzyQueryResults,
 )
 from explorative.llm_query import LLMQuery, QueryProgress, EnrichedEntitiesRelations
-from eval_config import BTO_CONFIGS, DBPEDIA_CONFIGS, UNIPROT_CONFIGS
+from eval_config import BTO_CONFIGS, DBPEDIA_CONFIGS, UNIPROT_CONFIGS, DNB_CONFIGS
 from initiator import InitatorManager
 from assistant.model import QueryGraph, Operations
 from assistant.iterative_assistant import IterativeAssistant
 from redis_cache import RedisCache
 from sqlalchemy.orm import Session
-# db_config = DBPEDIA_CONFIGS[0]
-db_config = BTO_CONFIGS[1]
+db_config = DBPEDIA_CONFIGS[0]
+# db_config = BTO_CONFIGS[1]
 
 base_path = "../data"
 onto_path = f"{base_path}/hero-ontology/hereditary_clinical.ttl"
