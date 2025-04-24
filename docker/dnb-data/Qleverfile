@@ -13,16 +13,16 @@
 # bib_lds.nt.gz, which contains incorrectly formatted IRIs. The file
 # dnb-all_ldsprov.nt.gz contains invalid floating point literals; to ignore
 # them, compile QLever with TurtleParserBase::invalidLiteralsAreSkipped_ = true
-
+#https://d-nb.info/standards/elementset/gnd.ttl
 [data]
 NAME              = dnb
 BASE_URL          = https://data.dnb.de/opendata
-GET_DATA_CMD      = curl -L -C - --remote-name-all --remote-time ${BASE_URL}/authorities-gnd_lds.nt.gz ${BASE_URL}/dnb-all_lds.nt.gz ${BASE_URL}/dnb-all_ldsprov.nt.gz ${BASE_URL}/zdb_lds.nt.gz 2>&1 | tee ${data:NAME}.getdata-log.txt
+GET_DATA_CMD      = curl -L -C - --remote-name-all --remote-time ${BASE_URL}/authorities-gnd_lds.nt.gz ${BASE_URL}/dnb-all_lds.nt.gz ${BASE_URL}/dnb-all_ldsprov.nt.gz ${BASE_URL}/zdb_lds.nt.gz https://d-nb.info/standards/elementset/gnd.ttl 2>&1 | tee ${data:NAME}.getdata-log.txt & riot --merge --output=NT --compress *.ttl > onto.nt.gz
 VERSION           = $$(date -r dnb-all_lds.nt.gz +%d.%m.%Y || echo "NO_DATE")
 DESCRIPTION       = DNB data from ${BASE_URL} (authoritities-gnd_lds, dnb_all_lds, dnb-all_ldsprov, zdb_lds), version ${VERSION}
 
 [index]
-INPUT_FILES     = *.nt.gz
+INPUT_FILES     = *.nt.gz 
 CAT_INPUT_FILES = zcat ${INPUT_FILES} | sed '/"\$$R0"/d;/"0\.03013\$$D"/d'
 SETTINGS_JSON   = { "ascii-prefixes-only": false, "num-triples-per-batch": 1000000 }
 
@@ -38,3 +38,4 @@ IMAGE  = qlever:invalid
 
 [ui]
 UI_CONFIG = dnb
+UI_PORT = 8178

@@ -17,7 +17,7 @@ from explorative.exp_model import (
     FuzzyQueryResults,
 )
 from explorative.llm_query import LLMQuery, QueryProgress, EnrichedEntitiesRelations
-from eval_config import BTO_CONFIGS, DBPEDIA_CONFIGS, UNIPROT_CONFIGS
+from eval_config import BTO_CONFIGS, DBPEDIA_CONFIGS, UNIPROT_CONFIGS, DNB_CONFIGS
 from initiator import InitatorManager
 from assistant.model import QueryGraph, Operations
 from assistant.iterative_assistant import IterativeAssistant

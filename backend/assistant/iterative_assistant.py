@@ -42,7 +42,7 @@ class IterativeAssistant:
         self.SYSTEM_PROMPT = """
         You are an assistant that helps the user to explore an ontology. You are given an existing query graph structure and are tasked to extent it by adding new subjects, links and subqueries.
         """
-        self.top_k = 5
+        self.top_k = 15
         self.max_tokens = 2048
         self.temperature = 0.1
 
@@ -161,49 +161,42 @@ class IterativeAssistant:
             for data in resulting_datas
         ]
 
-    def __candidates_ops(self, query: str, ops: Operations):
+    def __candidates_ops(self, query: str):
         candidate_ops: Operations = Operations()
-        for op in ops.operations:
-            if op.operation == OperationType.REMOVE:
-                continue
-            if op.data.type == "link":
-                link: AssistantLink = op.data
-                fuzzy_results = self.guidance.search_fuzzy(
-                    query=FuzzyQuery(
-                        q=f"A {link.from_id} is {link.link_id} of {link.to_id}",
-                        limit=self.top_k,
-                        type=RETURN_TYPE.LINK,
-                        relation_type=RELATION_TYPE.INSTANCE,
+
+        fuzzy_results = self.guidance.search_fuzzy(
+            query=FuzzyQuery(
+                q=query,
+                limit=self.top_k,
+                type=RETURN_TYPE.BOTH,
+                relation_type=RELATION_TYPE.INSTANCE,
+            )
+        )
+        for res in fuzzy_results.results:
+            if res.link is not None:
+                candidate_ops.operations.append(
+                    Operation(
+                        operation=OperationType.ADD,
+                        data=AssistantLink(
+                            from_id=res.link.from_subject.label,
+                            to_id=res.link.to_subject.label,
+                            from_internal_id="",
+                            to_internal_id="",
+                            link_id=res.link.label,
+                        ),
                     )
                 )
-                candidate_ops.operations.extend(
-                    self.__result_to_ops_links(fuzzy_results.results, op)
-                )
-            elif op.data.type == "subject":
-                subject: AssistantSubject = op.data
-                fuzzy_results = self.guidance.search_fuzzy(
-                    query=FuzzyQuery(
-                        q=f"A {subject.subject_id}",
-                        limit=self.top_k,
-                        type=RETURN_TYPE.SUBJECT,
-                        relation_type=RELATION_TYPE.INSTANCE,
+            elif res.subject is not None:
+                candidate_ops.operations.append(
+                    Operation(
+                        operation=OperationType.ADD,
+                        data=AssistantSubject(
+                            subject_id=res.subject.label,
+                            internal_id="",
+                            x=0.0,
+                            y=0.0,
+                        ),
                     )
-                )
-                candidate_ops.operations.extend(
-                    self.__result_to_ops_subjects(fuzzy_results.results, op)
-                )
-            elif op.data.type == "subquery":
-                subquery: AssistantSubQuery = op.data
-                fuzzy_results = self.guidance.search_fuzzy(
-                    query=FuzzyQuery(
-                        q=f"A {subquery.from_id} has {subquery.field}",
-                        limit=self.top_k,
-                        type=RETURN_TYPE.LINK,
-                        relation_type=RELATION_TYPE.PROPERTY,
-                    )
-                )
-                candidate_ops.operations.extend(
-                    self.__result_to_ops_subqueries(fuzzy_results.results, op)
                 )
         return candidate_ops
 
@@ -225,7 +218,7 @@ class IterativeAssistant:
             link_id_enum = Enum(
                 "LinkID",
                 {
-                    f"{from_id}_{link_id}_{to_id}": f"{from_id}|{link_id}|{to_id}"
+                    f"{from_id}_{link_id}_{to_id}": f"{link_id}|{from_id}|{to_id}"
                     for from_id, link_id, to_id in allowed_link_ids
                 },
             )
@@ -421,7 +414,7 @@ class IterativeAssistant:
 
     def __constrained_link_op_finalze(self, constrained_op: BaseModel):
         print(constrained_op)
-        from_id, link_id, to_id = constrained_op.link_id.value.split("|")
+        link_id, from_id, to_id = constrained_op.link_id.value.split("|")
         return AssistantLink(
             from_id=from_id,
             to_id=to_id,
@@ -572,7 +565,7 @@ class IterativeAssistant:
             # and remove related links if only subjects are removed
             for op in ops.operations:
                 if op.operation == OperationType.REMOVE:
-                    if op.data.type =="subject":
+                    if op.data.type == "subject":
                         # remove the link if the subject is removed
                         for link in graph.links:
                             if (
@@ -594,7 +587,7 @@ class IterativeAssistant:
                     for subject_id, internal_id in subjects_to_add:
                         subj: AssistantSubject | None = next(
                             filter(
-                                lambda subj: subj.subject_id == subject_id,
+                                lambda subj: subj.internal_id == internal_id,
                                 graph.subjects,
                             ),
                             None,
@@ -603,7 +596,7 @@ class IterativeAssistant:
                             subj = next(
                                 filter(
                                     lambda subj: subj.type == "subject"
-                                    and subj.subject_id == subject_id,
+                                    and subj.internal_id == internal_id,
                                     [op.data for op in ops.operations],
                                 ),
                                 None,
@@ -656,10 +649,10 @@ class IterativeAssistant:
                             or subjects[1].subject_id != link.to_id
                         ):
                             print("Switching link internal ids", link, subjects)
-                            link.from_internal_id, link.to_internal_id = (
-                                link.to_internal_id,
-                                link.from_internal_id,
-                            )
+                            # link.from_internal_id, link.to_internal_id = (
+                            #     link.to_internal_id,
+                            #     link.from_internal_id,
+                            # )
         return ops
 
     def __simplify_graph(self, graph: QueryGraph):
@@ -684,11 +677,11 @@ class IterativeAssistant:
 
     def run_query(self, query: str, graph: QueryGraph):
         simple_graph = self.__simplify_graph(graph)
-        # Step 1: Initial Operations
-        initial_ops = self.__initial_ops(query, simple_graph)
-        print("Initial Ops", initial_ops)
+        # # Step 1: Initial Operations -> skip, extract candidates directly from the query!
+        # initial_ops = self.__initial_ops(query, simple_graph)
+        # print("Initial Ops", initial_ops)
         # Step 2: Candidate Operations
-        candidate_ops = self.__candidates_ops(query, initial_ops)
+        candidate_ops = self.__candidates_ops(query)
         print("Candidate Ops", candidate_ops)
         # Step 3: Constrained Operations
         finalized_ops = self.__constrained_ops(query, simple_graph, candidate_ops)

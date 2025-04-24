@@ -25,10 +25,11 @@ from backend.eval_config import (
     OMA_CONFIGS,
     UNIPROT_CONFIGS,
     BTO_CONFIGS,
+    DNB_CONFIGS
 )
 
 # db_setups = [DBPEDIA_CONFIGS[1], UNIPROT_CONFIGS[1], BTO_CONFIGS[1]]
-db_setups = [BTO_CONFIGS[1]]
+db_setups = [DNB_CONFIGS[0]]
 if __name__ == "__main__":
     print("Starting")
     # %%

@@ -55,7 +55,7 @@ llama-cpp-python = [
     { index = "llama-gpu", marker = "platform_system == 'Linux'" },
 ]
 llama-cpp-agent = [
-    { git = "https://github.com/Dakantz/llama-cpp-agent.git", branch = "fix-gbnf-generation-trailing-bracket" },
+    { git = "https://github.com/Dakantz/llama-cpp-agent.git", branch = "add-literal-support" },
 ]
 
 
