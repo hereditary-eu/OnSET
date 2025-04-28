@@ -15,7 +15,7 @@
 
             <div class="input_step">
                 <h3>...pick a relation to start with...</h3>
-                <NodeLinkSelector :query="{ topic_ids: selected_topic_ids }" @select="selected_root"></NodeLinkSelector>
+                <!-- <NodeLinkSelector :query="{ topic_ids: selected_topic_ids }" @select="selected_root"></NodeLinkSelector> -->
             </div>
         </div>
         <div v-else>
@@ -55,6 +55,12 @@
                 Query
             </OnsetBtn>
             <pre v-if="ui_state.show_query" v-html="query_string_html" />
+        </div>
+        <div>
+
+            <OnsetBtn @click="ui_state.colour_blind = !ui_state.colour_blind">
+                <v-icon icon="mdi-eye-off" /> Red-Green Colourblindness Mode
+            </OnsetBtn>
         </div>
     </div>
 </template>
@@ -105,6 +111,7 @@ const ui_state = reactive({
     query_mode: QueryMode.FUZZY,
     diff: null as NodeLinkRepositoryDiff | null,
     diff_active: false,
+    colour_blind: false,
 })
 const store = ref(null as NodeLinkRepository | null)
 const old_store = ref(null as NodeLinkRepository | null)
@@ -224,6 +231,8 @@ const submit_assistant = () => {
                         new_link.from_internal_id = op_link.from_internal_id
                         new_link.to_internal_id = op_link.to_internal_id
                         store.value.links.push(new_link)
+                        store.value.to(new_link).x = store.value.from(new_link).x + store.value.from(new_link).width + 100
+                        store.value.to(new_link).y = store.value.from(new_link).y
                         break
                 }
             }
@@ -250,6 +259,28 @@ const loadState = () => {
     console.log('Loaded store', store.value)
 }
 
+const colour_config = computed(() => {
+    if (ui_state.colour_blind) {
+        return {
+            node_normal: '#ccc',
+            node_added: 'rgb(51,114,237)',
+            node_removed: 'rgb(248,212,150)',
+            node_changed: 'rgb(232,224,253)',
+            node_added_light: 'rgba(51,114,237,0.506)',
+            node_removed_light: 'rgba(248,212,150,0.506)',
+        }
+    } else {
+        return {
+            node_normal: '#ccc',
+            node_added: 'var(--vt-c-green-strong)',
+            node_removed: '#f26c6c',
+            node_changed: '#bbd8ff',
+            node_added_light: 'rgba(228, 119, 119, 0.506)',
+            node_removed_light: 'rgba(109, 209, 109, 0.506)',
+        }
+    }
+})
+
 </script>
 <style lang="scss" scoped>
 .query_build_view {
@@ -259,7 +290,7 @@ const loadState = () => {
     flex-direction: row;
     width: 100%;
     overflow: auto;
-    height: 50vh;
+    height: 60vh;
 
     pre {
         width: 25%;
@@ -308,5 +339,33 @@ const loadState = () => {
     height: 2.8rem;
     background-color: #8fa88f;
     margin: 0 10px;
+}
+
+
+:deep(.node_normal) {
+    fill: v-bind('colour_config.node_normal');
+}
+
+:deep(.node_added) {
+    fill: v-bind('colour_config.node_added');
+    stroke-dasharray: 10, 2, 10, 2;
+}
+
+:deep(.node_removed) {
+    fill: v-bind('colour_config.node_removed');
+    stroke-dasharray: 10, 4, 10, 4;
+}
+
+:deep(.node_changed) {
+    fill: v-bind('colour_config.node_changed');
+    stroke-dasharray: 10, 1, 10, 1;
+}
+
+:deep(.result_instance_right) {
+    background-color: v-bind('colour_config.node_added_light');
+}
+
+:deep(.result_instance_left) {
+    background-color: v-bind('colour_config.node_removed_light');
 }
 </style>

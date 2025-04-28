@@ -13,3 +13,21 @@ export function debounce<F extends (...args: []) => void, T>(func: F, wait: numb
         if (callNow) func.apply(context, args);
     } as F;
 }
+export function getMax(arr) {
+    let len = arr.length;
+    let max = -Infinity;
+
+    while (len--) {
+        max = arr[len] > max ? arr[len] : max;
+    }
+    return max;
+}
+export function getMin(arr) {
+    let len = arr.length;
+    let min = Infinity;
+
+    while (len--) {
+        min = arr[len] < min ? arr[len] : min;
+    }
+    return min;
+}

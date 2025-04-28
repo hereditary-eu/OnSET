@@ -1,3 +1,4 @@
+import { getMax, getMin } from "../helpers";
 import type { QueryProp } from "../sparql/representation";
 import type { PlotCacheEntry } from "./plot-cache";
 import { BucketSpecifier, ChartMode, ContinuousBucketSpecifier, DiscreteBucketSpecifier, PropSpecificType, PropType, type AnalyzedProp } from "./plot-types";
@@ -28,8 +29,8 @@ export function bucketizeData(props: AnalyzedProp[], n_buckets = 20) {
                     default:
                         break
                 }
-                let min = Math.min(...continous_data)
-                let max = Math.max(...continous_data)
+                let min = getMin(continous_data)
+                let max = getMax(continous_data)
                 let step = (max - min) / n_buckets
                 for (let i = 0; i < n_buckets; i++) {
                     let lower = min + i * step
@@ -130,6 +131,7 @@ export function buildChartTraces(analyzed_props: AnalyzedProp[], result_set: Rec
 
 
             chart_options = {
+                height: 600,
                 title: {
                     text: prop.prop.link.label
                 },
@@ -137,7 +139,8 @@ export function buildChartTraces(analyzed_props: AnalyzedProp[], result_set: Rec
 
                     title: {
                         text: prop.prop.link.label
-                    }
+                    },
+                    automargin: true,
                 },
                 yaxis: {
                     title: {
@@ -163,7 +166,8 @@ export function buildChartTraces(analyzed_props: AnalyzedProp[], result_set: Rec
                     xaxis: {
                         title: {
                             text: continous_props[0].prop.link.label
-                        }
+                        },
+                        automargin: true,
                     },
                     yaxis: {
                         title: {
@@ -251,7 +255,7 @@ export function combineTraces(caches: PlotCacheEntry[]) {
         for (let cache of caches) {
             let prop_data_cache = cache.analyzed_props.find((p) => p.query_id == prop.query_id)
             if (prop_data_cache) {
-                prop_data.push(...prop_data_cache.prop_data)
+                prop_data = prop_data.concat(prop_data_cache.prop_data)
             }
         }
         return {
@@ -259,6 +263,7 @@ export function combineTraces(caches: PlotCacheEntry[]) {
             prop_data: prop_data
         }
     })
+    console.log('Combined props', combined_props)
     let traces = [] as Plotly.PlotData[]
     let chart_mode = caches[0].chart_mode
     let chart_options = caches[0].chart_options

@@ -61,6 +61,8 @@ import OnsetBtn from '@/components/ui/OnsetBtn.vue';
 import { MixedResponse, type NodeLinkRepository } from '@/utils/sparql/store';
 import GraphView from '../GraphView.vue';
 import { jsonClone } from '@/utils/parsing';
+import { debounce } from '@/utils/helpers';
+import { de } from 'vuetify/locale';
 
 const emit = defineEmits<{
     select: [value: MixedResponse],
@@ -95,27 +97,30 @@ const editor_data = reactive({
 })
 const display = defineModel<boolean>()
 const selection_options = ref([] as MixedResponse<SubjectNode>[])
+const debounced_search = debounce(() => {
+    (async () => {
+        selection_options.value = []
+        editor_data.offset = 0
+        editor_data.reached_end = false
+        console.log('fetching selection options', selection_event, 'offset', editor_data.offset)
+        switch (selection_event.side) {
+            case NodeSide.PROP:
+                editor_data.select_width = NODE_WIDTH
+                break
+            default:
+                editor_data.select_width = LINK_WIDTH + NODE_WIDTH
+                break
+        }
+        await loadMore()
+    })().catch((e) => {
+        console.error('Error fetching selection options', e)
+        editor_data.loading = false
+    })
+}, 300, true)
 const update_selection_options = async () => {
     console.log('Node changed!', selection_event, display)
     if (display) {
-        (async () => {
-            selection_options.value = []
-            editor_data.offset = 0
-            editor_data.reached_end = false
-            console.log('fetching selection options', selection_event, 'offset', editor_data.offset)
-            switch (selection_event.side) {
-                case NodeSide.PROP:
-                    editor_data.select_width = NODE_WIDTH
-                    break
-                default:
-                    editor_data.select_width = LINK_WIDTH + NODE_WIDTH
-                    break
-            }
-            await loadMore()
-        })().catch((e) => {
-            console.error('Error fetching selection options', e)
-            editor_data.loading = false
-        })
+        debounced_search()
     } else {
         selection_options.value = []
     }

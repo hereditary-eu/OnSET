@@ -122,13 +122,6 @@ const miniatureClass = computed(() => {
     height: 100%;
 }
 
-.result_instance_right {
-    background-color: rgba(228, 119, 119, 0.506);
-}
-
-.result_instance_left {
-    background-color: rgba(109, 209, 109, 0.188);
-}
 
 .result_interact_svg {
     width: 100%;

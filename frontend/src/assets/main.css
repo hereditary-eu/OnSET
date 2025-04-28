@@ -49,22 +49,3 @@ nav a {
 nav a:first-of-type {
   border: 0;
 }
-
-.node_normal {
-  fill: #ccc;
-}
-
-.node_added {
-  fill: var(--vt-c-green-strong);
-  stroke-dasharray: 10, 2, 10, 2;
-}
-
-.node_removed {
-  fill: #f26c6c;
-  stroke-dasharray: 10, 4, 10, 4;
-}
-
-.node_changed {
-  fill: #bbd8ff;
-  stroke-dasharray: 10, 1, 10, 1;
-}
