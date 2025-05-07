@@ -285,7 +285,8 @@ class LLMQuery(Initationatable):
                     limit=example_limit,
                     type=RETURN_TYPE.LINK,
                     relation_type=RELATION_TYPE.INSTANCE,
-                )
+                    include_thing=False,
+                ),
             )
             relation_candidates.extend(
                 [
@@ -307,6 +308,7 @@ class LLMQuery(Initationatable):
                     limit=example_limit,
                     type=RETURN_TYPE.SUBJECT,
                     relation_type=RELATION_TYPE.INSTANCE,
+                    include_thing=False,
                 )
             )
             candidates = [
@@ -328,6 +330,7 @@ class LLMQuery(Initationatable):
                         from_id=candidate_ids,
                         type=RETURN_TYPE.LINK,
                         relation_type=RELATION_TYPE.PROPERTY,
+                        include_thing=False,
                     )
                 )
                 constraint_candidates.extend(
@@ -507,7 +510,9 @@ class LLMQuery(Initationatable):
         k_s = rs.randint(k_min, k_max, n_queries)
         queries: list[tuple[str, EnrichedEntitiesRelations]] = []
         for i, k in enumerate(tqdm.tqdm(k_s)):
-            query_graph = choose_graph(k, guidance_man=self.guidance_man, seed=i, top_k=10)
+            query_graph = choose_graph(
+                k, guidance_man=self.guidance_man, seed=i, top_k=10
+            )
             query_graph_reduced = reduce_erl(query_graph)
             query_response = self.guidance_man.llama_model.create_chat_completion(
                 # grammar=self.grammar_erl,

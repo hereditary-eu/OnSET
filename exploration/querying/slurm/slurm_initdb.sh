@@ -2,15 +2,13 @@
 #SBATCH --job-name=onset_initdb
 #SBATCH -c 3
 #SBATCH --mem 8G
-# #SBATCH -a 0-2
+#SBATCH -a 0-3%1
 #SBATCH --account=bkantz
-#SBATCH --output=test_gpu_%A_%a.out
-#SBATCH --error=test_gpu_%A_%a.err
+#SBATCH --output=logs/init_%A_%a.out
+#SBATCH --error=logs/init_%A_%a.err
 
 cd ..
 source ../../backend/.venv/bin/activate
 
-datasets=("dbpedia" "bto" "uniprot")
-selected_dataset=${datasets[$SLURM_ARRAY_TASK_ID]}
-
-python init-db.py
+echo "Running init-db for dataset $SLURM_ARRAY_TASK_ID"
+python init-db.py --dataset "$SLURM_ARRAY_TASK_ID"
