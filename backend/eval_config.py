@@ -15,9 +15,15 @@ class EvalConfig(BaseModel):
     sparql_endpoint: str = Field("http://localhost:7012")
     name: str = "DBpedia"  # DBpedia or OMA
     selection_distribution: SelectionDistribution = SelectionDistribution.INSTANCES
+    model_quant: str = "*.Q8_0.gguf"
 
 
 DBPEDIA_CONFIGS = [
+    EvalConfig(
+        model_id="unsloth/Mistral-Small-3.1-24B-Instruct-2503-GGUF",
+        model_quant="*-Q6_K.gguf",
+        name="DBpedia Mistral",
+    ),
     EvalConfig(
         model_id="NousResearch/Hermes-3-Llama-3.1-8B-GGUF",
     ),
@@ -27,6 +33,14 @@ DBPEDIA_CONFIGS = [
     ),
 ]
 OMA_CONFIGS = [
+    EvalConfig(
+        model_id="unsloth/Mistral-Small-3.1-24B-Instruct-2503-GGUF",
+        model_quant="*-Q6_K.gguf",
+        conn_str="postgresql+psycopg://postgres:postgres@localhost:5434/onset-uniprot",
+        sparql_endpoint="http://localhost:7013",
+        name="OMA",
+        selection_distribution=SelectionDistribution.UNIFORM,
+    ),
     EvalConfig(
         model_id="NousResearch/Hermes-3-Llama-3.1-8B-GGUF",
         conn_str="postgresql+psycopg://postgres:postgres@localhost:5434/onset-uniprot",
@@ -45,6 +59,14 @@ OMA_CONFIGS = [
 
 UNIPROT_CONFIGS = [
     EvalConfig(
+        model_id="unsloth/Mistral-Small-3.1-24B-Instruct-2503-GGUF",
+        model_quant="*-Q6_K.gguf",
+        conn_str="postgresql+psycopg://postgres:postgres@localhost:5434/onset-uniprot",
+        sparql_endpoint="http://localhost:7014",
+        name="UniProt",
+        selection_distribution=SelectionDistribution.UNIFORM,
+    ),
+    EvalConfig(
         model_id="NousResearch/Hermes-3-Llama-3.1-8B-GGUF",
         conn_str="postgresql+psycopg://postgres:postgres@localhost:5434/onset-uniprot",
         sparql_endpoint="http://localhost:7014",
@@ -61,6 +83,14 @@ UNIPROT_CONFIGS = [
 ]
 
 BTO_CONFIGS = [
+    EvalConfig(
+        model_id="unsloth/Mistral-Small-3.1-24B-Instruct-2503-GGUF",
+        model_quant="*-Q6_K.gguf",
+        conn_str="postgresql+psycopg://postgres:postgres@localhost:5434/onset-bto",
+        sparql_endpoint="http://localhost:7015",
+        name="BTO",
+        selection_distribution=SelectionDistribution.UNIFORM,
+    ),
     EvalConfig(
         model_id="NousResearch/Hermes-3-Llama-3.1-8B-GGUF",
         conn_str="postgresql+psycopg://postgres:postgres@localhost:5434/onset-bto",

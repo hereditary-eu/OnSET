@@ -36,6 +36,7 @@ class GuidanceManager:
         device=None,
         conn_str: str = "postgresql+psycopg://postgres:postgres@localhost:5434/onset",
         llm_model_id: str = "NousResearch/Hermes-3-Llama-3.1-8B-GGUF",
+        llm_quant_model: str = "*.Q8_0.gguf",
         langchain_model: LLM = None,
         ctx_size=10000,
     ) -> None:
@@ -52,6 +53,7 @@ class GuidanceManager:
         # They are defined in `config_sentence_transformers.json`
         self.query_prompt_name = "s2p_query"
         self.llm_model_id = llm_model_id
+        self.llm_quant_model = llm_quant_model
         self.langchain_model = langchain_model
         self.ctx_size = ctx_size
         self.engine = create_engine(conn_str)
@@ -82,7 +84,7 @@ class GuidanceManager:
         elif self.llm_model_id is not None:
             self.__lama_model = Llama.from_pretrained(
                 repo_id=self.llm_model_id,
-                filename="*.Q8_0.gguf",
+                filename=self.llm_quant_model,
                 n_batch=2048,
                 n_ubatch=512,
                 n_ctx=self.ctx_size,

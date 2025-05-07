@@ -14,8 +14,8 @@ import networkx as nx
 from rdflib.plugins.stores.sparqlstore import SPARQLStore
 
 from backend.ontology import OntologyManager, OntologyConfig, Graph
-from backend.explorative_support import GuidanceManager
-from backend.llm_query import (
+from backend.explorative.explorative_support import GuidanceManager
+from backend.explorative.llm_query import (
     EnrichedEntitiesRelations,
     LLMQuery,
     QueryProgress,
@@ -74,6 +74,7 @@ topic_man = GuidanceManager(
     llm_model_id=setup.model_id,
     ctx_size=6000,
     conn_str=setup.conn_str,
+    llm_quant_model=setup.model_quant,
 )
 
 query_man = LLMQuery(topic_man)

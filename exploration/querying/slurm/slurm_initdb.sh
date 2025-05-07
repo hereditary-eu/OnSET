@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=run_eval
+#SBATCH --job-name=onset_initdb
 #SBATCH -c 3
 #SBATCH --mem 8G
 # #SBATCH -a 0-2
