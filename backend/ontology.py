@@ -1,6 +1,14 @@
 from pydantic import BaseModel, Field
 from rdflib import Graph, URIRef, Literal
-from model import Instance, InstanceQuery, Property, PropertyValue, Subject
+from model import (
+    GeneralizationQuery,
+    Instance,
+    InstanceQuery,
+    Property,
+    PropertyValue,
+    Subject,
+    SubjectLink,
+)
 import pandas as pd
 from rdflib.plugins.sparql import prepareQuery
 from tqdm import tqdm
@@ -127,7 +135,7 @@ class OntologyManager:
         ]
         return onto_classes
 
-    def get_classes(self, cls: str, load_properties=False) -> list[Subject]:
+    def get_subclasses(self, cls: str, load_properties=False) -> list[Subject]:
         query = prepareQuery(
             queryString=self.config.sub_class_query,
             initNs={
@@ -142,6 +150,23 @@ class OntologyManager:
         onto_classes: list[Subject] = [
             self.enrich_subject(cls[0], load_properties=load_properties)
             for cls in classes
+        ]
+        return onto_classes
+
+    def get_all_subclasses(self, cls: str) -> list[Subject]:
+        query = f"""SELECT ?scls
+                    WHERE {{
+                         ?scls rdf:type owl:Class.
+                         ?scls rdfs:subClassOf* {cls}.
+                    }}
+                    """
+        classes = list(
+            self.onto.query(
+                query,
+            )
+        )
+        onto_classes: list[Subject] = [
+            self.enrich_subject(cls[0], subject_type="class") for cls in classes
         ]
         return onto_classes
 
@@ -200,6 +225,7 @@ class OntologyManager:
             label = label.value
         self.__label_cache[subject] = label
         return label
+
     def to_readable(self, cls: str | Literal | URIRef):
         if isinstance(cls, Literal):
             value = cls.title()
@@ -386,7 +412,14 @@ OPTIONAL {{?obj rdfs:label ?obj_lbl.}}
         # print("Enriching", col_ref)
         outgoing_edges = self.outgoing_edges_for(
             col_ref,
-            edges=["rdfs:label", "rdfs:range", "rdfs:subPropertyOf", "rdfs:subClassOf", "rdf:type"],
+            edges=[
+                "rdfs:label",
+                "rdfs:range",
+                "rdfs:domain",
+                "rdfs:subPropertyOf",
+                "rdfs:subClassOf",
+                "rdf:type",
+            ],
         )
         label_prop: Property = outgoing_edges.get(
             "rdfs:label",
@@ -417,7 +450,7 @@ OPTIONAL {{?obj rdfs:label ?obj_lbl.}}
             if d <= 0:
                 return []
             try:
-                subclasses = self.get_classes(cls.subject_id, load_properties=True)
+                subclasses = self.get_subclasses(cls.subject_id, load_properties=True)
                 cls.descendants["subClass"] = [
                     enrich_descendants(subcls, d=d - 1) for subcls in subclasses
                 ]
@@ -449,9 +482,11 @@ OPTIONAL {{?obj rdfs:label ?obj_lbl.}}
         )[0][0].value
 
     def property_count(self, cls: str):
-        return list(self.onto.query(
-            f"SELECT DISTINCT (COUNT(?s) as ?count) WHERE {{?s {cls} ?o}}"
-        ))[0][0].value
+        return list(
+            self.onto.query(
+                f"SELECT DISTINCT (COUNT(?s) as ?count) WHERE {{?s {cls} ?o}}"
+            )
+        )[0][0].value
 
     def get_parents(self, cls: str) -> list[str]:
         parents = self.q_to_df_values(
@@ -464,3 +499,60 @@ OPTIONAL {{?obj rdfs:label ?obj_lbl.}}
             f"SELECT DISTINCT ?p ?o WHERE {{ {instance_id} ?p ?o }}"
         )
         return properties.to_dict(orient="records")
+
+    def get_most_generic_classes(self, q: GeneralizationQuery):
+        """
+        Determine the most generic parent classes for a given class.
+        Strategy:
+        * Get all parent classes of the given class
+        * Find the classes linked by the in/out links
+        * Choose the highest class with at least one in/out link
+        """
+        query = f"""SELECT ?cls (count(?mid) as ?distance)
+                     WHERE {{
+                        ?cls rdf:type owl:Class.
+                        {q.cls} rdfs:subClassOf* ?mid .
+                        ?mid rdfs:subClassOf+ ?cls .
+                    }}
+                    group by ?cls ?distance 
+                    order by  DESC(?distance) 
+                    """
+        classes = list(
+            self.onto.query(
+                query,
+            )
+        )
+
+        class LinkedSubject(Subject):
+            out_links: list[SubjectLink] = Field([])
+            in_links: list[SubjectLink] = Field([])
+
+        parent_classes: list[LinkedSubject] = [
+            self.enrich_subject(cls[0], subject_type="class") for cls in classes
+        ] + [self.enrich_subject(q.cls, subject_type="class")]
+        parent_classes = [
+            LinkedSubject.model_validate(cls.model_dump()) for cls in parent_classes
+        ]
+        out_links = [
+            self.enrich_subject(link, subject_type="link").to_link()
+            for link in q.out_link_ids
+        ]
+        in_links = [
+            self.enrich_subject(link, subject_type="link").to_link()
+            for link in q.in_link_ids
+        ]
+        for parent_class in parent_classes:
+            parent_class.out_links = [
+                link
+                for link in out_links
+                if link.from_id == parent_class.subject_id
+            ]
+            parent_class.in_links = [
+                link for link in in_links if link.to_id == parent_class.subject_id
+            ]
+        for parent_class in parent_classes:
+            if len(parent_class.out_links) > 0:
+                return parent_class
+            if len(parent_class.in_links) > 0:
+                return parent_class
+        return parent_classes[0]

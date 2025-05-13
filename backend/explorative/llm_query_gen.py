@@ -4,6 +4,8 @@ import numpy as np
 import sys
 import os
 
+from model import SubjectLink
+
 sys.path.insert(0, os.path.abspath("../.."))
 sys.path.append(os.path.abspath("../../backend"))
 sys.path.append(os.path.abspath(""))
@@ -21,7 +23,6 @@ from pydantic import BaseModel, Field, create_model
 from ontology import OntologyManager, OntologyConfig, Graph
 from explorative.explorative_support import GuidanceManager, select
 from explorative.exp_model import (
-    SubjectLink,
     SubjectInDB,
     SubjectLinkDB,
 )
@@ -300,7 +301,7 @@ def choose_graph(
             ],
             relations=[
                 EnrichedRelation(
-                    link=SubjectLink.from_db(relation.link, guidance_man.oman),
+                    link=relation.link.from_db(guidance_man.oman),
                     **relation.model_dump(exclude=["link"]),
                 )
                 for relation in current_links

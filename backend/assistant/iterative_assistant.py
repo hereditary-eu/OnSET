@@ -16,7 +16,7 @@ from assistant.model import (
     DateSubQuery,
 )
 from pydantic import create_model, Field, BaseModel
-from llama_cpp.llama import Llama, LlamaGrammar
+from llama_cpp.llama import Llama, LlamaGrammar, ChatCompletionMessage
 
 from llama_cpp_agent.gbnf_grammar_generator.gbnf_grammar_from_pydantic_models import (
     generate_gbnf_grammar_from_pydantic_models,
@@ -27,9 +27,7 @@ from explorative.exp_model import (
     RELATION_TYPE,
     FuzzyQueryResult,
     SubjectLinkDB,
-    SubjectLink,
-    SubjectInDB,
-    Subject,
+    SubjectInDB
 )
 from typing import Literal
 from enum import Enum
@@ -42,6 +40,57 @@ class IterativeAssistant:
         self.SYSTEM_PROMPT = """
         You are an assistant that helps the user to explore an ontology. You are given an existing query graph structure and are tasked to extent it by adding new subjects, links and subqueries.
         """
+        self.example_graph = QueryGraph(
+            subjects=[
+                AssistantSubject(
+                    subject_id="place",
+                    internal_id="node_1",
+                    x=0.0,
+                    y=0.0,
+                ),
+                AssistantSubject(
+                    subject_id="person",
+                    internal_id="node_2",
+                    x=0.0,
+                    y=0.0,
+                ),
+            ],
+            links=[
+                AssistantLink(
+                    from_id="person",
+                    to_id="place",
+                    link_id="birthplace",
+                    from_internal_id="node_1",
+                    to_internal_id="node_2",
+                )
+            ],
+        )
+        self.few_shot_messages: list[ChatCompletionMessage] = [
+            {"role": "system", "content": self.SYSTEM_PROMPT},
+            {
+                "role": "user",
+                "content": f"""
+        {self.example_graph.model_dump_json()}
+                Add a country to the birth place.""",
+            },
+            {
+                "role": "assistant",
+                "content": Operations(
+                    operations=[
+                        Operation(
+                            operation="add",
+                            data=AssistantLink(
+                                from_id="place",
+                                to_id="country",
+                                from_internal_id="node_1",
+                                to_internal_id="node_3",
+                                link_id="country|place|country",
+                            ),
+                        )
+                    ]
+                ).model_dump_json(),
+            },
+        ]
         self.top_k = 15
         self.max_tokens = 2048
         self.temperature = 0.1
@@ -59,9 +108,7 @@ class IterativeAssistant:
                 add_inner_thoughts=False,
             )
         )
-        messages = [
-            {"role": "system", "content": self.SYSTEM_PROMPT},
-        ]
+        messages = self.few_shot_messages
         messages.append({"role": "user", "content": full_query})
         response = self.guidance.llama_model.create_chat_completion(
             grammar=grammar_constrained,
@@ -483,9 +530,7 @@ class IterativeAssistant:
         {query}
         """
 
-        messages = [
-            {"role": "system", "content": self.SYSTEM_PROMPT},
-        ]
+        messages = self.few_shot_messages
         messages.append({"role": "user", "content": full_query})
 
         response = self.guidance.llama_model.create_chat_completion(
@@ -535,7 +580,8 @@ class IterativeAssistant:
                     link: AssistantLink = op.data
                     db_link = (
                         session.query(SubjectLinkDB)
-                        .filter(SubjectLinkDB.label == link.link_id)
+                        .where(SubjectLinkDB.label == link.link_id)
+                        .where(SubjectLinkDB.to_id != None)
                         .first()
                     )
                     if db_link is not None:
@@ -580,10 +626,24 @@ class IterativeAssistant:
                                     )
                                 )
                 elif op.data.type == "link":
+                    link_db = (
+                        session.query(SubjectLinkDB)
+                        .filter(SubjectLinkDB.property_id == op.data.link_id)
+                        .first()
+                    )
                     subjects_to_add = [
-                        (op.data.from_id, op.data.from_internal_id),
-                        (op.data.to_id, op.data.to_internal_id),
+                        (
+                            link_db.from_id
+                            if op.data.from_id is None
+                            else op.data.from_id,
+                            op.data.from_internal_id,
+                        ),
+                        (
+                            link_db.to_id if op.data.to_id is None else op.data.to_id,
+                            op.data.to_internal_id,
+                        ),
                     ]
+
                     for subject_id, internal_id in subjects_to_add:
                         subj: AssistantSubject | None = next(
                             filter(
@@ -669,7 +729,7 @@ class IterativeAssistant:
                 )
                 if full_link is None:
                     continue
-                full_link = SubjectLink.from_db(full_link, self.guidance.oman)
+                full_link = full_link.from_db(self.guidance.oman)
                 link.from_id = full_link.from_subject.label
                 link.to_id = full_link.to_subject.label
                 link.link_id = full_link.label

@@ -17,6 +17,7 @@ from backend.ontology import OntologyManager, OntologyConfig, Graph
 from backend.explorative.explorative_support import GuidanceManager
 from backend.explorative.llm_query import (
     EnrichedEntitiesRelations,
+    EntitiesRelations,
     LLMQuery,
     QueryProgress,
 )
@@ -31,6 +32,7 @@ import glob
 from backend.eval_config import (
     DBPEDIA_CONFIGS,
     OMA_CONFIGS,
+    DNB_CONFIGS,
     UNIPROT_CONFIGS,
     BTO_CONFIGS,
     EvalConfig,
@@ -40,22 +42,23 @@ from backend.eval_config import (
 parser = argparse.ArgumentParser()
 
 
-parser.add_argument(
-    "--dataset", type=str, choices=["dbpedia", "uniprot", "bto"], default="dbpedia"
-)
-parser.add_argument("--cfg_idx", type=int, default=0)
-parser.add_argument("--zero_shot", type=bool, default=False)
-parser.add_argument("--n_samples", type=int, default=None)
-args = parser.parse_args()
-
-
 configs = {
     "dbpedia": DBPEDIA_CONFIGS,
     "uniprot": UNIPROT_CONFIGS,
     "bto": BTO_CONFIGS,
+    "dnb": DNB_CONFIGS,
 }
+parser.add_argument(
+    "--dataset", type=str, choices=list(configs.keys()), default="dbpedia"
+)
+parser.add_argument("--cfg_idx", type=int, default=-1)
+parser.add_argument("--zero_shot", action="store_true")
+parser.add_argument("--n_samples", type=int, default=None)
+args = parser.parse_args()
+
+
 setup: EvalConfig = configs[args.dataset][args.cfg_idx]
-setup_base = configs[args.dataset][0]
+setup_base = configs[args.dataset][-1]
 print("Started with args", args)
 print("Setup for", setup)
 
@@ -89,7 +92,7 @@ generated_queries["erl_loaded"] = generated_queries["erl"].apply(
 
 
 # %%
-def graph_from_erl(erl: EnrichedEntitiesRelations):
+def graph_from_erl(erl: EnrichedEntitiesRelations | EntitiesRelations):
     G = nx.DiGraph()
     for node in erl.entities:
         G.add_node(node.identifier, label=node.type)
@@ -97,7 +100,7 @@ def graph_from_erl(erl: EnrichedEntitiesRelations):
         G.add_edge(
             link.entity,
             link.target,
-            weight=link.link.instance_count,
+            weight=link.link.instance_count if hasattr(link, "link") else 1,
             label=link.relation,
         )
     return G
@@ -136,47 +139,60 @@ def run_eval(query: pd.Series, llm_query: LLMQuery):
     query = query["response"]
     progress = QueryProgress(id="0", max_steps=1, start_time="0")
     llm_query.run_query(query=query, progress=progress)
-    f1_score_ents, precision, recall = f1k(
-        [ent.type for ent in target_erl.entities],
-        [ent.type for ent in progress.enriched_relations.entities],
-    )
-    target_graph = graph_from_erl(target_erl)
-    retrieved_grah = graph_from_erl(progress.enriched_relations)
-    ged = nx.graph_edit_distance(
-        target_graph,
-        retrieved_grah,
-        edge_match=edge_match,
-        node_match=node_match,
-        timeout=20,
-    )
-    normed_ged = 1 - ged / (
-        max(len(target_graph.nodes), len(retrieved_grah.nodes))
-        + max(len(target_graph.edges), len(retrieved_grah.edges))
-    )
-
-    return {
-        "f1_score": f1_score_ents,
-        "precision": precision,
-        "recall": recall,
-        "ged": ged,
-        "normed_ged": normed_ged,
-        "response": progress.enriched_relations.model_dump_json(),
-        "model": setup.model_id,
-        "cfg_name": setup_base.name,
-        "zeroshot": args.zero_shot,
+    eval_erls: dict[str, EntitiesRelations | EnrichedEntitiesRelations] = {
+        "unconstrained": progress.relations_steps[0],
+        "final": progress.enriched_relations,
     }
+    results: list[dict, any] = []
+    for key, erl in eval_erls.items():
+        f1_score_ents, precision, recall = f1k(
+            [ent.type for ent in target_erl.entities],
+            [ent.type for ent in erl.entities],
+        )
+        target_graph = graph_from_erl(target_erl)
+        retrieved_grah = graph_from_erl(erl)
+        ged = nx.graph_edit_distance(
+            target_graph,
+            retrieved_grah,
+            edge_match=edge_match,
+            node_match=node_match,
+            timeout=20,
+        )
+        normed_ged = 1 - ged / (
+            max(len(target_graph.nodes), len(retrieved_grah.nodes))
+            + max(len(target_graph.edges), len(retrieved_grah.edges))
+        )
+
+        results.append(
+            {
+                "f1_score": f1_score_ents,
+                "precision": precision,
+                "recall": recall,
+                "ged": ged,
+                "normed_ged": normed_ged,
+                "response": erl.model_dump_json(),
+                "model": setup.model_id,
+                "cfg_name": setup_base.name,
+                "zeroshot": args.zero_shot,
+                "stage": key,
+            }
+        )
+    return results
 
 
 def run_evals(queries: pd.DataFrame, llm_query: LLMQuery):
-    results = queries.copy()
+    results = []
+
     for i, query in tqdm(queries.iterrows(), total=len(queries)):
         try:
             scores = run_eval(query, llm_query)
-            for key, value in scores.items():
-                results.loc[i, key] = value
+            for s in scores:
+                s.update(query.to_dict())
+                results.append(s)
+                # results = pd.concat([results, pd.DataFrame([s])], ignore_index=True)
         except Exception as e:
             print(e)
-    return results
+    return pd.DataFrame(results)
 
 
 if __name__ == "__main__":

@@ -26,10 +26,10 @@ DBPEDIA_CONFIGS = [
     ),
     EvalConfig(
         model_id="NousResearch/Hermes-3-Llama-3.1-8B-GGUF",
+        name="DBpedia large",
     ),
     EvalConfig(
         model_id="NousResearch/Hermes-3-Llama-3.2-3B-GGUF",
-        name="DBpedia small",
     ),
 ]
 OMA_CONFIGS = [
@@ -38,21 +38,21 @@ OMA_CONFIGS = [
         model_quant="*-Q6_K.gguf",
         conn_str="postgresql+psycopg://postgres:postgres@localhost:5434/onset-uniprot",
         sparql_endpoint="http://localhost:7013",
-        name="OMA",
+        name="OMA Mistral",
         selection_distribution=SelectionDistribution.UNIFORM,
     ),
     EvalConfig(
         model_id="NousResearch/Hermes-3-Llama-3.1-8B-GGUF",
         conn_str="postgresql+psycopg://postgres:postgres@localhost:5434/onset-uniprot",
         sparql_endpoint="http://localhost:7013",
-        name="OMA",
+        name="OMA large",
         selection_distribution=SelectionDistribution.UNIFORM,
     ),
     EvalConfig(
         model_id="NousResearch/Hermes-3-Llama-3.2-3B-GGUF",
         conn_str="postgresql+psycopg://postgres:postgres@localhost:5434/onset-uniprot",
         sparql_endpoint="http://localhost:7013",
-        name="OMA small",
+        name="OMA",
         selection_distribution=SelectionDistribution.UNIFORM,
     ),
 ]
@@ -63,21 +63,21 @@ UNIPROT_CONFIGS = [
         model_quant="*-Q6_K.gguf",
         conn_str="postgresql+psycopg://postgres:postgres@localhost:5434/onset-uniprot",
         sparql_endpoint="http://localhost:7014",
-        name="UniProt",
+        name="UniProt Mistral",
         selection_distribution=SelectionDistribution.UNIFORM,
     ),
     EvalConfig(
         model_id="NousResearch/Hermes-3-Llama-3.1-8B-GGUF",
         conn_str="postgresql+psycopg://postgres:postgres@localhost:5434/onset-uniprot",
         sparql_endpoint="http://localhost:7014",
-        name="UniProt",
+        name="UniProt large",
         selection_distribution=SelectionDistribution.UNIFORM,
     ),
     EvalConfig(
         model_id="NousResearch/Hermes-3-Llama-3.2-3B-GGUF",
         conn_str="postgresql+psycopg://postgres:postgres@localhost:5434/onset-uniprot",
         sparql_endpoint="http://localhost:7014",
-        name="UniProt small",
+        name="UniProt",
         selection_distribution=SelectionDistribution.UNIFORM,
     ),
 ]
@@ -88,37 +88,46 @@ BTO_CONFIGS = [
         model_quant="*-Q6_K.gguf",
         conn_str="postgresql+psycopg://postgres:postgres@localhost:5434/onset-bto",
         sparql_endpoint="http://localhost:7015",
-        name="BTO",
+        name="BTO  Mistral",
         selection_distribution=SelectionDistribution.UNIFORM,
     ),
     EvalConfig(
         model_id="NousResearch/Hermes-3-Llama-3.1-8B-GGUF",
         conn_str="postgresql+psycopg://postgres:postgres@localhost:5434/onset-bto",
         sparql_endpoint="http://localhost:7015",
-        name="BTO",
+        name="BTO large",
         selection_distribution=SelectionDistribution.UNIFORM,
     ),
     EvalConfig(
         model_id="NousResearch/Hermes-3-Llama-3.2-3B-GGUF",
         conn_str="postgresql+psycopg://postgres:postgres@localhost:5434/onset-bto",
         sparql_endpoint="http://localhost:7015",
-        name="BTO small",
+        name="BTO",
         selection_distribution=SelectionDistribution.UNIFORM,
     ),
 ]
 DNB_CONFIGS = [
+    
+    EvalConfig(
+        model_id="unsloth/Mistral-Small-3.1-24B-Instruct-2503-GGUF",
+        model_quant="*-Q6_K.gguf",
+        conn_str="postgresql+psycopg://postgres:postgres@localhost:5434/onset-dnb",
+        sparql_endpoint="http://localhost:7035",
+        name="DNB Mistral",
+        selection_distribution=SelectionDistribution.UNIFORM,
+    ),
     EvalConfig(
         model_id="NousResearch/Hermes-3-Llama-3.1-8B-GGUF",
         conn_str="postgresql+psycopg://postgres:postgres@localhost:5434/onset-dnb",
         sparql_endpoint="http://localhost:7035",
-        name="DNB",
+        name="DNB large",
         selection_distribution=SelectionDistribution.UNIFORM,
     ),
     EvalConfig(
         model_id="NousResearch/Hermes-3-Llama-3.2-3B-GGUF",
         conn_str="postgresql+psycopg://postgres:postgres@localhost:5434/onset-dnb",
         sparql_endpoint="http://localhost:7035",
-        name="DNB small",
+        name="DNB",
         selection_distribution=SelectionDistribution.UNIFORM,
     ),
 ]
