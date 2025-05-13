@@ -1,26 +1,35 @@
 \begin{table}
 \caption{Comparison of models for DBpedia}
 \label{tab:compare_model_DBpedia}
-\begin{tabular}{lllrr}
+\begin{tabular}{llllrr}
 \toprule
- &  &  & $F_1$ & $GED_{s}$ \\
-$k$ & Prompt Type & Version \& Size &  &  \\
+ &  &  &  & $F_1$ & $GED_{s}$ \\
+$k$ & Stage & Prompt Type & Version \& Size &  &  \\
 \midrule
-\multirow[t]{3}{*}{3} & \multirow[t]{2}{*}{one shot} &  Hermes 3 Llama 3.1 8B  & 0.82 & 0.65 \\
- &  &  Hermes 3 Llama 3.2 3B  & 0.83 & 0.59 \\
-\cline{2-5}
- & zero shot &  Hermes 3 Llama 3.2 3B  & 0.63 & 0.24 \\
-\cline{1-5} \cline{2-5}
-\multirow[t]{3}{*}{5} & \multirow[t]{2}{*}{one shot} &  Hermes 3 Llama 3.1 8B  & 0.79 & 0.54 \\
- &  &  Hermes 3 Llama 3.2 3B  & 0.76 & 0.47 \\
-\cline{2-5}
- & zero shot &  Hermes 3 Llama 3.2 3B  & 0.56 & 0.24 \\
-\cline{1-5} \cline{2-5}
-\multirow[t]{3}{*}{10} & \multirow[t]{2}{*}{one shot} &  Hermes 3 Llama 3.1 8B  & 0.73 & 0.41 \\
- &  &  Hermes 3 Llama 3.2 3B  & 0.67 & 0.36 \\
-\cline{2-5}
- & zero shot &  Hermes 3 Llama 3.2 3B  & 0.45 & 0.10 \\
-\cline{1-5} \cline{2-5}
+\multirow[t]{4}{*}{3} & \multirow[t]{2}{*}{final} & \multirow[t]{2}{*}{one shot} &  3B  & 0.83 & 0.56 \\
+ &  &  & 1 8B  & 0.82 & 0.64 \\
+\cline{2-6} \cline{3-6}
+ & \multirow[t]{2}{*}{unconstrained} & \multirow[t]{2}{*}{one shot} &  3B  & 0.80 & 0.49 \\
+ &  &  & 1 8B  & 0.78 & 0.45 \\
+\cline{1-6} \cline{2-6} \cline{3-6}
+\multirow[t]{4}{*}{5} & \multirow[t]{2}{*}{final} & \multirow[t]{2}{*}{one shot} &  3B  & 0.77 & 0.47 \\
+ &  &  & 1 8B  & 0.79 & 0.55 \\
+\cline{2-6} \cline{3-6}
+ & \multirow[t]{2}{*}{unconstrained} & \multirow[t]{2}{*}{one shot} &  3B  & 0.74 & 0.39 \\
+ &  &  & 1 8B  & 0.73 & 0.37 \\
+\cline{1-6} \cline{2-6} \cline{3-6}
+\multirow[t]{4}{*}{7} & \multirow[t]{2}{*}{final} & \multirow[t]{2}{*}{one shot} &  3B  & 0.73 & 0.43 \\
+ &  &  & 1 8B  & 0.77 & 0.50 \\
+\cline{2-6} \cline{3-6}
+ & \multirow[t]{2}{*}{unconstrained} & \multirow[t]{2}{*}{one shot} &  3B  & 0.74 & 0.37 \\
+ &  &  & 1 8B  & 0.71 & 0.33 \\
+\cline{1-6} \cline{2-6} \cline{3-6}
+\multirow[t]{4}{*}{10} & \multirow[t]{2}{*}{final} & \multirow[t]{2}{*}{one shot} &  3B  & 0.65 & 0.13 \\
+ &  &  & 1 8B  & 0.73 & 0.27 \\
+\cline{2-6} \cline{3-6}
+ & \multirow[t]{2}{*}{unconstrained} & \multirow[t]{2}{*}{one shot} &  3B  & 0.65 & 0.17 \\
+ &  &  & 1 8B  & 0.58 & 0.18 \\
+\cline{1-6} \cline{2-6} \cline{3-6}
 \bottomrule
 \end{tabular}
 \end{table}

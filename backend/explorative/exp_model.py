@@ -4,10 +4,10 @@ from sqlalchemy.orm import relationship, DeclarativeBase, Mapped, mapped_column
 
 from pydantic import Field, BaseModel
 
-from model import Subject
-from ontology import OntologyManager
+from model import Subject, SubjectLink
 from pgvector.sqlalchemy import Vector
 from enum import Enum
+from ontology import OntologyManager
 
 
 class BasePostgres(DeclarativeBase):
@@ -164,6 +164,9 @@ class SubjectInDB(BasePostgres):
         "GraphEntityDB", back_populates="subject"
     )
 
+    def from_db(self, oman: OntologyManager):
+        return oman.enrich_subject(self.subject_id)
+
 
 class SubjectLinkDB(BasePostgres):
     __tablename__ = "subject_links"
@@ -205,38 +208,20 @@ class SubjectLinkDB(BasePostgres):
         "GraphLinkDB", back_populates="subject_link"
     )
 
-
-class SubjectLink(BaseModel):
-    link_id: int
-    label: str | None
-
-    from_id: str | None
-    link_type: str
-    to_id: str | None
-    to_proptype: str | None
-
-    property_id: str | None
-
-    from_subject: Subject | None
-    to_subject: Subject | None
-
-    instance_count: int = 0
-
-    @classmethod
-    def from_db(self, link: SubjectLinkDB, oman: OntologyManager):
+    def from_db(self, oman: OntologyManager):
         return SubjectLink(
-            label=link.label,
-            link_id=link.link_id,
-            from_id=link.from_id,
-            link_type=link.link_type,
-            to_id=link.to_id,
-            to_proptype=link.to_proptype,
-            property_id=link.property_id,
-            from_subject=oman.enrich_subject(link.from_id),
+            label=self.label,
+            link_id=self.link_id,
+            from_id=self.from_id,
+            link_type=self.link_type,
+            to_id=self.to_id,
+            to_proptype=self.to_proptype,
+            property_id=self.property_id,
+            from_subject=oman.enrich_subject(self.from_id),
             to_subject=(
-                oman.enrich_subject(link.to_id) if link.to_id is not None else None
+                oman.enrich_subject(self.to_id) if self.to_id is not None else None
             ),
-            instance_count=link.instance_count,
+            instance_count=self.instance_count,
         )
 
 

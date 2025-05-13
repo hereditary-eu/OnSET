@@ -27,9 +27,7 @@ from explorative.exp_model import (
     RELATION_TYPE,
     FuzzyQueryResult,
     SubjectLinkDB,
-    SubjectLink,
-    SubjectInDB,
-    Subject,
+    SubjectInDB
 )
 from typing import Literal
 from enum import Enum
@@ -731,7 +729,7 @@ class IterativeAssistant:
                 )
                 if full_link is None:
                     continue
-                full_link = SubjectLink.from_db(full_link, self.guidance.oman)
+                full_link = full_link.from_db(self.guidance.oman)
                 link.from_id = full_link.from_subject.label
                 link.to_id = full_link.to_subject.label
                 link.link_id = full_link.label

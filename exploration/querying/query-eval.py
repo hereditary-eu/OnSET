@@ -42,21 +42,21 @@ from backend.eval_config import (
 parser = argparse.ArgumentParser()
 
 
-parser.add_argument(
-    "--dataset", type=str, choices=["dbpedia", "uniprot", "bto"], default="dbpedia"
-)
-parser.add_argument("--cfg_idx", type=int, default=-1)
-parser.add_argument("--zero_shot", type=bool, default=False)
-parser.add_argument("--n_samples", type=int, default=None)
-args = parser.parse_args()
-
-
 configs = {
     "dbpedia": DBPEDIA_CONFIGS,
     "uniprot": UNIPROT_CONFIGS,
     "bto": BTO_CONFIGS,
     "dnb": DNB_CONFIGS,
 }
+parser.add_argument(
+    "--dataset", type=str, choices=list(configs.keys()), default="dbpedia"
+)
+parser.add_argument("--cfg_idx", type=int, default=-1)
+parser.add_argument("--zero_shot", action="store_true")
+parser.add_argument("--n_samples", type=int, default=None)
+args = parser.parse_args()
+
+
 setup: EvalConfig = configs[args.dataset][args.cfg_idx]
 setup_base = configs[args.dataset][-1]
 print("Started with args", args)

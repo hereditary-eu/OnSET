@@ -16,7 +16,6 @@ from explorative.exp_model import (
     FuzzyQuery,
     RETURN_TYPE,
     RELATION_TYPE,
-    SubjectLink,
     SubjectLinkDB,
     SubjectInDB,
     SampledGraphDB,
@@ -24,7 +23,7 @@ from explorative.exp_model import (
     GraphEntityDB,
     BasePostgres,
 )
-from explorative.exp_model import Subject
+from explorative.exp_model import Subject, SubjectLink
 
 # has to be installed from fork until merged!
 from llama_cpp_agent.gbnf_grammar_generator.gbnf_grammar_from_pydantic_models import (
@@ -424,7 +423,7 @@ class LLMQuery(Initationatable):
                     .limit(1)
                 ).first()
                 return EnrichedRelation(
-                    link=SubjectLink.from_db(link_db[0], self.guidance_man.oman),
+                    link=link_db[0].from_db(self.guidance_man.oman),
                     **relation.model_dump(),
                 )
 
@@ -437,7 +436,7 @@ class LLMQuery(Initationatable):
                     .limit(1)
                 ).first()
                 return EnrichedConstraint(
-                    constraint=SubjectLink.from_db(link_db[0], self.guidance_man.oman),
+                    constraint=link_db[0].from_db(self.guidance_man.oman),
                     **constraint.model_dump(),
                 )
 
@@ -611,9 +610,7 @@ class LLMQuery(Initationatable):
                         entity=f"{escape_sparql_var(link.from_entity.subject.subject_id)}_{link.from_entity.entity_id}",
                         relation=link.subject_link.property_id,
                         target=f"{escape_sparql_var(link.to_entity.subject.subject_id)}_{link.to_entity.entity_id}",
-                        link=SubjectLink.from_db(
-                            link.subject_link, self.guidance_man.oman
-                        ),
+                        link=link.subject_link.from_db(self.guidance_man.oman),
                     )
                     query_graph.relations.append(enriched_relation)
                 examples.append(query_graph)

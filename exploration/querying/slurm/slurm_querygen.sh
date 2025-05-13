@@ -11,4 +11,4 @@ cd ..
 source ../../backend/.venv/bin/activate
 
 echo "Running query generator for dataset $SLURM_ARRAY_TASK_ID"
-python query-gen.py --dataset "$SLURM_ARRAY_TASK_ID"
+python querygen.py --dataset "$SLURM_ARRAY_TASK_ID"

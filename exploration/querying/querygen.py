@@ -16,7 +16,7 @@ from typing import TypeVar
 from sqlalchemy.orm import aliased
 from sqlalchemy.sql import text
 from rdflib.plugins.stores.sparqlstore import SPARQLStore
-from backend.model import Session, Subject
+from backend.model import Session, Subject, SubjectLink
 
 from backend.ontology import OntologyManager, OntologyConfig, Graph
 from backend.explorative.explorative_support import GuidanceManager, select
@@ -27,7 +27,6 @@ from backend.explorative.llm_query import (
     EnrichedEntity,
     EnrichedRelation,
     EnrichedEntitiesRelations,
-    SubjectLink,
     SubjectInDB,
     SubjectLinkDB,
 )
@@ -249,7 +248,7 @@ def choose_graph(
             ],
             relations=[
                 EnrichedRelation(
-                    link=SubjectLink.from_db(relation.link, topic_man.oman),
+                    link=relation.link.from_db(topic_man.oman),
                     **relation.model_dump(exclude=["link"]),
                 )
                 for relation in current_links

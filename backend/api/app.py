@@ -4,14 +4,20 @@ from fastapi.middleware.cors import CORSMiddleware
 from typing import Any
 from rdflib.plugins.stores.sparqlstore import SPARQLStore
 
-from model import Subject, SparseOutLinks, Instance, Property
+from model import (
+    Subject,
+    SubjectLink,
+    SparseOutLinks,
+    Instance,
+    Property,
+    GeneralizationQuery,
+)
 from ontology import OntologyManager, OntologyConfig, Graph, InstanceQuery
 from datasetmatcher import DatasetManager
 from explorative.explorative_support import GuidanceManager
 from explorative.exp_model import (
     SparqlQuery,
     Topic,
-    SubjectLink,
     SubjectLinkDB,
     FuzzyQuery,
     FuzzyQueryResults,
@@ -23,7 +29,8 @@ from assistant.model import QueryGraph, Operations
 from assistant.iterative_assistant import IterativeAssistant
 from redis_cache import RedisCache
 from sqlalchemy.orm import Session
-db_config = DBPEDIA_CONFIGS[0]
+
+db_config = DBPEDIA_CONFIGS[1]
 # db_config = BTO_CONFIGS[1]
 
 base_path = "../data"
@@ -83,7 +90,6 @@ initatior.register(llm_query)
 iterative_assistant = IterativeAssistant(guidance=guidance_man)
 
 
-
 assistant_cache = RedisCache(
     redis_url="redis://localhost:6379/1",
     model=Operations,
@@ -140,7 +146,19 @@ def get_root_classes() -> list[Subject]:
 
 @app.get("/classes/subclasses")
 def get_class(cls: str = Query()) -> list[Subject]:
-    return ontology_manager.get_classes(cls)
+    return ontology_manager.get_subclasses(cls)
+
+
+@app.post("/classes/subclasses/search")
+def get_class_search(q: FuzzyQuery = Body(FuzzyQuery())) -> FuzzyQueryResults:
+    return guidance_man.search_subclasses(q)
+
+
+@app.post("/classes/parents/most_generic")
+def get_most_generics(
+    q: GeneralizationQuery = Body(GeneralizationQuery()),
+) -> Subject:
+    return ontology_manager.get_most_generic_classes(q)
 
 
 @app.get("/classes/instances")
@@ -183,15 +201,19 @@ def get_link(
     link_id: str = Query(),
 ) -> SubjectLink | None:
     with Session(guidance_man.engine) as session:
-        link = session.query(SubjectLinkDB).filter(SubjectLinkDB.property_id == link_id).first()
+        link = (
+            session.query(SubjectLinkDB)
+            .filter(SubjectLinkDB.property_id == link_id)
+            .first()
+        )
         if link is None:
             return None
-        return SubjectLink.from_db(link, ontology_manager)
+        return link.from_db(oman=ontology_manager)
 
 
 @app.post("/classes/search")
 def search_classes(
-    q: FuzzyQuery = Body("working field of person"),
+    q: FuzzyQuery = Body(FuzzyQuery()),
 ) -> FuzzyQueryResults:
     return guidance_man.search_fuzzy(q)
 
@@ -223,8 +245,6 @@ def get_llm_results_running(
 @app.get("/classes/search/llm/examples")
 def get_llm_examples() -> list[EnrichedEntitiesRelations]:
     return llm_query.get_examples()
-
-
 
 
 @app.post("/classes/search/assistant")

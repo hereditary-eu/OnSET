@@ -1,23 +1,38 @@
 \begin{table}
 \caption{Comparison of query generation methods for LLama 3.1 8B on DBpedia with one shot prompts.}
 \label{tab:compare_gen_query}
-\begin{tabular}{llrr}
+\begin{tabular}{lllrr}
 \toprule
- &  & $F_1$ & $GED_{s}$ \\
-$k$ & Query Origin &  &  \\
+ &  &  & $F_1$ & $GED_{s}$ \\
+$k$ & Query Origin & Stage &  &  \\
 \midrule
-\multirow[t]{3}{*}{3} & human & 0.70 & 0.50 \\
- & llama & 0.77 & 0.56 \\
- & templated & 0.87 & 0.74 \\
-\cline{1-4}
-\multirow[t]{3}{*}{5} & human & 0.93 & 0.70 \\
- & llama & 0.73 & 0.44 \\
- & templated & 0.85 & 0.64 \\
-\cline{1-4}
-\multirow[t]{3}{*}{10} & human & 0.65 & 0.23 \\
- & llama & 0.67 & 0.29 \\
- & templated & 0.80 & 0.53 \\
-\cline{1-4}
+\multirow[t]{6}{*}{3} & \multirow[t]{2}{*}{human} & final & 0.45 & 0.40 \\
+ &  & unconstrained & 0.45 & 0.30 \\
+\cline{2-5}
+ & \multirow[t]{2}{*}{llama} & final & 0.77 & 0.54 \\
+ &  & unconstrained & 0.71 & 0.35 \\
+\cline{2-5}
+ & \multirow[t]{2}{*}{templated} & final & 0.88 & 0.74 \\
+ &  & unconstrained & 0.84 & 0.55 \\
+\cline{1-5} \cline{2-5}
+\multirow[t]{6}{*}{5} & \multirow[t]{2}{*}{human} & final & 0.83 & 0.28 \\
+ &  & unconstrained & 0.70 & 0.22 \\
+\cline{2-5}
+ & \multirow[t]{2}{*}{llama} & final & 0.74 & 0.42 \\
+ &  & unconstrained & 0.65 & 0.24 \\
+\cline{2-5}
+ & \multirow[t]{2}{*}{templated} & final & 0.83 & 0.67 \\
+ &  & unconstrained & 0.79 & 0.49 \\
+\cline{1-5} \cline{2-5}
+\multirow[t]{4}{*}{7} & \multirow[t]{2}{*}{llama} & final & 0.68 & 0.34 \\
+ &  & unconstrained & 0.61 & 0.18 \\
+\cline{2-5}
+ & \multirow[t]{2}{*}{templated} & final & 0.85 & 0.65 \\
+ &  & unconstrained & 0.80 & 0.48 \\
+\cline{1-5} \cline{2-5}
+\multirow[t]{2}{*}{10} & \multirow[t]{2}{*}{human} & final & 0.73 & 0.27 \\
+ &  & unconstrained & 0.58 & 0.18 \\
+\cline{1-5} \cline{2-5}
 \bottomrule
 \end{tabular}
 \end{table}

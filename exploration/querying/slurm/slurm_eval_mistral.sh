@@ -24,7 +24,7 @@ echo "cfg_idx: $cfg_idx"
 if [ $zeroshot -eq 1 ]
 then
     echo "Running zeroshot"
-    python query-eval.py --dataset $selected_dataset --cfg_idx $cfg_idx --zeroshot
+    python query-eval.py --dataset $selected_dataset --cfg_idx $cfg_idx --zero_shot
 else
     echo "Running normal"
     python query-eval.py --dataset $selected_dataset --cfg_idx $cfg_idx

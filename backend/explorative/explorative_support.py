@@ -10,13 +10,13 @@ from sqlalchemy.orm import Session
 from tqdm import tqdm
 import pandas as pd
 
+from model import SubjectLink
 from ontology import OntologyManager
 
 from explorative.exp_model import (
     BasePostgres,
     TopicDB,
     SubjectLinkDB,
-    SubjectLink,
     SubjectInDB,
     FuzzyQueryResult,
     FuzzyQuery,
@@ -160,7 +160,7 @@ class GuidanceManager:
                 .order_by(SubjectLinkDB.embedding.cosine_distance(query_embedding))
                 .limit(limit)
             ).all()
-            links_enriched = [SubjectLink.from_db(l[0], self.oman) for l in links]
+            links_enriched = [l[0].from_db(self.oman) for l in links]
             return FuzzyQueryResults(
                 links=links_enriched,
                 subjects=subjects_enriched,
@@ -183,39 +183,43 @@ class GuidanceManager:
                     SubjectLinkDB.embedding.cosine_distance(query_embedding)
                 )
             links = session.execute(query.limit(25)).all()
-            links_enriched = [SubjectLink.from_db(l[0], self.oman) for l in links]
+            links_enriched = [l[0].from_db(self.oman) for l in links]
             return links_enriched
+
+    def __embed_query(
+        self,
+        query: FuzzyQuery,
+        session: Session,
+    ):
+        query_embedding = None
+        if query.q is not None and len(query.q) > 0:
+            query_embedding = self.embedding_model.encode(
+                query.q, prompt_name=self.query_prompt_name
+            )
+        if query.topic_ids is not None and len(query.topic_ids) > 0:
+            topics = session.execute(
+                select(TopicDB)
+                .where(TopicDB.onto_hash == self.identifier)
+                .where(TopicDB.topic_id.in_(query.topic_ids))
+            ).all()
+            topic_embeddings = torch.tensor([topic[0].embedding for topic in topics])
+            topic_embedding = torch.mean(topic_embeddings, axis=0)
+            if query_embedding is not None:
+                query_embedding = (
+                    1 - query.mix_topic_factor
+                ) * query_embedding + query.mix_topic_factor * topic_embedding
+            else:
+                query_embedding = topic_embedding
+
+        if query.q is None and (query.topic_ids is None or len(query.topic_ids) == 0):
+            query_embedding = (
+                torch.ones(N_EMBEDDINGS) / N_EMBEDDINGS
+            )  # default to uniform
+        return query_embedding
 
     def search_fuzzy(self, query: FuzzyQuery):
         with Session(self.engine) as session:
-            query_embedding = None
-            if query.q is not None and len(query.q) > 0:
-                query_embedding = self.embedding_model.encode(
-                    query.q, prompt_name=self.query_prompt_name
-                )
-            if query.topic_ids is not None and len(query.topic_ids) > 0:
-                topics = session.execute(
-                    select(TopicDB)
-                    .where(TopicDB.onto_hash == self.identifier)
-                    .where(TopicDB.topic_id.in_(query.topic_ids))
-                ).all()
-                topic_embeddings = torch.tensor(
-                    [topic[0].embedding for topic in topics]
-                )
-                topic_embedding = torch.mean(topic_embeddings, axis=0)
-                if query_embedding is not None:
-                    query_embedding = (
-                        1 - query.mix_topic_factor
-                    ) * query_embedding + query.mix_topic_factor * topic_embedding
-                else:
-                    query_embedding = topic_embedding
-
-            if query.q is None and (
-                query.topic_ids is None or len(query.topic_ids) == 0
-            ):
-                query_embedding = (
-                    torch.ones(N_EMBEDDINGS) / N_EMBEDDINGS
-                )  # default to uniform
+            query_embedding = self.__embed_query(query, session)
 
             results: list[FuzzyQueryResult] = []
             if query.type == RETURN_TYPE.SUBJECT or query.type == RETURN_TYPE.BOTH:
@@ -289,9 +293,7 @@ class GuidanceManager:
                     query_link.offset(query.skip).limit(query.limit)
                 ).all()
 
-                links_enriched = [
-                    (SubjectLink.from_db(l[0], self.oman), l.distance) for l in links
-                ]
+                links_enriched = [(l[0].from_db(self.oman), l.distance) for l in links]
 
                 for l in links_enriched:
                     results.append(
@@ -299,6 +301,36 @@ class GuidanceManager:
                             link=l[0], score=l[1] if l[1] is not None else 0.0
                         )
                     )
-
             results = sorted(results, key=lambda x: x.score, reverse=False)
+            return FuzzyQueryResults(results=results)
+
+    def search_subclasses(self, query: FuzzyQuery):
+        with Session(self.engine) as session:
+            query_embedding = self.__embed_query(query, session)
+            results: list[FuzzyQueryResult] = []
+            subclasses = self.oman.get_all_subclasses(query.from_id)
+            # rerank by embedding
+            query = (
+                select(
+                    SubjectInDB,
+                    SubjectInDB.embedding.cosine_distance(query_embedding).label(
+                        "distance"
+                    ),
+                )
+                .where(
+                    SubjectInDB.onto_hash == self.identifier,
+                    SubjectInDB.subject_id.in_(
+                        [s.subject_id for s in subclasses],
+                    ),
+                )
+                .order_by(SubjectInDB.embedding.cosine_distance(query_embedding))
+            )
+            results = session.execute(query).all()
+            results = [
+                FuzzyQueryResult(
+                    subject=self.oman.enrich_subject(s[0].subject_id),
+                    score=s.distance if s.distance is not None else 0.0,
+                )
+                for s in results
+            ]
             return FuzzyQueryResults(results=results)

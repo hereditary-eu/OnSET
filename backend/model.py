@@ -7,7 +7,6 @@ from sqlalchemy import ForeignKey
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship, Session
 
 
-
 class Base(DeclarativeBase):
     pass
 
@@ -40,8 +39,6 @@ class Property(BaseModel):
         return ""
 
 
-    
-
 class Subject(BaseModel):
     subject_id: str
     label: str
@@ -53,7 +50,6 @@ class Subject(BaseModel):
     properties: dict[str, list[Subject]] = Field({})
     instance_count: int = 0
 
-
     def is_of_type(self, subject_id: str):
         if self.subject_id == subject_id:
             return True
@@ -64,6 +60,21 @@ class Subject(BaseModel):
                     return True
         return self.subject_id == subject_id
 
+    def to_link(self):
+        return SubjectLink(
+            link_id=-1,
+            label=self.label,
+            property_id=self.subject_id,
+            from_id=self.spos["rdfs:domain"].first_value(),
+            to_id=self.spos["rdfs:range"].first_value()
+            if self.spos.get("rdfs:range")
+            else None,
+            link_type="class",
+            to_proptype=None,
+            from_subject=None,
+            to_subject=None,
+            instance_count=self.instance_count,
+        )
 
 
 class MatchDB(Base):
@@ -155,3 +166,26 @@ class SparseOutLinks:
 
 # Subject.update_forward_refs()
 Subject.model_rebuild()
+
+
+class SubjectLink(BaseModel):
+    link_id: int
+    label: str | None
+
+    from_id: str | None
+    link_type: str
+    to_id: str | None
+    to_proptype: str | None
+
+    property_id: str | None
+
+    from_subject: Subject | None
+    to_subject: Subject | None
+
+    instance_count: int = 0
+
+
+class GeneralizationQuery(BaseModel):
+    cls: str = Field("")
+    out_link_ids: list[str] = Field([])
+    in_link_ids: list[str] = Field([])
