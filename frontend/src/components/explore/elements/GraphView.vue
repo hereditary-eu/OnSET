@@ -7,7 +7,8 @@
             <NodeComp :subject="node" :store="store" :mode="displayMode" :diff="diff"
                 @edit-point-clicked="emit('editPointClicked', $event)"
                 @prop-point-clicked="emit('propPointClicked', $event)"
-                @instance-search-clicked="emit('instanceSearchClicked', $event)" />
+                @instance-search-clicked="emit('instanceSearchClicked', $event)"
+                @type-point-clicked="emit('typePointClicked', $event)" />
         </g>
         <g v-if="diff">
             <g v-for="link in diff.diff_links.removed">
@@ -28,11 +29,12 @@ import { Link } from '@/utils/sparql/representation';
 import NodeComp from './Node.vue';
 import LinkComp from './Link.vue';
 import type { NodeLinkRepository } from '@/utils/sparql/store';
-import { DisplayMode, InstanceSelectorOpenEvent, OutlinkSelectorOpenEvent } from '@/utils/sparql/helpers';
+import { DisplayMode, InstanceSelectorOpenEvent, SelectorOpenEvent } from '@/utils/sparql/helpers';
 import type { PropertiesOpenEvent } from '@/utils/sparql/querymapper';
 import type { NodeLinkRepositoryDiff } from '@/utils/sparql/diff';
 const emit = defineEmits<{
-    editPointClicked: [value: OutlinkSelectorOpenEvent]
+    editPointClicked: [value: SelectorOpenEvent]
+    typePointClicked: [value: SelectorOpenEvent]
     propPointClicked: [value: PropertiesOpenEvent]
     instanceSearchClicked: [value: InstanceSelectorOpenEvent]
 }>()

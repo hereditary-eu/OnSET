@@ -35,7 +35,7 @@ import LinkComp from '../Link.vue';
 import NodeComp from '../Node.vue';
 import { BACKEND_URL } from '@/utils/config';
 import { Api, RELATION_TYPE, RETURN_TYPE, type Instance } from '@/api/client.ts/Api';
-import { CONSTRAINT_PADDING, InstanceSelectorOpenEvent, LINK_WIDTH, NODE_HEIGHT, NODE_WIDTH, NodeSide, OutlinkSelectorOpenEvent } from '@/utils/sparql/helpers';
+import { CONSTRAINT_PADDING, InstanceSelectorOpenEvent, LINK_WIDTH, NODE_HEIGHT, NODE_WIDTH, NodeSide } from '@/utils/sparql/helpers';
 import Loading from '@/components/ui/Loading.vue';
 import OnsetBtn from '@/components/ui/OnsetBtn.vue';
 import { readableName } from '@/utils/sparql/querymapper';

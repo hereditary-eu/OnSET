@@ -323,6 +323,11 @@ export interface FuzzyQuery {
   relation_type?: RELATION_TYPE | null;
   /** @default "score" */
   order?: FUZZY_QUERY_ORDER;
+  /**
+   * Include Thing
+   * @default true
+   */
+  include_thing?: boolean;
 }
 
 /** FuzzyQueryResult */
@@ -345,6 +350,25 @@ export interface FuzzyQueryResult {
 export interface FuzzyQueryResults {
   /** Results */
   results: FuzzyQueryResult[];
+}
+
+/** GeneralizationQuery */
+export interface GeneralizationQuery {
+  /**
+   * Cls
+   * @default ""
+   */
+  cls?: string;
+  /**
+   * Out Link Ids
+   * @default []
+   */
+  out_link_ids?: string[];
+  /**
+   * In Link Ids
+   * @default []
+   */
+  in_link_ids?: string[];
 }
 
 /** HTTPValidationError */
@@ -630,7 +654,7 @@ export interface SubjectLink {
   /** Label */
   label: string | null;
   /** From Id */
-  from_id: string;
+  from_id: string | null;
   /** Link Type */
   link_type: string;
   /** To Id */
@@ -937,6 +961,40 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         path: `/classes/subclasses`,
         method: "GET",
         query: query,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @name GetClassSearchClassesSubclassesSearchPost
+     * @summary Get Class Search
+     * @request POST:/classes/subclasses/search
+     */
+    getClassSearchClassesSubclassesSearchPost: (data: FuzzyQuery, params: RequestParams = {}) =>
+      this.request<FuzzyQueryResults, HTTPValidationError>({
+        path: `/classes/subclasses/search`,
+        method: "POST",
+        body: data,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @name GetMostGenericsClassesParentsMostGenericPost
+     * @summary Get Most Generics
+     * @request POST:/classes/parents/most_generic
+     */
+    getMostGenericsClassesParentsMostGenericPost: (data: GeneralizationQuery, params: RequestParams = {}) =>
+      this.request<Subject, HTTPValidationError>({
+        path: `/classes/parents/most_generic`,
+        method: "POST",
+        body: data,
+        type: ContentType.Json,
         format: "json",
         ...params,
       }),

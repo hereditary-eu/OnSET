@@ -1,15 +1,19 @@
 <template>
     <div class="query_builder">
         <svg class="query_build_wrapper">
-            <GraphView :store="store" :display-mode="DisplayMode.EDIT" @edit-point-clicked="clicked_outlink($event)" :diff="diff"
-                @instance-search-clicked="clicked_instance($event)"></GraphView>
-            <OutLinkSelector :selection_event="ui_state.outlink_event" v-model="ui_state.outlink_display"
-                :store="store" @hover_option="preview_link($event)">
+            <GraphView :store="store" :display-mode="DisplayMode.EDIT" :diff="diff"
+                @edit-point-clicked="clicked_outlink($event)" @instance-search-clicked="clicked_instance($event)"
+                @type-point-clicked="clicked_type($event)"></GraphView>
+            <OutLinkSelector :selection_event="ui_state.outlink_event" v-model="ui_state.outlink_display" :store="store"
+                @hover_option="preview_link($event)">
             </OutLinkSelector>
             <InstanceSelector :selection_event="ui_state.instance_event" v-model="ui_state.instance_display">
             </InstanceSelector>
+            <TypeSelector :selection_event="ui_state.type_event" v-model="ui_state.type_display" :store="store">
+            </TypeSelector>
             <use xlink:href="#outlink_selector"></use>
             <use xlink:href="#instance_selector"></use>
+            <use xlink:href="#type_selector"></use>
         </svg>
         <!-- <div id="threed_minimap">
             <Loading v-if="ui_state.loading"></Loading>
@@ -22,7 +26,7 @@ import { ref, watch, reactive, computed, onMounted, defineProps, onBeforeMount }
 import { SubjectNode, Link } from '@/utils/sparql/representation';
 import NodeComp from './elements/Node.vue';
 import OutLinkSelector from './elements/panels/OutLinkSelector.vue';
-import { DisplayMode, InstanceSelectorOpenEvent, type NodeSide, type OutlinkSelectorOpenEvent } from '@/utils/sparql/helpers';
+import { DisplayMode, InstanceSelectorOpenEvent, type NodeSide, type SelectorOpenEvent } from '@/utils/sparql/helpers';
 import InstanceSelector from './elements/panels/InstanceSelector.vue';
 import type { MixedResponse, NodeLinkRepository } from '@/utils/sparql/store';
 import GraphView from './elements/GraphView.vue';
@@ -33,6 +37,7 @@ import { BACKEND_URL } from '@/utils/config';
 import type { SubjectInCircle } from '@/utils/d3-man/CircleMan';
 import Loading from '../ui/Loading.vue';
 import type { NodeLinkRepositoryDiff } from '@/utils/sparql/diff';
+import TypeSelector from './elements/panels/TypeSelector.vue';
 
 const api = new Api({
     baseURL: BACKEND_URL
@@ -49,22 +54,28 @@ const { store } = defineProps({
 })
 const ui_state = reactive({
     outlink_display: false,
-    outlink_event: null as OutlinkSelectorOpenEvent,
+    outlink_event: null as SelectorOpenEvent,
     instance_display: false,
     instance_event: null as InstanceSelectorOpenEvent,
+    type_display: false,
+    type_event: null as SelectorOpenEvent,
     loading: false,
     query_string: ''
 })
 
 const overviewBox = new OverviewCircles('#threed_graph')
 
-const clicked_outlink = (evt: OutlinkSelectorOpenEvent) => {
+const clicked_outlink = (evt: SelectorOpenEvent) => {
     ui_state.outlink_display = true
     ui_state.outlink_event = evt
 }
 const clicked_instance = (evt: InstanceSelectorOpenEvent) => {
     ui_state.instance_display = true
     ui_state.instance_event = evt
+}
+const clicked_type = (evt: SelectorOpenEvent) => {
+    ui_state.type_display = true
+    ui_state.type_event = evt
 }
 const root_subject = ref(null as SubjectNode | null)
 watch(() => store, () => {
@@ -117,7 +128,7 @@ onMounted(() => {
 })
 const preview_link = (l: Link | null) => {
     // console.log('Preview link', l)
-    if(l){
+    if (l) {
         overviewBox.previewLink(l)
     } else {
         overviewBox.hidePreview()

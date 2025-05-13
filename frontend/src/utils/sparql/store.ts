@@ -68,6 +68,14 @@ export class NodeLinkRepository<N extends SubjectNode = SubjectNode, L extends L
         let outnodes = this.nodes.filter(node => node.internal_id === link.to_internal_id)
         return outnodes.length ? outnodes[0] : null
     }
+    node(n: N): N | null {
+        let outnodes = this.nodes.filter(node => node.internal_id === n.internal_id)
+        return outnodes.length ? outnodes[0] : null
+    }
+    link(l: Link): L | null {
+        let outlinks = this.links.filter(link => link.id === l.id)
+        return outlinks.length ? outlinks[0] : null
+    }
 
     addOutlink(link: L, origin: N, target: N, side: NodeSide) {
         if (this.nodes.filter(node => node === origin).length === 0) {

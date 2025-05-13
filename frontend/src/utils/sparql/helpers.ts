@@ -7,9 +7,10 @@ export enum NodeSide {
     TO = 'to_link',
     FROM = 'from_link',
     PROP = 'prop',
-    DETAIL = 'detail'
+    DETAIL = 'detail',
+    TYPE = 'type'
 }
-export class OutlinkSelectorOpenEvent {
+export class SelectorOpenEvent {
     node: SubjectNode;
     side: NodeSide;
 
@@ -46,7 +47,7 @@ function nodeFromEntity(entity: Entity): SubjectNode {
         ...subject_data,
         internal_id: identifier,
     })
-    mapped_node.height = NODE_HEIGHT 
+    mapped_node.height = NODE_HEIGHT
     return mapped_node
 }
 function linkFromRelation(relation: Relation, from: SubjectNode, to: SubjectNode, i = 0): Link {

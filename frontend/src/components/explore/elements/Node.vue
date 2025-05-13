@@ -41,6 +41,10 @@
                     @click="emit('editPointClicked', { side: NodeSide.TO, node: subject })"
                     class="edit_point edit_point_link">
                 </circle>
+                <circle :cx="subject.width / 2" :cy="0" :r="editor_data.editpoint_r"
+                    @click="emit('typePointClicked', { side: NodeSide.TO, node: subject })"
+                    class="edit_point edit_point_type">
+                </circle>
                 <circle :cx="subject.width" :cy="0" :r="editor_data.editpoint_r" @mouseover="hover_deletion(true)"
                     @mouseout="hover_deletion(false)" class="edit_point edit_point_delete" @click="do_deletion()">
                 </circle>
@@ -52,15 +56,16 @@
 <script setup lang="ts">
 import { ref, watch, reactive, computed, onMounted, defineProps, onBeforeUpdate, type Prop, onUpdated, onRenderTriggered } from 'vue'
 import { SubjectNode as NodeRepr, NodeState, SubQuery } from '@/utils/sparql/representation';
-import { CONSTRAINT_PADDING, CONSTRAINT_WIDTH, DisplayMode, InstanceSelectorOpenEvent, NodeSide, OutlinkSelectorOpenEvent } from '@/utils/sparql/helpers';
+import { CONSTRAINT_PADDING, CONSTRAINT_WIDTH, DisplayMode, InstanceSelectorOpenEvent, NodeSide, SelectorOpenEvent } from '@/utils/sparql/helpers';
 import Sublink from './Subquery.vue';
 import type { InstanceNode, PropertiesOpenEvent } from '@/utils/sparql/querymapper';
 import type { NodeLinkRepository } from '@/utils/sparql/store';
 import type { NodeLinkRepositoryDiff } from '@/utils/sparql/diff';
 
 const emit = defineEmits<{
-    editPointClicked: [value: OutlinkSelectorOpenEvent]
+    editPointClicked: [value: SelectorOpenEvent]
     propPointClicked: [value: PropertiesOpenEvent]
+    typePointClicked: [value: SelectorOpenEvent]
     instanceSearchClicked: [value: InstanceSelectorOpenEvent]
 }>()
 
@@ -276,5 +281,9 @@ onMounted(() => {
 
 .edit_point_link {
     fill: #c2bca0;
+}
+
+.edit_point_type {
+    fill: #6be1ff;
 }
 </style>
