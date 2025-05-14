@@ -24,19 +24,19 @@ watch(() => { graph_data.value, topics_root.value }, () => {
     circleman.initPackedCircles()
 }, { deep: true })
 onMounted(() => {
-    // circleman.clicked_node = (node: NodeType) => {
-    //     console.log('clicked_node', node)
-    //     api.classes.getLinksClassesLinksGet({
-    //         subject_id: node.subject_id
-    //     }).then(resp => {
-    //         console.log('resp', resp)
-    //         circleman.removeLinks()
-    //         const links = resp.data
-    //         for (const out of links.targets) {
-    //             circleman.addLink(links.source.subject_id, out.target.subject_id, out.count)
-    //         }
-    //     }).catch(console.error)
-    // }
+    circleman.clicked_node = (node: NodeType) => {
+        console.log('clicked_node', node)
+        api.classes.getOutlinksClassesOutlinksGet({
+            subject_id: node.subject_id
+        }).then(resp => {
+            console.log('resp', resp)
+            circleman.removeLinks()
+            const links = resp.data
+            for (const out of links.targets) {
+                circleman.addLink(links.source.subject_id, out.target.subject_id, out.count)
+            }
+        }).catch(console.error)
+    }
     (async () => {
         loading.value = true
         const resp_classes = await api.classes.getFullClassesClassesFullGet()

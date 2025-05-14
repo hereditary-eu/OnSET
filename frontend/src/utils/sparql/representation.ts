@@ -1,5 +1,5 @@
 import type { Api, FuzzyQueryResult, Instance, Property, Subject, SubjectLink } from "@/api/client.ts/Api";
-import { CONSTRAINT_HEIGHT, CONSTRAINT_WIDTH, NODE_HEIGHT, NODE_WIDTH } from "./helpers";
+import { CONSTRAINT_HEIGHT, CONSTRAINT_WIDTH, NODE_HEIGHT, NODE_WIDTH, toVar } from "./helpers";
 
 import { registerClass } from "../parsing";
 import { NodeLinkRepository } from "./store";
@@ -100,6 +100,9 @@ export class SubjectConstraint extends SubQuery {
         this.constraint_type = SubQueryType.SUBJECT
     }
     filterExpression(property: string): string {
+        if (!this.instance) {
+            return ``;
+        }
         return `${property} = "${this.instance.id}"`;
     }
     static validPropType(propType: string): boolean {
@@ -325,10 +328,10 @@ export class SubjectNode implements Subject, Diffable {
     }
 
     labelId(): string {
-        return `?lbl_${this.internal_id}`
+        return `?lbl_${toVar(this.internal_id)}`
     }
     outputId(): string {
-        return `?${this.internal_id}`
+        return `?${toVar(this.internal_id)}`
     }
 
     computeConstraintOffsets(padding: number) {
@@ -426,7 +429,7 @@ export class Link<N extends Subject = Subject> implements SubjectLink, Diffable 
     instance_count: number;
     label: string;
     outputId(): string {
-        return `?prop_${this.link_id}_${this.from_internal_id}`
+        return `?prop_${toVar(this.link_id)}_${toVar(this.from_internal_id)}`
     }
     identifier(): string {
         return `${this.from_internal_id}-${this.link_id}-${this.to_internal_id}`

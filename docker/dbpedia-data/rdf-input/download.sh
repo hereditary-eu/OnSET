@@ -298,4 +298,4 @@ rm -rf *.nt
 
 while IFS= read -r file ; do wget $file; done <<< "$files"
 
-riot --merge --output=NT ./*.ttl.bz2 ./*.nt   > ../nt/oma.nt
+riot --merge --output=NT ./*.ttl.bz2 ./*.nt   > ../nt/dbpedia.nt

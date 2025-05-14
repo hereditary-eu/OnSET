@@ -35,10 +35,13 @@ export enum DisplayMode {
     RESULT_INTERACTIVE = 'result_interactive',
 
 }
-function toVar(v: string) {
-    return v.replace(/[_ &]/, '_')
+export function toVar(v: string|number): string {
+    if (typeof v === 'number') {
+        return v.toString()
+    }
+    return v.replace(/[_ &]/g, '_')
 }
-function nodeFromEntity(entity: Entity): SubjectNode {
+export function nodeFromEntity(entity: Entity): SubjectNode {
     let subject_data = (entity as EnrichedEntity).subject ? (entity as EnrichedEntity).subject : entity
     let identifier = toVar(entity.identifier)
     let mapped_node = new SubjectNode({
@@ -50,7 +53,7 @@ function nodeFromEntity(entity: Entity): SubjectNode {
     mapped_node.height = NODE_HEIGHT
     return mapped_node
 }
-function linkFromRelation(relation: Relation, from: SubjectNode, to: SubjectNode, i = 0): Link {
+export function linkFromRelation(relation: Relation, from: SubjectNode, to: SubjectNode, i = 0): Link {
     let link_data = (relation as EnrichedRelation).link ? (relation as EnrichedRelation).link : relation
     return new Link({
         link_id: i,

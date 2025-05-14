@@ -30,8 +30,8 @@ from assistant.iterative_assistant import IterativeAssistant
 from redis_cache import RedisCache
 from sqlalchemy.orm import Session
 
-db_config = DBPEDIA_CONFIGS[1]
-# db_config = BTO_CONFIGS[1]
+# db_config = DBPEDIA_CONFIGS[1]
+db_config = BTO_CONFIGS[1]
 
 base_path = "../data"
 onto_path = f"{base_path}/hero-ontology/hereditary_clinical.ttl"
@@ -72,7 +72,7 @@ config = OntologyConfig()
 
 ontology_manager = OntologyManager(config, graph)
 dataset_manager = DatasetManager(ontology_manager)
-# dataset_manager.initialise(glob_path="data/datasets/ALS/**/*.csv")
+dataset_manager.initialise(glob_path="data/datasets/ALS/**/*.csv")
 
 # ontology_manager.load_full_graph()
 

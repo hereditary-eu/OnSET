@@ -11,8 +11,13 @@ OnSET should enable a more explorative ontology querying experience for non-expe
 
 ## Setup instruction
 
-1. Download object and instances form DBPEDIA: DBPEDIA-Data: [ontologies](https://www.dbpedia.org/resources/ontology/), this may take some time!
-2. Setup a local `qlever` instance (https://github.com/ad-freiburg/qlever-control) (the used configurations can be found in `docker/bto-data` and `docker/dbpedia-data`)
+1. Install Apache Fuseki such that you have a working `riot` command line tool (https://jena.apache.org/documentation/fuseki2/)
+2. Setup a local `qlever` instance (https://github.com/ad-freiburg/qlever-control) (the used configurations can be found in `docker/bto-data` and `docker/dbpedia-data`), you should be able to just run from the `docker/*-data`-directories:
+```bash
+qlever get-data
+qlever index
+qlever start
+```
 3. Start auxiliary DB using `cd docker/onset-data && docker-compose up -d`
 4. Backend setup:
    - install `uv` (https://docs.astral.sh/uv/getting-started/installation/)
