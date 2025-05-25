@@ -10,6 +10,7 @@ import { BACKEND_URL } from '@/utils/config';
 import { CircleMan3D } from '@/utils/three-man/CircleMan3D';
 import { HierarchicalCircleMan3D } from '@/utils/three-man/HierarchicalCircleMan3D';
 import Loading from '@/components/ui/Loading.vue';
+import ColourRing from '@/components/ui/CoulourRing.vue'
 const graph_data = ref([] as SubjectInCircle[])
 const topics_root = ref(null as Topic | null)
 const circleman = new HierarchicalCircleMan3D('.graph_wrapper')
@@ -56,6 +57,8 @@ onMounted(() => {
 </script>
 <template>
     <main>
+        <ColourRing>
+        </ColourRing>
         <Loading v-if="loading"></Loading>
         <div class="graph_wrapper"></div>
     </main>

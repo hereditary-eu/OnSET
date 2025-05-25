@@ -15,10 +15,10 @@
             <use xlink:href="#instance_selector"></use>
             <use xlink:href="#type_selector"></use>
         </svg>
-        <!-- <div id="threed_minimap">
+        <div id="threed_minimap">
             <Loading v-if="ui_state.loading"></Loading>
             <div id="threed_graph"></div>
-        </div> -->
+        </div>
     </div>
 </template>
 <script setup lang="ts">
@@ -167,11 +167,11 @@ const preview_link = (l: Link | null) => {
 
 #threed_minimap {
     aspect-ratio: 1;
-    height: 20vw;
-    width: 20vw;
+    height: 10vw;
+    width: 10vw;
     position: relative;
-    left: calc(100% - 20vw - 20px);
-    bottom: calc(5vw + 20px);
+    left: calc(100% - 10vw - 20px);
+    bottom: calc(10vw + 20px);
     // translate: calc(100%) calc(80%);
     z-index: 20;
     background-color: #ffffff;

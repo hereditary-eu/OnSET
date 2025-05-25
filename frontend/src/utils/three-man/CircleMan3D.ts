@@ -39,6 +39,53 @@ export class TopicInCircle implements Topic {
     to_position?: THREE.Vector3
 
 }
+class LabelInstance {
+    id: string
+    base_position: THREE.Vector3
+    position: THREE.Vector3
+    label_div: HTMLDivElement
+    text: string
+    shown: boolean = false
+}
+class LabelManager {
+    labels: Record<string, LabelInstance> = {}
+    register_labels(id: string, text: string, base_position: THREE.Vector3) {
+        if (this.labels[id]) {
+            this.labels[id].text = text
+            this.labels[id].base_position = base_position
+        } else {
+            this.labels[id] = new LabelInstance()
+            this.labels[id].id = id
+            this.labels[id].text = text
+            this.labels[id].base_position = base_position
+        }
+    }
+    label_container: HTMLDivElement = null
+    label_parent: HTMLDivElement = null
+    update_labels(camera: THREE.PerspectiveCamera, scene: THREE.Scene) {
+        if (!this.label_container) {
+            this.label_container = document.createElement('div')
+            this.label_container.className = 'label_container'
+            this.label_parent.appendChild(this.label_container)
+        }
+        for (let key in this.labels) {
+            const label = this.labels[key]
+            if (label.shown) {
+                continue
+            }
+            label.label_div = document.createElement('div')
+            label.label_div.className = 'label'
+            label.label_div.innerText = label.text
+            label.label_div.style.position = 'absolute'
+            label.label_div.style.transform = `translate(-50%, -50%)`
+            label.label_div.style.color = '#000000'
+            label.label_div.style.fontSize = '12px'
+            this.label_parent.appendChild(label.label_div)
+            label.shown = true
+        }
+    }
+}
+
 // 3D circle packing based upon https://observablehq.com/@analyzer2004/3d-circle-packing
 // expanded with Topic links and fixed height of nodes (TODO)
 export class CircleMan3D {
@@ -82,6 +129,12 @@ export class CircleMan3D {
     properties_by_id: Record<string, SubjectInCircle> = {}
     max_depth = 0
     node_counter = 0
+
+    private labels: Record<string, string> = {}
+
+    register_labels(id, label) {
+    }
+
     constructor(public query_renderer: string) {
 
     }
@@ -165,9 +218,9 @@ export class CircleMan3D {
         this.root.each(d => {
             const node = d.data
             const circle = new THREE.Mesh(this.pool.geometry, this.pool.materials[d.depth]);
-            node.position = new THREE.Vector3(d.x, d.depth, d.y)
+            node.position = new THREE.Vector3(d.x, d.depth * 2, d.y)
             circle.position.copy(node.position);
-            circle.scale.set(d.r, 1, d.r);
+            circle.scale.set(d.r, 2, d.r);
 
 
             const frame = new THREE.LineSegments(this.pool.edge_geometry, this.pool.line_materials[d.depth]);

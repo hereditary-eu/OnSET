@@ -30,8 +30,8 @@ from assistant.iterative_assistant import IterativeAssistant
 from redis_cache import RedisCache
 from sqlalchemy.orm import Session
 
-# db_config = DBPEDIA_CONFIGS[1]
-db_config = BTO_CONFIGS[1]
+db_config = DBPEDIA_CONFIGS[1]
+# db_config = BTO_CONFIGS[1]
 
 base_path = "../data"
 onto_path = f"{base_path}/hero-ontology/hereditary_clinical.ttl"
