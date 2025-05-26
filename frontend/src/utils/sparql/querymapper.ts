@@ -43,10 +43,18 @@ export class InstanceNode extends NodeRepr {
 }
 @registerClass
 export class InstanceLink extends Link {
+    instance_label: string = null
     instance_id: string = null
     constructor(base_link: Link = null, public instance_data: Record<string, string> = null) {
         super(base_link)
-
+        if (!base_link) {
+            this.instance_data = instance_data || {}
+        } else {
+            this.instance_data = instance_data || (base_link as InstanceLink).instance_data || {}
+        }
+        this.instance_id = this.instance_data[this.outputId().replace('?', '')]
+        // this.instance_label = this.instance_data[this.outputId().replace('?', '')]
+        this.instance_label = readableName(this.instance_id, this.label)
     }
     get id() {
         return this.link_id

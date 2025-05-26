@@ -49,7 +49,7 @@ import LinkComp from '../Link.vue';
 import NodeComp from '../Node.vue';
 import { BACKEND_URL } from '@/utils/config';
 import { Api, RELATION_TYPE, RETURN_TYPE } from '@/api/client.ts/Api';
-import { DisplayMode, LINK_WIDTH, NODE_HEIGHT, NODE_WIDTH, NodeSide, SelectorOpenEvent } from '@/utils/sparql/helpers';
+import { DisplayMode, LINK_WIDTH, NODE_HEIGHT, NODE_WIDTH, OpenEventType, SelectorOpenEvent } from '@/utils/sparql/helpers';
 import Loading from '@/components/ui/Loading.vue';
 import OnsetBtn from '@/components/ui/OnsetBtn.vue';
 import { MixedResponse, type NodeLinkRepository } from '@/utils/sparql/store';
@@ -155,8 +155,8 @@ const attachment_pt = computed(() => {
     }
 })
 const prepareTarget = (link: Link<SubjectNode>) => {
-    let target = selection_event.side == NodeSide.TO ? link.to_subject : link.from_subject
-    if (selection_event.side == NodeSide.TO) {
+    let target = selection_event.side == OpenEventType.TO ? link.to_subject : link.from_subject
+    if (selection_event.side == OpenEventType.TO) {
         target.x = selection_event.node.x + selection_event.node.width + LINK_WIDTH
     } else {
         target.x = selection_event.node.x - (target.width + LINK_WIDTH)

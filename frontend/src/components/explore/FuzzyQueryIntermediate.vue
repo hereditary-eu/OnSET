@@ -11,7 +11,7 @@
 </template>
 <script setup lang="ts">
 import type { Candidates, EnrichedEntitiesRelations, EntitiesRelations } from '@/api/client.ts/Api';
-import { DisplayMode, mapERLToStore, NODE_HEIGHT, NODE_WIDTH, NodeSide } from '@/utils/sparql/helpers';
+import { DisplayMode, mapERLToStore, NODE_HEIGHT, NODE_WIDTH, OpenEventType } from '@/utils/sparql/helpers';
 import { SubQuery, Link, SubjectNode } from '@/utils/sparql/representation';
 import { NodeLinkRepository } from '@/utils/sparql/store';
 import { compute } from 'three/webgpu';

@@ -1,16 +1,17 @@
 <template>
     <g>
-        <g :transform="`translate(${subject.x},${subject.y})`" @mouseout.capture="edit_point_hover($event, false)"
-            @mouseenter.capture="edit_point_hover($event, true)" @mouseover="edit_point_hover($event, true)">
+        <g :transform="`translate(${subject.x},${subject.y})`" @mouseout.capture="editPointHover($event, false)"
+            @mouseenter.capture="editPointHover($event, true)" @mouseover="editPointHover($event, true)">
             <rect :x="`${-7}px`" :y="`${-7}px`"
                 :width="`${subject.width + editor_data.editpoint_r * 2 + (constraint_list_mapped.length > 0 ? CONSTRAINT_WIDTH : 0)}px`"
                 :height="`${constraints_height + subject.height + editor_data.editpoint_r * 2}px`" fill-opacity="0">
 
             </rect>
             <rect :width="`${subject.width}px`" :height="`${subject.height}px`" class="node" :class="node_statestyle"
-                @mousedown="mouse_down_node" @mousemove="mouse_move_node" @mouseup="mouse_up_node"
-                @mouseleave="mouse_up_node">
+                @mousedown="mouseDownNode" @mousemove="mouseMoveNode" @mouseup="mouseUpNode"
+                @mouseleave="mouseUpNode">
             </rect>
+
             <text :x="`${subject.width / 2}px`" :y="`${subject.height / 2}px`" class=node_text>
                 {{ (mode == DisplayMode.RESULTS || mode == DisplayMode.RESULT_INTERACTIVE) ?
                     result_subject.instance_label :
@@ -32,21 +33,33 @@
             </g>
             <g v-show="mode == DisplayMode.EDIT && editor_data.show_editpoints">
                 <circle :cx="0" :cy="subject.height / 2" :r="editor_data.editpoint_r" class="edit_point edit_point_link"
-                    @click="emit('editPointClicked', { side: NodeSide.FROM, node: subject })"></circle>
+                    @click="emit('linkPointClicked', { side: OpenEventType.FROM, node: subject, evt: $event })"></circle>
+                <text :x="`${-editor_data.editpoint_r}px`" :y="`${subject.height / 2}px`"
+                    class="help_text_left">From</text>
+
                 <circle :cx="subject.width / 2" :cy="constraints_height + subject.height" :r="editor_data.editpoint_r"
                     class="edit_point edit_point_prop"
-                    @click="emit('editPointClicked', { side: NodeSide.PROP, node: subject })">
+                    @click="emit('linkPointClicked', { side: OpenEventType.PROP, node: subject, evt: $event })">
                 </circle>
+                <text :x="`${subject.width / 2}px`" :y="`${subject.height + editor_data.editpoint_r * 3}px`"
+                    class="help_text_bottom">Constraint/Property</text>
+
                 <circle :cx="subject.width" :cy="subject.height / 2" :r="editor_data.editpoint_r"
-                    @click="emit('editPointClicked', { side: NodeSide.TO, node: subject })"
+                    @click="emit('linkPointClicked', { side: OpenEventType.TO, node: subject, evt: $event })"
                     class="edit_point edit_point_link">
                 </circle>
+                <text :x="`${subject.width + editor_data.editpoint_r}px`" :y="`${subject.height / 2}px`"
+                    class="help_text_right">To</text>
+
                 <circle :cx="subject.width / 2" :cy="0" :r="editor_data.editpoint_r"
-                    @click="emit('typePointClicked', { side: NodeSide.TO, node: subject })"
+                    @click="emit('typePointClicked', { side: OpenEventType.TO, node: subject, evt: $event })"
                     class="edit_point edit_point_type">
                 </circle>
-                <circle :cx="subject.width" :cy="0" :r="editor_data.editpoint_r" @mouseover="hover_deletion(true)"
-                    @mouseout="hover_deletion(false)" class="edit_point edit_point_delete" @click="do_deletion()">
+                <text :x="`${subject.width / 2}px`" :y="`${-editor_data.editpoint_r * 3}px`"
+                    class="help_text_top">Specify</text>
+
+                <circle :cx="subject.width" :cy="0" :r="editor_data.editpoint_r" @mouseover="hoverDeletion(true)"
+                    @mouseout="hoverDeletion(false)" class="edit_point edit_point_delete" @click="doDeletion()">
                 </circle>
 
             </g>
@@ -56,14 +69,14 @@
 <script setup lang="ts">
 import { ref, watch, reactive, computed, onMounted, defineProps, onBeforeUpdate, type Prop, onUpdated, onRenderTriggered } from 'vue'
 import { SubjectNode as NodeRepr, NodeState, SubQuery } from '@/utils/sparql/representation';
-import { CONSTRAINT_PADDING, CONSTRAINT_WIDTH, DisplayMode, InstanceSelectorOpenEvent, NodeSide, SelectorOpenEvent } from '@/utils/sparql/helpers';
+import { CONSTRAINT_PADDING, CONSTRAINT_WIDTH, DisplayMode, InstanceSelectorOpenEvent, OpenEventType, SelectorOpenEvent } from '@/utils/sparql/helpers';
 import Sublink from './Subquery.vue';
 import type { InstanceNode, PropertiesOpenEvent } from '@/utils/sparql/querymapper';
 import type { NodeLinkRepository } from '@/utils/sparql/store';
 import type { NodeLinkRepositoryDiff } from '@/utils/sparql/diff';
 
 const emit = defineEmits<{
-    editPointClicked: [value: SelectorOpenEvent]
+    linkPointClicked: [value: SelectorOpenEvent]
     propPointClicked: [value: PropertiesOpenEvent]
     typePointClicked: [value: SelectorOpenEvent]
     instanceSearchClicked: [value: InstanceSelectorOpenEvent]
@@ -97,17 +110,17 @@ const editor_data = reactive({
     hover_deletion: false,
     state: NodeState.NORMAL
 })
-const mouse_down_node = (event: MouseEvent) => {
+const mouseDownNode = (event: MouseEvent) => {
     if (mode == DisplayMode.EDIT || mode == DisplayMode.RESULT_INTERACTIVE || mode == DisplayMode.EDIT_NO_ADD) {
         editor_data.mouse_down = true
         editor_data.mouse_x = event.clientX
         editor_data.mouse_y = event.clientY
     }
 }
-const mouse_up_node = (event: MouseEvent) => {
+const mouseUpNode = (event: MouseEvent) => {
     editor_data.mouse_down = false
 }
-const mouse_move_node = (event: MouseEvent) => {
+const mouseMoveNode = (event: MouseEvent) => {
     if (editor_data.mouse_down) {
         subject.x += event.clientX - editor_data.mouse_x
         subject.y += event.clientY - editor_data.mouse_y
@@ -165,13 +178,8 @@ watch(() => editor_data.hover_deletion, () => {
     if (!store) {
         return
     }
-    let subElements = store.subElements(subject)
-
     let target_state = editor_data.hover_deletion ? NodeState.DELETION_IMMINENT : NodeState.NORMAL
     subject.state = target_state
-    for (let node of subElements.nodes) {
-        node.state = target_state
-    }
 }, { deep: true })
 
 const node_statestyle = computed(() => {
@@ -221,13 +229,13 @@ const updateNodeState = () => {
     editor_data.state = NodeState.NORMAL
 }
 
-const hover_deletion = (state: boolean) => {
+const hoverDeletion = (state: boolean) => {
     editor_data.hover_deletion = state
 }
-const do_deletion = () => {
-    store.deleteWithSubnodes(subject)
+const doDeletion = () => {
+    store.removeNode(subject)
 }
-const edit_point_hover = (event: MouseEvent, state: boolean) => {
+const editPointHover = (event: MouseEvent, state: boolean) => {
     editor_data.show_editpoints = state
 }
 const deleteConstraint = (constraint) => {
@@ -256,6 +264,7 @@ onMounted(() => {
 .node_text {
     font-size: 10px;
     text-anchor: middle;
+    pointer-events: none;
 }
 
 .edit_point {
@@ -285,5 +294,27 @@ onMounted(() => {
 
 .edit_point_type {
     fill: #6be1ff;
+}
+
+@mixin help_text($anchor: middle, $baseline: 0.5em) {
+    font-size: 10px;
+    text-anchor: $anchor;
+    dominant-baseline: central;
+}
+
+.help_text_right {
+    @include help_text(start);
+}
+
+.help_text_top {
+    @include help_text(middle, 1.5em);
+}
+
+.help_text_bottom {
+    @include help_text(middle, -0.5em);
+}
+
+.help_text_left {
+    @include help_text(end);
 }
 </style>

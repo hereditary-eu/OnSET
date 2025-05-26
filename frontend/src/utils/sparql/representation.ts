@@ -1,5 +1,5 @@
 import type { Api, FuzzyQueryResult, Instance, Property, Subject, SubjectLink } from "@/api/client.ts/Api";
-import { CONSTRAINT_HEIGHT, CONSTRAINT_WIDTH, NODE_HEIGHT, NODE_WIDTH, toVar } from "./helpers";
+import { CONSTRAINT_HEIGHT, CONSTRAINT_WIDTH, NODE_HEIGHT, NODE_WIDTH, OpenEventType, toVar } from "./helpers";
 
 import { registerClass } from "../parsing";
 import { NodeLinkRepository } from "./store";
@@ -15,7 +15,8 @@ export enum NodeState {
     DELETION_IMMINENT = "deletion_imminent",
     ADDED = "added",
     REMOVED = "removed",
-    CHANGED = "changed"
+    CHANGED = "changed",
+    ATTACHING = "attaching",
 }
 
 export enum SubQueryType {
@@ -274,10 +275,13 @@ export class QuerySet {
 
     filter: SubQuery[];
 
+    output_ids: string[] = [];
+
     constructor() {
         this.nodes = {};
         this.link_triplets = [];
         this.filter = [];
+        this.output_ids = [];
     }
 }
 let internal_id_counter: number = 0;
@@ -394,6 +398,38 @@ export class UnknownNode extends SubjectNode {
         this.unknown = true;
     }
 }
+export enum LinkQuantifierType {
+    ONE_OR_MORE = "+",
+    ZERO_OR_MORE = "*",
+    ZERO_OR_ONE = "?",
+    BETWEEEN = "BETWEEN",
+    EXACTLY = "EXACTLY",
+}
+@registerClass
+export class LinkQuantifier {
+    min: number | null;
+    max: number | null;
+    type: LinkQuantifierType;
+    constructor(type: LinkQuantifierType = LinkQuantifierType.ONE_OR_MORE, min: number | null = null, max: number | null = null) {
+        this.type = type;
+        this.min = min;
+        this.max = max;
+    }
+    toString(): string {
+        if (this.type == LinkQuantifierType.EXACTLY) {
+            return `{${this.min}}`;
+        } else if (this.type == LinkQuantifierType.BETWEEEN) {
+            return `{${this.min},${this.max}}`;
+        } else if (this.type == LinkQuantifierType.ZERO_OR_ONE) {
+            return `?`;
+        } else if (this.type == LinkQuantifierType.ZERO_OR_MORE) {
+            return `+`;
+        } else if (this.type == LinkQuantifierType.ONE_OR_MORE) {
+            return `*`;
+        }
+        return "";
+    }
+}
 @registerClass
 export class Link<N extends Subject = Subject> implements SubjectLink, Diffable {
 
@@ -404,12 +440,41 @@ export class Link<N extends Subject = Subject> implements SubjectLink, Diffable 
     to_proptype: string | null;
     property_id: string | null;
 
+    allow_arbitrary: boolean = false;
+    quantifier: LinkQuantifier | null = null;
+
     from_internal_id: string;
     to_internal_id: string;
 
     from_subject: N | SubjectNode;
     to_subject: N | UnknownNode;
 
+    initialized: boolean = true;
+    static betweenNodes(from: SubjectNode, to: SubjectNode, link_id = "-"): NodeLinkRepository<SubjectNode, Link> {
+        let repository = new NodeLinkRepository<SubjectNode, Link>([from, to], []);
+        let link = new Link({
+            from_id: from.subject_id,
+            to_id: to.subject_id,
+            from_internal_id: from.internal_id,
+            to_internal_id: to.internal_id,
+            link_type: 'relation',
+            link_id: -1,
+            label: `*`,
+            to_proptype: null,
+            property_id: null,
+            instance_count: 1,
+            from_subject: from,
+            to_subject: to,
+            allow_arbitrary: false,
+            initialized: false,
+            quantifier: null,
+        });
+        link.initialized = false
+        repository.addOutlink(link, from, to, OpenEventType.TO);
+        return repository;
+
+
+    }
     constructor(link?: SubjectLink | Link) {
         if (link) {
             for (const key in link) {
@@ -429,10 +494,22 @@ export class Link<N extends Subject = Subject> implements SubjectLink, Diffable 
     instance_count: number;
     label: string;
     outputId(): string {
-        return `?prop_${toVar(this.link_id)}_${toVar(this.from_internal_id)}`
+        return `?p_${toVar(this.link_id)}`
     }
     identifier(): string {
         return `${this.from_internal_id}-${this.link_id}-${this.to_internal_id}`
+    }
+    queryId(): string {
+
+        let link_var = this.property_id
+        if (this.allow_arbitrary) {
+            link_var = this.outputId();
+        }
+        if (this.quantifier) {
+            link_var += this.quantifier.toString();
+        }
+        // console.log("Query ID for link", this, "is", link_var)
+        return link_var
     }
     changed(other: this): boolean {
         return this.from_id != other.from_id ||

@@ -1,6 +1,6 @@
 import type { FuzzyQueryResult, QueryGraph, Subject } from "@/api/client.ts/Api";
 import { jsonClone, registerClass } from "../parsing";
-import { NodeSide } from "./helpers";
+import { OpenEventType } from "./helpers";
 import { Link, QueryProp, QuerySet, SubjectConstraint, SubjectNode, SubQuery } from "./representation";
 import type { Diffable } from "./diff";
 
@@ -76,8 +76,13 @@ export class NodeLinkRepository<N extends SubjectNode = SubjectNode, L extends L
         let outlinks = this.links.filter(link => link.id === l.id)
         return outlinks.length ? outlinks[0] : null
     }
-
-    addOutlink(link: L, origin: N, target: N, side: NodeSide) {
+    sameLinks(link: L): L[] {
+        return this.links.filter(l => l.from_internal_id === link.from_internal_id && l.to_internal_id === link.to_internal_id)
+    }
+    circularLink(link: L): boolean {
+        return link.from_internal_id === link.to_internal_id
+    }
+    addOutlink(link: L, origin: N, target: N, side: OpenEventType) {
         if (this.nodes.filter(node => node === origin).length === 0) {
             this.nodes.push(origin)
         }
@@ -87,20 +92,31 @@ export class NodeLinkRepository<N extends SubjectNode = SubjectNode, L extends L
         link = this.prepareLink(link, origin, target, side)
         this.links.push(link)
     }
-    prepareLink(link: L, origin: N, target: N, side: NodeSide) {
+    prepareLink(link: L, origin: N, target: N, side: OpenEventType) {
         switch (side) {
-            case NodeSide.FROM:
+            case OpenEventType.FROM:
                 link.from_internal_id = target.internal_id
                 link.to_internal_id = origin.internal_id
                 break
-            case NodeSide.TO:
+            case OpenEventType.TO:
                 link.from_internal_id = origin.internal_id
                 link.to_internal_id = target.internal_id
                 break
-            default:
-                throw new Error("Invalid side")
+            // default:
+            //     throw new Error("Invalid side")
         }
         return link
+    }
+    removeLink(link: L) {
+        if (link) {
+            this.links = this.links.filter(l => l.link_id !== link.link_id)
+        }
+    }
+    removeNode(node: N) {
+        if (node) {
+            this.nodes = this.nodes.filter(n => n.internal_id !== node.internal_id)
+            this.links = this.links.filter(l => l.from_internal_id !== node.internal_id && l.to_internal_id !== node.internal_id)
+        }
     }
     subElementsRecursive(node: SubjectNode, visited: SubjectNode[] = []) {
         let subNodes: SubjectNode[] = []
@@ -160,12 +176,32 @@ export class NodeLinkRepository<N extends SubjectNode = SubjectNode, L extends L
         return links
     }
 
+
+    textAttachPoint(link: L, circular: boolean = false): { x: number, y: number } {
+        let from = this.from(link)
+        let to = this.to(link)
+        if(!from || !to) {
+            console.warn("Link has no from or to node", link, from, to)
+            return { x: 0, y: 0 }
+        }
+        //circular
+        if (this.circularLink(link) || circular) {
+            return { x: from.x + from.width / 2, y: from.y - from.height * 2 }
+        } else {
+            let from_pt = { x: from.x + from.width, y: from.y + from.height / 2 }
+            let to_pt = { x: to.x, y: to.y + to.height / 2 }
+            return {
+                x: (from_pt.x + to_pt.x) / 2,
+                y: (from_pt.y + to_pt.y) / 2
+            }
+        }
+
+    }
+
     generateQuery(limit: number | null = 100, skip: number | null = null): string {
         let set = this.querySet()
         let output_names = Object.values(set.nodes).map(nd => nd.outputId())
-        let output_labels = Object.values(set.nodes).map(nd => nd.labelId())
-        output_labels.push(...set.filter.map((constraint) => constraint.link.outputId()))
-        let query = `SELECT DISTINCT ${output_names.join(" ")} ${output_labels.join(" ")} WHERE {`
+        let query = `SELECT DISTINCT ${output_names.join(" ")} ${set.output_ids.join(" ")} WHERE {`
 
         for (let link of set.link_triplets) {
             query += `\n${link.from_id} ${link.link_id} ${link.to_id}.`
@@ -195,7 +231,7 @@ export class NodeLinkRepository<N extends SubjectNode = SubjectNode, L extends L
             }
         }
         query += "\n}"
-        query += "\nORDER BY " + output_labels.join(" ")
+        query += "\nORDER BY " + set.output_ids.join(" ")
         if (limit) {
             query += `\nLIMIT ${limit}`
         }
@@ -206,19 +242,24 @@ export class NodeLinkRepository<N extends SubjectNode = SubjectNode, L extends L
     }
     querySet(): QuerySet {
         let set = new QuerySet()
-        set.nodes = {}
-        set.filter = []
-        set.link_triplets = []
+        
         for (let node of this.nodes) {
             set.nodes[node.internal_id] = node
             set.filter.push(...node.subqueries)
         }
+
+        set.output_ids = Object.values(set.nodes).map(nd => nd.labelId())
+        set.output_ids.push(...set.filter.map((constraint) => constraint.link.outputId()))
         for (let link of this.links) {
             let from = this.from(link)
             let to = this.to(link)
+            let link_id = link.queryId()
+            if (link.allow_arbitrary){
+                set.output_ids.push(link_id)
+            }
             set.link_triplets.push({
                 from_id: from.outputId(),
-                link_id: link.property_id,
+                link_id: link_id,
                 to_id: to.outputId()
             })
         }

@@ -3,18 +3,29 @@ import { SubQuery, Link, SubjectNode, type SubjectConstraint } from "./represent
 import { NodeLinkRepository } from "./store";
 import { reactive } from "vue";
 
-export enum NodeSide {
+export enum OpenEventType {
     TO = 'to_link',
     FROM = 'from_link',
     PROP = 'prop',
     DETAIL = 'detail',
-    TYPE = 'type'
+    TYPE = 'type',
+    LINK = 'link',
 }
 export class SelectorOpenEvent {
-    node: SubjectNode;
-    side: NodeSide;
-
+    node?: SubjectNode;
+    side: OpenEventType;
+    link?: Link;
+    evt: MouseEvent;
 }
+
+export class LinkEditEvent {
+    link?: Link;
+    node?: SubjectNode;
+    side: OpenEventType;
+    success: boolean;
+}
+
+
 export class InstanceSelectorOpenEvent {
     node: SubjectNode;
     constraint: SubjectConstraint
@@ -35,7 +46,7 @@ export enum DisplayMode {
     RESULT_INTERACTIVE = 'result_interactive',
 
 }
-export function toVar(v: string|number): string {
+export function toVar(v: string | number): string {
     if (typeof v === 'number') {
         return v.toString()
     }
@@ -88,7 +99,7 @@ export function mapERLToStore(step: EntitiesRelations) {
             to_subject = nodeFromEntity({ type: relation.target, identifier: relation.target })
         }
         let mapped_link = linkFromRelation(relation, from_subject, to_subject, i)
-        store.addOutlink(mapped_link, from_subject, to_subject, NodeSide.TO
+        store.addOutlink(mapped_link, from_subject, to_subject, OpenEventType.TO
         )
     })
     if ((step as Candidates).constraints) {
@@ -116,4 +127,27 @@ export function mapERLToStore(step: EntitiesRelations) {
     store.nodes = store.nodes.map(node => reactive(node))
     store.links = store.links.map(link => reactive(link))
     return store
+}
+
+export function extentNodes(nodes: SubjectNode[] = []) {
+    let min_x = Infinity
+    let min_y = Infinity
+    let max_x = -Infinity
+    let max_y = -Infinity
+
+    for (let node of nodes) {
+        if (node.x < min_x) {
+            min_x = node.x
+        }
+        if (node.y < min_y) {
+            min_y = node.y
+        }
+        if (node.x + node.width > max_x) {
+            max_x = node.x + node.width
+        }
+        if (node.y + node.height > max_y) {
+            max_y = node.y + node.height
+        }
+    }
+    return { x: min_x, y: min_y, width: max_x - min_x, height: max_y - min_y }
 }

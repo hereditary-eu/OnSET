@@ -1,22 +1,23 @@
 <template>
     <g v-if="store" class="graph_view">
         <g v-for="link in store.links">
-            <LinkComp :link="link" :store="store" :diff="diff" />
+            <LinkComp :link="link" :store="store" :diff="diff" :mode="displayMode"
+            @link-edit-clicked="emit('linkEditClicked', $event)"/>
         </g>
         <g v-for="node in store.nodes" :key="node.internal_id">
             <NodeComp :subject="node" :store="store" :mode="displayMode" :diff="diff"
-                @edit-point-clicked="emit('editPointClicked', $event)"
+                @link-point-clicked="emit('linkPointClicked', $event)"
                 @prop-point-clicked="emit('propPointClicked', $event)"
                 @instance-search-clicked="emit('instanceSearchClicked', $event)"
                 @type-point-clicked="emit('typePointClicked', $event)" />
         </g>
         <g v-if="diff">
             <g v-for="link in diff.diff_links.removed">
-                <LinkComp :link="link.left" :store="store" :diff="diff" />
+                <LinkComp :link="link.left" :store="store" :diff="diff"  :mode="DisplayMode.SELECT"/>
             </g>
             <g v-for="node in diff.diff_nodes.removed" :key="node.left.internal_id">
                 <NodeComp :subject="node.left" :store="store" :mode="DisplayMode.SELECT" :diff="diff"
-                    @edit-point-clicked="emit('editPointClicked', $event)"
+                    @link-point-clicked="emit('linkPointClicked', $event)"
                     @prop-point-clicked="emit('propPointClicked', $event)"
                     @instance-search-clicked="emit('instanceSearchClicked', $event)" />
             </g>
@@ -33,7 +34,8 @@ import { DisplayMode, InstanceSelectorOpenEvent, SelectorOpenEvent } from '@/uti
 import type { PropertiesOpenEvent } from '@/utils/sparql/querymapper';
 import type { NodeLinkRepositoryDiff } from '@/utils/sparql/diff';
 const emit = defineEmits<{
-    editPointClicked: [value: SelectorOpenEvent]
+    linkPointClicked: [value: SelectorOpenEvent]
+    linkEditClicked: [value: SelectorOpenEvent]
     typePointClicked: [value: SelectorOpenEvent]
     propPointClicked: [value: PropertiesOpenEvent]
     instanceSearchClicked: [value: InstanceSelectorOpenEvent]

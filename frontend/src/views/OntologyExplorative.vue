@@ -360,6 +360,11 @@ const colour_config = computed(() => {
     fill: v-bind('colour_config.node_changed');
     stroke-dasharray: 10, 1, 10, 1;
 }
+:deep(.node_attaching) {
+    fill: v-bind('colour_config.node_normal');
+    stroke-width: 3px;
+    stroke-dasharray: 1, 1, 1, 1;
+}
 
 :deep(.result_instance_right) {
     background-color: v-bind('colour_config.node_added_light');

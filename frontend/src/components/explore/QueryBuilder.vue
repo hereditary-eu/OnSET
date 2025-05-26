@@ -2,10 +2,12 @@
     <div class="query_builder">
         <svg class="query_build_wrapper">
             <GraphView :store="store" :display-mode="DisplayMode.EDIT" :diff="diff"
-                @edit-point-clicked="clicked_outlink($event)" @instance-search-clicked="clicked_instance($event)"
-                @type-point-clicked="clicked_type($event)"></GraphView>
-            <OutLinkSelector :selection_event="ui_state.outlink_event" v-model="ui_state.outlink_display" :store="store"
-                @hover_option="preview_link($event)">
+                @link-point-clicked="clickedOutlink($event)" @instance-search-clicked="clickedInstance($event)"
+                @type-point-clicked="clickedType($event)" @link-edit-clicked="clickedEditLink($event)"></GraphView>
+            <LinkComposer :store="store" :evt="ui_state.attaching_event" @selection-complete="linkEditDone($event)">
+            </LinkComposer>
+            <OutLinkSelector :selection_event="ui_state.sublink_event" v-model="ui_state.sublink_display" :store="store"
+                @hover_option="previewLink($event)" @finished="linkSelectDone($event)">
             </OutLinkSelector>
             <InstanceSelector :selection_event="ui_state.instance_event" v-model="ui_state.instance_display">
             </InstanceSelector>
@@ -15,18 +17,18 @@
             <use xlink:href="#instance_selector"></use>
             <use xlink:href="#type_selector"></use>
         </svg>
-        <div id="threed_minimap">
+        <!-- <div id="threed_minimap">
             <Loading v-if="ui_state.loading"></Loading>
             <div id="threed_graph"></div>
-        </div>
+        </div> -->
     </div>
 </template>
 <script setup lang="ts">
 import { ref, watch, reactive, computed, onMounted, defineProps, onBeforeMount } from 'vue'
 import { SubjectNode, Link } from '@/utils/sparql/representation';
 import NodeComp from './elements/Node.vue';
-import OutLinkSelector from './elements/panels/OutLinkSelector.vue';
-import { DisplayMode, InstanceSelectorOpenEvent, type NodeSide, type SelectorOpenEvent } from '@/utils/sparql/helpers';
+import OutLinkSelector from './elements/panels/LinkSelector.vue';
+import { DisplayMode, InstanceSelectorOpenEvent, LinkEditEvent, OpenEventType, type SelectorOpenEvent } from '@/utils/sparql/helpers';
 import InstanceSelector from './elements/panels/InstanceSelector.vue';
 import type { MixedResponse, NodeLinkRepository } from '@/utils/sparql/store';
 import GraphView from './elements/GraphView.vue';
@@ -38,6 +40,8 @@ import type { SubjectInCircle } from '@/utils/d3-man/CircleMan';
 import Loading from '../ui/Loading.vue';
 import type { NodeLinkRepositoryDiff } from '@/utils/sparql/diff';
 import TypeSelector from './elements/panels/TypeSelector.vue';
+import type { PropertiesOpenEvent } from '@/utils/sparql/querymapper';
+import LinkComposer from './elements/LinkComposer.vue';
 
 const api = new Api({
     baseURL: BACKEND_URL
@@ -52,33 +56,78 @@ const { store } = defineProps({
         default: null
     }
 })
+enum EditorMode {
+    EDIT = 'edit',
+    CREATE_LINK = 'create_link',
+}
 const ui_state = reactive({
-    outlink_display: false,
-    outlink_event: null as SelectorOpenEvent,
+    sublink_display: false,
+    sublink_event: null as SelectorOpenEvent,
+    attaching_display: false,
+    attaching_event: null as SelectorOpenEvent,
     instance_display: false,
     instance_event: null as InstanceSelectorOpenEvent,
     type_display: false,
     type_event: null as SelectorOpenEvent,
     loading: false,
-    query_string: ''
+    query_string: '',
+    editor_mode: EditorMode.EDIT,
 })
 
 const overviewBox = new OverviewCircles('#threed_graph')
 
-const clicked_outlink = (evt: SelectorOpenEvent) => {
-    ui_state.outlink_display = true
-    ui_state.outlink_event = evt
+const clickedOutlink = (evt: SelectorOpenEvent) => {
+    if (evt.side == OpenEventType.PROP) {
+        ui_state.sublink_display = true
+        ui_state.sublink_event = evt
+
+        ui_state.attaching_display = false
+        ui_state.attaching_event = null
+    } else {
+        ui_state.editor_mode = EditorMode.CREATE_LINK
+        ui_state.attaching_display = true
+        ui_state.attaching_event = evt
+
+        ui_state.sublink_display = false
+        ui_state.sublink_event = null
+    }
 }
-const clicked_instance = (evt: InstanceSelectorOpenEvent) => {
+const clickedEditLink = (evt: SelectorOpenEvent) => {
+    console.log('clickedEditLink', evt)
+    ui_state.editor_mode = EditorMode.EDIT
+    ui_state.sublink_display = true
+    ui_state.sublink_event = evt
+}
+const clickedInstance = (evt: InstanceSelectorOpenEvent) => {
     ui_state.instance_display = true
     ui_state.instance_event = evt
 }
-const clicked_type = (evt: SelectorOpenEvent) => {
+const clickedType = (evt: SelectorOpenEvent) => {
     ui_state.type_display = true
     ui_state.type_event = evt
 }
-const root_subject = ref(null as SubjectNode | null)
-watch(() => store, () => {
+const linkEditDone = (evt: SelectorOpenEvent) => {
+    ui_state.sublink_display = true
+    ui_state.sublink_event = evt
+}
+
+const linkSelectDone = (evt: LinkEditEvent) => {
+    ui_state.sublink_display = false
+    ui_state.sublink_event = null
+    ui_state.attaching_display = false
+    ui_state.attaching_event = null
+    if (evt.success) {
+        ui_state.editor_mode = EditorMode.EDIT
+        regenerateQuery()
+    } else {
+        store.removeLink(evt.link)
+        if (evt.side != OpenEventType.LINK) {
+            store.removeNode(evt.node)
+        }
+    }
+}
+
+const regenerateQuery = () => {
     // console.log('Store changed!', store)
     if (!store) {
         return
@@ -88,6 +137,15 @@ watch(() => store, () => {
     if (query_string != ui_state.query_string) {
         ui_state.query_string = query_string
     }
+}
+
+watch(() => ui_state.editor_mode, (new_val) => {
+    if (ui_state.editor_mode == EditorMode.EDIT) {
+        regenerateQuery()
+    }
+}, { deep: true })
+watch(() => store, () => {
+    regenerateQuery()
 }, { deep: true })
 watch(() => ui_state.query_string, (new_val) => {
     if (overviewBox.nodes.length == 0 && overviewBox.renderer) {
@@ -126,7 +184,9 @@ onMounted(() => {
 
     // .style('background-color', 'red')
 })
-const preview_link = (l: Link | null) => {
+
+
+const previewLink = (l: Link | null) => {
     // console.log('Preview link', l)
     if (l) {
         overviewBox.previewLink(l)
@@ -134,6 +194,10 @@ const preview_link = (l: Link | null) => {
         overviewBox.hidePreview()
     }
 }
+
+
+
+
 </script>
 <style lang="scss" scoped>
 .query_builder {

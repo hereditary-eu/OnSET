@@ -38,7 +38,7 @@ import { ref, watch, reactive, computed, onMounted, onBeforeMount } from 'vue'
 import OnsetProgress from '../ui/OnsetProgress.vue';
 import OnsetBtn from '../ui/OnsetBtn.vue';
 import { MixedResponse, NodeLinkRepository } from '@/utils/sparql/store';
-import { mapERLToStore, NodeSide } from '@/utils/sparql/helpers';
+import { mapERLToStore, OpenEventType } from '@/utils/sparql/helpers';
 import Loading from '../ui/Loading.vue';
 import FuzzyQueryIntermediate from './FuzzyQueryIntermediate.vue';
 const emit = defineEmits<{

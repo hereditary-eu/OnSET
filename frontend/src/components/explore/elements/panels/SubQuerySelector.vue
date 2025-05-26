@@ -2,9 +2,9 @@
     <g id="outlink_selector" @mouseout.capture="edit_point_hover($event, false)"
         @mouseenter.capture="edit_point_hover($event, true)" @mouseover="edit_point_hover($event, true)">
         <g :transform="`translate(${attachment_pt.x},${attachment_pt.y})`" v-if="display">
-            <foreignObject :height="(NODE_HEIGHT) * 8 + 10" :width="NODE_WIDTH + LINK_WIDTH + 35">
-                <div class="selection_div_container" :style="{ 'height': `${NODE_HEIGHT * 8 + 10}px` }">
-                    <div class="selection_defaults" v-if="selection_event.side == NodeSide.PROP">
+            <foreignObject :height="(NODE_HEIGHT) * NODE_LINK_COUNT + 10" :width="NODE_WIDTH + LINK_WIDTH + 35">
+                <div class="selection_div_container" :style="{ 'height': `${NODE_HEIGHT * NODE_LINK_COUNT + 10}px` }">
+                    <div class="selection_defaults" v-if="selection_event.side == OpenEventType.PROP">
                         <OnsetBtn @click="addLabelConstraint()" btn_width="100%">Filter Label</OnsetBtn>
                         <OnsetBtn @click="addLabelProp()" btn_width="100%"><v-icon icon="mdi-tag"></v-icon> Label
                         </OnsetBtn>
@@ -26,7 +26,7 @@
                                 </svg>
 
                             </div>
-                            <div v-if="selection_event.side == NodeSide.PROP">
+                            <div v-if="selection_event.side == OpenEventType.PROP">
                                 <OnsetBtn :btn_width="'1.5rem'" :toggleable="false"
                                     @click="select_prop(option, $event)">
                                     <v-icon icon="mdi-tag"></v-icon>
@@ -55,7 +55,7 @@ import LinkComp from '../Link.vue';
 import NodeComp from '../Node.vue';
 import { BACKEND_URL } from '@/utils/config';
 import { Api, RELATION_TYPE, RETURN_TYPE } from '@/api/client.ts/Api';
-import { DisplayMode, LINK_WIDTH, NODE_HEIGHT, NODE_WIDTH, NodeSide, SelectorOpenEvent } from '@/utils/sparql/helpers';
+import { DisplayMode, LINK_WIDTH, NODE_HEIGHT, NODE_WIDTH, OpenEventType, SelectorOpenEvent } from '@/utils/sparql/helpers';
 import Loading from '@/components/ui/Loading.vue';
 import OnsetBtn from '@/components/ui/OnsetBtn.vue';
 import { MixedResponse, type NodeLinkRepository } from '@/utils/sparql/store';
@@ -63,7 +63,7 @@ import GraphView from '../GraphView.vue';
 import { jsonClone } from '@/utils/parsing';
 import { debounce } from '@/utils/helpers';
 import { de } from 'vuetify/locale';
-
+const NODE_LINK_COUNT = 8
 const emit = defineEmits<{
     select: [value: MixedResponse],
     hover_option: [value: Link | null]
@@ -104,7 +104,7 @@ const debounced_search = debounce(() => {
         editor_data.reached_end = false
         console.log('fetching selection options', selection_event, 'offset', editor_data.offset)
         switch (selection_event.side) {
-            case NodeSide.PROP:
+            case OpenEventType.PROP:
                 editor_data.select_width = NODE_WIDTH
                 break
             default:
@@ -138,12 +138,12 @@ const loadMore = async () => {
     let query_id = ++editor_data.query_id
     const response = await api.classes.searchClassesClassesSearchPost({
         q: editor_data.q,
-        from_id: selection_event.side == NodeSide.TO || selection_event.side == NodeSide.PROP ? selection_event.node.subject_id : undefined,
-        to_id: selection_event.side == NodeSide.FROM ? selection_event.node.subject_id : undefined,
+        from_id: selection_event.side == OpenEventType.TO || selection_event.side == OpenEventType.PROP ? selection_event.node.subject_id : undefined,
+        to_id: selection_event.side == OpenEventType.FROM ? selection_event.node.subject_id : undefined,
         type: RETURN_TYPE.Link,
         limit: 10,
         skip: editor_data.offset,
-        relation_type: selection_event.side == NodeSide.PROP ? RELATION_TYPE.Property : RELATION_TYPE.Instance
+        relation_type: selection_event.side == OpenEventType.PROP ? RELATION_TYPE.Property : RELATION_TYPE.Instance
     })
     if (query_id != editor_data.query_id) {
         return
@@ -152,13 +152,13 @@ const loadMore = async () => {
     //TODO: topic ids - user context!
     let mapped_responses = response.data.results.map((result) => {
         const resp = new MixedResponse<SubjectNode>(result)
-        const other_subject = selection_event.side == NodeSide.FROM || selection_event.side == NodeSide.PROP ? resp.store.to(resp.link) : resp.store.from(resp.link)
+        const other_subject = selection_event.side == OpenEventType.FROM || selection_event.side == OpenEventType.PROP ? resp.store.to(resp.link) : resp.store.from(resp.link)
         let from = resp.store.from(resp.link)
         let to = resp.store.to(resp.link)
-        if (selection_event.side == NodeSide.TO) {
+        if (selection_event.side == OpenEventType.TO) {
             to.x = LINK_WIDTH
             from.x = -NODE_WIDTH
-        } else if (selection_event.side == NodeSide.PROP) {
+        } else if (selection_event.side == OpenEventType.PROP) {
             to.x = NODE_WIDTH
             from.x = -from.width
         } else {
@@ -177,17 +177,17 @@ const attachment_pt = computed(() => {
         return { x: 0, y: 0 }
     }
     switch (selection_event.side) {
-        case NodeSide.TO:
+        case OpenEventType.TO:
             return { x: selection_event.node.x + selection_event.node.width, y: selection_event.node.y + selection_event.node.height / 2 }
-        case NodeSide.FROM:
+        case OpenEventType.FROM:
             return { x: selection_event.node.x - (NODE_WIDTH + LINK_WIDTH + 20), y: selection_event.node.y + selection_event.node.height / 2 }
-        case NodeSide.PROP:
+        case OpenEventType.PROP:
             return { x: selection_event.node.x + selection_event.node.width / 2, y: selection_event.node.y + selection_event.node.height }
     }
 })
 const prepareTarget = (link: Link<SubjectNode>) => {
-    let target = selection_event.side == NodeSide.TO ? link.to_subject : link.from_subject
-    if (selection_event.side == NodeSide.TO) {
+    let target = selection_event.side == OpenEventType.TO ? link.to_subject : link.from_subject
+    if (selection_event.side == OpenEventType.TO) {
         target.x = selection_event.node.x + selection_event.node.width + LINK_WIDTH
     } else {
         target.x = selection_event.node.x - (target.width + LINK_WIDTH)
@@ -198,12 +198,12 @@ const prepareTarget = (link: Link<SubjectNode>) => {
 const select_option = (selected_option: MixedResponse<SubjectNode>, event: MouseEvent) => {
     display.value = false
     switch (selection_event.side) {
-        case NodeSide.TO:
-        case NodeSide.FROM:
+        case OpenEventType.TO:
+        case OpenEventType.FROM:
             let target = prepareTarget(selected_option.link)
             store.addOutlink(selected_option.link, selection_event.node, target, selection_event.side)
             break
-        case NodeSide.PROP:
+        case OpenEventType.PROP:
             selected_option.link.from_internal_id = selection_event.node.internal_id
             let constraint = SubQuery.construct(selected_option.link)
             if (!selection_event.node.subqueries) {
@@ -245,7 +245,7 @@ const select_prop = (option: MixedResponse<SubjectNode>, event: MouseEvent) => {
     }
 }
 const selected_options_filtered = computed(() => {
-    if (selection_event.side == NodeSide.PROP) {
+    if (selection_event.side == OpenEventType.PROP) {
         return selection_options.value.filter((option) => {
             return SubQuery.construct(option.link) != null
         })
@@ -287,7 +287,7 @@ const addInstanceConstraint = () => {
     display.value = false
 }
 watch(editor_data, (editor_data) => {
-    if (selection_event.side != NodeSide.PROP) {
+    if (selection_event.side != OpenEventType.PROP) {
         if (editor_data.hover_add) {
             let hover_target = jsonClone(editor_data.hover_add)
             let target = prepareTarget(hover_target.link)
