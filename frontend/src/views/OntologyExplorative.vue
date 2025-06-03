@@ -15,7 +15,7 @@
 
             <div class="input_step">
                 <h3>...pick a relation to start with...</h3>
-                <!-- <NodeLinkSelector :query="{ topic_ids: selected_topic_ids }" @select="selected_root"></NodeLinkSelector> -->
+                <NodeLinkSelector :query="{ topic_ids: selected_topic_ids }" @select="selected_root"></NodeLinkSelector>
             </div>
         </div>
         <div v-else>

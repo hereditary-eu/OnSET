@@ -5,6 +5,7 @@ import * as THREE from 'three'
 import { Api, type Subject, type Topic } from '@/api/client.ts/Api';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { CircleMan3D, SubjectInCircle } from './CircleMan3D';
+import { registerClass } from '../parsing';
 export class TopicTreeLink {
     from_topic?: TopicInCircle
     from_subject?: SubjectInCircle
@@ -13,7 +14,9 @@ export class TopicTreeLink {
     material: THREE.LineBasicMaterial
     line_geometry: THREE.Line
     from_position: THREE.Vector3
+    mesh: THREE.Mesh<THREE.TubeGeometry, THREE.MeshBasicMaterial, THREE.Object3DEventMap>;
 }
+@registerClass
 export class TopicInCircle implements Topic {
     subjects_ids: string[];
     property_ids: string[];
@@ -27,6 +30,21 @@ export class TopicInCircle implements Topic {
     color_position?: THREE.Vector2
     color_angle?: number
     n_children?: number
+    parent?: TopicInCircle | null
+    depth: number = 0
+    get id() {
+        return `topic-${this.topic_id}`
+    }
+    get position() {
+        // console.warn('TopicInCircle.position is deprecated, use to_position instead')
+        return this.to_position || new THREE.Vector3(0, 0, 0)
+    }
+    get children() {
+        return this.sub_topics || []
+    }
+    get label() {
+        return `${this.topic} / ${this.depth}`
+    }
 
 }
 // 3D circle packing based upon https://observablehq.com/@analyzer2004/3d-circle-packing
@@ -49,8 +67,19 @@ export class HierarchicalCircleMan3D extends CircleMan3D {
         if (!this.topics_root) {
             return
         }
+        const revive_topic = (topic: Topic, parent?: TopicInCircle): TopicInCircle => {
+            let topic_in_circle = new TopicInCircle()
+            for (let key in topic) {
+                topic_in_circle[key] = topic[key]
+            }
+            topic_in_circle.parent = parent
+            topic_in_circle.sub_topics = topic.sub_topics.map((st) => revive_topic(st, topic_in_circle))
+            return topic_in_circle
+        }
+        this.topics_root = revive_topic(this.topics_root, null)
         let depth = 0
         const eval_depth = (topic, depth) => {
+            topic.depth = depth
             let max_depth = depth
             for (let sub_topic of topic.sub_topics) {
                 let sub_topic_depth = eval_depth(sub_topic, depth + 1)
@@ -182,13 +211,22 @@ export class HierarchicalCircleMan3D extends CircleMan3D {
                     opacity: 0.7
                 });
                 let tube_mesh = new THREE.Mesh(geometry, material);
+                if (link.from_subject) {
 
+                    let id = `node-${link.from_subject.id}`
+                    tube_mesh.name = id
+                }
+                if (link.from_topic) {
+                    let id = `topic-${link.from_topic.topic_id}`
+                    tube_mesh.name = id
+                }
                 // let line_geometry = new THREE.LineSegments(geometry, new THREE.LineBasicMaterial({ color: 0x7f7f7f }));
 
                 // tube_mesh.add(line_geometry)
 
                 link.curve = curve
                 link.geometry = geometry
+                link.mesh = tube_mesh
                 // link.line_geometry = line_geometry
 
                 // line.position.y =  / 2
@@ -199,6 +237,22 @@ export class HierarchicalCircleMan3D extends CircleMan3D {
 
         }
         build_tree_bottom(this.topics_root, depth)
+        const add_labels = (topic: TopicInCircle, depth: number) => {
+            let id = `topic-${topic.topic_id}`
+            let label = this.label_manager.register_label(id, topic, this.scene)
+
+            for (let sub_topic of topic.sub_topics) {
+                add_labels(sub_topic, depth + 1)
+                for (let subject_id of sub_topic.subjects_ids) {
+                    let id = `node-${subject_id}`
+                    this.label_manager.register_event(id, (lbl, display) => {
+                        label.display(display)
+                    })
+                }
+            }
+        }
+        add_labels(this.topics_root, 0)
+
     }
     initPackedCircles() {
         super.initPackedCircles()

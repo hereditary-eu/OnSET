@@ -4,9 +4,13 @@ import * as d3 from 'd3'
 import * as THREE from 'three'
 import { Api, type Property, type Subject, type Topic } from '@/api/client.ts/Api';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { LabelManager } from './LabelManager';
+import { CSS2DRenderer } from 'three/addons/renderers/CSS2DRenderer.js';
 export class SubjectInCircle implements Subject {
     subject_id: string;
+    id: string;
     label: string;
+    name: string = '';
     spos: Record<string, Property> = {};
     subject_type?: string = 'split';
     refcount?: number = 0;
@@ -15,7 +19,7 @@ export class SubjectInCircle implements Subject {
     expanded: boolean = false
     children?: SubjectInCircle[]
     n_id: number = 0
-    position?: THREE.Vector3
+    position: THREE.Vector3
     properties?: Record<string, SubjectInCircle[]>;
 }
 export class TopicTreeLink {
@@ -39,53 +43,6 @@ export class TopicInCircle implements Topic {
     to_position?: THREE.Vector3
 
 }
-class LabelInstance {
-    id: string
-    base_position: THREE.Vector3
-    position: THREE.Vector3
-    label_div: HTMLDivElement
-    text: string
-    shown: boolean = false
-}
-class LabelManager {
-    labels: Record<string, LabelInstance> = {}
-    register_labels(id: string, text: string, base_position: THREE.Vector3) {
-        if (this.labels[id]) {
-            this.labels[id].text = text
-            this.labels[id].base_position = base_position
-        } else {
-            this.labels[id] = new LabelInstance()
-            this.labels[id].id = id
-            this.labels[id].text = text
-            this.labels[id].base_position = base_position
-        }
-    }
-    label_container: HTMLDivElement = null
-    label_parent: HTMLDivElement = null
-    update_labels(camera: THREE.PerspectiveCamera, scene: THREE.Scene) {
-        if (!this.label_container) {
-            this.label_container = document.createElement('div')
-            this.label_container.className = 'label_container'
-            this.label_parent.appendChild(this.label_container)
-        }
-        for (let key in this.labels) {
-            const label = this.labels[key]
-            if (label.shown) {
-                continue
-            }
-            label.label_div = document.createElement('div')
-            label.label_div.className = 'label'
-            label.label_div.innerText = label.text
-            label.label_div.style.position = 'absolute'
-            label.label_div.style.transform = `translate(-50%, -50%)`
-            label.label_div.style.color = '#000000'
-            label.label_div.style.fontSize = '12px'
-            this.label_parent.appendChild(label.label_div)
-            label.shown = true
-        }
-    }
-}
-
 // 3D circle packing based upon https://observablehq.com/@analyzer2004/3d-circle-packing
 // expanded with Topic links and fixed height of nodes (TODO)
 export class CircleMan3D {
@@ -108,7 +65,7 @@ export class CircleMan3D {
     three_div: HTMLElement = null
     camera: THREE.PerspectiveCamera = null
     scene: THREE.Scene = null
-    renderer: THREE.Renderer = null
+    renderer: THREE.WebGLRenderer = null
     dimensions = {
         width: 1000,
         height: 50,
@@ -130,10 +87,8 @@ export class CircleMan3D {
     max_depth = 0
     node_counter = 0
 
-    private labels: Record<string, string> = {}
-
-    register_labels(id, label) {
-    }
+    protected label_manager: LabelManager;
+    labelRenderer: CSS2DRenderer;
 
     constructor(public query_renderer: string) {
 
@@ -144,9 +99,10 @@ export class CircleMan3D {
             let child = new SubjectInCircle()
             child.subject_id = `${node.subject_id}_${key}`
             child.label = `${key} of ${node.label}`
+            child.name = node.label
             child.expanded = true
             if (node.descendants[key].length == 0) {
-                child.subject_type = 'leaf'
+                // child.subject_type = 'leaf'
             } else {
                 child.children = node.descendants[key].map(this.mapNodesToChildren.bind(this))
                 child.children.forEach(child => child.n_id = this.node_counter++)
@@ -170,6 +126,7 @@ export class CircleMan3D {
 
         console.log('restarting graph', this.nodes, mapped_nodes)
         const data: SubjectInCircle = {
+            name: 'root',
             subject_id: 'root',
             expanded: true,
             spos: {},
@@ -178,13 +135,15 @@ export class CircleMan3D {
             subject_type: 'root',
             total_descendants: mapped_nodes.reduce((acc, child) => acc + child.total_descendants, 0),
             children: mapped_nodes,
+            position: new THREE.Vector3(0, 0, 0),
+            id: "NA",
             n_id: this.node_counter++
         }
         this.hierarchy = d3.hierarchy(data, (d) => d.children)
             .sum(d => d.children?.length || 0)
             .sort((a, b) => b.value - a.value)
         this.root = d3.pack<SubjectInCircle>()
-            .size([this.width, this.height])
+            .size([this.dimensions.width, this.dimensions.width])
             .radius(d => Math.sqrt(d.data.total_descendants) || 0)
 
             .padding(d => d.data.children ? 0.5 : 1)(this.hierarchy);
@@ -218,14 +177,21 @@ export class CircleMan3D {
         this.root.each(d => {
             const node = d.data
             const circle = new THREE.Mesh(this.pool.geometry, this.pool.materials[d.depth]);
-            node.position = new THREE.Vector3(d.x, d.depth * 2, d.y)
+            node.position = new THREE.Vector3(d.x - this.dimensions.width / 2, d.depth * 2, d.y - this.dimensions.width / 2)
             circle.position.copy(node.position);
             circle.scale.set(d.r, 2, d.r);
 
 
             const frame = new THREE.LineSegments(this.pool.edge_geometry, this.pool.line_materials[d.depth]);
             circle.add(frame);
+            let id = `node-${node.subject_id}`
+
+            node.id = id
+            circle.name = id;
             this.scene.add(circle);
+            if (node.subject_type == 'class' || node.subject_type == 'individual') {
+                this.label_manager.register_label(id, node, this.scene);
+            }
             // console.log('added circle', d.x, d.y, d.depth * 10, d.r)
             // const text = new THREE.Mesh(new (THREE as any).TextGeometry(node.label, { size: 1, height: 0.1 }), this.pool.text_material);
             // text.position.set(d.x, d.y, d.depth * 10 + 1);
@@ -250,20 +216,34 @@ export class CircleMan3D {
         this.three_div = d3.select(this.query_renderer).append("div").attr("class", "threed_graph").node()
         this.width = this.three_div.clientWidth
         this.height = this.three_div.clientHeight
+
         this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
         this.renderer.setSize(this.width, this.height);
         this.three_div.appendChild(this.renderer.domElement);
 
+
+        console.log('init packed circles', this.width, this.height, this.three_div.clientTop + 'px', this.three_div.clientLeft + 'px')
+        this.labelRenderer = new CSS2DRenderer();
+        this.labelRenderer.setSize(this.width, this.height);
+        this.labelRenderer.domElement.style.position = 'relative';
+        this.labelRenderer.domElement.style.top = -this.height + 'px';
+        this.labelRenderer.domElement.style.left = '0px';
+        this.labelRenderer.domElement.style.zIndex = '1';
+        this.three_div.appendChild(this.labelRenderer.domElement);
+
+        this.label_manager = new LabelManager(this.three_div);
+
+
         this.camera = new THREE.PerspectiveCamera(75, this.width / this.height, 0.2, 1500);
         this.camera.aspect = this.width / this.height;
         this.camera.updateProjectionMatrix();
-        this.camera.position.set(105, 105, 0);
+        this.camera.position.set(205, 205, 0);
 
 
         this.scene = new THREE.Scene();
-        this.scene.position.x = -this.dimensions.width / 2;
+        // this.scene.position.x = -this.dimensions.width / 2;
         // this.scene.position.y = -this.dimensions.height / 2;
-        this.scene.position.z = -this.dimensions.depth / 4;
+        // this.scene.position.z = -this.dimensions.depth / 4;
         this.scene.background = new THREE.Color(0xffffff);
 
         this.pool.geometry = new THREE.CylinderGeometry(1, 1, 1, 16);
@@ -286,24 +266,40 @@ export class CircleMan3D {
         this.restartPackedCircles()
 
 
-        const controls = new OrbitControls(this.camera, this.renderer.domElement);
+        const controls = new OrbitControls(this.camera, this.labelRenderer.domElement);
         controls.screenSpacePanning = true;
         controls.maxPolarAngle = Math.PI / 2.5;
         controls.minDistance = 50;
         controls.maxDistance = 650;
-        controls.autoRotate = true;
+        // controls.autoRotate = true;
         controls.addEventListener("change", () => {
             // tooltip.clear();
             if (this.renderer && this.renderer instanceof THREE.WebGLRenderer) {
                 this.renderer.clear();
             }
+            this.label_manager.update_labels(this.camera, this.renderer);
+
+            this.labelRenderer.render(this.scene, this.camera);
             this.renderer.render(this.scene, this.camera);
         });
         controls.update();
         this.renderer.render(this.scene, this.camera);
         (this.renderer as any).setAnimationLoop(() => {
             controls.update();
+            this.label_manager.update_labels(this.camera, this.renderer);
+            this.labelRenderer.render(this.scene, this.camera);
             this.renderer.render(this.scene, this.camera);
         });
+
+
+
+        this.labelRenderer.domElement.addEventListener('mousemove', (event) => {
+            const rect = this.renderer.domElement.getBoundingClientRect();
+            const mouse = new THREE.Vector2(
+                (event.clientX - rect.left) / rect.width * 2 - 1,
+                -(event.clientY - rect.top) / rect.height * 2 + 1
+            );
+            this.label_manager.check_hover(this.camera, this.scene, mouse);
+        })
     }
 }
