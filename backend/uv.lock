@@ -987,6 +987,15 @@ wheels = [
 ]
 
 [[package]]
+name = "json-repair"
+version = "0.46.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/79/5a/5c14f14735438eb27fd4eb9bb4eb273c996c0d1d959182382cbc618f99dd/json_repair-0.46.0.tar.gz", hash = "sha256:abc751162baf8e384685558acba978478e833c1207be31468d9babfaf8029ab6", size = 33321 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/33/ea/8ca71883f10acf4449720b86dd85cea51d7a71bec2558d5275ae0dcc66e4/json_repair-0.46.0-py3-none-any.whl", hash = "sha256:54d6a9889fba0846b80befb2b1aca619103ad3ed74612fb3fedd965a4a3b1653", size = 22255 },
+]
+
+[[package]]
 name = "json5"
 version = "0.10.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1942,6 +1951,7 @@ dependencies = [
     { name = "cachetools" },
     { name = "fastapi", extra = ["standard"] },
     { name = "ipywidgets" },
+    { name = "json-repair" },
     { name = "jupyter" },
     { name = "langchain" },
     { name = "langchain-community" },
@@ -1988,6 +1998,7 @@ requires-dist = [
     { name = "fastapi" },
     { name = "fastapi", extras = ["standard"] },
     { name = "ipywidgets" },
+    { name = "json-repair", specifier = ">=0.46.0" },
     { name = "jupyter" },
     { name = "langchain", specifier = ">=0.3.14" },
     { name = "langchain-community", specifier = ">=0.3.14" },
