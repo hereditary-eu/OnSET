@@ -17,10 +17,10 @@
             <use xlink:href="#instance_selector"></use>
             <use xlink:href="#type_selector"></use>
         </svg>
-        <!-- <div id="threed_minimap">
+        <div id="threed_minimap">
             <Loading v-if="ui_state.loading"></Loading>
             <div id="threed_graph"></div>
-        </div> -->
+        </div>
     </div>
 </template>
 <script setup lang="ts">
@@ -36,12 +36,13 @@ import { OverviewCircles } from '@/utils/three-man/OverviewCircles';
 import { fa } from 'vuetify/locale';
 import { Api } from '@/api/client.ts/Api';
 import { BACKEND_URL } from '@/utils/config';
-import type { SubjectInCircle } from '@/utils/d3-man/CircleMan';
+// import type { SubjectInCircle } from '@/utils/d3-man/CircleMan';
 import Loading from '../ui/Loading.vue';
 import type { NodeLinkRepositoryDiff } from '@/utils/sparql/diff';
 import TypeSelector from './elements/panels/TypeSelector.vue';
 import type { PropertiesOpenEvent } from '@/utils/sparql/querymapper';
 import LinkComposer from './elements/LinkComposer.vue';
+import type { SubjectInCircle } from '@/utils/three-man/CircleMan3D';
 
 const api = new Api({
     baseURL: BACKEND_URL
@@ -173,6 +174,7 @@ onMounted(() => {
         const resp_classes = await api.classes.getFullClassesClassesFullGet()
         ui_state.loading = false
         overviewBox.nodes = resp_classes.data as SubjectInCircle[]
+        // overviewBox.dimensions.width = 1000
         overviewBox.initPackedCircles()
         if (store && store.nodes.length > 0) {
             overviewBox.updateLinks(store)

@@ -57,8 +57,8 @@ onMounted(() => {
 </script>
 <template>
     <main>
-        <ColourRing>
-        </ColourRing>
+        <!-- <ColourRing>
+        </ColourRing> -->
         <Loading v-if="loading"></Loading>
         <div class="graph_wrapper"></div>
     </main>
@@ -68,7 +68,7 @@ onMounted(() => {
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 70vh;
+    height: 100vh;
     width: 100%;
     background-color: #ffffff;
 }

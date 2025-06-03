@@ -45,7 +45,7 @@ class Entity(BaseModel):
     identifier: str
     type: str
     constraints: list[Constraint] = Field([])
-
+    
 
 class Relation(BaseModel):
     entity: str

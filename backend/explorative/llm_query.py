@@ -1,6 +1,6 @@
 from llama_cpp.llama import Llama, LlamaGrammar
 
-from sqlalchemy import select, text, func
+from sqlalchemy import select, text, func, and_
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, Field, create_model
 from enum import Enum
@@ -189,7 +189,7 @@ class LLMQuery(Initationatable):
         progress.relations_steps.append(constrained_erl)
         self.cache[progress.id] = progress
 
-        enriched_erl = self.enrich_entities_relations(constrained_erl)
+        enriched_erl = self.enrich_entities_relations(constrained_erl, candidates)
         progress.progress = 5
         progress.message = "Query completed"
         enriched_erl.message = "Aligned results"
@@ -357,15 +357,15 @@ class LLMQuery(Initationatable):
         constrained_classes = []
         ALLOWED_ENTITY_TYPES = Enum(
             "ALLOWED_ENTITY_TYPES",
-            {e.type: e.type for e in candidates.entities},
+            {e.subject.subject_id: e.type for e in candidates.entities},
         )
         ALLOWED_CONSTRAINT_TYPES = Enum(
             "ALLOWED_CONSTRAINT_TYPES",
-            {c.property: c.property for c in candidates.constraints},
+            {c.link.property_id: c.property for c in candidates.constraints},
         )
         ALLOWED_RELATION_TYPES = Enum(
             "ALLOWED_RELATION_TYPES",
-            {r.relation: r.relation for r in candidates.relations},
+            {r.link.property_id: r.relation for r in candidates.relations},
         )
 
         ConstrainedRelation = create_model(
@@ -408,7 +408,7 @@ class LLMQuery(Initationatable):
         return ConstrainedEntitiesRelations
 
     def enrich_entities_relations(
-        self, erl: EntitiesRelations
+        self, erl: EntitiesRelations, candidates: Candidates
     ) -> EnrichedEntitiesRelations:
         with Session(self.guidance_man.engine) as session:
             session.execute(text("SET TRANSACTION READ ONLY"))
@@ -418,7 +418,12 @@ class LLMQuery(Initationatable):
                 link_db = session.execute(
                     select(SubjectLinkDB)
                     .where(
-                        SubjectLinkDB.label == relation.relation,
+                        and_(
+                            SubjectLinkDB.label == relation.relation.value,
+                            SubjectLinkDB.property_id.in_(
+                                [rel.link.property_id for rel in candidates.relations]
+                            ),
+                        )
                     )
                     .limit(1)
                 ).first()
@@ -431,7 +436,10 @@ class LLMQuery(Initationatable):
                 link_db = session.execute(
                     select(SubjectLinkDB)
                     .where(
-                        SubjectLinkDB.label == constraint.property,
+                        SubjectLinkDB.label == constraint.property.value,
+                        SubjectLinkDB.property_id.in_(
+                            [rel.link.property_id for rel in candidates.constraints]
+                        ),
                     )
                     .limit(1)
                 ).first()
@@ -444,7 +452,10 @@ class LLMQuery(Initationatable):
                 subject_db = session.execute(
                     select(SubjectInDB)
                     .where(
-                        SubjectInDB.label == entity.type,
+                        SubjectInDB.label == entity.type.value,
+                        SubjectInDB.subject_id.in_(
+                            [ent.subject.subject_id for ent in candidates.entities]
+                        ),
                     )
                     .limit(1)
                 ).first()
@@ -463,30 +474,61 @@ class LLMQuery(Initationatable):
             # swap links if the schema is the other way around - does not constrain llm
             # TODO: how could we constrain LLM?
             for relation in erl_enriched.relations:
-                from_entity = next(
-                    (
-                        e
-                        for e in erl_enriched.entities
-                        if e.identifier == relation.entity
-                    ),
-                    None,
-                )
-                to_entity = next(
-                    (
-                        e
-                        for e in erl_enriched.entities
-                        if e.identifier == relation.target
-                    ),
-                    None,
-                )
-                if from_entity and to_entity:
-                    if from_entity.subject.is_of_type(
-                        relation.link.to_id
-                    ) and to_entity.subject.is_of_type(relation.link.from_id):
-                        relation.entity, relation.target = (
-                            relation.target,
-                            relation.entity,
-                        )
+
+                def get_entity_by_id(identifier: str):
+                    return next(
+                        (
+                            e
+                            for e in erl_enriched.entities
+                            if e.identifier == identifier
+                        ),
+                        None,
+                    )
+
+                from_entity = get_entity_by_id(relation.entity)
+                to_entity = get_entity_by_id(relation.target)
+                if (
+                    from_entity is not None
+                    and from_entity.subject.is_of_type(relation.link.to_id)
+                ) or (
+                    to_entity is not None
+                    and to_entity.subject.is_of_type(relation.link.from_id)
+                ):
+                    print(
+                        f"Swapping relation {relation.relation} from {relation.entity} to {relation.target}"
+                    )
+                    # switch if either entity is not set and the relation is the other way around
+                    relation.entity, relation.target = (
+                        relation.target,
+                        relation.entity,
+                    )
+                # add missing entities from the relation
+                from_entity = get_entity_by_id(relation.entity)
+                to_entity = get_entity_by_id(relation.target)
+                entities = [
+                    (from_entity, relation.entity, relation.link.from_id),
+                    (to_entity, relation.target, relation.link.to_id),
+                ]
+                for entity, id, subject_id in entities:
+                    if entity is None:
+                        # if we do not have the target entity, we create a the one from the relation
+                        subject = session.execute(
+                            select(SubjectInDB)
+                            .where(
+                                SubjectInDB.subject_id == subject_id,
+                            )
+                            .limit(1)
+                        ).first()
+                        if subject:
+                            subject_parsed: Subject = subject[0].from_db(
+                                self.guidance_man.oman
+                            )
+                            entity = EnrichedEntity(
+                                identifier=id,
+                                type=subject_parsed.label,
+                                subject=subject_parsed,
+                            )
+                            erl_enriched.entities.append(entity)
 
             return erl_enriched
 
