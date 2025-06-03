@@ -140,8 +140,9 @@ def run_eval(query: pd.Series, llm_query: LLMQuery):
     progress = QueryProgress(id="0", max_steps=1, start_time="0")
     llm_query.run_query(query=query, progress=progress)
     eval_erls: dict[str, EntitiesRelations | EnrichedEntitiesRelations] = {
-        "unconstrained": progress.relations_steps[0],
-        "final": progress.enriched_relations,
+        "raw": progress.relations_steps[0],
+        "constrained": progress.relations_steps[-2],
+        "aligned": progress.enriched_relations,
     }
     results: list[dict, any] = []
     for key, erl in eval_erls.items():
