@@ -289,7 +289,7 @@ const colour_config = computed(() => {
     align-items: start;
     flex-direction: row;
     width: 100%;
-    overflow: auto;
+    //overflow: auto;
     height: 60vh;
 
     pre {

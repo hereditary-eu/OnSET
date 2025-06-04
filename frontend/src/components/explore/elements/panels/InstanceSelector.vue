@@ -74,7 +74,7 @@ const debounced_search = debounce(() => (async () => {
 })().catch(e => {
     console.error('Error fetching selection options', e)
     editor_data.loading = false
-}), 200, true)
+}), 200, false)
 const update_selection_options = async () => {
     if (display) {
         debounced_search()

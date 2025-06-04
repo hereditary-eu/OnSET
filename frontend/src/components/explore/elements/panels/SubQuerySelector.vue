@@ -116,7 +116,7 @@ const debounced_search = debounce(() => {
         console.error('Error fetching selection options', e)
         editor_data.loading = false
     })
-}, 300, true)
+}, 300, false)
 const update_selection_options = async () => {
     console.log('Node changed!', selection_event, display)
     if (display) {
