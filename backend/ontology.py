@@ -136,12 +136,12 @@ class OntologyManager:
         return onto_classes
 
     def get_subclasses(self, cls: str, load_properties=False) -> list[Subject]:
-        query = prepareQuery(
-            queryString=self.config.sub_class_query,
-            initNs={
-                prefix.ttl_prefix: prefix.uri for prefix in self.config.ttl_prefixes
-            },
-        )
+        # query = prepareQuery(
+        #     queryString=self.config.sub_class_query,
+        #     initNs={
+        #         prefix.ttl_prefix: prefix.uri for prefix in self.config.ttl_prefixes
+        #     },
+        # )
         classes = list(
             self.onto.query(
                 self.config.sub_class_query.replace("?cls", cls),

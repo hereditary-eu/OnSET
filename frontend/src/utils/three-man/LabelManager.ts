@@ -10,7 +10,7 @@ interface Labelable {
 export class LabelInstance<T extends Labelable = Labelable> {
     id: string
     subj: T
-    radius: number = 100
+    radius: number = 150
     base_position: THREE.Vector3
     object: CSS2DObject
     connector: THREE.Mesh | null = null;

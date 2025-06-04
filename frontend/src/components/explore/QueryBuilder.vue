@@ -1,9 +1,10 @@
 <template>
-    <div class="query_builder">
+    <div class="query_builder" ref="svg_wrapper">
         <svg class="query_build_wrapper">
             <GraphView :store="store" :display-mode="DisplayMode.EDIT" :diff="diff"
                 @link-point-clicked="clickedOutlink($event)" @instance-search-clicked="clickedInstance($event)"
-                @type-point-clicked="clickedType($event)" @link-edit-clicked="clickedEditLink($event)"></GraphView>
+                @type-point-clicked="clickedType($event)" @link-edit-clicked="clickedEditLink($event)"
+                :simulate="ui_state.simulate" @trigger-interface="ui_state.trigger_sim = $event.trigger"></GraphView>
             <LinkComposer :store="store" :evt="ui_state.attaching_event" @selection-complete="linkEditDone($event)">
             </LinkComposer>
             <OutLinkSelector :selection_event="ui_state.sublink_event" v-model="ui_state.sublink_display" :store="store"
@@ -47,7 +48,7 @@ import type { SubjectInCircle } from '@/utils/three-man/CircleMan3D';
 const api = new Api({
     baseURL: BACKEND_URL
 })
-const { store } = defineProps({
+const { store, diff } = defineProps({
     store: {
         type: Object as () => NodeLinkRepository,
         required: true
@@ -55,7 +56,7 @@ const { store } = defineProps({
     diff: {
         type: Object as () => NodeLinkRepositoryDiff | null,
         default: null
-    }
+    },
 })
 enum EditorMode {
     EDIT = 'edit',
@@ -73,6 +74,8 @@ const ui_state = reactive({
     loading: false,
     query_string: '',
     editor_mode: EditorMode.EDIT,
+    simulate: false,
+    trigger_sim: null as (() => void) | null,
 })
 
 const overviewBox = new OverviewCircles('#threed_graph')
@@ -148,10 +151,17 @@ watch(() => ui_state.editor_mode, (new_val) => {
 watch(() => store, () => {
     regenerateQuery()
 }, { deep: true })
+watch(() => store, () => {
+    ui_state.simulate = true
+    if (ui_state.trigger_sim) {
+        ui_state.trigger_sim()
+    }
+}, { deep: false, flush: 'post' })
 watch(() => ui_state.query_string, (new_val) => {
     if (overviewBox.nodes.length == 0 && overviewBox.renderer) {
         return
     }
+
     overviewBox.updateLinks(store)
 }, { deep: false })
 
@@ -169,6 +179,7 @@ onMounted(() => {
     //         }
     //     }).catch(console.error)
     // }
+
     (async () => {
         ui_state.loading = true
         const resp_classes = await api.classes.getFullClassesClassesFullGet()
@@ -196,9 +207,6 @@ const previewLink = (l: Link | null) => {
         overviewBox.hidePreview()
     }
 }
-
-
-
 
 </script>
 <style lang="scss" scoped>
@@ -233,11 +241,11 @@ const previewLink = (l: Link | null) => {
 
 #threed_minimap {
     aspect-ratio: 1;
-    height: 10vw;
-    width: 10vw;
+    height: 20vw;
+    width: 20vw;
     position: relative;
-    left: calc(100% - 10vw - 20px);
-    bottom: calc(10vw + 20px);
+    left: calc(100% - 20vw - 20px);
+    bottom: calc(20vw + 20px);
     // translate: calc(100%) calc(80%);
     z-index: 20;
     background-color: #ffffff;
