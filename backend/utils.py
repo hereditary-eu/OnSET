@@ -6,6 +6,7 @@ from typing import Any, List, Optional, Union, Literal
 import os
 from pathlib import Path
 import regex as re
+import json_repair
 
 
 def llama_cpp_langchain_from_pretrained(
@@ -186,3 +187,24 @@ def escape_sparql_var(
     for char in replace_chars:
         var = var.replace(char, "_")
     return var
+
+
+def fix_json(json_str: str, item_keys: list[str] = []) -> str:
+    resp = json_repair.repair_json(json_str, logging=True)
+    log = []
+    fixed_response = ""
+    if isinstance(resp, tuple):
+        fixed_response = resp[0]
+        log = resp[1]
+    else:
+        fixed_response = resp
+    if len(log) > 0:
+        print(f"Error in JSON: {json_str}")
+        print(log)
+        print("removing last element")
+        for key in item_keys:
+            if key in fixed_response and isinstance(fixed_response[key], list):
+                fixed_response[key] = fixed_response[key][:-1]
+        fixed_response["relations"] = fixed_response["relations"][:-1]
+    # resp_str = json.dumps(fixed_response)
+    return fixed_response

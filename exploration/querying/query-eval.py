@@ -127,7 +127,7 @@ def f1k(y_true, y_pred, k: int = None):
         rel_set.difference(doc_set)
     )  # relevant docs that are not present in doc set - missing docs
     if tp == 0:
-        return 0
+        return 0, 0, 0
     precision = tp / (tp + fp)
     recall = tp / (tp + fn)
     return 2 * precision * recall / (precision + recall), precision, recall
@@ -181,22 +181,32 @@ def run_eval(query: pd.Series, llm_query: LLMQuery):
     return results
 
 
-def run_evals(queries: pd.DataFrame, llm_query: LLMQuery):
+def run_evals(queries: pd.DataFrame, llm_query: LLMQuery, outfile=None):
     results = []
-
+    print(f"Running evals for {len(queries)} queries")
     for i, query in tqdm(queries.iterrows(), total=len(queries)):
+        print(f"Running eval for query {i}: {query['response']}", flush=True)
         try:
             scores = run_eval(query, llm_query)
             for s in scores:
                 s.update(query.to_dict())
                 results.append(s)
+            print(f"Writing results to {outfile}", flush=True)
+            if outfile is not None:
+                pd.DataFrame(results).to_csv(outfile)
                 # results = pd.concat([results, pd.DataFrame([s])], ignore_index=True)
         except Exception as e:
             print(e)
+            # print stack trace
+            import traceback
+
+            traceback.print_exc()
+            print(f"Error running eval for query {i}: {query['response']}", flush=True)
     return pd.DataFrame(results)
 
 
 if __name__ == "__main__":
+    print("Running evals with setup", setup)
     # n_samples = 5
     n_samples = args.n_samples
     zero_shot = args.zero_shot
@@ -204,7 +214,8 @@ if __name__ == "__main__":
         f"zero_shot={zero_shot}, n_samples={n_samples}, llm_model_id={setup.model_id}"
     )
     query_man = LLMQuery(topic_man, zero_shot=zero_shot, max_tokens=4096)
-    results = run_evals(generated_queries.iloc[:n_samples], llm_query=query_man)
-    results.to_csv(
-        f"results/eval_results_{setup_base.name}_{'zeroshot' if zero_shot else 'oneshot'}_{topic_man.llm_model_id.replace('/', '-')}.csv"
+    output_file = f"results/eval_results_{setup_base.name}_{'zeroshot' if zero_shot else 'oneshot'}_{topic_man.llm_model_id.replace('/', '-')}.csv"
+    results = run_evals(
+        generated_queries.iloc[:n_samples], llm_query=query_man, outfile=output_file
     )
+    results.to_csv(output_file)

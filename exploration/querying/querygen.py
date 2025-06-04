@@ -338,7 +338,7 @@ if __name__ == "__main__":
     # %%
 
     # %%
-    n_examples = 300
+    n_examples = 128
     n_nodes = [3, 5, 7]
     resulting_examples = []
     progress = tqdm(total=n_examples * len(n_nodes))

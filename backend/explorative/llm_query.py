@@ -9,7 +9,7 @@ from fastapi import BackgroundTasks
 import numpy as np
 import tqdm
 
-from utils import escape_sparql_var
+from utils import escape_sparql_var, fix_json
 
 from explorative.explorative_support import GuidanceManager
 from explorative.exp_model import (
@@ -237,7 +237,8 @@ class LLMQuery(Initationatable):
             temperature=self.temperature,
         )
         response_msg = response["choices"][0]["message"]["content"]
-        return EntitiesRelations.model_validate_json(response_msg)
+        fixed_response = fix_json(response_msg, item_keys=["entities", "relations"])
+        return EntitiesRelations.model_validate(fixed_response)
 
     def query_constrained(
         self, query: str, candidates: Candidates
@@ -268,7 +269,9 @@ class LLMQuery(Initationatable):
             temperature=self.temperature,
         )
         response_msg = response["choices"][0]["message"]["content"]
-        return ConstrainedEntitiesRelations.model_validate_json(response_msg)
+        fixed_response = fix_json(response_msg, item_keys=["entities", "relations"])
+        
+        return ConstrainedEntitiesRelations.model_validate(fixed_response)
 
     def candidates_for_erl(
         self, erl: EntitiesRelations, candidate_limit=3

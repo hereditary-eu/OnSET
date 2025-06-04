@@ -42,6 +42,7 @@ dependencies = [
     # "onnxruntime-gpu",
     # "fastembed-gpu",
     "line-profiler>=4.2.0",
+    "json-repair>=0.46.0",
 ]
 
 [project.optional-dependencies]
