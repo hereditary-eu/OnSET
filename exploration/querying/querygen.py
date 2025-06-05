@@ -44,7 +44,12 @@ from backend.eval_config import (
     EvalConfig,
 )
 
-db_setups = [DBPEDIA_CONFIGS[-1], UNIPROT_CONFIGS[-1], BTO_CONFIGS[-1], DNB_CONFIGS[-1]]
+db_setups = [
+    DBPEDIA_CONFIGS[-1],
+    UNIPROT_CONFIGS[-1],
+    BTO_CONFIGS[-1],
+    DNB_CONFIGS[-1],
+]
 # db_setups = [BTO_CONFIGS[0]]
 
 
@@ -339,7 +344,7 @@ if __name__ == "__main__":
 
     # %%
     n_examples = 128
-    n_nodes = [3, 5, 7]
+    n_nodes = [2, 3, 5, 7]
     resulting_examples = []
     progress = tqdm(total=n_examples * len(n_nodes))
     for n_node in n_nodes:
@@ -358,7 +363,7 @@ if __name__ == "__main__":
                         }
                     ],
                     max_tokens=4096,
-                    temperature=0.7,  # get wild :)
+                    temperature=0.3,
                 )
                 templated_query = erl_to_templated_query(erl)
                 progress.update(1)
@@ -390,3 +395,4 @@ if __name__ == "__main__":
 
     # %% [markdown]
     #
+    print("Done generating examples", setup.name)

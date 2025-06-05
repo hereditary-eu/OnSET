@@ -579,7 +579,7 @@ class LLMQuery(Initationatable):
                     },
                 ],
                 max_tokens=4096,
-                temperature=0.7,  # get wild :)
+                temperature=0.3,  # get wild :)
             )
             query_str = query_response["choices"][0]["message"]["content"]
             queries.append((query_str, query_graph))

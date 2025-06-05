@@ -84,7 +84,7 @@ class TopicInitator:
         representation_llama = LlamaCPP(
             self.guidance_man.llama_model, TOPIC_LLAMA3_PROMPT, diversity=0.3
         )
-        docs = self.build_docs()
+        docs = self.docs
         # Create an instance of the Llama class and load the model
 
         # Create the provider by passing the Llama class instance to the LlamaCppPythonProvider class
@@ -136,6 +136,15 @@ class TopicInitator:
                     subject = session.execute(
                         select(SubjectInDB).where(
                             SubjectInDB.subject_id == doc["subject_id"]
+                        )
+                    ).first()
+                    if subject is not None and topic_id in topic_map:
+                        subject[0].topic_id = topic_id
+                elif doc["type"] == "named_individual":
+                    subject = session.execute(
+                        select(SubjectInDB).where(
+                            SubjectInDB.subject_id == doc["named_individual_id"],
+                            SubjectInDB.subject_type == "individual",
                         )
                     ).first()
                     if subject is not None and topic_id in topic_map:
@@ -208,7 +217,11 @@ class TopicInitator:
             p.spos["rdfs:range"].first_value() if "rdfs:range" in p.spos else ""
         )
         prop = (
-            (p.spos["rdf:type"].values[-1].value if len(p.spos["rdf:type"].values) > 0 else "")
+            (
+                p.spos["rdf:type"].values[-1].value
+                if len(p.spos["rdf:type"].values) > 0
+                else ""
+            )
             if "rdf:type" in p.spos
             else ""
         )
@@ -252,7 +265,6 @@ class TopicInitator:
             session.execute(text("SET CONSTRAINTS ALL DEFERRED"))
             session.execute(text("SET session_replication_role = replica"))
 
-          
             anonymous_props = self.guidance_man.oman.open_properties()
             thing = self.guidance_man.oman.enrich_subject("owl:Thing")
 
@@ -264,11 +276,14 @@ class TopicInitator:
                 session.add(subject_link)
                 if i % 1000 == 0:
                     session.commit()
-            
+
             session.commit()
-            
+            all_class_ids = [self.all_classes[c].subject_id for c in self.all_classes]
             cls_descs: dict[str, str] = {}
-            for cls in tqdm(self.all_classes.values(), desc="Saving classes"):
+            cls_it = tqdm(self.all_classes.values(), desc="Saving classes")
+            named_individuals_ids = {}
+
+            for cls in cls_it:
                 comment = (
                     cls.spos["rdfs:comment"].first_value()
                     if "rdfs:comment" in cls.spos
@@ -293,6 +308,14 @@ class TopicInitator:
                     """
                 cls_descs[cls.subject_id] = desc_short
                 embedding = self.guidance_man.embedding_model.encode(desc_short)
+                if cls.subject_id in named_individuals_ids.keys():
+                    session.execute(
+                        delete(SubjectInDB).where(
+                            SubjectInDB.subject_id == cls.subject_id,
+                            SubjectInDB.onto_hash == self.guidance_man.identifier,
+                        )
+                    )
+                    session.commit()
                 session.add(
                     SubjectInDB(
                         subject_id=cls.subject_id,
@@ -305,9 +328,49 @@ class TopicInitator:
                         instance_count=cls.instance_count,
                     )
                 )
+
+                session.commit()
+                named_individuals = self.guidance_man.oman.get_named_individuals(
+                    cls.subject_id
+                )
+                cls_it.set_description(
+                    f"{cls.label} with {len(named_individuals)} named individuals"
+                )
+
+                for ne in named_individuals:
+                    existing_individual = session.execute(
+                        select(SubjectInDB)
+                        .where(
+                            SubjectInDB.subject_id == ne.subject_id,
+                            SubjectInDB.onto_hash == self.guidance_man.identifier,
+                        )
+                        .limit(1)
+                    ).first()
+                    if (
+                        ne.subject_id in self.all_classes.keys()
+                        or existing_individual is not None
+                    ):
+                        # print(f"Named individual {ne.subject_id} is a class, skipping")
+                        continue
+                    if ne.subject_id in named_individuals_ids:
+                        named_individuals_ids[ne.subject_id].parent_id = cls.subject_id
+                        continue
+                    ne_desc = f"{ne.label} is a {cls.label}."
+                    ne_embedding = self.guidance_man.embedding_model.encode(ne_desc)
+                    named_individuals_ids[ne.subject_id] = SubjectInDB(
+                        subject_id=ne.subject_id,
+                        embedding=ne_embedding,
+                        label=ne.label if ne.label is not None else ne.subject_id,
+                        onto_hash=self.guidance_man.identifier,
+                        parent_id=cls.subject_id if len(cls.subject_id) > 0 else None,
+                        subject_type=ne.subject_type,
+                        instance_count=ne.instance_count,
+                    )
+                    session.add(named_individuals_ids[ne.subject_id])
+                    session.commit()
+
             session.commit()
-            
-                    
+
             for cls in tqdm(self.all_classes.values(), desc="Saving relations"):
                 for prop in cls.properties.keys():
                     for p in cls.properties[prop]:
@@ -327,12 +390,11 @@ class TopicInitator:
                     if class_exists is None:
                         link.to_proptype = link.to_id
                         link.to_id = None
-                
+
                 if i % 1000 == 0:
                     session.commit()
 
             session.commit()
-                    
 
             # now do the embeddings in batches
             batch_size = 64
@@ -452,11 +514,17 @@ class TopicInitator:
             cls_doc += f" is subclass of  {subcls.label}\n"
         return [cls_doc]
 
-    def build_docs(self):
+    @property
+    def docs(self) -> pd.DataFrame:
+        if not hasattr(self, "__docs") or self.__docs is None:
+            self.__docs = self.__build_docs()
+        return self.__docs
+
+    def __build_docs(self):
         classes_enriched = self.all_classes
         classes_enriched = [v for v in classes_enriched.values() if v.label is not None]
         documents: list[dict[str, str]] = []
-        for c in classes_enriched[1:]:
+        for c in tqdm(classes_enriched[1:], desc="Building documents"):
             if c.label.startswith("<"):
                 print("ignoring", c.label)
                 continue

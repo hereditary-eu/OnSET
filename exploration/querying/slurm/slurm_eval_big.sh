@@ -10,7 +10,7 @@
 cd ..
 source ../../backend/.venv/bin/activate
 
-datasets=("dbpedia" "bto" "uniprot" "dnb")
+datasets=("dbpedia" "bto" "uniprot" "yago")
 
 dataset_id=$(($SLURM_ARRAY_TASK_ID % 4))
 zeroshot=$(($SLURM_ARRAY_TASK_ID / 4))

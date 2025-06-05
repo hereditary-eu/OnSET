@@ -131,3 +131,44 @@ DNB_CONFIGS = [
         selection_distribution=SelectionDistribution.UNIFORM,
     ),
 ]
+YAGO_CONFIGS = [
+    EvalConfig(
+        model_id="NousResearch/Hermes-3-Llama-3.1-8B-GGUF",
+        conn_str="postgresql+psycopg://postgres:postgres@localhost:5434/onset-yago",
+        sparql_endpoint="http://localhost:9024",
+        name="Yago 4 8B",
+        selection_distribution=SelectionDistribution.UNIFORM,
+    ),
+    EvalConfig(
+        model_id="NousResearch/Hermes-3-Llama-3.2-3B-GGUF",
+        conn_str="postgresql+psycopg://postgres:postgres@localhost:5434/onset-yago",
+        sparql_endpoint="http://localhost:9024",
+        name="Yago 3B",
+        selection_distribution=SelectionDistribution.UNIFORM,
+    ),
+    
+]
+GUTBRAINIE_CONFIGS = [
+    EvalConfig(
+        model_id="NousResearch/Hermes-3-Llama-3.1-8B-GGUF",
+        conn_str="postgresql+psycopg://postgres:postgres@localhost:5434/onset-gutbrainie",
+        sparql_endpoint="http://localhost:9101",
+        name="GutBrainIE 8B",
+        selection_distribution=SelectionDistribution.UNIFORM,
+    ),
+    EvalConfig(
+        model_id="NousResearch/Hermes-3-Llama-3.2-3B-GGUF",
+        conn_str="postgresql+psycopg://postgres:postgres@localhost:5434/onset-gutbrainie",
+        sparql_endpoint="http://localhost:9101",
+        name="GutBrainIE 3B",
+        selection_distribution=SelectionDistribution.UNIFORM,
+    ),
+]
+ALL_CONFIGS = (
+    DBPEDIA_CONFIGS
+    + OMA_CONFIGS
+    + UNIPROT_CONFIGS
+    + BTO_CONFIGS
+    + DNB_CONFIGS
+    + YAGO_CONFIGS
+)
