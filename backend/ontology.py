@@ -279,10 +279,10 @@ class OntologyManager:
                     label_candidates[ref_n3].append(label.value)
         return label_candidates
 
-    def outgoing_edges_for(self, cls: str, edges: list[str] = []):
-        if cls.startswith("_"):
-            print("Skipping", cls)
-            return {}
+    def outgoing_edges_for(self, cls: str, edges: list[str] = [], limit=128):
+        # if cls.startswith("_"):
+        #     print("Skipping", cls)
+        #     return {}
         try:
             # print("Loading outgoing edges for", cls, edges)
             if edges and len(edges) > 0:
@@ -292,7 +292,9 @@ class OntologyManager:
                     SELECT DISTINCT ?edge ?edge_lbl ?obj ?obj_lbl WHERE {{ {cls} ?edge ?obj. FILTER (?edge in ({", ".join(edges)})) 
 OPTIONAL {{?edge rdfs:label ?edge_label.}}
 OPTIONAL {{?obj rdfs:label ?obj_lbl.}}
-                    }}"""
+                    }}
+                    LIMIT {limit}
+                    """
                     )
                 )
             else:
@@ -302,8 +304,8 @@ OPTIONAL {{?obj rdfs:label ?obj_lbl.}}
                     SELECT DISTINCT ?edge ?edge_lbl ?obj ?obj_lbl WHERE {{ {cls} ?edge ?obj. 
 OPTIONAL {{?edge rdfs:label ?edge_label.}}
 OPTIONAL {{?obj rdfs:label ?obj_lbl.}}
-  
-                    }}"""
+                    }}
+                    LIMIT {limit}"""
                     )
                 )
             outgoing_edge_label_candidates: dict[str, list[str]] = (
@@ -364,9 +366,9 @@ OPTIONAL {{?obj rdfs:label ?obj_lbl.}}
     def properties_for(
         self, cls: str, property_type: str = "ObjectProperty", n_props=None
     ) -> list[Subject]:
-        if cls.startswith("_"):
-            print("Skipping", cls)
-            return []
+        # if cls.startswith("_"):
+        #     print("Skipping", cls)
+        #     return []
         try:
             # print("Loading properties for", cls)
             properties = list(
@@ -466,7 +468,7 @@ OPTIONAL {{?obj rdfs:label ?obj_lbl.}}
 
             return cls
 
-        roots = [enrich_descendants(cls) for cls in tqdm(roots)]
+        roots = [enrich_descendants(cls) for cls in tqdm(roots, desc="Enriching root classes")]
         self.roots_cache = roots
         return roots
 

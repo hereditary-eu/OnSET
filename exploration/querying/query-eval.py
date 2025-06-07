@@ -35,6 +35,8 @@ from backend.eval_config import (
     DNB_CONFIGS,
     UNIPROT_CONFIGS,
     BTO_CONFIGS,
+    YAGO_CONFIGS,
+    GUTBRAINIE_CONFIGS,
     EvalConfig,
 )
 # %%
@@ -47,6 +49,9 @@ configs = {
     "uniprot": UNIPROT_CONFIGS,
     "bto": BTO_CONFIGS,
     "dnb": DNB_CONFIGS,
+    "oma": OMA_CONFIGS,
+    "yago": YAGO_CONFIGS,
+    "gutbrainie": GUTBRAINIE_CONFIGS,
 }
 parser.add_argument(
     "--dataset", type=str, choices=list(configs.keys()), default="dbpedia"
@@ -150,6 +155,10 @@ def run_eval(query: pd.Series, llm_query: LLMQuery):
             [ent.type for ent in target_erl.entities],
             [ent.type for ent in erl.entities],
         )
+        f1_score_rel, precision_rel, recall_rel = f1k(
+            [rel.relation for rel in target_erl.relations],
+            [rel.relation for rel in erl.relations],
+        )
         target_graph = graph_from_erl(target_erl)
         retrieved_grah = graph_from_erl(erl)
         ged = nx.graph_edit_distance(
@@ -169,6 +178,9 @@ def run_eval(query: pd.Series, llm_query: LLMQuery):
                 "f1_score": f1_score_ents,
                 "precision": precision,
                 "recall": recall,
+                "f1_score_rel": f1_score_rel,
+                "precision_rel": precision_rel,
+                "recall_rel": recall_rel,
                 "ged": ged,
                 "normed_ged": normed_ged,
                 "response": erl.model_dump_json(),
@@ -219,3 +231,5 @@ if __name__ == "__main__":
         generated_queries.iloc[:n_samples], llm_query=query_man, outfile=output_file
     )
     results.to_csv(output_file)
+    
+    print(f"Done, esults saved to {output_file}")

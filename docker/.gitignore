@@ -21,3 +21,4 @@ graphdb-data
 qdrant
 *.ttl
 *.log
+gutbrainie-data

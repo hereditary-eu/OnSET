@@ -27,10 +27,20 @@ from backend.eval_config import (
     UNIPROT_CONFIGS,
     BTO_CONFIGS,
     DNB_CONFIGS,
+    YAGO_CONFIGS,
+    GUTBRAINIE_CONFIGS,
     EvalConfig,
 )
 
-db_setups = [DBPEDIA_CONFIGS[-1], UNIPROT_CONFIGS[-1], BTO_CONFIGS[-1], DNB_CONFIGS[-1]]
+db_setups = [
+    # OLYMPICS_CONFIGS[-1],
+    DBPEDIA_CONFIGS[-1],
+    UNIPROT_CONFIGS[-1],
+    BTO_CONFIGS[-1],
+    DNB_CONFIGS[-1],
+    YAGO_CONFIGS[-1],
+    GUTBRAINIE_CONFIGS[-1],
+]
 # db_setups = []
 
 
@@ -67,4 +77,5 @@ if __name__ == "__main__":
     initiator.initate(force=True, delete_tables=True)
     llm_man.initate(force=True)
 
+    print("Database initialised with setup:", setup.name)
 # %%
