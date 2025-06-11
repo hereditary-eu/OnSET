@@ -133,18 +133,26 @@ DNB_CONFIGS = [
 ]
 YAGO_CONFIGS = [
     EvalConfig(
+        model_id="unsloth/Mistral-Small-3.1-24B-Instruct-2503-GGUF",
+        model_quant="*-Q6_K.gguf",
+        conn_str="postgresql+psycopg://postgres:postgres@localhost:5434/onset-yago",
+        sparql_endpoint="http://localhost:9024",
+        name="Yago Mistral",
+        selection_distribution=SelectionDistribution.INSTANCES,
+    ),
+    EvalConfig(
         model_id="NousResearch/Hermes-3-Llama-3.1-8B-GGUF",
         conn_str="postgresql+psycopg://postgres:postgres@localhost:5434/onset-yago",
         sparql_endpoint="http://localhost:9024",
-        name="Yago 4 8B",
-        selection_distribution=SelectionDistribution.UNIFORM,
+        name="Yago 8B",
+        selection_distribution=SelectionDistribution.INSTANCES,
     ),
     EvalConfig(
         model_id="NousResearch/Hermes-3-Llama-3.2-3B-GGUF",
         conn_str="postgresql+psycopg://postgres:postgres@localhost:5434/onset-yago",
         sparql_endpoint="http://localhost:9024",
-        name="Yago 3B",
-        selection_distribution=SelectionDistribution.UNIFORM,
+        name="Yago",
+        selection_distribution=SelectionDistribution.INSTANCES,
     ),
     
 ]
@@ -160,7 +168,7 @@ GUTBRAINIE_CONFIGS = [
         model_id="NousResearch/Hermes-3-Llama-3.2-3B-GGUF",
         conn_str="postgresql+psycopg://postgres:postgres@localhost:5434/onset-gutbrainie",
         sparql_endpoint="http://localhost:9101",
-        name="GutBrainIE 3B",
+        name="GutBrainIE",
         selection_distribution=SelectionDistribution.UNIFORM,
     ),
 ]

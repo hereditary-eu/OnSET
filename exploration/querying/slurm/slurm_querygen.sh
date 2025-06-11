@@ -2,7 +2,7 @@
 #SBATCH --job-name=onset_querygen
 #SBATCH -c 1
 #SBATCH --mem 8G
-#SBATCH -a 0-3%2
+#SBATCH -a 0-4%2
 #SBATCH --account=bkantz
 #SBATCH --output=logs/gen_%A_%a.out
 #SBATCH --error=logs/gen_%A_%a.err
