@@ -77,7 +77,7 @@ export class HierarchicalCircleMan3D extends CircleMan3D {
             return topic_in_circle
         }
         this.topics_root = revive_topic(this.topics_root, null)
-        let depth = 0
+        let max_depth = 0
         const eval_depth = (topic, depth) => {
             topic.depth = depth
             let max_depth = depth
@@ -111,7 +111,7 @@ export class HierarchicalCircleMan3D extends CircleMan3D {
         eval_children(this.topics_root)
 
 
-        depth = eval_depth(this.topics_root, 0)
+        max_depth = eval_depth(this.topics_root, 0)
         this.topics_root.color_position = new THREE.Vector2(0, 0)
         const build_colours = (topic: TopicInCircle, start_angle = 0, end_angle = 2 * Math.PI) => {
             let angle = (start_angle + end_angle) / 2
@@ -138,7 +138,12 @@ export class HierarchicalCircleMan3D extends CircleMan3D {
 
         const build_tree_bottom = (topic: TopicInCircle, depth: number) => {
             let heights = topic.sub_topics.map(sub_topic => build_tree_bottom(sub_topic, depth - 1))
+
             let height = Math.max(...[0, ...heights]) + 1
+            if (isNaN(height)) {
+                console.warn('height is NaN', heights, topic.topic)
+                height = depth
+            }
             topic.links = [...topic.sub_topics.map(child => {
                 let link = new TopicTreeLink()
                 link.from_topic = child
@@ -190,8 +195,12 @@ export class HierarchicalCircleMan3D extends CircleMan3D {
             squared_positions.divideScalar(n_valid_links)
             squared_positions.sub(new THREE.Vector3().multiplyVectors(topic.to_position, topic.to_position)) //E[X^2] - E[X]^2=Var(X)
             squared_positions = new THREE.Vector3(Math.sqrt(squared_positions.x), 0, Math.sqrt(squared_positions.z))
+            if (isNaN(squared_positions.x) || isNaN(squared_positions.z)) {
+                squared_positions.set(0, 0, 0)
+            }
             let height_add = squared_positions.length() * Math.pow(this.tree_params.height_factor, height)
             if (isNaN(height_add)) {
+                console.warn('height_add is NaN', squared_positions, topic.to_position, height, topic.topic)
                 height_add = 0
             }
             // console.log('height add', height_add, height, depth, topic.topic)
@@ -236,17 +245,23 @@ export class HierarchicalCircleMan3D extends CircleMan3D {
             return height
 
         }
-        build_tree_bottom(this.topics_root, depth)
+        build_tree_bottom(this.topics_root, max_depth)
         const add_labels = (topic: TopicInCircle, depth: number) => {
             let id = `topic-${topic.topic_id}`
-            let label = this.label_manager.register_label(id, topic, this.scene)
+            if (topic.depth > 3) {
+                this.label_manager.register_label(id, topic, this.scene)
+            }
 
             for (let sub_topic of topic.sub_topics) {
                 add_labels(sub_topic, depth + 1)
                 for (let subject_id of sub_topic.subjects_ids) {
-                    let id = `node-${subject_id}`
-                    this.label_manager.register_event(id, (lbl, display) => {
-                        label.display(display)
+                    let id_nd = `node-${subject_id}`
+                    const label_cpy = this.label_manager.labels[id]
+                    if (!label_cpy) {
+                        continue
+                    }
+                    this.label_manager.register_event(id_nd, (lbl, display) => {
+                        label_cpy.display(display)
                     })
                 }
             }

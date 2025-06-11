@@ -10,7 +10,7 @@ interface Labelable {
 export class LabelInstance<T extends Labelable = Labelable> {
     id: string
     subj: T
-    radius: number = 150
+    radius: number = 100
     base_position: THREE.Vector3
     object: CSS2DObject
     connector: THREE.Mesh | null = null;
@@ -78,7 +78,7 @@ export class LabelInstance<T extends Labelable = Labelable> {
             this.base_position.y = 0;
             this.base_position.normalize();
             this.base_position.multiplyScalar(this.radius);
-            this.base_position.y = this.subj.position.y;
+            this.base_position.y = this.subj.position.y* 1.2; // raise the label above the object
         }
         this.object.position.copy(this.base_position);
     }
