@@ -280,9 +280,9 @@ class TopicInitator:
             session.commit()
             all_class_ids = [self.all_classes[c].subject_id for c in self.all_classes]
             cls_descs: dict[str, str] = {}
-            cls_it = tqdm(self.all_classes.values(), desc="Saving classes")
             named_individuals_ids = {}
 
+            cls_it = tqdm(self.all_classes.values(), desc="Saving classes")
             for cls in cls_it:
                 comment = (
                     cls.spos["rdfs:comment"].first_value()

@@ -236,11 +236,13 @@ export class CircleMan {
             console.error('could not find source or target data node')
             return
         }
+        let from_safe=from.replace(/[^a-zA-Z0-9]/g, '_')
+        let to_safe=to.replace(/[^a-zA-Z0-9]/g, '_')
         console.log('adding link', source_node_d3, target_node_d3)
         const k = this.width / (this.focus.r * 2)
         const path_color = "rgb(128 128 128 / 40%)"
         const link_element = this.svg_d3.append("g")
-            .attr("id", `link_${from}_${to}`)
+            .attr("id", `link_${from_safe}_${to_safe}`)
             .attr("class", "link")
 
         const add_text = (nd: d3.HierarchyNode<SubjectInCircle>) => {

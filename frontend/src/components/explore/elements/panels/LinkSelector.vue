@@ -65,7 +65,6 @@ import { MixedResponse, type NodeLinkRepository } from '@/utils/sparql/store';
 import GraphView from '../GraphView.vue';
 import { jsonClone } from '@/utils/parsing';
 import { debounce } from '@/utils/helpers';
-import { c } from 'node_modules/vite/dist/node/types.d-aGj9QkWt';
 
 const NODE_LINK_COUNT = 16
 const emit = defineEmits<{
