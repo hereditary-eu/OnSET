@@ -73,10 +73,13 @@ class TopicInitator:
     }
     """
         )[0].to_list()
-        all_classes = {
-            c: self.guidance_man.oman.enrich_subject(c, load_properties=True)
-            for c in tqdm(all_classes, desc="Enriching classes")
+        all_class_iter= tqdm(all_classes, desc="Enriching classes")
+        all_classes:dict[str, Subject] = {
         }
+        for c in all_class_iter:
+            all_class_iter.set_description(f"Enriching {c}")
+            all_classes[c] = self.guidance_man.oman.enrich_subject(c, load_properties=True)
+            
         self.__all_classes = all_classes
         return all_classes
 

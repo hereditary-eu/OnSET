@@ -41,6 +41,7 @@ from backend.eval_config import (
     UNIPROT_CONFIGS,
     DNB_CONFIGS,
     BTO_CONFIGS,
+    YAGO_CONFIGS,
     EvalConfig,
 )
 
@@ -49,6 +50,7 @@ db_setups = [
     UNIPROT_CONFIGS[-1],
     BTO_CONFIGS[-1],
     DNB_CONFIGS[-1],
+    YAGO_CONFIGS[-1],
 ]
 # db_setups = [BTO_CONFIGS[0]]
 
@@ -124,10 +126,15 @@ def choose_graph(
 
         from_subject_alias = aliased(SubjectInDB, name="from_subject")
         to_subject_alias = aliased(SubjectInDB, name="to_subject")
+        # from and start links do not start with underscore _
         best_links_db = session.execute(
             select(SubjectLinkDB)
-            .filter(SubjectLinkDB.from_id != SubjectLinkDB.to_id)
-            .filter(SubjectLinkDB.to_id != None)
+            .where(SubjectLinkDB.from_id != SubjectLinkDB.to_id)
+            .where(SubjectLinkDB.to_id != None)
+            .where(SubjectLinkDB.from_id.not_like("!_:%", "!"))
+            .where(SubjectLinkDB.to_id.not_like("!_:%", "!"))
+            .where(SubjectLinkDB.description.not_like("%<%"))
+            .where(SubjectLinkDB.description.not_like("%>%"))
             .order_by(SubjectLinkDB.instance_count.desc())
             .join(
                 from_subject_alias,
@@ -176,6 +183,10 @@ def choose_graph(
                 select(SubjectLinkDB)
                 .where(SubjectLinkDB.from_id != SubjectLinkDB.to_id)
                 .where(SubjectLinkDB.to_id is not None)
+                .where(SubjectLinkDB.from_id.not_like("!_:%", "!"))
+                .where(SubjectLinkDB.to_id.not_like("!_:%", "!"))
+                .where(SubjectLinkDB.description.not_like("%<%"))
+                .where(SubjectLinkDB.description.not_like("%>%"))
                 .join(
                     from_subject_alias,
                     SubjectLinkDB.from_subject.of_type(from_subject_alias),
@@ -385,11 +396,15 @@ if __name__ == "__main__":
                         "seed": i,
                     }
                 )
+                resulting_examples_df = pd.DataFrame(resulting_examples)
+                # only save unique examples
+                resulting_examples_df = resulting_examples_df.drop_duplicates(
+                    subset=["response"]
+                )
+                resulting_examples_df.to_csv(f"examples/examples_{setup.name}.csv")
             except Exception as e:
                 print(e)
                 continue
-            resulting_examples_df = pd.DataFrame(resulting_examples)
-            resulting_examples_df.to_csv(f"examples/examples_{setup.name}.csv")
 
     # %%
 

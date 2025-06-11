@@ -280,9 +280,9 @@ class OntologyManager:
         return label_candidates
 
     def outgoing_edges_for(self, cls: str, edges: list[str] = [], limit=128):
-        # if cls.startswith("_"):
-        #     print("Skipping", cls)
-        #     return {}
+        if cls.startswith("_"):
+            print("Skipping", cls)
+            return {}
         try:
             # print("Loading outgoing edges for", cls, edges)
             if edges and len(edges) > 0:
@@ -347,7 +347,7 @@ OPTIONAL {{?obj rdfs:label ?obj_lbl.}}
                 outgoing_edges_dict[edge_n3] = edge
             return outgoing_edges_dict
         except Exception as e:
-            print(traceback.format_exc())
+            print(traceback.format_exc(), e, cls)
             return {}
 
     def refcount(self, cls):
@@ -366,9 +366,9 @@ OPTIONAL {{?obj rdfs:label ?obj_lbl.}}
     def properties_for(
         self, cls: str, property_type: str = "ObjectProperty", n_props=None
     ) -> list[Subject]:
-        # if cls.startswith("_"):
-        #     print("Skipping", cls)
-        #     return []
+        if cls.startswith("_"):
+            print("Skipping", cls)
+            return []
         try:
             # print("Loading properties for", cls)
             properties = list(
@@ -437,7 +437,7 @@ OPTIONAL {{?obj rdfs:label ?obj_lbl.}}
         )
         if load_properties:
             subject.properties = {
-                prop_type: self.properties_for(col_ref, property_type=prop_type)
+                prop_type: self.properties_for(col_ref, property_type=prop_type, n_props=512)
                 for prop_type in self.config.property_types
             }
         return subject

@@ -1,0 +1,59 @@
+\begin{table}
+\caption{Comparison of models for Yago}
+\label{tab:compare_model_Yago}
+\begin{tabular}{llllrr}
+\toprule
+ &  &  &  & $F_1$ & $GED_{s}$ \\
+$k$ & Stage & Prompt Type & Version \& Size &  &  \\
+\midrule
+\multirow[t]{6}{*}{2} & \multirow[t]{2}{*}{aligned} & one shot &  3B  & 0.65 & 0.54 \\
+\cline{3-6}
+ &  & zero shot &  3B  & 0.11 & 0.19 \\
+\cline{2-6} \cline{3-6}
+ & \multirow[t]{2}{*}{constrained} & one shot &  3B  & 0.00 & 0.00 \\
+\cline{3-6}
+ &  & zero shot &  3B  & 0.00 & 0.00 \\
+\cline{2-6} \cline{3-6}
+ & \multirow[t]{2}{*}{raw} & one shot &  3B  & 0.43 & 0.25 \\
+\cline{3-6}
+ &  & zero shot &  3B  & 0.06 & 0.04 \\
+\cline{1-6} \cline{2-6} \cline{3-6}
+\multirow[t]{6}{*}{3} & \multirow[t]{2}{*}{aligned} & one shot &  3B  & 0.64 & 0.52 \\
+\cline{3-6}
+ &  & zero shot &  3B  & 0.22 & 0.20 \\
+\cline{2-6} \cline{3-6}
+ & \multirow[t]{2}{*}{constrained} & one shot &  3B  & 0.00 & -0.02 \\
+\cline{3-6}
+ &  & zero shot &  3B  & 0.00 & -0.02 \\
+\cline{2-6} \cline{3-6}
+ & \multirow[t]{2}{*}{raw} & one shot &  3B  & 0.49 & 0.30 \\
+\cline{3-6}
+ &  & zero shot &  3B  & 0.09 & 0.03 \\
+\cline{1-6} \cline{2-6} \cline{3-6}
+\multirow[t]{6}{*}{5} & \multirow[t]{2}{*}{aligned} & one shot &  3B  & 0.68 & 0.47 \\
+\cline{3-6}
+ &  & zero shot &  3B  & 0.29 & 0.14 \\
+\cline{2-6} \cline{3-6}
+ & \multirow[t]{2}{*}{constrained} & one shot &  3B  & 0.00 & -0.04 \\
+\cline{3-6}
+ &  & zero shot &  3B  & 0.00 & -0.05 \\
+\cline{2-6} \cline{3-6}
+ & \multirow[t]{2}{*}{raw} & one shot &  3B  & 0.52 & 0.32 \\
+\cline{3-6}
+ &  & zero shot &  3B  & 0.10 & -0.00 \\
+\cline{1-6} \cline{2-6} \cline{3-6}
+\multirow[t]{6}{*}{7} & \multirow[t]{2}{*}{aligned} & one shot &  3B  & 0.65 & 0.44 \\
+\cline{3-6}
+ &  & zero shot &  3B  & 0.20 & 0.06 \\
+\cline{2-6} \cline{3-6}
+ & \multirow[t]{2}{*}{constrained} & one shot &  3B  & 0.00 & -0.03 \\
+\cline{3-6}
+ &  & zero shot &  3B  & 0.00 & -0.04 \\
+\cline{2-6} \cline{3-6}
+ & \multirow[t]{2}{*}{raw} & one shot &  3B  & 0.47 & 0.30 \\
+\cline{3-6}
+ &  & zero shot &  3B  & 0.08 & 0.00 \\
+\cline{1-6} \cline{2-6} \cline{3-6}
+\bottomrule
+\end{tabular}
+\end{table}
