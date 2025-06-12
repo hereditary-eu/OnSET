@@ -47,6 +47,40 @@ export class TopicInCircle implements Topic {
     }
 
 }
+export function buildColours(topic: TopicInCircle, start_angle = 0, end_angle = 2 * Math.PI) {
+    let angle = (start_angle + end_angle) / 2
+    topic.color_angle = angle
+    topic.color_position = new THREE.Vector2(Math.cos(angle), Math.sin(angle))
+    let total_children = topic.n_children
+    let weights = topic.sub_topics.map(sub_topic => {
+        return sub_topic.n_children / total_children
+    })
+    let angles = weights.map(weight => {
+        let angle = (end_angle - start_angle) * weight
+        let old_start_angle = start_angle
+        start_angle += angle
+        return old_start_angle
+    })
+    // console.log('angles', weights, angles, start_angle, end_angle)
+    topic.sub_topics.forEach((sub_topic, i) => {
+        let sub_start_angle = angles[i - 1] || start_angle
+        let sub_end_angle = angles[i]
+        buildColours(sub_topic, sub_start_angle, sub_end_angle)
+    })
+}
+export function evalChildren(topic: TopicInCircle) {
+    let n_children = topic.sub_topics.reduce((acc, sub_topic) => {
+        let sub_topic_children = evalChildren(sub_topic);
+        if (sub_topic_children > 0) {
+            acc += sub_topic_children;
+        } else {
+            acc += 1;
+        }
+        return acc;
+    }, 0);
+    topic.n_children = n_children;
+    return n_children;
+}
 // 3D circle packing based upon https://observablehq.com/@analyzer2004/3d-circle-packing
 // expanded with Topic links and fixed height of nodes (TODO)
 export class HierarchicalCircleMan3D extends CircleMan3D {
@@ -95,46 +129,12 @@ export class HierarchicalCircleMan3D extends CircleMan3D {
          * 3. set color angle to the center of the carved out part
          * 4. go to children and repeat
          */
-        const eval_children = (topic: TopicInCircle) => {
-            let n_children = topic.sub_topics.reduce((acc, sub_topic) => {
-                let sub_topic_children = eval_children(sub_topic)
-                if (sub_topic_children > 0) {
-                    acc += sub_topic_children
-                } else {
-                    acc += 1
-                }
-                return acc
-            }, 0)
-            topic.n_children = n_children
-            return n_children
-        }
-        eval_children(this.topics_root)
+        evalChildren(this.topics_root)
 
 
         max_depth = eval_depth(this.topics_root, 0)
         this.topics_root.color_position = new THREE.Vector2(0, 0)
-        const build_colours = (topic: TopicInCircle, start_angle = 0, end_angle = 2 * Math.PI) => {
-            let angle = (start_angle + end_angle) / 2
-            topic.color_angle = angle
-            topic.color_position = new THREE.Vector2(Math.cos(angle), Math.sin(angle))
-            let total_children = topic.n_children
-            let weights = topic.sub_topics.map(sub_topic => {
-                return sub_topic.n_children / total_children
-            })
-            let angles = weights.map(weight => {
-                let angle = (end_angle - start_angle) * weight
-                let old_start_angle = start_angle
-                start_angle += angle
-                return old_start_angle
-            })
-            // console.log('angles', weights, angles, start_angle, end_angle)
-            topic.sub_topics.forEach((sub_topic, i) => {
-                let sub_start_angle = angles[i - 1] || start_angle
-                let sub_end_angle = angles[i]
-                build_colours(sub_topic, sub_start_angle, sub_end_angle)
-            })
-        }
-        build_colours(this.topics_root)
+        buildColours(this.topics_root)
 
         const build_tree_bottom = (topic: TopicInCircle, depth: number) => {
             let heights = topic.sub_topics.map(sub_topic => build_tree_bottom(sub_topic, depth - 1))

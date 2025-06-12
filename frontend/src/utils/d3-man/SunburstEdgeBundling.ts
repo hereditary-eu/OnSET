@@ -4,8 +4,10 @@ import * as d3 from 'd3'
 import * as THREE from 'three';
 import { Api, type Property, type Subject, type Topic } from '@/api/client.ts/Api';
 import { registerClass } from '../parsing';
+import { buildColours, evalChildren, TopicInCircle } from '../three-man/HierarchicalCircleMan3D';
 
 export class SubjectInRadial implements Subject {
+    kind: string = 'subject';
     subject_id: string;
     label: string;
     spos: Record<string, Property> = {};
@@ -16,18 +18,24 @@ export class SubjectInRadial implements Subject {
     expanded: boolean = false
     children?: SubjectInRadial[]
     n_id: number = 0
-    x0: number = 0
-    x1: number = 0
-    y0: number = 0
-    y1: number = 0
+
+
+    incoming: [d3.HierarchyNode<SubjectInRadial>, d3.HierarchyNode<SubjectInRadial>][]
+    outgoing: [d3.HierarchyNode<SubjectInRadial>, d3.HierarchyNode<SubjectInRadial>][]
+
+    get id() {
+        return `subject-${this.subject_id}`
+    }
 }
 
 @registerClass
 export class TopicInEdges implements Topic {
+    kind: string = 'topic';
     subjects_ids: string[];
     property_ids: string[];
     topic_id: number;
     sub_topics: TopicInEdges[];
+    subjects: SubjectInRadial[] = [];
     parent_topic_id: number;
     topic: string;
     count: number;
@@ -42,9 +50,6 @@ export class TopicInEdges implements Topic {
     incoming: [d3.HierarchyNode<TopicInEdges>, d3.HierarchyNode<TopicInEdges>][]
     outgoing: [d3.HierarchyNode<TopicInEdges>, d3.HierarchyNode<TopicInEdges>][]
 
-    x: number = 0
-    y: number = 0
-
     get id() {
         return `topic-${this.topic_id}`
     }
@@ -52,16 +57,97 @@ export class TopicInEdges implements Topic {
         // console.warn('TopicInCircle.position is deprecated, use to_position instead')
         return this.to_position || new THREE.Vector3(0, 0, 0)
     }
-    get children() {
-        return this.sub_topics || []
+    get children(): (TopicInEdges | SubjectInRadial)[] {
+        return [...this.sub_topics, ...this.subjects]
     }
     get label() {
         return `${this.topic}`
     }
 
 }
+export type EdgeDatum = SubjectInRadial | TopicInEdges;
+export function topicPoints<DatumEdge extends EdgeDatum, DatumCircle extends SubjectInRadial>(edge_root: d3.HierarchyNode<DatumEdge>, radial_root: d3.HierarchyRectangularNode<DatumCircle>, radius_steps: number, radius: number): d3.HierarchyNode<DatumEdge> {
+    const radial_map = new Map(radial_root.descendants().map(d => [d.data.id, d]));
+    const edge_map = new Map(edge_root.descendants().map(d => [d.data.id, d]));
+    let na_nodes = radial_root.descendants().filter(d => isNaN(d.x0))
+    console.warn('NaN nodes in radial root', na_nodes)
+    console.log('radial_map', radial_map)
+    edge_root.each(d => {
+        if (d.data.kind === 'subject') {
+            const radial_node = radial_map.get((d.data as SubjectInRadial).id);
+            if (radial_node) {
+                d.x = radial_node.x0 + (radial_node.x1 - radial_node.x0) / 2;
+                d.y = radial_node.y0 + (radial_node.y1 - radial_node.y0) / 2;
+
+            }
+        }
+    })
+
+    console.warn('NaN nodes in radial root', na_nodes)
+    //eachAfter to visit leaf nodes first, then parents, etc - can aggregate data from children
+    edge_root.eachAfter(d => {
+        let x = 0;
+        let y = 0;
+        let radius_max = 0;
+        let count = 0;
+        if (d.children) {
+            for (const child of d.children) {
+                let x_c = child.x || 0;
+                let y_c = child.y || 0;
+                radius_max = Math.max(radius_max, y_c);
+                // project to cartesian coordinates
+                let x_cart = Math.cos(x_c) * y_c;
+                let y_cart = Math.sin(x_c) * y_c;
+                x += x_cart;
+                y += y_cart;
+                count++;
+            }
+
+            if (count > 0) {
+                let d_x = x / count;
+                let d_y = y / count;
+                // convert back to polar coordinates
+                d.x = Math.atan2(d_y, d_x); // angle
+                let r = Math.sqrt(d_x * d_x + d_y * d_y);
+                d.y = Math.max(r, radius_max); // radius
+                d.y = Math.min(d.y, radius - radius_steps); // limit radius to avoid overlap
+            } else {
+                d.x = 0;
+                d.y = 0;
+            }
+
+            d.y = d.y + radius_steps; // spread out vertically by depth
+        } else {
+            d.x = d.x || 0;
+            d.y = d.y || 0;
+            count = 1; // if no children, we take the node's position as is
+        }
+        // for (const child of d.data.children) {
+        //     if (child.kind === 'subject') {
+        //         const radial_node = radial_map.get(child.id);
+        //         if (radial_node) {
+        //             x += radial_node.x0 + (radial_node.x1 - radial_node.x0) / 2;
+        //             y += radial_node.y0 + (radial_node.y1 - radial_node.y0) / 2;
+        //             count++;
+        //         } else {
+        //             console.warn('No radial node found for subject id', child.id, 'in edge', d.data);
+        //         }
+        //     } else if (child.kind === 'topic') {
+        //         const topic = child as TopicInEdges;
+        //         const topic_node = edge_map.get(topic.id);
+        //         x += topic_node.x || 0; // if it's a topic, we take its position as is
+        //         y += topic_node.y || 0; // if it's a topic, we take its position as is;
+        //         // y -= topic_node.y || 0;; // spread out vertically by depth
+        //         count++; // if it's a topic, we take its position as is
+        //     }
+
+        // }
+    })
+    return edge_root;
+
+}
 export class SunburstEdgeBundling {
-    topics_root: TopicInEdges = null
+    topics_root: EdgeDatum = null
     nodes: SubjectInRadial[] = []
 
     node_d3: d3.Selection<any, SubjectInRadial, any, any> = null
@@ -82,13 +168,19 @@ export class SunburstEdgeBundling {
     root: d3.HierarchyNode<SubjectInRadial> = null
     focus: d3.HierarchyCircularNode<SubjectInRadial> = null
     hierarchy: d3.HierarchyNode<SubjectInRadial> = null
+
+    subject_map: Map<string, d3.HierarchyRectangularNode<SubjectInRadial>> = new Map<string, d3.HierarchyRectangularNode<SubjectInRadial>>();
     private node_counter = 0
     constructor(private selector: string) {
 
     }
     mapNodesToChildren(node: SubjectInRadial): SubjectInRadial {
+        let new_node = new SubjectInRadial()
+        for (let key in node) {
+            new_node[key] = node[key]
+        }
         let children: SubjectInRadial[] = []
-        for (let key in node.descendants) {
+        for (let key in new_node.descendants) {
             let child = new SubjectInRadial()
             child.subject_id = `${node.subject_id}_${key}`
             child.label = `${node.label}`
@@ -101,11 +193,9 @@ export class SunburstEdgeBundling {
                 children.push(child)
             }
         }
-        node.expanded = true
-        return {
-            ...node,
-            children: children
-        }
+        new_node.expanded = true
+        new_node.children = children
+        return new_node
     }
     restartSunburst() {
 
@@ -113,25 +203,19 @@ export class SunburstEdgeBundling {
         mapped_nodes.forEach(child => child.n_id = this.node_counter++)
 
         console.log('restarting graph', this.nodes, mapped_nodes)
-        const data: SubjectInRadial = {
-            subject_id: 'root',
-            expanded: true,
-            spos: {},
-            label: 'root',
-            refcount: 0,
-            subject_type: 'root',
-            total_descendants: mapped_nodes.reduce((acc, child) => acc + child.total_descendants, 0),
-            children: mapped_nodes,
-            n_id: this.node_counter++,
-            x0: 0,
-            x1: 0,
-            y0: 0,
-            y1: 0
-        }
+        const data = new SubjectInRadial()
+        data.subject_id = 'root'
+        data.label = 'root'
+        data.children = mapped_nodes
+        data.refcount = mapped_nodes.reduce((acc, child) => acc + child.refcount, 0)
+        data.total_descendants = mapped_nodes.reduce((acc, child) => acc + child.total_descendants, 0)
+        data.n_id = this.node_counter++
+        data.spos = {}
+        data.expanded = true
+        data.subject_type = 'root'
         this.hierarchy = d3.hierarchy(data, (d) => d.children)
             .sum(d => (d.children?.length || 10))
             .sort((a, b) => b.value - a.value)
-
         //https://observablehq.com/@d3/sunburst/2
         // const color = d3.scaleOrdinal(d3.quantize(d3.interpolateRainbow, data.children.length + 1));
 
@@ -139,9 +223,13 @@ export class SunburstEdgeBundling {
 
         // Prepare the layout.
         const root = d3.partition<SubjectInRadial>()
-            .size([2 * Math.PI, radius / 2])
+            .size([2 * Math.PI, radius])
             .padding(0)
             (this.hierarchy);
+
+        this.subject_map = new Map<string, d3.HierarchyRectangularNode<SubjectInRadial>>(
+            root.descendants().map(d => [d.data.subject_id, d])
+        );
         console.log('root', root)
         let max_depth = 0
         root.each(d => {
@@ -154,7 +242,7 @@ export class SunburstEdgeBundling {
             .domain([0, max_depth])
             .range(["hsl(152,80%,80%)", "hsl(228,30%,40%)"] as any)
             .interpolate(d3.interpolateHcl as any);
-        const arc = d3.arc<SubjectInRadial>()
+        const arc = d3.arc<d3.HierarchyRectangularNode<SubjectInRadial>>()
             .startAngle(d => d.x0)
             .endAngle(d => d.x1)
             // .padAngle(d => Math.min((d.x1 - d.x0) / 2, 0.005))
@@ -212,48 +300,68 @@ export class SunburstEdgeBundling {
             }
             topic_in_circle.parent = parent
             topic_in_circle.sub_topics = topic.sub_topics.map((st) => revive_topic(st, topic_in_circle))
+            topic_in_circle.subjects = topic.subjects_ids.map((sid) => {
+                return this.subject_map.get(sid)?.data || null
+            }).filter(s => s !== null)
             return topic_in_circle
         }
-        this.topics_root = revive_topic(this.topics_root, null)
-        const tree = d3.cluster<TopicInEdges>()
-            .size([2 * Math.PI, radius - 100]);
-        const hierarchy_topics = d3.hierarchy(this.topics_root)
+        this.topics_root = revive_topic(this.topics_root as TopicInEdges, null) as EdgeDatum;
+        evalChildren(this.topics_root as TopicInCircle)
+        buildColours(this.topics_root as TopicInCircle)
+
+        // const tree = d3.cluster<TopicInEdges>()
+        //     .size([2 * Math.PI, radius - 100]);
+        const hierarchy_topics = d3.hierarchy(this.topics_root, (d) => d.children)
             .sort((a, b) => d3.ascending(a.height, b.height) || d3.ascending(a.data.children.length, b.data.children.length))
 
-        const root_edges = tree(this.bilink(hierarchy_topics));
+        const root_edges = topicPoints(this.bilink(hierarchy_topics), root, radius / (max_depth), radius);
         console.log('root_edges', root_edges)
-        console.log('root_edges.leaves()', root_edges.leaves().filter(d=>d.data.subjects_ids.length > 0))
+        console.log('this.subject_map', this.subject_map)
+        console.log('root_edges.links()', root_edges.links())//.filter(d => (d.data as TopicInEdges).subjects_ids?.length > 0))
         console.log('hierarchy_topics', hierarchy_topics)
 
-        const line = d3.lineRadial<d3.HierarchyNode<TopicInEdges>>()
-            .curve(d3.curveBundle.beta(0.85))
-            .radius(d => d.y)
+        const line = d3.linkRadial<d3.HierarchyLink<EdgeDatum>, d3.HierarchyNode<EdgeDatum>>()
+            // .curve(d3.curveBundle.beta(0.3))
+            .radius(d => radius - d.y)
             .angle(d => d.x);
 
         let colornone = "#ccc"
         const link = svg.append("g")
-            .attr("stroke", colornone)
             .attr("fill", "none")
             .selectAll()
-            .data(root_edges.leaves().flatMap(leaf => leaf.data.outgoing))
+            .data(root_edges.links().filter(d => d.source.x !== d.target.x && d.source.y !== d.target.y && d.source.x !== 0 && d.source.y !== 0))
             .join("path")
             .style("mix-blend-mode", "multiply")
-            .attr("d", ([i, o]) => line(i.path(o)))
+
+            .attr("stroke", d => {
+                if (d.source.data.kind === 'topic') {
+                    let topic = d.source.data as TopicInEdges;
+                    if (topic.color_angle) {
+                        console.log('topic.color_angle', topic.color_angle)
+                        return `hsl(${topic.color_angle * 180 / Math.PI}deg, 50%, 90%)`;
+                    }
+                }
+                return colornone;
+            })
+            .attr("d", d => line(d)
+            )
         // .each(function (d) { d.path = this; });
     }
-    bilink(root: d3.HierarchyNode<TopicInEdges>) {
+    bilink(root: d3.HierarchyNode<EdgeDatum>) {
+
         const map = new Map(root.leaves().map(d => [d.data.id, d]));
         for (const d of root.leaves()) {
             d.data.incoming = [];
-            d.data.outgoing = d.data.sub_topics.map(i => [d, map.get(i.id)])
+            d.data.outgoing = d.parent.children.map(i => [d, map.get(i.data.id)]).filter(o => o[1] !== undefined) as [d3.HierarchyNode<TopicInEdges>, d3.HierarchyNode<TopicInEdges>][];
         }
         for (const d of root.leaves()) {
             for (const o of d.data.outgoing) {
-                o[1].data.incoming.push(o);
+                o[1].data.incoming.push(o as any);
             }
         }
         return root;
     }
+
     init() {
 
         // Create a simulation with several forces.
