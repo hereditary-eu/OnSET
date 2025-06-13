@@ -25,7 +25,7 @@ qlever start
 3. Start auxiliary DB using `cd docker/onset-data && docker-compose up -d`
 4. Backend setup:
    - install `uv` (https://docs.astral.sh/uv/getting-started/installation/)
-   - install dependencies using `uv sync`
+   - install dependencies using `CMAKE_ARGS="-DGGML_CUDA=on" uv sync`
    - start backend (should initialize DB on first start) using the correct Python  installation using `python -m uvicorn api:app --reload --port 8001`
 5. Frontend setup:
    - install a somewhat recent Node version

@@ -2,7 +2,7 @@
 #SBATCH --job-name=onset_eval_mistral
 #SBATCH -c 1
 #SBATCH --mem 22G
-#SBATCH -a 0-8%1
+#SBATCH -a 0-4%1
 #SBATCH --account=bkantz
 #SBATCH --output=logs/eval_%A_%a.out
 #SBATCH --error=logs/eval_%A_%a.err
@@ -21,11 +21,11 @@ echo "selected_dataset: $selected_dataset"
 echo "zeroshot: $zeroshot"
 echo "cfg_idx: $cfg_idx"
 
-if [ $zeroshot -eq 1 ]
-then
-    echo "Running zeroshot"
-    python query-eval.py --dataset $selected_dataset --cfg_idx $cfg_idx --zero_shot
-else
-    echo "Running normal"
-    python query-eval.py --dataset $selected_dataset --cfg_idx $cfg_idx
-fi
+# if [ $zeroshot -eq 1 ]
+# then
+#     echo "Running zeroshot"
+#     python query-eval.py --dataset $selected_dataset --cfg_idx $cfg_idx --zero_shot
+# else
+echo "Running normal"
+python query-eval.py --dataset $selected_dataset --cfg_idx $cfg_idx
+# fi

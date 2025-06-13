@@ -20,7 +20,7 @@ class EvalConfig(BaseModel):
 
 DBPEDIA_CONFIGS = [
     EvalConfig(
-        model_id="unsloth/Mistral-Small-3.1-24B-Instruct-2503-GGUF",
+        model_id="bartowski/Mistral-Small-Instruct-2409-GGUF",
         model_quant="*-Q6_K.gguf",
         name="DBpedia Mistral",
     ),
@@ -34,7 +34,7 @@ DBPEDIA_CONFIGS = [
 ]
 OMA_CONFIGS = [
     EvalConfig(
-        model_id="unsloth/Mistral-Small-3.1-24B-Instruct-2503-GGUF",
+        model_id="bartowski/Mistral-Small-Instruct-2409-GGUF",
         model_quant="*-Q6_K.gguf",
         conn_str="postgresql+psycopg://postgres:postgres@localhost:5434/onset-uniprot",
         sparql_endpoint="http://localhost:7013",
@@ -59,7 +59,7 @@ OMA_CONFIGS = [
 
 UNIPROT_CONFIGS = [
     EvalConfig(
-        model_id="unsloth/Mistral-Small-3.1-24B-Instruct-2503-GGUF",
+        model_id="bartowski/Mistral-Small-Instruct-2409-GGUF",
         model_quant="*-Q6_K.gguf",
         conn_str="postgresql+psycopg://postgres:postgres@localhost:5434/onset-uniprot",
         sparql_endpoint="http://localhost:7014",
@@ -84,7 +84,7 @@ UNIPROT_CONFIGS = [
 
 BTO_CONFIGS = [
     EvalConfig(
-        model_id="unsloth/Mistral-Small-3.1-24B-Instruct-2503-GGUF",
+        model_id="bartowski/Mistral-Small-Instruct-2409-GGUF",
         model_quant="*-Q6_K.gguf",
         conn_str="postgresql+psycopg://postgres:postgres@localhost:5434/onset-bto",
         sparql_endpoint="http://localhost:7015",
@@ -109,7 +109,7 @@ BTO_CONFIGS = [
 DNB_CONFIGS = [
     
     EvalConfig(
-        model_id="unsloth/Mistral-Small-3.1-24B-Instruct-2503-GGUF",
+        model_id="bartowski/Mistral-Small-Instruct-2409-GGUF",
         model_quant="*-Q6_K.gguf",
         conn_str="postgresql+psycopg://postgres:postgres@localhost:5434/onset-dnb",
         sparql_endpoint="http://localhost:7035",
@@ -133,7 +133,7 @@ DNB_CONFIGS = [
 ]
 YAGO_CONFIGS = [
     EvalConfig(
-        model_id="unsloth/Mistral-Small-3.1-24B-Instruct-2503-GGUF",
+        model_id="bartowski/Mistral-Small-Instruct-2409-GGUF",
         model_quant="*-Q6_K.gguf",
         conn_str="postgresql+psycopg://postgres:postgres@localhost:5434/onset-yago",
         sparql_endpoint="http://localhost:9024",
