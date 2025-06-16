@@ -25,6 +25,11 @@ DBPEDIA_CONFIGS = [
         name="DBpedia Mistral",
     ),
     EvalConfig(
+        model_id="bartowski/Qwen2.5-Coder-32B-Instruct-GGUF",
+        model_quant="*-Q4_K_L.gguf",
+        name="DBpedia Qwen2.5 Coder 32B",
+    ),
+    EvalConfig(
         model_id="NousResearch/Hermes-3-Llama-3.1-8B-GGUF",
         name="DBpedia large",
     ),
@@ -36,6 +41,14 @@ OMA_CONFIGS = [
     EvalConfig(
         model_id="bartowski/Mistral-Small-Instruct-2409-GGUF",
         model_quant="*-Q6_K.gguf",
+        conn_str="postgresql+psycopg://postgres:postgres@localhost:5434/onset-uniprot",
+        sparql_endpoint="http://localhost:7013",
+        name="OMA Mistral",
+        selection_distribution=SelectionDistribution.UNIFORM,
+    ),
+    EvalConfig(
+        model_id="bartowski/Qwen2.5-Coder-32B-Instruct-GGUF",
+        model_quant="*-Q4_K_L.gguf",
         conn_str="postgresql+psycopg://postgres:postgres@localhost:5434/onset-uniprot",
         sparql_endpoint="http://localhost:7013",
         name="OMA Mistral",
@@ -67,6 +80,14 @@ UNIPROT_CONFIGS = [
         selection_distribution=SelectionDistribution.UNIFORM,
     ),
     EvalConfig(
+        model_id="bartowski/Qwen2.5-Coder-32B-Instruct-GGUF",
+        model_quant="*-Q4_K_L.gguf",
+        conn_str="postgresql+psycopg://postgres:postgres@localhost:5434/onset-uniprot",
+        sparql_endpoint="http://localhost:7014",
+        name="UniProt Mistral",
+        selection_distribution=SelectionDistribution.UNIFORM,
+    ),
+    EvalConfig(
         model_id="NousResearch/Hermes-3-Llama-3.1-8B-GGUF",
         conn_str="postgresql+psycopg://postgres:postgres@localhost:5434/onset-uniprot",
         sparql_endpoint="http://localhost:7014",
@@ -86,6 +107,14 @@ BTO_CONFIGS = [
     EvalConfig(
         model_id="bartowski/Mistral-Small-Instruct-2409-GGUF",
         model_quant="*-Q6_K.gguf",
+        conn_str="postgresql+psycopg://postgres:postgres@localhost:5434/onset-bto",
+        sparql_endpoint="http://localhost:7015",
+        name="BTO  Mistral",
+        selection_distribution=SelectionDistribution.UNIFORM,
+    ),
+    EvalConfig(
+        model_id="bartowski/Qwen2.5-Coder-32B-Instruct-GGUF",
+        model_quant="*-Q4_K_L.gguf",
         conn_str="postgresql+psycopg://postgres:postgres@localhost:5434/onset-bto",
         sparql_endpoint="http://localhost:7015",
         name="BTO  Mistral",
@@ -117,6 +146,14 @@ DNB_CONFIGS = [
         selection_distribution=SelectionDistribution.UNIFORM,
     ),
     EvalConfig(
+        model_id="bartowski/Qwen2.5-Coder-32B-Instruct-GGUF",
+        model_quant="*-Q4_K_L.gguf",
+        conn_str="postgresql+psycopg://postgres:postgres@localhost:5434/onset-dnb",
+        sparql_endpoint="http://localhost:7035",
+        name="DNB Mistral",
+        selection_distribution=SelectionDistribution.UNIFORM,
+    ),
+    EvalConfig(
         model_id="NousResearch/Hermes-3-Llama-3.1-8B-GGUF",
         conn_str="postgresql+psycopg://postgres:postgres@localhost:5434/onset-dnb",
         sparql_endpoint="http://localhost:7035",
@@ -141,6 +178,14 @@ YAGO_CONFIGS = [
         selection_distribution=SelectionDistribution.INSTANCES,
     ),
     EvalConfig(
+        model_id="bartowski/Qwen2.5-Coder-32B-Instruct-GGUF",
+        model_quant="*-Q4_K_L.gguf",
+        conn_str="postgresql+psycopg://postgres:postgres@localhost:5434/onset-yago",
+        sparql_endpoint="http://localhost:9024",
+        name="Yago Mistral",
+        selection_distribution=SelectionDistribution.INSTANCES,
+    ),
+    EvalConfig(
         model_id="NousResearch/Hermes-3-Llama-3.1-8B-GGUF",
         conn_str="postgresql+psycopg://postgres:postgres@localhost:5434/onset-yago",
         sparql_endpoint="http://localhost:9024",
@@ -157,6 +202,14 @@ YAGO_CONFIGS = [
     
 ]
 GUTBRAINIE_CONFIGS = [
+    EvalConfig(
+        model_id="bartowski/Qwen2.5-Coder-32B-Instruct-GGUF",
+        model_quant="*-Q4_K_L.gguf",
+        conn_str="postgresql+psycopg://postgres:postgres@localhost:5434/onset-gutbrainie",
+        sparql_endpoint="http://localhost:9101",
+        name="GutBrainIE 8B",
+        selection_distribution=SelectionDistribution.UNIFORM,
+    ),
     EvalConfig(
         model_id="NousResearch/Hermes-3-Llama-3.1-8B-GGUF",
         conn_str="postgresql+psycopg://postgres:postgres@localhost:5434/onset-gutbrainie",
