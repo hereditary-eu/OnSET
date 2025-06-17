@@ -14,7 +14,7 @@ datasets=("dbpedia" "bto" "uniprot" "yago")
 
 dataset_id=$(($SLURM_ARRAY_TASK_ID % 4))
 zeroshot=$(($SLURM_ARRAY_TASK_ID / 4))
-cfg_idx=2
+cfg_idx=3
 selected_dataset=${datasets[$dataset_id]}
 echo "dataset_id: $dataset_id"
 echo "selected_dataset: $selected_dataset"
