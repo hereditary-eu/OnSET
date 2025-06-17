@@ -1434,13 +1434,14 @@ dependencies = [
 [[package]]
 name = "llama-cpp-python"
 version = "0.3.9"
-source = { git = "https://github.com/abetlen/llama-cpp-python#b1d23df0bbd327b774083b5cf88e67ca0dd52b92" }
+source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "diskcache" },
     { name = "jinja2" },
     { name = "numpy" },
     { name = "typing-extensions" },
 ]
+sdist = { url = "https://files.pythonhosted.org/packages/de/6d/4a20e676bdf7d9d3523be3a081bf327af958f9bdfe2a564f5cf485faeaec/llama_cpp_python-0.3.9.tar.gz", hash = "sha256:a3a985f558385e2f5de5b663f4e9b0817506d6af98122450142cd98e79216370", size = 67858575 }
 
 [[package]]
 name = "llvmlite"
@@ -1934,6 +1935,7 @@ dependencies = [
     { name = "qlever" },
     { name = "rdflib", extra = ["html", "lxml", "networkx", "orjson"] },
     { name = "redis-om" },
+    { name = "scipy" },
     { name = "seaborn" },
     { name = "sentence-transformers" },
     { name = "seqeval" },
@@ -1965,7 +1967,7 @@ requires-dist = [
     { name = "langchain-huggingface", specifier = ">=0.1.2" },
     { name = "line-profiler", specifier = ">=4.2.0" },
     { name = "llama-cpp-agent", git = "https://github.com/Dakantz/llama-cpp-agent.git?branch=add-literal-support" },
-    { name = "llama-cpp-python", git = "https://github.com/abetlen/llama-cpp-python" },
+    { name = "llama-cpp-python", specifier = ">=0.3.9" },
     { name = "llvmlite", specifier = ">=0.44.0" },
     { name = "matplotlib" },
     { name = "networkx" },
@@ -1981,6 +1983,7 @@ requires-dist = [
     { name = "qlever", specifier = ">=0.5.15" },
     { name = "rdflib", extras = ["networkx", "html", "lxml", "orjson"] },
     { name = "redis-om" },
+    { name = "scipy", specifier = ">=1.15.2" },
     { name = "seaborn", specifier = ">=0.13.2" },
     { name = "sentence-transformers" },
     { name = "seqeval" },
