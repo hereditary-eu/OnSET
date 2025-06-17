@@ -12,4 +12,4 @@ node_modules
 .venv
 *.err
 *.out
-instructions-video
+**/user-study/private

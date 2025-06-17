@@ -1,0 +1,112 @@
+% This file was created with tikzplotlib v0.10.1.post13.
+\begin{tikzpicture}[
+scale=0.5,
+every axis/.style={legend pos=south west, legend style={
+                font=\small}
+                }
+]
+
+\definecolor{lightblue161201244}{RGB}{161,201,244}
+\definecolor{lightgreen141229161}{RGB}{141,229,161}
+\definecolor{lightgrey203}{RGB}{203,203,203}
+\definecolor{lightgrey204}{RGB}{204,204,204}
+\definecolor{lightsalmon255180130}{RGB}{255,180,130}
+\definecolor{whitesmoke240}{RGB}{240,240,240}
+
+\begin{axis}[
+axis line style={whitesmoke240},
+height=1.5\textwidth,
+legend cell align={left},
+legend style={
+  fill opacity=0.8,
+  draw opacity=1,
+  text opacity=1,
+  at={(0.97,0.03)},
+  anchor=south east,
+  draw=lightgrey204
+},
+tick align=outside,
+tick pos=left,
+width=2\textwidth,
+x grid style={lightgrey203},
+xlabel={\(\displaystyle k\)},
+xmajorgrids,
+xmin=1.75, xmax=7.25,
+xtick style={color=black},
+xtick={1,2,3,4,5,6,7,8},
+xticklabels={
+  \(\displaystyle {1}\),
+  \(\displaystyle {2}\),
+  \(\displaystyle {3}\),
+  \(\displaystyle {4}\),
+  \(\displaystyle {5}\),
+  \(\displaystyle {6}\),
+  \(\displaystyle {7}\),
+  \(\displaystyle {8}\)
+},
+y grid style={lightgrey203},
+ylabel={Median \(\displaystyle F_{1,node}\)},
+ymajorgrids,
+ymin=0, ymax=1,
+ytick style={color=black},
+ytick={0,0.2,0.4,0.6,0.8,1},
+yticklabels={
+  \(\displaystyle {0.0}\),
+  \(\displaystyle {0.2}\),
+  \(\displaystyle {0.4}\),
+  \(\displaystyle {0.6}\),
+  \(\displaystyle {0.8}\),
+  \(\displaystyle {1.0}\)
+}
+]
+\addplot [thick, lightblue161201244, mark=x, mark size=5, mark options={solid,fill opacity=0}]
+table {%
+2 0.666666666666667
+3 0.666666666666667
+5 0.666666666666667
+7 0.666666666666667
+};
+\addlegendentry{aligned - Hermes 3 3B}
+\addplot [thick, lightblue161201244, dashed, mark=x, mark size=5, mark options={solid,fill opacity=0}]
+table {%
+2 0.5
+3 0.4
+5 0.5
+7 0.428571428571428
+};
+\addlegendentry{raw - Hermes 3 3B}
+\addplot [thick, lightsalmon255180130, mark=x, mark size=5, mark options={solid,fill opacity=0}]
+table {%
+2 0.5
+3 0.666666666666667
+5 0.75
+7 0.666666666666667
+};
+\addlegendentry{aligned - Hermes 3 8B}
+\addplot [thick, lightsalmon255180130, dashed, mark=x, mark size=5, mark options={solid,fill opacity=0}]
+table {%
+2 0.5
+3 0.5
+5 0.6
+7 0.5
+};
+\addlegendentry{raw - Hermes 3 8B}
+\addplot [thick, lightgreen141229161, mark=x, mark size=5, mark options={solid,fill opacity=0}]
+table {%
+2 0.5
+3 0.666666666666667
+5 0.75
+7 0.727272727272727
+};
+\addlegendentry{aligned - Qwen2.5 Coder 32B}
+\addplot [thick, lightgreen141229161, dashed, mark=x, mark size=5, mark options={solid,fill opacity=0}]
+table {%
+2 0.5
+3 0.5
+5 0.6
+7 0.6
+};
+\addlegendentry{raw - Qwen2.5 Coder 32B}
+\end{axis}
+
+\end{tikzpicture}
