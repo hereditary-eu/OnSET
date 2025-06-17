@@ -45,7 +45,7 @@ xticklabels={
   \(\displaystyle {8}\)
 },
 y grid style={lightgrey203},
-ylabel={Median \(\displaystyle F_{1,node}\)},
+ylabel={Mean \(\displaystyle F_{1,node}\)},
 ymajorgrids,
 ymin=0, ymax=1,
 ytick style={color=black},
@@ -61,50 +61,50 @@ yticklabels={
 ]
 \addplot [thick, lightblue161201244, mark=x, mark size=5, mark options={solid,fill opacity=0}]
 table {%
-2 0.8
-3 0.8
-5 0.8
-7 0.727272727272727
+2 0.67312925170068
+3 0.757154249259512
+5 0.738976629177634
+7 0.696975767228605
 };
 \addlegendentry{aligned - Hermes 3 3B}
 \addplot [thick, lightblue161201244, dashed, mark=x, mark size=5, mark options={solid,fill opacity=0}]
 table {%
-2 0.8
-3 0.8
-5 0.75
-7 0.727272727272727
+2 0.677210884353742
+3 0.730458722563986
+5 0.709092526680466
+7 0.668155983068264
 };
 \addlegendentry{raw - Hermes 3 3B}
 \addplot [thick, lightsalmon255180130, mark=x, mark size=5, mark options={solid,fill opacity=0}]
 table {%
-2 0.5
-3 0.8
-5 0.8
-7 0.8
+2 0.536007130124777
+3 0.684372637944067
+5 0.701619712542043
+7 0.709277047738586
 };
 \addlegendentry{aligned - Hermes 3 8B}
 \addplot [thick, lightsalmon255180130, dashed, mark=x, mark size=5, mark options={solid,fill opacity=0}]
 table {%
-2 0.5
-3 0.666666666666667
-5 0.738636363636364
-7 0.727272727272727
+2 0.509803921568627
+3 0.652180650037793
+5 0.645177179885918
+7 0.659169447768349
 };
 \addlegendentry{raw - Hermes 3 8B}
 \addplot [thick, lightgreen141229161, mark=x, mark size=5, mark options={solid,fill opacity=0}]
 table {%
-2 0.5
-3 0.666666666666667
-5 0.888888888888889
-7 0.857142857142857
+2 0.520994475138122
+3 0.677565571683219
+5 0.74955264373869
+7 0.757542861498558
 };
 \addlegendentry{aligned - Qwen2.5 Coder 32B}
 \addplot [thick, lightgreen141229161, dashed, mark=x, mark size=5, mark options={solid,fill opacity=0}]
 table {%
-2 0.5
-3 0.666666666666667
-5 0.8
-7 0.773504273504273
+2 0.472375690607735
+3 0.627489177489178
+5 0.700440451021846
+7 0.693872460169928
 };
 \addlegendentry{raw - Qwen2.5 Coder 32B}
 \end{axis}
