@@ -27,7 +27,7 @@ dependencies = [
     "cachetools",
     "redis-om",
     "matplotlib",
-    "llama-cpp-python==0.3.4",
+    "llama-cpp-python",
     "llvmlite>=0.44.0",
     "llama-cpp-agent",
     "seqeval",
@@ -53,10 +53,10 @@ dev = [
 ]
 
 [tool.uv.sources]
-llama-cpp-python = [
-    { index = "llama-metal", marker = "platform_system == 'Darwin'" },
-    { index = "llama-gpu", marker = "platform_system == 'Linux'" },
-]
+# llama-cpp-python = [
+#     { index = "llama-metal", marker = "platform_system == 'Darwin'" },
+#     { index = "llama-gpu", marker = "platform_system == 'Linux'" },
+# ]
 llama-cpp-agent = [
     { git = "https://github.com/Dakantz/llama-cpp-agent.git", branch = "add-literal-support" },
 ]
@@ -65,13 +65,13 @@ tikzplotlib-patched = [
 ]
 
 
-[[tool.uv.index]]
-name = "llama-metal"
-url = "https://abetlen.github.io/llama-cpp-python/whl/metal/"
-explicit = true
+# [[tool.uv.index]]
+# name = "llama-metal"
+# url = "https://abetlen.github.io/llama-cpp-python/whl/metal/"
+# explicit = true
 
-[[tool.uv.index]]
-name = "llama-gpu"
-url = "https://abetlen.github.io/llama-cpp-python/whl/cu124/"
-explicit = true
+# [[tool.uv.index]]
+# name = "llama-gpu"
+# url = "https://abetlen.github.io/llama-cpp-python/whl/cu124/"
+# explicit = true
 
