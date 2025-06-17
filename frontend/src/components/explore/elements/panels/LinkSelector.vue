@@ -211,12 +211,18 @@ const attachment_pt = computed(() => {
 })
 const prepareTarget = (link: Link<SubjectNode>) => {
     let target = selection_event.side == OpenEventType.TO ? link.to_subject : link.from_subject
-    if (selection_event.side == OpenEventType.TO) {
-        target.x = selection_event.node.x + selection_event.node.width + LINK_WIDTH
-    } else {
-        target.x = selection_event.node.x - (target.width + LINK_WIDTH)
+    if (!target) {
+        target = new SubjectNode()
+        target.internal_id = selection_event.side == OpenEventType.TO ? link.to_internal_id : link.from_internal_id
+        target.subject_id = selection_event.side == OpenEventType.TO ? link.to_id : link.from_id
+        target.label = selection_event.side == OpenEventType.TO ? link.to_id : link.from_id
     }
-    target.y = selection_event.node.y
+    if (selection_event.side == OpenEventType.TO) {
+        target.x = selection_event.node ? selection_event.node.x + selection_event.node.width + LINK_WIDTH : 0
+    } else {
+        target.x = selection_event.node ? selection_event.node.x - (target.width + LINK_WIDTH) : 0
+    }
+    target.y = selection_event.node ? selection_event.node.y : 0
     return target
 }
 const select_option = (selected_option: MixedResponse<SubjectNode>, event: MouseEvent) => {

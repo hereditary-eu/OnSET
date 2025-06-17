@@ -1,54 +1,28 @@
 \begin{table}
-\caption{Comparison of query generation methods for LLama 3.1 8B on DBpedia with one shot prompts.}
+\caption{Comparison of query generation methods for LLama 3.2 3B on DBpedia with one shot prompts.}
 \label{tab:compare_gen_query}
 \begin{tabular}{lllrr}
 \toprule
- &  &  & $F_1$ & $GED_{s}$ \\
+ &  &  & $F_{1,node}$ & $GED_{s}$ \\
 $k$ & Query Origin & Stage &  &  \\
 \midrule
-\multirow[t]{6}{*}{2} & \multirow[t]{3}{*}{llama} & aligned & 0.63 & 0.47 \\
- &  & constrained & 0.00 & -0.00 \\
- &  & raw & 0.63 & 0.47 \\
-\cline{2-5}
- & \multirow[t]{3}{*}{templated} & aligned & 0.73 & 0.58 \\
- &  & constrained & 0.00 & 0.00 \\
- &  & raw & 0.73 & 0.58 \\
-\cline{1-5} \cline{2-5}
-\multirow[t]{9}{*}{3} & \multirow[t]{3}{*}{human} & aligned & 0.63 & 0.40 \\
- &  & constrained & 0.00 & 0.00 \\
+\multirow[t]{6}{*}{3.000000} & \multirow[t]{2}{*}{human} & aligned & 0.63 & 0.40 \\
  &  & raw & 0.52 & 0.24 \\
 \cline{2-5}
- & \multirow[t]{3}{*}{llama} & aligned & 0.71 & 0.46 \\
- &  & constrained & 0.00 & -0.06 \\
+ & \multirow[t]{2}{*}{llama} & aligned & 0.71 & 0.46 \\
  &  & raw & 0.68 & 0.36 \\
 \cline{2-5}
- & \multirow[t]{3}{*}{templated} & aligned & 0.81 & 0.57 \\
- &  & constrained & 0.00 & -0.04 \\
+ & \multirow[t]{2}{*}{templated} & aligned & 0.81 & 0.57 \\
  &  & raw & 0.79 & 0.54 \\
 \cline{1-5} \cline{2-5}
-\multirow[t]{9}{*}{5} & \multirow[t]{3}{*}{human} & aligned & 0.69 & 0.22 \\
- &  & constrained & 0.00 & -0.13 \\
+\multirow[t]{6}{*}{5.000000} & \multirow[t]{2}{*}{human} & aligned & 0.69 & 0.22 \\
  &  & raw & 0.90 & 0.27 \\
 \cline{2-5}
- & \multirow[t]{3}{*}{llama} & aligned & 0.66 & 0.34 \\
- &  & constrained & 0.00 & -0.09 \\
+ & \multirow[t]{2}{*}{llama} & aligned & 0.66 & 0.34 \\
  &  & raw & 0.67 & 0.25 \\
 \cline{2-5}
- & \multirow[t]{3}{*}{templated} & aligned & 0.83 & 0.48 \\
- &  & constrained & 0.00 & -0.07 \\
+ & \multirow[t]{2}{*}{templated} & aligned & 0.83 & 0.48 \\
  &  & raw & 0.74 & 0.45 \\
-\cline{1-5} \cline{2-5}
-\multirow[t]{6}{*}{7} & \multirow[t]{3}{*}{llama} & aligned & 0.66 & 0.29 \\
- &  & constrained & 0.00 & -0.11 \\
- &  & raw & 0.63 & 0.18 \\
-\cline{2-5}
- & \multirow[t]{3}{*}{templated} & aligned & 0.75 & 0.41 \\
- &  & constrained & 0.00 & -0.08 \\
- &  & raw & 0.71 & 0.39 \\
-\cline{1-5} \cline{2-5}
-\multirow[t]{3}{*}{10} & \multirow[t]{3}{*}{human} & aligned & 0.70 & 0.24 \\
- &  & constrained & 0.00 & -0.21 \\
- &  & raw & 0.65 & 0.17 \\
 \cline{1-5} \cline{2-5}
 \bottomrule
 \end{tabular}
