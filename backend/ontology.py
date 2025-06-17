@@ -494,6 +494,8 @@ OPTIONAL {{?obj rdfs:label ?obj_lbl.}}
         parents = self.q_to_df_values(
             f"SELECT DISTINCT ?p WHERE {{ {cls} rdfs:subClassOf* ?p. ?p rdf:type owl:Class }}"
         )
+        if "p" not in parents.columns:
+            return []
         return parents["p"].to_list()
 
     def get_instance_properties(self, instance_id: str) -> list[dict[str, str]]:
