@@ -43,6 +43,8 @@ dependencies = [
     # "fastembed-gpu",
     "line-profiler>=4.2.0",
     "json-repair>=0.46.0",
+    "tikzplotlib-patched",
+    "seaborn>=0.13.2",
 ]
 
 [project.optional-dependencies]
@@ -58,8 +60,8 @@ dev = [
 llama-cpp-agent = [
     { git = "https://github.com/Dakantz/llama-cpp-agent.git", branch = "add-literal-support" },
 ]
-llama-cpp-python = [
-    { git = "https://github.com/abetlen/llama-cpp-python" },
+tikzplotlib-patched = [
+    { git = "https://github.com/JasonGross/tikzplotlib.git", branch = "patched" },
 ]
 
 
