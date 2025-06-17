@@ -6,7 +6,7 @@
  &  &  &  &  & $F_{1,node}$ & $GED_{s}$ & $F_{1,rel.}$  \\
 $k$ & Stage & Prompt Type & Version \& Size & Percentile &  &  &  \\
 \midrule
-\multirow[t]{30}{*}{2.000000} & \multirow[t]{15}{*}{aligned} & \multirow[t]{9}{*}{one shot} & \multirow[t]{3}{*}{Hermes 3 3B} & 0.250000 & 0.40 & 0.33 & 1.00 \\
+\multirow[t]{30}{*}{2} & \multirow[t]{15}{*}{aligned} & \multirow[t]{9}{*}{one shot} & \multirow[t]{3}{*}{Hermes 3 3B} & 0.250000 & 0.40 & 0.33 & 1.00 \\
  &  &  &  & 0.500000 & 0.50 & 0.60 & 1.00 \\
  &  &  &  & 0.750000 & 1.00 & 0.75 & 1.00 \\
 \cline{4-8}
@@ -46,7 +46,7 @@ $k$ & Stage & Prompt Type & Version \& Size & Percentile &  &  &  \\
  &  &  &  & 0.500000 & 0.00 & 0.00 & 0.00 \\
  &  &  &  & 0.750000 & 0.00 & 0.00 & 0.00 \\
 \cline{1-8} \cline{2-8} \cline{3-8} \cline{4-8}
-\multirow[t]{30}{*}{3.000000} & \multirow[t]{15}{*}{aligned} & \multirow[t]{9}{*}{one shot} & \multirow[t]{3}{*}{Hermes 3 3B} & 0.250000 & 0.50 & 0.36 & 0.67 \\
+\multirow[t]{30}{*}{3} & \multirow[t]{15}{*}{aligned} & \multirow[t]{9}{*}{one shot} & \multirow[t]{3}{*}{Hermes 3 3B} & 0.250000 & 0.50 & 0.36 & 0.67 \\
  &  &  &  & 0.500000 & 0.67 & 0.50 & 1.00 \\
  &  &  &  & 0.750000 & 1.00 & 0.80 & 1.00 \\
 \cline{4-8}
@@ -86,7 +86,7 @@ $k$ & Stage & Prompt Type & Version \& Size & Percentile &  &  &  \\
  &  &  &  & 0.500000 & 0.00 & 0.00 & 0.00 \\
  &  &  &  & 0.750000 & 0.29 & 0.20 & 0.00 \\
 \cline{1-8} \cline{2-8} \cline{3-8} \cline{4-8}
-\multirow[t]{30}{*}{5.000000} & \multirow[t]{15}{*}{aligned} & \multirow[t]{9}{*}{one shot} & \multirow[t]{3}{*}{Hermes 3 3B} & 0.250000 & 0.50 & 0.32 & 0.71 \\
+\multirow[t]{30}{*}{5} & \multirow[t]{15}{*}{aligned} & \multirow[t]{9}{*}{one shot} & \multirow[t]{3}{*}{Hermes 3 3B} & 0.250000 & 0.50 & 0.32 & 0.71 \\
  &  &  &  & 0.500000 & 0.73 & 0.44 & 1.00 \\
  &  &  &  & 0.750000 & 0.94 & 0.71 & 1.00 \\
 \cline{4-8}
@@ -126,7 +126,7 @@ $k$ & Stage & Prompt Type & Version \& Size & Percentile &  &  &  \\
  &  &  &  & 0.500000 & 0.00 & 0.00 & 0.00 \\
  &  &  &  & 0.750000 & 0.75 & 0.23 & 0.33 \\
 \cline{1-8} \cline{2-8} \cline{3-8} \cline{4-8}
-\multirow[t]{30}{*}{7.000000} & \multirow[t]{15}{*}{aligned} & \multirow[t]{9}{*}{one shot} & \multirow[t]{3}{*}{Hermes 3 3B} & 0.250000 & 0.40 & 0.25 & 0.75 \\
+\multirow[t]{30}{*}{7} & \multirow[t]{15}{*}{aligned} & \multirow[t]{9}{*}{one shot} & \multirow[t]{3}{*}{Hermes 3 3B} & 0.250000 & 0.40 & 0.25 & 0.75 \\
  &  &  &  & 0.500000 & 0.67 & 0.43 & 0.91 \\
  &  &  &  & 0.750000 & 0.86 & 0.64 & 1.00 \\
 \cline{4-8}
@@ -165,6 +165,86 @@ $k$ & Stage & Prompt Type & Version \& Size & Percentile &  &  &  \\
  &  &  & \multirow[t]{3}{*}{Hermes 3 8B} & 0.250000 & 0.00 & -0.11 & 0.00 \\
  &  &  &  & 0.500000 & 0.00 & 0.00 & 0.00 \\
  &  &  &  & 0.750000 & 0.22 & 0.14 & 0.00 \\
+\cline{1-8} \cline{2-8} \cline{3-8} \cline{4-8}
+\multirow[t]{10}{*}{2} & \multirow[t]{5}{*}{aligned} & \multirow[t]{3}{*}{one shot} & Hermes 3 3B & mean & 0.58 & 0.55 & 0.84 \\
+\cline{4-8}
+ &  &  & Hermes 3 8B & mean & 0.54 & 0.59 & 0.89 \\
+\cline{4-8}
+ &  &  & Qwen2.5 Coder 32B & mean & 0.56 & 0.64 & 0.92 \\
+\cline{3-8} \cline{4-8}
+ &  & \multirow[t]{2}{*}{zero shot} & Hermes 3 3B & mean & 0.24 & 0.41 & 0.85 \\
+\cline{4-8}
+ &  &  & Hermes 3 8B & mean & 0.32 & 0.42 & 0.80 \\
+\cline{2-8} \cline{3-8} \cline{4-8}
+ & \multirow[t]{5}{*}{raw} & \multirow[t]{3}{*}{one shot} & Hermes 3 3B & mean & 0.23 & 0.21 & 0.23 \\
+\cline{4-8}
+ &  &  & Hermes 3 8B & mean & 0.09 & 0.15 & 0.29 \\
+\cline{4-8}
+ &  &  & Qwen2.5 Coder 32B & mean & 0.12 & 0.17 & 0.29 \\
+\cline{3-8} \cline{4-8}
+ &  & \multirow[t]{2}{*}{zero shot} & Hermes 3 3B & mean & 0.07 & 0.09 & 0.15 \\
+\cline{4-8}
+ &  &  & Hermes 3 8B & mean & 0.09 & 0.08 & 0.11 \\
+\cline{1-8} \cline{2-8} \cline{3-8} \cline{4-8}
+\multirow[t]{10}{*}{3} & \multirow[t]{5}{*}{aligned} & \multirow[t]{3}{*}{one shot} & Hermes 3 3B & mean & 0.67 & 0.55 & 0.87 \\
+\cline{4-8}
+ &  &  & Hermes 3 8B & mean & 0.62 & 0.54 & 0.89 \\
+\cline{4-8}
+ &  &  & Qwen2.5 Coder 32B & mean & 0.59 & 0.61 & 0.90 \\
+\cline{3-8} \cline{4-8}
+ &  & \multirow[t]{2}{*}{zero shot} & Hermes 3 3B & mean & 0.36 & 0.40 & 0.88 \\
+\cline{4-8}
+ &  &  & Hermes 3 8B & mean & 0.44 & 0.41 & 0.80 \\
+\cline{2-8} \cline{3-8} \cline{4-8}
+ & \multirow[t]{5}{*}{raw} & \multirow[t]{3}{*}{one shot} & Hermes 3 3B & mean & 0.27 & 0.19 & 0.24 \\
+\cline{4-8}
+ &  &  & Hermes 3 8B & mean & 0.17 & 0.10 & 0.20 \\
+\cline{4-8}
+ &  &  & Qwen2.5 Coder 32B & mean & 0.11 & 0.17 & 0.33 \\
+\cline{3-8} \cline{4-8}
+ &  & \multirow[t]{2}{*}{zero shot} & Hermes 3 3B & mean & 0.11 & 0.08 & 0.16 \\
+\cline{4-8}
+ &  &  & Hermes 3 8B & mean & 0.18 & 0.11 & 0.14 \\
+\cline{1-8} \cline{2-8} \cline{3-8} \cline{4-8}
+\multirow[t]{10}{*}{5} & \multirow[t]{5}{*}{aligned} & \multirow[t]{3}{*}{one shot} & Hermes 3 3B & mean & 0.66 & 0.51 & 0.87 \\
+\cline{4-8}
+ &  &  & Hermes 3 8B & mean & 0.62 & 0.51 & 0.85 \\
+\cline{4-8}
+ &  &  & Qwen2.5 Coder 32B & mean & 0.57 & 0.55 & 0.88 \\
+\cline{3-8} \cline{4-8}
+ &  & \multirow[t]{2}{*}{zero shot} & Hermes 3 3B & mean & 0.31 & 0.37 & 0.85 \\
+\cline{4-8}
+ &  &  & Hermes 3 8B & mean & 0.50 & 0.42 & 0.78 \\
+\cline{2-8} \cline{3-8} \cline{4-8}
+ & \multirow[t]{5}{*}{raw} & \multirow[t]{3}{*}{one shot} & Hermes 3 3B & mean & 0.24 & 0.21 & 0.35 \\
+\cline{4-8}
+ &  &  & Hermes 3 8B & mean & 0.15 & 0.12 & 0.30 \\
+\cline{4-8}
+ &  &  & Qwen2.5 Coder 32B & mean & 0.13 & 0.20 & 0.43 \\
+\cline{3-8} \cline{4-8}
+ &  & \multirow[t]{2}{*}{zero shot} & Hermes 3 3B & mean & 0.07 & 0.06 & 0.21 \\
+\cline{4-8}
+ &  &  & Hermes 3 8B & mean & 0.29 & 0.13 & 0.19 \\
+\cline{1-8} \cline{2-8} \cline{3-8} \cline{4-8}
+\multirow[t]{10}{*}{7} & \multirow[t]{5}{*}{aligned} & \multirow[t]{3}{*}{one shot} & Hermes 3 3B & mean & 0.62 & 0.45 & 0.83 \\
+\cline{4-8}
+ &  &  & Hermes 3 8B & mean & 0.61 & 0.45 & 0.84 \\
+\cline{4-8}
+ &  &  & Qwen2.5 Coder 32B & mean & 0.57 & 0.46 & 0.83 \\
+\cline{3-8} \cline{4-8}
+ &  & \multirow[t]{2}{*}{zero shot} & Hermes 3 3B & mean & 0.37 & 0.32 & 0.76 \\
+\cline{4-8}
+ &  &  & Hermes 3 8B & mean & 0.41 & 0.31 & 0.76 \\
+\cline{2-8} \cline{3-8} \cline{4-8}
+ & \multirow[t]{5}{*}{raw} & \multirow[t]{3}{*}{one shot} & Hermes 3 3B & mean & 0.12 & 0.06 & 0.25 \\
+\cline{4-8}
+ &  &  & Hermes 3 8B & mean & 0.07 & 0.05 & 0.26 \\
+\cline{4-8}
+ &  &  & Qwen2.5 Coder 32B & mean & 0.07 & 0.06 & 0.25 \\
+\cline{3-8} \cline{4-8}
+ &  & \multirow[t]{2}{*}{zero shot} & Hermes 3 3B & mean & 0.06 & -0.01 & 0.10 \\
+\cline{4-8}
+ &  &  & Hermes 3 8B & mean & 0.17 & 0.06 & 0.13 \\
 \cline{1-8} \cline{2-8} \cline{3-8} \cline{4-8}
 \bottomrule
 \end{tabular}
