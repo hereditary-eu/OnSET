@@ -270,7 +270,7 @@ class LLMQuery(Initationatable):
         )
         response_msg = response["choices"][0]["message"]["content"]
         fixed_response = fix_json(response_msg, item_keys=["entities", "relations"])
-        
+
         return ConstrainedEntitiesRelations.model_validate(fixed_response)
 
     def candidates_for_erl(
@@ -366,6 +366,9 @@ class LLMQuery(Initationatable):
             "ALLOWED_CONSTRAINT_TYPES",
             {c.link.property_id: c.property for c in candidates.constraints},
         )
+
+        if len(candidates.constraints) == 0:
+            ALLOWED_CONSTRAINT_TYPES = str
         ALLOWED_RELATION_TYPES = Enum(
             "ALLOWED_RELATION_TYPES",
             {r.link.property_id: r.relation for r in candidates.relations},

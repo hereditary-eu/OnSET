@@ -1426,61 +1426,21 @@ source = { git = "https://github.com/Dakantz/llama-cpp-agent.git?branch=add-lite
 dependencies = [
     { name = "aiohttp" },
     { name = "docstring-parser" },
-    { name = "llama-cpp-python", version = "0.3.4", source = { registry = "https://abetlen.github.io/llama-cpp-python/whl/cu124/" }, marker = "sys_platform == 'linux'" },
-    { name = "llama-cpp-python", version = "0.3.4", source = { registry = "https://abetlen.github.io/llama-cpp-python/whl/metal/" }, marker = "sys_platform == 'darwin'" },
-    { name = "llama-cpp-python", version = "0.3.4", source = { registry = "https://pypi.org/simple" }, marker = "sys_platform != 'darwin' and sys_platform != 'linux'" },
+    { name = "llama-cpp-python" },
     { name = "pydantic" },
     { name = "requests" },
 ]
 
 [[package]]
 name = "llama-cpp-python"
-version = "0.3.4"
-source = { registry = "https://abetlen.github.io/llama-cpp-python/whl/cu124/" }
-resolution-markers = [
-    "sys_platform == 'linux'",
-]
+version = "0.3.9"
+source = { git = "https://github.com/abetlen/llama-cpp-python#b1d23df0bbd327b774083b5cf88e67ca0dd52b92" }
 dependencies = [
-    { name = "diskcache", marker = "sys_platform == 'linux'" },
-    { name = "jinja2", marker = "sys_platform == 'linux'" },
-    { name = "numpy", marker = "sys_platform == 'linux'" },
-    { name = "typing-extensions", marker = "sys_platform == 'linux'" },
+    { name = "diskcache" },
+    { name = "jinja2" },
+    { name = "numpy" },
+    { name = "typing-extensions" },
 ]
-wheels = [
-    { url = "https://github.com/abetlen/llama-cpp-python/releases/download/v0.3.4-cu124/llama_cpp_python-0.3.4-cp312-cp312-linux_x86_64.whl" },
-]
-
-[[package]]
-name = "llama-cpp-python"
-version = "0.3.4"
-source = { registry = "https://abetlen.github.io/llama-cpp-python/whl/metal/" }
-resolution-markers = [
-    "sys_platform == 'darwin'",
-]
-dependencies = [
-    { name = "diskcache", marker = "sys_platform == 'darwin'" },
-    { name = "jinja2", marker = "sys_platform == 'darwin'" },
-    { name = "numpy", marker = "sys_platform == 'darwin'" },
-    { name = "typing-extensions", marker = "sys_platform == 'darwin'" },
-]
-wheels = [
-    { url = "https://github.com/abetlen/llama-cpp-python/releases/download/v0.3.4-metal/llama_cpp_python-0.3.4-cp312-cp312-macosx_11_0_arm64.whl" },
-]
-
-[[package]]
-name = "llama-cpp-python"
-version = "0.3.4"
-source = { registry = "https://pypi.org/simple" }
-resolution-markers = [
-    "sys_platform != 'darwin' and sys_platform != 'linux'",
-]
-dependencies = [
-    { name = "diskcache", marker = "sys_platform != 'darwin' and sys_platform != 'linux'" },
-    { name = "jinja2", marker = "sys_platform != 'darwin' and sys_platform != 'linux'" },
-    { name = "numpy", marker = "sys_platform != 'darwin' and sys_platform != 'linux'" },
-    { name = "typing-extensions", marker = "sys_platform != 'darwin' and sys_platform != 'linux'" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/af/07/6e9e19cf88bee4986f53f5310205364baae22cb31122ebf4c36ac6152b15/llama_cpp_python-0.3.4.tar.gz", hash = "sha256:52b37129c282753edf89213e852b8b46664b059116ae2213da9cb4a45374d23d", size = 64461957 }
 
 [[package]]
 name = "llvmlite"
@@ -1958,9 +1918,7 @@ dependencies = [
     { name = "langchain-huggingface" },
     { name = "line-profiler" },
     { name = "llama-cpp-agent" },
-    { name = "llama-cpp-python", version = "0.3.4", source = { registry = "https://abetlen.github.io/llama-cpp-python/whl/cu124/" }, marker = "sys_platform == 'linux'" },
-    { name = "llama-cpp-python", version = "0.3.4", source = { registry = "https://abetlen.github.io/llama-cpp-python/whl/metal/" }, marker = "sys_platform == 'darwin'" },
-    { name = "llama-cpp-python", version = "0.3.4", source = { registry = "https://pypi.org/simple" }, marker = "sys_platform != 'darwin' and sys_platform != 'linux'" },
+    { name = "llama-cpp-python" },
     { name = "llvmlite" },
     { name = "matplotlib" },
     { name = "networkx" },
@@ -2007,9 +1965,7 @@ requires-dist = [
     { name = "langchain-huggingface", specifier = ">=0.1.2" },
     { name = "line-profiler", specifier = ">=4.2.0" },
     { name = "llama-cpp-agent", git = "https://github.com/Dakantz/llama-cpp-agent.git?branch=add-literal-support" },
-    { name = "llama-cpp-python", marker = "sys_platform != 'darwin' and sys_platform != 'linux'", specifier = "==0.3.4" },
-    { name = "llama-cpp-python", marker = "sys_platform == 'darwin'", specifier = "==0.3.4", index = "https://abetlen.github.io/llama-cpp-python/whl/metal/" },
-    { name = "llama-cpp-python", marker = "sys_platform == 'linux'", specifier = "==0.3.4", index = "https://abetlen.github.io/llama-cpp-python/whl/cu124/" },
+    { name = "llama-cpp-python", git = "https://github.com/abetlen/llama-cpp-python" },
     { name = "llvmlite", specifier = ">=0.44.0" },
     { name = "matplotlib" },
     { name = "networkx" },
