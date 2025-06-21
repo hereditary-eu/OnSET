@@ -399,7 +399,7 @@ if __name__ == "__main__":
                 resulting_examples_df = pd.DataFrame(resulting_examples)
                 # only save unique examples
                 resulting_examples_df = resulting_examples_df.drop_duplicates(
-                    subset=["erl", "generator"]
+                    subset=["response"]
                 )
                 resulting_examples_df.to_csv(f"examples/examples_{setup.name}.csv")
             except Exception as e:
