@@ -362,17 +362,22 @@ class LLMQuery(Initationatable):
             "ALLOWED_ENTITY_TYPES",
             {e.subject.subject_id: e.type for e in candidates.entities},
         )
+        if len(candidates.entities) == 0:
+            ALLOWED_ENTITY_TYPES = str
+            
         ALLOWED_CONSTRAINT_TYPES = Enum(
             "ALLOWED_CONSTRAINT_TYPES",
             {c.link.property_id: c.property for c in candidates.constraints},
         )
-
         if len(candidates.constraints) == 0:
             ALLOWED_CONSTRAINT_TYPES = str
+            
         ALLOWED_RELATION_TYPES = Enum(
             "ALLOWED_RELATION_TYPES",
             {r.link.property_id: r.relation for r in candidates.relations},
         )
+        if len(candidates.relations) == 0:
+            ALLOWED_RELATION_TYPES = str
 
         ConstrainedRelation = create_model(
             "ConstrainedRelation",
