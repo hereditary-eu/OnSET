@@ -29,6 +29,8 @@ from backend.eval_config import (
     DNB_CONFIGS,
     YAGO_CONFIGS,
     GUTBRAINIE_CONFIGS,
+    DBLP_CONFIGS,
+    ALL_CONFIG_MAP,
     EvalConfig,
 )
 
@@ -40,19 +42,28 @@ db_setups = [
     DNB_CONFIGS[-1],
     YAGO_CONFIGS[-1],
     GUTBRAINIE_CONFIGS[-1],
+    DBLP_CONFIGS[-1],
 ]
 # db_setups = []
 
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
-    "--dataset", type=int, choices=list(range(len(db_setups))), default=0
+    "--dataset-id",
+    type=int,
+    choices=list(range(len(db_setups))),
+    default=None,
 )
+parser.add_argument("--dataset", type=str, choices=list(ALL_CONFIG_MAP.keys()))
 if __name__ == "__main__":
     print("Starting")
     # %%
     args = parser.parse_args()
-    setup: EvalConfig = db_setups[args.dataset]
+    setup: EvalConfig = (
+        db_setups[args.dataset_id]
+        if args.dataset_id is not None
+        else ALL_CONFIG_MAP[args.dataset][-1]
+    )
     print("Setup for ", setup.name)
     store = SPARQLStore(
         setup.sparql_endpoint,

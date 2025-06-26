@@ -73,13 +73,14 @@ class TopicInitator:
     }
     """
         )[0].to_list()
-        all_class_iter= tqdm(all_classes, desc="Enriching classes")
-        all_classes:dict[str, Subject] = {
-        }
+        all_class_iter = tqdm(all_classes, desc="Enriching classes")
+        all_classes: dict[str, Subject] = {}
         for c in all_class_iter:
             all_class_iter.set_description(f"Enriching {c}")
-            all_classes[c] = self.guidance_man.oman.enrich_subject(c, load_properties=True)
-            
+            all_classes[c] = self.guidance_man.oman.enrich_subject(
+                c, load_properties=True
+            )
+
         self.__all_classes = all_classes
         return all_classes
 
@@ -98,7 +99,20 @@ class TopicInitator:
             representation_model=representation_llama,
         )
         topic_model_llm.fit(docs["doc"])
-        hierarchical_topics = topic_model_llm.hierarchical_topics(docs["doc"])
+        try:
+            hierarchical_topics = topic_model_llm.hierarchical_topics(
+                docs["doc"],
+            )
+        except Exception as e:
+            print(f"Error in hierarchical topics: {e}")
+            hierarchical_topics = pd.DataFrame(
+                columns=[
+                    "Parent_ID",
+                    "Parent_Name",
+                    "Child_Left_ID",
+                    "Child_Right_ID",
+                ]
+            )
         topics = topic_model_llm.get_topic_info()
         # Save the model
         # topic_model_llm.save(f"model_{self.guidance_man.identifier}.pkl")

@@ -163,31 +163,44 @@ class LLMQuery(Initationatable):
         self.query_id_counter = 0
         self.cache = RedisCache[QueryProgress](model=QueryProgress)
 
-    def run_query(self, progress: QueryProgress, query: str):
+    def run_query(
+        self, query: str, progress: QueryProgress | None = None, enable_cache=True
+    ):
+        if progress is None:
+            progress = QueryProgress(
+                max_steps=5,
+                id="query:0",
+                start_time=datetime.datetime.now().isoformat(),
+                relations_steps=[],
+            )
         progress.progress = 1
         progress.message = "Querying entities and relations"
-        self.cache[progress.id] = progress
+        if enable_cache:
+            self.cache[progress.id] = progress
 
         erl = self.query_erl(query)
         progress.progress = 2
         progress.message = "Fetching possible candidates"
         erl.message = "Found entities and relations"
         progress.relations_steps.append(erl)
-        self.cache[progress.id] = progress
+        if enable_cache:
+            self.cache[progress.id] = progress
 
         candidates = self.candidates_for_erl(erl)
         progress.progress = 3
         progress.message = "Querying candidates"
         candidates.message = "Found similar candidates"
         progress.relations_steps.append(candidates)
-        self.cache[progress.id] = progress
+        if enable_cache:
+            self.cache[progress.id] = progress
 
         constrained_erl = self.query_constrained(query, candidates)
         progress.progress = 4
         progress.message = "Enriching results"
         constrained_erl.message = "Constraints applied"
         progress.relations_steps.append(constrained_erl)
-        self.cache[progress.id] = progress
+        if enable_cache:
+            self.cache[progress.id] = progress
 
         enriched_erl = self.enrich_entities_relations(constrained_erl, candidates)
         progress.progress = 5
@@ -195,7 +208,9 @@ class LLMQuery(Initationatable):
         enriched_erl.message = "Aligned results"
         progress.enriched_relations = enriched_erl
         progress.relations_steps.append(enriched_erl)
-        self.cache[progress.id] = progress
+        if enable_cache:
+            self.cache[progress.id] = progress
+        return progress
 
     def start_query(self, query: str, background_tasks: BackgroundTasks):
         query_id = self.query_id_counter = self.query_id_counter + 1
@@ -276,7 +291,6 @@ class LLMQuery(Initationatable):
     def candidates_for_erl(
         self, erl: EntitiesRelations, candidate_limit=3
     ) -> Candidates:
-        example_limit = 3
         relation_candidates: list[CandidateRelation] = []
         constraint_candidates: list[CandidateConstraint] = []
         entity_candidates: list[CandidateEntity] = []
@@ -284,7 +298,7 @@ class LLMQuery(Initationatable):
             top_results = self.guidance_man.search_fuzzy(
                 query=FuzzyQuery(
                     q=f"A {relation.entity} is {relation.relation} of {relation.target}",
-                    limit=example_limit,
+                    limit=candidate_limit,
                     type=RETURN_TYPE.LINK,
                     relation_type=RELATION_TYPE.INSTANCE,
                     include_thing=False,
@@ -307,7 +321,7 @@ class LLMQuery(Initationatable):
             top_results = self.guidance_man.search_fuzzy(
                 query=FuzzyQuery(
                     q=f"A {entity.type}",
-                    limit=example_limit,
+                    limit=candidate_limit,
                     type=RETURN_TYPE.SUBJECT,
                     relation_type=RELATION_TYPE.INSTANCE,
                     include_thing=False,
@@ -328,7 +342,7 @@ class LLMQuery(Initationatable):
                 top_results = self.guidance_man.search_fuzzy(
                     query=FuzzyQuery(
                         q=f"The {constraint.property} of is {constraint.modifier} {constraint.value}",
-                        limit=example_limit,
+                        limit=candidate_limit,
                         from_id=candidate_ids,
                         type=RETURN_TYPE.LINK,
                         relation_type=RELATION_TYPE.PROPERTY,
@@ -364,14 +378,14 @@ class LLMQuery(Initationatable):
         )
         if len(candidates.entities) == 0:
             ALLOWED_ENTITY_TYPES = str
-            
+
         ALLOWED_CONSTRAINT_TYPES = Enum(
             "ALLOWED_CONSTRAINT_TYPES",
             {c.link.property_id: c.property for c in candidates.constraints},
         )
         if len(candidates.constraints) == 0:
             ALLOWED_CONSTRAINT_TYPES = str
-            
+
         ALLOWED_RELATION_TYPES = Enum(
             "ALLOWED_RELATION_TYPES",
             {r.link.property_id: r.relation for r in candidates.relations},
@@ -426,11 +440,16 @@ class LLMQuery(Initationatable):
             session.autoflush = False
 
             def enrich_relation(relation: Relation) -> EnrichedRelation:
+                value = (
+                    relation.relation.value
+                    if isinstance(relation.relation, Enum)
+                    else relation.relation
+                )
                 link_db = session.execute(
                     select(SubjectLinkDB)
                     .where(
                         and_(
-                            SubjectLinkDB.label == relation.relation.value,
+                            SubjectLinkDB.label == value,
                             SubjectLinkDB.property_id.in_(
                                 [rel.link.property_id for rel in candidates.relations]
                             ),
@@ -444,10 +463,15 @@ class LLMQuery(Initationatable):
                 )
 
             def enrich_constraint(constraint: Constraint) -> EnrichedConstraint:
+                value = (
+                    constraint.property.value
+                    if isinstance(constraint.property, Enum)
+                    else constraint.property
+                )
                 link_db = session.execute(
                     select(SubjectLinkDB)
                     .where(
-                        SubjectLinkDB.label == constraint.property.value,
+                        SubjectLinkDB.label == value,
                         SubjectLinkDB.property_id.in_(
                             [rel.link.property_id for rel in candidates.constraints]
                         ),
@@ -460,10 +484,13 @@ class LLMQuery(Initationatable):
                 )
 
             def enrich_entity(entity: Entity) -> EnrichedEntity:
+                value = (
+                    entity.type.value if isinstance(entity.type, Enum) else entity.type
+                )
                 subject_db = session.execute(
                     select(SubjectInDB)
                     .where(
-                        SubjectInDB.label == entity.type.value,
+                        SubjectInDB.label == value,
                         SubjectInDB.subject_id.in_(
                             [ent.subject.subject_id for ent in candidates.entities]
                         ),
@@ -514,13 +541,12 @@ class LLMQuery(Initationatable):
                         relation.entity,
                     )
                 # add missing entities from the relation
-                from_entity = get_entity_by_id(relation.entity)
-                to_entity = get_entity_by_id(relation.target)
                 entities = [
-                    (from_entity, relation.entity, relation.link.from_id),
-                    (to_entity, relation.target, relation.link.to_id),
+                    (relation.entity, relation.link.from_id),
+                    (relation.target, relation.link.to_id),
                 ]
-                for entity, id, subject_id in entities:
+                for id, subject_id in entities:
+                    entity = get_entity_by_id(id)
                     if entity is None:
                         # if we do not have the target entity, we create a the one from the relation
                         subject = session.execute(
@@ -540,7 +566,17 @@ class LLMQuery(Initationatable):
                                 subject=subject_parsed,
                             )
                             erl_enriched.entities.append(entity)
-
+            to_remove = []
+            for entity in erl_enriched.entities:
+                # remove orphan entities that are not in any relation
+                relations_for_entity = [
+                    e for e in erl_enriched.relations if e.entity == entity.identifier
+                ] + [e for e in erl_enriched.relations if e.target == entity.identifier]
+                if not len(relations_for_entity) > 0:
+                    to_remove.append(entity)
+            for entity in to_remove:
+                erl_enriched.entities.remove(entity)
+            # remove entities that are not
             return erl_enriched
 
     def initiate(self, force=False, n_queries=10, k_min=2, k_max=4):
