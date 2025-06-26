@@ -28,7 +28,7 @@ from explorative.exp_model import (
 )
 from tqdm import tqdm
 import pandas as pd
-
+import re
 SL = TypeVar("SL")
 
 top_k = 100
@@ -45,7 +45,7 @@ class Entity(BaseModel):
     identifier: str
     type: str
     constraints: list[Constraint] = Field([])
-    
+
 
 class Relation(BaseModel):
     entity: str
@@ -129,11 +129,13 @@ def safe_prob(probs: np.array):
         return probs / probs.sum()
 
 
-def choose_entity(links: list[SL], rs: np.random.RandomState) -> SL:
-    probs = np.array([link.instance_count for link in links])
+def choose_entity(
+    links: list[tuple[str, SL]], rs: np.random.RandomState
+) -> tuple[str, SL]:
+    probs = np.array([link[1].instance_count for link in links])
     probs = safe_prob(probs)
     indices = np.arange(len(links))
-    choice = rs.choice(indices, p=probs)
+    choice: int = rs.choice(indices, p=probs)
     return links[choice]
 
 
@@ -154,10 +156,10 @@ def random_downgrade(cls: SubjectInDB, rs: np.random.RandomState) -> SubjectInDB
 
 
 def choose_graph(
-    max_nodes=4, top_k=100, seed=42, max_tries=5, guidance_man: GuidanceManager = None
+    max_nodes=4, top_k=top_k, seed=seed, max_tries=5, topic_man: GuidanceManager = None
 ):
     rs = np.random.RandomState(seed)
-    with Session(guidance_man.engine) as session:
+    with Session(topic_man.engine) as session:
         session.execute(text("SET TRANSACTION READ ONLY"))
         session.autoflush = False
 
@@ -172,10 +174,15 @@ def choose_graph(
 
         from_subject_alias = aliased(SubjectInDB, name="from_subject")
         to_subject_alias = aliased(SubjectInDB, name="to_subject")
+        # from and start links do not start with underscore _
         best_links_db = session.execute(
             select(SubjectLinkDB)
-            .filter(SubjectLinkDB.from_id != SubjectLinkDB.to_id)
-            .filter(SubjectLinkDB.to_id != None)
+            .where(SubjectLinkDB.from_id != SubjectLinkDB.to_id)
+            .where(SubjectLinkDB.to_id != None)
+            .where(SubjectLinkDB.from_id.not_like("!_:%", "!"))
+            .where(SubjectLinkDB.to_id.not_like("!_:%", "!"))
+            .where(SubjectLinkDB.description.not_like("%<%"))
+            .where(SubjectLinkDB.description.not_like("%>%"))
             .order_by(SubjectLinkDB.instance_count.desc())
             .join(
                 from_subject_alias,
@@ -188,35 +195,50 @@ def choose_graph(
             # )
             .limit(top_k)
         ).all()
-        best_links: list[SubjectLinkDB] = [link[0] for link in best_links_db]
-        choice = choose_entity(best_links, rs)
+        best_links: list[tuple[str, SubjectLinkDB]] = [
+            (link[0].property_id, link[0]) for link in best_links_db
+        ]
+        _, choice = choose_entity(best_links, rs)
         choice_downgraded = downgrade_link_subjects(choice)
+        id_counter = 0
+
+        def id_counter_gen():
+            nonlocal id_counter
+            id_counter += 1
+            return id_counter
 
         current_links = [
-            (
-                EnrichedDBRelation(
-                    entity=choice_downgraded.from_subject.label,
-                    relation=choice.label,
-                    target=choice_downgraded.to_subject.label,
-                    link=choice_downgraded,
-                )
+            EnrichedDBRelation(
+                entity=f"{choice_downgraded.from_subject.label} {id_counter_gen()}",
+                relation=choice_downgraded.label,
+                target=f"{choice_downgraded.to_subject.label} {id_counter_gen()}",
+                link=choice_downgraded,
             )
         ]
-        current_nodes = {
-            subject.label: EnrichedDBEntity(
-                identifier=subject.label,
-                type=subject.label,
-                subject=subject,
-            )
-            for subject in [
-                choice_downgraded.from_subject,
-                choice_downgraded.to_subject,
+
+        def nodes_from_links(links: list[EnrichedDBRelation]):
+            all_subjects = [
+                [
+                    (link.entity, link.link.from_subject, link),
+                    (link.target, link.link.to_subject, link),
+                ]
+                for link in links
             ]
-        }
+            all_subjects = [subj for sublist in all_subjects for subj in sublist]
+            return {
+                id: EnrichedDBEntity(
+                    identifier=id,
+                    type=subject.label,
+                    subject=subject,
+                )
+                for id, subject, link in all_subjects
+            }
+
+        current_nodes = nodes_from_links(current_links)
         retries = 0
         while len(current_nodes) < max_nodes:
-            start_node = choose_entity(
-                list([nd.subject for nd in current_nodes.values()]), rs
+            start_id, start_node = choose_entity(
+                list([(nd.identifier, nd.subject) for nd in current_nodes.values()]), rs
             )
             left_right = rs.choice([0, 1])
             extending_to = left_right == 0
@@ -224,6 +246,10 @@ def choose_graph(
                 select(SubjectLinkDB)
                 .where(SubjectLinkDB.from_id != SubjectLinkDB.to_id)
                 .where(SubjectLinkDB.to_id is not None)
+                .where(SubjectLinkDB.from_id.not_like("!_:%", "!"))
+                .where(SubjectLinkDB.to_id.not_like("!_:%", "!"))
+                .where(SubjectLinkDB.description.not_like("%<%"))
+                .where(SubjectLinkDB.description.not_like("%>%"))
                 .join(
                     from_subject_alias,
                     SubjectLinkDB.from_subject.of_type(from_subject_alias),
@@ -245,18 +271,20 @@ def choose_graph(
             new_links = session.execute(
                 query.order_by(SubjectLinkDB.instance_count.desc()).limit(top_k)
             ).all()
-            new_links: list[SubjectLinkDB] = [link[0] for link in new_links]
+            new_links: list[tuple[str, SubjectLinkDB]] = [
+                (link[0].property_id, link[0]) for link in new_links
+            ]
             if len(new_links) == 0:
                 if retries >= max_tries:
                     break
                 retries += 1
                 continue
-            choice = choose_entity(new_links, rs)
+            chosen_link_id, chosen_link = choose_entity(new_links, rs)
 
             extending_direction = (
-                (choice.from_subject, choice.to_subject)
+                (chosen_link.from_subject, chosen_link.to_subject)
                 if extending_to
-                else (choice.to_subject, choice.from_subject)
+                else (chosen_link.to_subject, chosen_link.from_subject)
             )
 
             downgraded_extend = random_downgrade(extending_direction[1], rs)
@@ -268,45 +296,61 @@ def choose_graph(
             #     choice.label,
             # )
             if extending_to:
-                choice.to_id = downgraded_extend.subject_id
-                choice.to_subject = downgraded_extend
+                entity, target = (
+                    start_id,
+                    f"{downgraded_extend.label} {id_counter_gen()}",
+                )
+                chosen_link.to_id = downgraded_extend.subject_id
+                chosen_link.to_subject = downgraded_extend
             else:
-                choice.from_id = downgraded_extend.subject_id
-                choice.from_subject = downgraded_extend
+                entity, target = (
+                    f"{downgraded_extend.label} {id_counter_gen()}",
+                    start_id,
+                )
+                chosen_link.from_id = downgraded_extend.subject_id
+                chosen_link.from_subject = downgraded_extend
             current_links.append(
                 EnrichedDBRelation(
-                    entity=choice.from_subject.label,
-                    relation=choice.label,
-                    target=choice.to_subject.label,
-                    link=choice,
+                    entity=entity,
+                    relation=chosen_link.label,
+                    target=target,
+                    link=chosen_link,
                 )
             )
-            current_nodes.update(
-                {
-                    subject.label: EnrichedDBEntity(
-                        identifier=subject.label,
-                        type=subject.label,
-                        subject=subject,
-                    )
-                    for subject in [extending_direction[0], downgraded_extend]
-                }
-            )
+            current_nodes = nodes_from_links(current_links)
         enriched_erl = EnrichedEntitiesRelations(
             entities=[
                 EnrichedEntity(
-                    subject=guidance_man.oman.enrich_subject(entity.subject.subject_id),
+                    subject=topic_man.oman.enrich_subject(entity.subject.subject_id),
                     **entity.model_dump(exclude=["subject"]),
                 )
                 for entity in current_nodes.values()
             ],
             relations=[
                 EnrichedRelation(
-                    link=relation.link.from_db(guidance_man.oman),
+                    link=relation.link.from_db(topic_man.oman),
                     **relation.model_dump(exclude=["link"]),
                 )
                 for relation in current_links
             ],
         )
+        # remove numbers from identifiers if they are unique!
+        simplifyable_entities:dict[str,EnrichedEntity] = {}
+        unique_types = set([entity.type for entity in enriched_erl.entities])
+        for unique_type in unique_types:
+            using_type = [
+                entity for entity in enriched_erl.entities if entity.type == unique_type
+            ]
+            if len(using_type) == 1:
+                simplifyable_entities[using_type[0].identifier] = using_type[0]
+        for entity in simplifyable_entities.values():
+            entity.identifier = re.sub(r" \d+$", "", entity.identifier)
+        for link in enriched_erl.relations:
+            if link.entity in simplifyable_entities.keys():
+                link.entity = re.sub(r" \d+$", "", link.entity)
+            if link.target in simplifyable_entities.keys():
+                link.target = re.sub(r" \d+$", "", link.target)
+
         return enriched_erl
 
 

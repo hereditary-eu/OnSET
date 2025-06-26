@@ -270,6 +270,26 @@ GUTBRAINIE_CONFIGS = [
         selection_distribution=SelectionDistribution.UNIFORM,
     ),
 ]
+DBLP_CONFIGS=[
+    EvalConfig(
+        model_id="NousResearch/Hermes-3-Llama-3.2-3B-GGUF",
+        conn_str="postgresql+psycopg://postgres:postgres@localhost:5434/onset-dblp",
+        sparql_endpoint="http://localhost:9601",
+        name="DBLP Dump",
+        selection_distribution=SelectionDistribution.UNIFORM,
+    ),
+]
+
+ALL_CONFIG_MAP={
+    "dbpedia": DBPEDIA_CONFIGS,
+    "oma": OMA_CONFIGS, 
+    "uniprot": UNIPROT_CONFIGS,
+    "bto": BTO_CONFIGS,
+    "dnb": DNB_CONFIGS,
+    "yago": YAGO_CONFIGS,
+    "gutbrainie": GUTBRAINIE_CONFIGS,
+    "dblp": DBLP_CONFIGS,
+}
 ALL_CONFIGS = (
     DBPEDIA_CONFIGS
     + OMA_CONFIGS

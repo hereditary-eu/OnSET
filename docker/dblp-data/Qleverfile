@@ -1,0 +1,32 @@
+# Qleverfile for Olympics, use with https://github.com/ad-freiburg/qlever-control
+#
+# qlever get-data  # downloads .zip file of size 13 MB, uncompressed to 323 MB 
+# qlever index     # takes ~10 seconds and ~1 GB RAM (on an AMD Ryzen 9 5900X)
+# qlever start     # starts the server (instant)
+
+[data]
+NAME              = dblp
+BASE_URL          = https://drops.dagstuhl.de
+GET_DATA_CMD      = wget -O dblp.nt.gz ${BASE_URL}/storage/artifacts/dblp/rdf/2025/dblp-2025-06-01.nt.gz
+DESCRIPTION       = DBLP data dump ${BASE_URL}
+TEXT_DESCRIPTION  = DBLP data dump
+
+[index]
+INPUT_FILES     = dblp.nt.gz
+CAT_INPUT_FILES = zcat ${INPUT_FILES}
+SETTINGS_JSON   = { "ascii-prefixes-only": false, "num-triples-per-batch": 100000 }
+
+[server]
+PORT               = 9601
+ACCESS_TOKEN       = ${data:NAME}_7643543846_OkrhhakARvEt
+MEMORY_FOR_QUERIES = 5G
+CACHE_MAX_SIZE     = 2G
+TIMEOUT            = 30s
+
+[runtime]
+SYSTEM = docker
+IMAGE  = docker.io/adfreiburg/qlever:latest
+
+[ui]
+UI_CONFIG = dblp
+UI_PORT = 9602

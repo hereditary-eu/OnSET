@@ -53,7 +53,13 @@ class OntologyConfig(BaseModel):
         title="Sub Class Query",
         description="Query to get the sub classes",
     )
-    property_types: list[str] = Field(["ObjectProperty", "DatatypeProperty"])
+    property_types: list[str] = Field(
+        [
+            "owl:ObjectProperty",
+            "owl:DatatypeProperty",
+            "rdf:Property",
+        ],
+    )
     language: str = Field(
         "en", title="Language", description="Language of the ontology"
     )
@@ -375,7 +381,7 @@ OPTIONAL {{?obj rdfs:label ?obj_lbl.}}
                 self.onto.query(
                     f"""
                 SELECT DISTINCT ?prop WHERE {{ 
-                ?prop rdf:type owl:{property_type}.
+                ?prop rdf:type {property_type}.
                 ?prop rdfs:domain {cls}.
                 }} {f"LIMIT {n_props}" if n_props else ""}"""
                 )
@@ -437,7 +443,9 @@ OPTIONAL {{?obj rdfs:label ?obj_lbl.}}
         )
         if load_properties:
             subject.properties = {
-                prop_type: self.properties_for(col_ref, property_type=prop_type, n_props=512)
+                prop_type: self.properties_for(
+                    col_ref, property_type=prop_type, n_props=512
+                )
                 for prop_type in self.config.property_types
             }
         return subject
@@ -468,7 +476,10 @@ OPTIONAL {{?obj rdfs:label ?obj_lbl.}}
 
             return cls
 
-        roots = [enrich_descendants(cls) for cls in tqdm(roots, desc="Enriching root classes")]
+        roots = [
+            enrich_descendants(cls)
+            for cls in tqdm(roots, desc="Enriching root classes")
+        ]
         self.roots_cache = roots
         return roots
 
@@ -547,9 +558,7 @@ OPTIONAL {{?obj rdfs:label ?obj_lbl.}}
         ]
         for parent_class in parent_classes:
             parent_class.out_links = [
-                link
-                for link in out_links
-                if link.from_id == parent_class.subject_id
+                link for link in out_links if link.from_id == parent_class.subject_id
             ]
             parent_class.in_links = [
                 link for link in in_links if link.to_id == parent_class.subject_id
