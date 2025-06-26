@@ -10,11 +10,7 @@ every axis/.style={
 ]
 
 \definecolor{lightblue161201244}{RGB}{161,201,244}
-\definecolor{lightgreen141229161}{RGB}{141,229,161}
 \definecolor{lightgrey203}{RGB}{203,203,203}
-\definecolor{lightsalmon255159155}{RGB}{255,159,155}
-\definecolor{lightsalmon255180130}{RGB}{255,180,130}
-\definecolor{thistle208187255}{RGB}{208,187,255}
 \definecolor{whitesmoke240}{RGB}{240,240,240}
 
 \begin{axis}[
@@ -26,18 +22,21 @@ width=2\textwidth,
 x grid style={lightgrey203},
 xlabel={\(\displaystyle k\)},
 xmajorgrids,
-xmin=1.75, xmax=7.25,
+xmin=1.89, xmax=2.11,
 xtick style={color=black},
-xtick={1,2,3,4,5,6,7,8},
+xtick={1.875,1.9,1.925,1.95,1.975,2,2.025,2.05,2.075,2.1,2.125},
 xticklabels={
-  \(\displaystyle {1}\),
-  \(\displaystyle {2}\),
-  \(\displaystyle {3}\),
-  \(\displaystyle {4}\),
-  \(\displaystyle {5}\),
-  \(\displaystyle {6}\),
-  \(\displaystyle {7}\),
-  \(\displaystyle {8}\)
+  \(\displaystyle {1.875}\),
+  \(\displaystyle {1.900}\),
+  \(\displaystyle {1.925}\),
+  \(\displaystyle {1.950}\),
+  \(\displaystyle {1.975}\),
+  \(\displaystyle {2.000}\),
+  \(\displaystyle {2.025}\),
+  \(\displaystyle {2.050}\),
+  \(\displaystyle {2.075}\),
+  \(\displaystyle {2.100}\),
+  \(\displaystyle {2.125}\)
 },
 y grid style={lightgrey203},
 ylabel={Mean \(\displaystyle F_{1,rel.}\) },
@@ -56,73 +55,11 @@ yticklabels={
 ]
 \addplot [thick, lightblue161201244, mark=x, mark size=5, mark options={solid,fill opacity=0}]
 table {%
-2 0.829032258064516
-3 0.72680412371134
-5 0.776289682539682
-7 0.692951625094482
+2 0.761261261261261
 };
 \addplot [thick, lightblue161201244, dashed, mark=x, mark size=5, mark options={solid,fill opacity=0}]
 table {%
-2 0.270967741935484
-3 0.2
-5 0.173611111111111
-7 0.0158730158730159
-};
-\addplot [thick, lightsalmon255180130, mark=x, mark size=5, mark options={solid,fill opacity=0}]
-table {%
-2 0.747747747747748
-3 0.70093896713615
-5 0.7531279178338
-7 0.737373737373737
-};
-\addplot [thick, lightsalmon255180130, dashed, mark=x, mark size=5, mark options={solid,fill opacity=0}]
-table {%
-2 0.254504504504505
-3 0.185915492957746
-5 0.244553376906318
-7 0.0757575757575758
-};
-\addplot [thick, lightgreen141229161, mark=x, mark size=5, mark options={solid,fill opacity=0}]
-table {%
-2 0.774647887323944
-3 0.746666666666667
-5 0.812596006144393
-7 0.772698412698413
-};
-\addplot [thick, lightgreen141229161, dashed, mark=x, mark size=5, mark options={solid,fill opacity=0}]
-table {%
-2 0.352112676056338
-3 0.14
-5 0.236559139784946
-7 0
-};
-\addplot [thick, lightsalmon255159155, mark=x, mark size=5, mark options={solid,fill opacity=0}]
-table {%
-2 0.916666666666667
-3 0.77047619047619
-5 0.820607553366174
-7 0.733333333333333
-};
-\addplot [thick, lightsalmon255159155, dashed, mark=x, mark size=5, mark options={solid,fill opacity=0}]
-table {%
-2 0.342592592592593
-3 0.3
-5 0.229885057471264
-7 0.0625
-};
-\addplot [thick, thistle208187255, mark=x, mark size=5, mark options={solid,fill opacity=0}]
-table {%
-2 0.840740740740741
-3 0.741666666666667
-5 0.847229437229437
-7 0.721148459383753
-};
-\addplot [thick, thistle208187255, dashed, mark=x, mark size=5, mark options={solid,fill opacity=0}]
-table {%
-2 0.311111111111111
-3 0.234375
-5 0.302164502164502
-7 0.0294117647058824
+2 0.288288288288288
 };
 \end{axis}
 

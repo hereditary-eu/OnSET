@@ -33,27 +33,3 @@ qlever start
    - then start the frontend using `npm run dev`
 * Profit?
 
-
-## Citations
-
-If you feel inspired or want to refer our work in some way, cite SIGIR 2025 Demo Paper (on the Visual Query Builder):
-
-```bib
-@misc{kantz2025onsetontologysemanticexploration,
-      title={OnSET: Ontology and Semantic Exploration Toolkit}, 
-      author={Benedikt Kantz and Kevin Innerebner and Peter Waldert and Stefan Lengauer and Elisabeth Lex and Tobias Schreck},
-      year={2025},
-      eprint={2504.08373},
-      archivePrefix={arXiv},
-      primaryClass={cs.IR},
-      url={https://arxiv.org/abs/2504.08373}, 
-}
-```
-
-If you find the intersection of language tooling and ontologies interesting, cite the VINCI '25 paper: (TBA)
-
-Additionally, if you see an application of the LM queries for parsing natural language query to our visual queries cite the IEEE VIS 2025 Short Paper (tba):
-
-Furthermore, for the aspects of this code referencing the differential query view, cite the IEE VIS '25 paper: (TBA)
-Furthermore, for the aspects of this code referencing the differential views, cite the IEE VIS '25 paper: (TBA)
-
