@@ -81,7 +81,7 @@ class CandidateEntity(Entity):
 class Candidates(EntitiesRelations):
     relations: list[CandidateRelation] = Field([])
     entities: list[CandidateEntity] = Field([])
-    constraints: list[CandidateConstraint] = Field([])
+    # constraints: list[CandidateConstraint] = Field([])
 
 
 class EnrichedConstraint(Constraint):
@@ -90,7 +90,7 @@ class EnrichedConstraint(Constraint):
 
 class EnrichedEntity(Entity):
     subject: Subject
-    constraints: list[EnrichedConstraint] = Field([])
+    # constraints: list[EnrichedConstraint] = Field([])
 
 
 class EnrichedRelation(Relation):
