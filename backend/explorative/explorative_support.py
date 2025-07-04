@@ -91,6 +91,7 @@ class GuidanceManager:
                 n_gpu_layers=-1,
                 n_threads=6,
                 embedding=False,
+                temperature=0.6,
             )
         return self.__lama_model
 

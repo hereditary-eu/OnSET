@@ -10,9 +10,12 @@ every axis/.style={
 ]
 
 \definecolor{lightblue161201244}{RGB}{161,201,244}
+\definecolor{lightgreen141229161}{RGB}{141,229,161}
 \definecolor{lightgrey203}{RGB}{203,203,203}
 \definecolor{lightgrey204}{RGB}{204,204,204}
+\definecolor{lightsalmon255159155}{RGB}{255,159,155}
 \definecolor{lightsalmon255180130}{RGB}{255,180,130}
+\definecolor{thistle208187255}{RGB}{208,187,255}
 \definecolor{whitesmoke240}{RGB}{240,240,240}
 
 \begin{axis}[
@@ -24,8 +27,8 @@ legend style={
   fill opacity=0.8,
   draw opacity=1,
   text opacity=1,
-  at={(0.03,0.97)},
-  anchor=north west,
+  at={(0.97,0.03)},
+  anchor=south east,
   draw=lightgrey204
 },
 tick align=outside,
@@ -34,21 +37,18 @@ width=2\textwidth,
 x grid style={lightgrey203},
 xlabel={\(\displaystyle k\)},
 xmajorgrids,
-xmin=2.9, xmax=5.1,
+xmin=1.75, xmax=7.25,
 xtick style={color=black},
-xtick={2.75,3,3.25,3.5,3.75,4,4.25,4.5,4.75,5,5.25},
+xtick={1,2,3,4,5,6,7,8},
 xticklabels={
-  \(\displaystyle {2.75}\),
-  \(\displaystyle {3.00}\),
-  \(\displaystyle {3.25}\),
-  \(\displaystyle {3.50}\),
-  \(\displaystyle {3.75}\),
-  \(\displaystyle {4.00}\),
-  \(\displaystyle {4.25}\),
-  \(\displaystyle {4.50}\),
-  \(\displaystyle {4.75}\),
-  \(\displaystyle {5.00}\),
-  \(\displaystyle {5.25}\)
+  \(\displaystyle {1}\),
+  \(\displaystyle {2}\),
+  \(\displaystyle {3}\),
+  \(\displaystyle {4}\),
+  \(\displaystyle {5}\),
+  \(\displaystyle {6}\),
+  \(\displaystyle {7}\),
+  \(\displaystyle {8}\)
 },
 y grid style={lightgrey203},
 ylabel={Mean \(\displaystyle F_{1,node}\)},
@@ -67,26 +67,82 @@ yticklabels={
 ]
 \addplot [thick, lightblue161201244, mark=x, mark size=5, mark options={solid,fill opacity=0}]
 table {%
-3 0.640692640692641
-5 0.699330972058245
+2 0.667940979208585
+3 0.74788838612368
+5 0.749741797965148
+7 0.710023418846948
 };
 \addlegendentry{Hermes 3 3B aligned}
 \addplot [thick, lightblue161201244, dashed, mark=x, mark size=5, mark options={solid,fill opacity=0}]
 table {%
-3 0.632034632034632
-5 0.738659320477502
+2 0.683568075117371
+3 0.752280399339223
+5 0.755312087799397
+7 0.716396323143728
 };
 \addlegendentry{raw}
 \addplot [thick, lightsalmon255180130, mark=x, mark size=5, mark options={solid,fill opacity=0}]
 table {%
-3 0.443333333333333
-5 0.733333333333333
+2 0.48341307814992
+3 0.705425092411394
+5 0.731748621748622
+7 0.742349081564768
 };
 \addlegendentry{Hermes 3 8B aligned}
 \addplot [thick, lightsalmon255180130, dashed, mark=x, mark size=5, mark options={solid,fill opacity=0}]
 table {%
-3 0.54
-5 0.643939393939394
+2 0.485805422647528
+3 0.714220482713633
+5 0.714148444148444
+7 0.758754077525704
+};
+\addlegendentry{raw}
+\addplot [thick, lightgreen141229161, mark=x, mark size=5, mark options={solid,fill opacity=0}]
+table {%
+2 0.635726495726496
+3 0.748304132973944
+5 0.798049794318451
+7 0.781842610940972
+};
+\addlegendentry{Hermes 3 70B aligned}
+\addplot [thick, lightgreen141229161, dashed, mark=x, mark size=5, mark options={solid,fill opacity=0}]
+table {%
+2 0.647692307692308
+3 0.769418238993711
+5 0.804838445136953
+7 0.797848008985907
+};
+\addlegendentry{raw}
+\addplot [thick, lightsalmon255159155, mark=x, mark size=5, mark options={solid,fill opacity=0}]
+table {%
+2 0.489622641509434
+3 0.664746543778802
+5 0.702896932127701
+7 0.749501242742795
+};
+\addlegendentry{Qwen2.5 Coder 32B aligned}
+\addplot [thick, lightsalmon255159155, dashed, mark=x, mark size=5, mark options={solid,fill opacity=0}]
+table {%
+2 0.444025157232704
+3 0.632762782532368
+5 0.685825285825286
+7 0.720094562647754
+};
+\addlegendentry{raw}
+\addplot [thick, thistle208187255, mark=x, mark size=5, mark options={solid,fill opacity=0}]
+table {%
+2 0.513888888888889
+3 0.637301587301587
+5 0.658574562362441
+7 0.670032728008188
+};
+\addlegendentry{Qwen2.5 Instruct 32B aligned}
+\addplot [thick, thistle208187255, dashed, mark=x, mark size=5, mark options={solid,fill opacity=0}]
+table {%
+2 0.454938271604938
+3 0.583289845618613
+5 0.605194805194805
+7 0.611072865101432
 };
 \addlegendentry{raw}
 \end{axis}
