@@ -223,7 +223,7 @@ class LLMQuery(Initationatable):
             relations_steps=[],
         )
         self.cache[query_key] = progress
-        background_tasks.add_task(self.run_query, progress, query)
+        background_tasks.add_task(self.run_query, query, progress)
         return progress
 
     def query_progress(self, query_id: str) -> QueryProgress:
