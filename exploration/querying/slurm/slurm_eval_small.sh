@@ -2,7 +2,7 @@
 #SBATCH --job-name=onset_eval_small
 #SBATCH -c 1
 #SBATCH --mem 6000M
-#SBATCH -a 0-4%2
+#SBATCH -a 0-3%2
 #SBATCH --account=bkantz
 #SBATCH --output=logs/eval_%A_%a.out
 #SBATCH --error=logs/eval_%A_%a.err
