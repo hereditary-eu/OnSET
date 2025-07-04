@@ -2,7 +2,7 @@
 #SBATCH --job-name=onset_eval_qwen_coder
 #SBATCH -c 1
 #SBATCH --mem 22G
-#SBATCH -a 0-4%1
+#SBATCH -a 0-3%1
 #SBATCH --account=bkantz
 #SBATCH --output=logs/eval_%A_%a.out
 #SBATCH --error=logs/eval_%A_%a.err
