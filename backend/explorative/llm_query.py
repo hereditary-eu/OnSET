@@ -145,7 +145,7 @@ RAG_PROMPT_EXAMPLE = (
 
 class LLMQuery(Initationatable):
     def __init__(
-        self, topic: GuidanceManager, zero_shot=False, temperature=0.3, max_tokens=2048
+        self, topic: GuidanceManager, zero_shot=False, temperature=0.3, max_tokens=1024,  # 1024 is the default for llama.cpp
     ):
         self.max_tokens = max_tokens
         self.zero_shot = zero_shot

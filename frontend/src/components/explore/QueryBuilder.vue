@@ -4,7 +4,8 @@
             <GraphView :store="store" :display-mode="DisplayMode.EDIT" :diff="diff"
                 @link-point-clicked="clickedOutlink($event)" @instance-search-clicked="clickedInstance($event)"
                 @type-point-clicked="clickedType($event)" @link-edit-clicked="clickedEditLink($event)"
-                :simulate="ui_state.simulate" @trigger-interface="ui_state.trigger_sim = $event.trigger"></GraphView>
+                :simulate="ui_state.simulate" @trigger-interface="ui_state.trigger_sim = $event.trigger"
+                :rect="ui_state.rect"></GraphView>
             <LinkComposer :store="store" :evt="ui_state.attaching_event" @selection-complete="linkEditDone($event)">
             </LinkComposer>
             <OutLinkSelector :selection_event="ui_state.sublink_event" v-model="ui_state.sublink_display" :store="store"
@@ -45,6 +46,8 @@ import type { PropertiesOpenEvent } from '@/utils/sparql/querymapper';
 import LinkComposer from './elements/LinkComposer.vue';
 import type { SubjectInCircle } from '@/utils/three-man/CircleMan3D';
 
+const svg_wrapper = ref<HTMLElement | null>(null)
+
 const api = new Api({
     baseURL: BACKEND_URL
 })
@@ -76,6 +79,12 @@ const ui_state = reactive({
     editor_mode: EditorMode.EDIT,
     simulate: false,
     trigger_sim: null as (() => void) | null,
+    rect: {
+        x: 0,
+        y: 0,
+        width: 1000,
+        height: 500
+    }
 })
 
 const overviewBox = new OverviewCircles('#threed_graph')
@@ -194,8 +203,15 @@ onMounted(() => {
         console.error(e)
         ui_state.loading = false
     })
-
+    let svg_g_rect = svg_wrapper.value?.getBoundingClientRect()
+    if (svg_g_rect) {
+        ui_state.rect.x = svg_g_rect.x
+        ui_state.rect.y = svg_g_rect.y
+        ui_state.rect.width = svg_g_rect.width
+        ui_state.rect.height = svg_g_rect.height
+    }
     // .style('background-color', 'red')
+
 })
 
 
@@ -241,11 +257,11 @@ const previewLink = (l: Link | null) => {
 
 #threed_minimap {
     aspect-ratio: 1;
-    height: 20vw;
-    width: 20vw;
+    height: 15vw;
+    width: 15vw;
     position: relative;
-    left: calc(100% - 20vw - 20px);
-    bottom: calc(20vw + 20px);
+    left: calc(100% - 15vw - 20px);
+    bottom: calc(15vw + 20px);
     // translate: calc(100%) calc(80%);
     z-index: 20;
     background-color: #ffffff;

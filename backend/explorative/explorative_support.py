@@ -229,7 +229,7 @@ class GuidanceManager:
                     if query.order == FUZZY_QUERY_ORDER.SCORE
                     else SubjectInDB.instance_count
                 )
-                subjects = session.execute(
+                query_subject = (
                     select(
                         SubjectInDB,
                         SubjectInDB.embedding.cosine_distance(query_embedding).label(
@@ -240,7 +240,12 @@ class GuidanceManager:
                     .order_by(order_by)
                     .offset(query.skip)
                     .limit(query.limit)
-                ).all()
+                )
+                if query.entity_type is not None:
+                    query_subject = query_subject.where(
+                        SubjectInDB.subject_type == query.entity_type
+                    )
+                subjects = session.execute(query_subject).all()
                 subjects_enriched = [
                     (self.oman.enrich_subject(s[0].subject_id), s.distance)
                     for s in subjects

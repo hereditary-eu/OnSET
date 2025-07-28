@@ -16,7 +16,7 @@ enum TopicMode {
 
 const graph_data = ref([] as SubjectInCircle[])
 const ui_state = ref({
-    query_mode: TopicMode.EDGE_BUNDLE,
+    query_mode: TopicMode.THREE_D,
 })
 const topics_root = ref(null as Topic | null)
 const circleman = new HierarchicalCircleMan3D('.graph_wrapper')

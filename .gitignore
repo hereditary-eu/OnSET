@@ -13,3 +13,4 @@ node_modules
 *.err
 *.out
 **/user-study/private
+demo-video
