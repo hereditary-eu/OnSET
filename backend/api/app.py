@@ -19,7 +19,7 @@ from explorative.exp_model import (
     SparqlQuery,
     Topic,
     SubjectLinkDB,
-    FuzzyQuery,
+    FuzzyQuery, 
     FuzzyQueryResults,
 )
 from explorative.llm_query import LLMQuery, QueryProgress, EnrichedEntitiesRelations
@@ -30,7 +30,7 @@ from assistant.iterative_assistant import IterativeAssistant
 from redis_cache import RedisCache
 from sqlalchemy.orm import Session
 
-db_config = ALL_CONFIG_MAP["dbpedia"][-1]
+db_config = ALL_CONFIG_MAP["bto"][-2]
 # db_config = GUTBRAINIE_CONFIGS[1]
 
 base_path = "../data"

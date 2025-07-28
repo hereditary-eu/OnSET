@@ -258,6 +258,8 @@ class FuzzyQuery(BaseModel):
     order: FUZZY_QUERY_ORDER = Field(FUZZY_QUERY_ORDER.SCORE)
     include_thing: bool = Field(True)
 
+    entity_type: str | None = Field("class")
+
 
 class ResultAttributionType(Enum):
     TOPIC = "topic"
