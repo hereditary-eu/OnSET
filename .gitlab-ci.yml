@@ -17,24 +17,20 @@ variables:
   DOCKER_DRIVER: overlay2
   DOCKER_TLS_CERTDIR: ""
 
-  CONTAINER_FRONTEND_IMAGE: onset-frontend
-  CONTAINER_BACKEND_IMAGE: onset-backend
+  CONTAINER_FRONTEND_IMAGE: $CI_REGISTRY:onset-frontend:$CI_COMMIT_REF_SLUG
+  CONTAINER_BACKEND_IMAGE: $CI_REGISTRY:onset-backend:$CI_COMMIT_REF_SLUG
 
 build-frontend:
   stage: build
   script:
-    - docker build --pull -t $CONTAINER_FRONTEND_IMAGE:$CI_COMMIT_REF_SLUG ./frontend
-    - docker tag $CONTAINER_FRONTEND_IMAGE:$CI_COMMIT_REF_SLUG $CONTAINER_FRONTEND_IMAGE:latest
-    - docker push $CONTAINER_FRONTEND_IMAGE:latest
-    - docker push $CONTAINER_FRONTEND_IMAGE:$CI_COMMIT_REF_SLUG
+    - docker build --pull -t $CONTAINER_FRONTEND_IMAGE ./frontend
+    - docker push $CONTAINER_FRONTEND_IMAGE
 
 build-backend:
   stage: build
   script:
-    - docker build --pull -t $CONTAINER_BACKEND_IMAGE:$CI_COMMIT_REF_SLUG ./backend
-    - docker tag $CONTAINER_BACKEND_IMAGE:$CI_COMMIT_REF_SLUG $CONTAINER_BACKEND_IMAGE:latest
-    - docker push $CONTAINER_BACKEND_IMAGE:latest
-    - docker push $CONTAINER_BACKEND_IMAGE:$CI_COMMIT_REF_SLUG
+    - docker build --pull -t $CONTAINER_BACKEND_IMAGE ./backend
+    - docker push $CONTAINER_BACKEND_IMAGE
 
 # deploy:
 #   stage: deploy
