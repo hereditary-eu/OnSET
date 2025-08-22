@@ -2,7 +2,7 @@ import sys
 import os
 
 sys.path.insert(0, os.path.abspath("../.."))
-sys.path.append(os.path.abspath("../../backend"))
+sys.path.append(os.path.abspath("../../backend/src"))
 sys.path.append(os.path.abspath(""))
 
 from rdflib.plugins.stores.sparqlstore import SPARQLStore
