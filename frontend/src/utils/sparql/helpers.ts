@@ -50,7 +50,7 @@ export function toVar(v: string | number): string {
     if (typeof v === 'number') {
         return v.toString()
     }
-    return v.replace(/[_ &]/g, '_')
+    return v.replace(/[_ &,]/g, '_')
 }
 export function nodeFromEntity(entity: Entity): SubjectNode {
     let subject_data = (entity as EnrichedEntity).subject ? (entity as EnrichedEntity).subject : entity

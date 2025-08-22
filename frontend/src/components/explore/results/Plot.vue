@@ -81,7 +81,7 @@ const ui_data = reactive({
 })
 const loadData = async () => {
     ui_data.loading = true
-    let query_limitless = store.generateQuery(null, null);
+    let query_limitless = store.generateQuery(null, null, false);
     let data = await api.sparql.sparqlQuerySparqlPost({
         query: query_limitless
     })
@@ -115,7 +115,7 @@ const loadData = async () => {
         }
         diff_options.plot_cache.set(query_limitless, new_cache_entry)
         if (diff) {
-            let old_query = diff.left.generateQuery(null, null)
+            let old_query = diff.left.generateQuery(null, null, false)
             console.log('Diff enabled, loading cache for', old_query)
             let cache_result = diff_options.plot_cache.get(old_query)
             if (cache_result) {
@@ -153,11 +153,11 @@ const loadData = async () => {
     ui_data.loading = false
 }
 const initDownloadData = () => {
-    let cache_result = diff_options.plot_cache.get(store.generateQuery(null, null))
+    let cache_result = diff_options.plot_cache.get(store.generateQuery(null, null, false))
     if (cache_result) {
         let old_cache_result = null
         if (diff) {
-            old_cache_result = diff_options.plot_cache.get(diff.left.generateQuery(null, null))
+            old_cache_result = diff_options.plot_cache.get(diff.left.generateQuery(null, null, false))
         }
         downloadDataAsCSV(cache_result, old_cache_result)
     }
