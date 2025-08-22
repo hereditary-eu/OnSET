@@ -22,5 +22,9 @@ class InitatorManager(Initationatable):
         self.__initatables.append((initatable, args, kwargs))
 
     def initate(self, reset=True, config=DBPEDIA_CONFIGS[0]):
-        for args, kwargs, initatable in self.__initatables:
+        for (
+            initatable,
+            args,
+            kwargs,
+        ) in self.__initatables:
             initatable.initate(reset, config * args, **kwargs)
