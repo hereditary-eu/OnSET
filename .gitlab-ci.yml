@@ -13,6 +13,10 @@ stages:
 
 variables:
   # Use TLS https://docs.gitlab.com/ee/ci/docker/using_docker_build.html#tls-enabled
+  DOCKER_HOST: tcp://docker:2375
+  DOCKER_DRIVER: overlay2
+  DOCKER_TLS_CERTDIR: ""
+
   CONTAINER_FRONTEND_IMAGE: onset-frontend
   CONTAINER_BACKEND_IMAGE: onset-backend
   CONTAINER_FRONTEND_IMAGE: $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG
