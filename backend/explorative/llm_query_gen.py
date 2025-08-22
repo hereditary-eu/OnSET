@@ -29,6 +29,7 @@ from explorative.exp_model import (
 from tqdm import tqdm
 import pandas as pd
 import re
+
 SL = TypeVar("SL")
 
 top_k = 100
@@ -156,7 +157,11 @@ def random_downgrade(cls: SubjectInDB, rs: np.random.RandomState) -> SubjectInDB
 
 
 def choose_graph(
-    max_nodes=4, top_k=top_k, seed=seed, max_tries=5, guidance_man: GuidanceManager = None
+    max_nodes=4,
+    top_k=top_k,
+    seed=seed,
+    max_tries=5,
+    guidance_man: GuidanceManager = None,
 ):
     rs = np.random.RandomState(seed)
     with Session(guidance_man.engine) as session:
@@ -175,33 +180,43 @@ def choose_graph(
         from_subject_alias = aliased(SubjectInDB, name="from_subject")
         to_subject_alias = aliased(SubjectInDB, name="to_subject")
         # from and start links do not start with underscore _
-        best_links_db = session.execute(
-            select(SubjectLinkDB)
-            .where(SubjectLinkDB.from_id != SubjectLinkDB.to_id)
-            .where(SubjectLinkDB.to_id != None)
-            .where(SubjectLinkDB.from_id.not_like("!_:%", "!"))
-            .where(SubjectLinkDB.to_id.not_like("!_:%", "!"))
-            .where(SubjectLinkDB.description.not_like("%<%"))
-            .where(SubjectLinkDB.description.not_like("%>%"))
-            .order_by(SubjectLinkDB.instance_count.desc())
-            .join(
-                from_subject_alias,
-                SubjectLinkDB.from_subject.of_type(from_subject_alias),
-            )
-            .join(to_subject_alias, SubjectLinkDB.to_subject.of_type(to_subject_alias))
-            # .options(
-            #     lazyload(SubjectLinkDB.from_subject.of_type(from_subject_alias)),
-            #     lazyload(SubjectLinkDB.to_subject.of_type(to_subject_alias)),
-            # )
-            .limit(top_k)
-        ).all()
-        best_links: list[tuple[str, SubjectLinkDB]] = [
-            (link[0].property_id, link[0]) for link in best_links_db
-        ]
-        _, choice = choose_entity(best_links, rs)
-        choice_downgraded = downgrade_link_subjects(choice)
+        choice_downgraded = None
+        inital_try = 0
+        while choice_downgraded is None and inital_try < max_tries:
+            best_links_db = session.execute(
+                select(SubjectLinkDB)
+                .where(SubjectLinkDB.from_id != SubjectLinkDB.to_id)
+                .where(SubjectLinkDB.to_id != None)
+                .where(SubjectLinkDB.from_id.not_like("!_:%", "!"))
+                .where(SubjectLinkDB.to_id.not_like("!_:%", "!"))
+                .where(SubjectLinkDB.description.not_like("%<%"))
+                .where(SubjectLinkDB.description.not_like("%>%"))
+                .order_by(SubjectLinkDB.instance_count.desc())
+                .join(
+                    from_subject_alias,
+                    SubjectLinkDB.from_subject.of_type(from_subject_alias),
+                )
+                .join(
+                    to_subject_alias, SubjectLinkDB.to_subject.of_type(to_subject_alias)
+                )
+                # .options(
+                #     lazyload(SubjectLinkDB.from_subject.of_type(from_subject_alias)),
+                #     lazyload(SubjectLinkDB.to_subject.of_type(to_subject_alias)),
+                # )
+                .limit(top_k)
+            ).all()
+            best_links: list[tuple[str, SubjectLinkDB]] = [
+                (link[0].property_id, link[0]) for link in best_links_db
+            ]
+            if best_links is None or len(best_links) == 0:
+                print("Retrying", best_links, "inital try", inital_try)
+                inital_try += 1
+                continue
+            _, choice = choose_entity(best_links, rs)
+            choice_downgraded = downgrade_link_subjects(choice)
         id_counter = 0
-
+        if max_tries == inital_try:
+            raise ValueError("Max tries reached")
         def id_counter_gen():
             nonlocal id_counter
             id_counter += 1
@@ -335,7 +350,7 @@ def choose_graph(
             ],
         )
         # remove numbers from identifiers if they are unique!
-        simplifyable_entities:dict[str,EnrichedEntity] = {}
+        simplifyable_entities: dict[str, EnrichedEntity] = {}
         unique_types = set([entity.type for entity in enriched_erl.entities])
         for unique_type in unique_types:
             using_type = [
@@ -364,3 +379,6 @@ def erl_to_templated_query(erl: EnrichedEntitiesRelations):
 def reduce_erl(erl: EnrichedEntitiesRelations):
     reduced_erl = EntitiesRelations(entities=erl.entities, relations=erl.relations)
     return reduced_erl
+
+
+# %%

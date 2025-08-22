@@ -30,7 +30,7 @@ from assistant.iterative_assistant import IterativeAssistant
 from redis_cache import RedisCache
 from sqlalchemy.orm import Session
 
-db_config = ALL_CONFIG_MAP["bto"][-2]
+db_config = ALL_CONFIG_MAP["gutbrainie"][-2]
 # db_config = GUTBRAINIE_CONFIGS[1]
 
 base_path = "../data"
