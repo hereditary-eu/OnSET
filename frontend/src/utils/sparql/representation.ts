@@ -149,6 +149,7 @@ export class StringConstraint extends SubQuery {
         return propType == 'xsd:string' ||
             propType == 'rdf:langString'
             || propType == 'rdfs:label'
+            || propType == 'rdf:PlainLiteral'
     }
 
 }

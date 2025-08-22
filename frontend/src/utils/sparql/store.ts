@@ -198,10 +198,10 @@ export class NodeLinkRepository<N extends SubjectNode = SubjectNode, L extends L
 
     }
 
-    generateQuery(limit: number | null = 100, skip: number | null = null): string {
+    generateQuery(limit: number | null = 100, skip: number | null = null, distinct: boolean = true): string {
         let set = this.querySet()
         let output_names = Object.values(set.nodes).map(nd => nd.outputId())
-        let query = `SELECT DISTINCT ${output_names.join(" ")} ${set.output_ids.join(" ")} WHERE {`
+        let query = `SELECT ${distinct ? "DISTINCT" : ""} ${output_names.join(" ")} ${set.output_ids.join(" ")} WHERE {`
 
         for (let link of set.link_triplets) {
             query += `\n${link.from_id} ${link.link_id} ${link.to_id}.`
