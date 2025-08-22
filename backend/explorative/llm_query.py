@@ -145,7 +145,11 @@ RAG_PROMPT_EXAMPLE = (
 
 class LLMQuery(Initationatable):
     def __init__(
-        self, topic: GuidanceManager, zero_shot=False, temperature=0.3, max_tokens=1024,  # 1024 is the default for llama.cpp
+        self,
+        topic: GuidanceManager,
+        zero_shot=False,
+        temperature=0.4,
+        max_tokens=1024,  # 1024 is the default for llama.cpp
     ):
         self.max_tokens = max_tokens
         self.zero_shot = zero_shot
@@ -579,7 +583,7 @@ class LLMQuery(Initationatable):
             # remove entities that are not
             return erl_enriched
 
-    def initiate(self, force=False, n_queries=10, k_min=2, k_max=4):
+    def initiate(self, force=False, n_queries=10, k_min=2, k_max=4, seed=42):
         do_init = False
         if force:
             do_init = True
@@ -599,7 +603,7 @@ class LLMQuery(Initationatable):
         queries: list[tuple[str, EnrichedEntitiesRelations]] = []
         for i, k in enumerate(tqdm.tqdm(k_s)):
             query_graph = choose_graph(
-                k, guidance_man=self.guidance_man, seed=i, top_k=10
+                k, guidance_man=self.guidance_man, seed=seed + i, top_k=10
             )
             query_graph_reduced = reduce_erl(query_graph)
             query_response = self.guidance_man.llama_model.create_chat_completion(

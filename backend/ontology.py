@@ -382,7 +382,7 @@ OPTIONAL {{?obj rdfs:label ?obj_lbl.}}
                     f"""
                 SELECT DISTINCT ?prop WHERE {{ 
                 ?prop rdf:type {property_type}.
-                ?prop rdfs:domain {cls}.
+                ?prop rdfs:domain/(owl:unionOf/rdf:rest*/rdf:first)* {cls}.
                 }} {f"LIMIT {n_props}" if n_props else ""}"""
                 )
             )
@@ -395,6 +395,27 @@ OPTIONAL {{?obj rdfs:label ?obj_lbl.}}
         except Exception as e:
             print(traceback.format_exc())
             print("Failed to load properties for", cls)
+            return []
+
+    def range_of(self, prop: str, n_ranges: int = None):
+        try:
+            # print("Loading properties for", cls)
+            ranges = list(
+                self.onto.query(
+                    f"""
+                SELECT DISTINCT ?range WHERE {{ 
+                {prop} rdfs:range/(owl:unionOf/rdf:rest*/rdf:first)* ?range.
+                }} {f"LIMIT {n_ranges}" if n_ranges else ""}"""
+                )
+            )
+            # print("Loaded", len(properties), "properties for", cls)
+            ranges_mapped: list[Subject] = [
+                self.enrich_subject(r[0], subject_type="individual") for r in ranges
+            ]
+            return ranges_mapped
+        except Exception as e:
+            print(traceback.format_exc())
+            print("Failed to load range of", prop, e)
             return []
 
     def open_properties(self):

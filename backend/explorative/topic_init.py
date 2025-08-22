@@ -230,52 +230,54 @@ class TopicInitator:
             session.commit()
 
     def embed_property(self, p: Subject, cls: Subject) -> SubjectLinkDB:
-        prop_range = (
-            p.spos["rdfs:range"].first_value() if "rdfs:range" in p.spos else ""
-        )
-        prop = (
-            (
-                p.spos["rdf:type"].values[-1].value
-                if len(p.spos["rdf:type"].values) > 0
+        prop_ranges = self.guidance_man.oman.range_of(p.subject_id)
+        subject_links: list[SubjectLinkDB] = []
+        for prop_range in prop_ranges:
+            prop_range_id = prop_range.subject_id
+            prop = (
+                (
+                    p.spos["rdf:type"].values[-1].value
+                    if len(p.spos["rdf:type"].values) > 0
+                    else ""
+                )
+                if "rdf:type" in p.spos
                 else ""
             )
-            if "rdf:type" in p.spos
-            else ""
-        )
-        prop_range_desc = f"A {cls.label} is defined by {to_readable(p.label)}."
-        if len(prop_range) > 0:
-            prop_range_label = self.guidance_man.oman.label_for(prop_range)
-            if prop == "ObjectProperty":
-                prop_range_desc = f"A {cls.label} is {to_readable(p.label)} of {to_readable(prop_range_label)}."
-            else:
-                prop_range_desc = f"A {cls.label} has {to_readable(p.label)} of type {to_readable(prop_range_label)}."
-            # print(prop_range_desc)
-        superprop = (
-            p.spos["rdfs:subPropertyOf"].first_value()
-            if "rdfs:subPropertyOf" in p.spos
-            else ""
-        )
-        superprop_desc = ""
-        if len(superprop) > 0:
-            superprop_label = self.guidance_man.oman.label_for(superprop)
-            if not superprop_label.startswith("<"):
-                superprop_desc = f"{to_readable(p.label)} is a subproperty of {to_readable(superprop_label)}."
+            prop_range_desc = f"A {cls.label} is defined by {to_readable(p.label)}."
+            if len(prop_range_id) > 0:
+                prop_range_label = self.guidance_man.oman.label_for(prop_range_id)
+                if prop == "ObjectProperty":
+                    prop_range_desc = f"A {cls.label} is {to_readable(p.label)} of {to_readable(prop_range_label)}."
+                else:
+                    prop_range_desc = f"A {cls.label} has {to_readable(p.label)} of type {to_readable(prop_range_label)}."
+                # print(prop_range_desc)
+            superprop = (
+                p.spos["rdfs:subPropertyOf"].first_value()
+                if "rdfs:subPropertyOf" in p.spos
+                else ""
+            )
+            superprop_desc = ""
+            if len(superprop) > 0:
+                superprop_label = self.guidance_man.oman.label_for(superprop)
+                if not superprop_label.startswith("<"):
+                    superprop_desc = f"{to_readable(p.label)} is a subproperty of {to_readable(superprop_label)}."
 
-        prop_desc = f"{prop_range_desc} {superprop_desc}"
-        to_id = p.spos["rdfs:range"].first_value() if "rdfs:range" in p.spos else None
-        to_proptype = None
-        return SubjectLinkDB(
-            from_id=cls.subject_id,
-            to_id=to_id,
-            to_proptype=to_proptype,
-            property_id=p.subject_id,
-            description=prop_desc,
-            link_type=prop,
-            onto_hash=self.guidance_man.identifier,
-            # embedding=prop_embedding,
-            label=p.label,
-            instance_count=self.guidance_man.oman.property_count(p.subject_id),
-        )
+            prop_desc = f"{prop_range_desc} {superprop_desc}"
+            subject_links.append(
+                SubjectLinkDB(
+                    from_id=cls.subject_id,
+                    to_id=prop_range_id,
+                    to_proptype=None,
+                    property_id=p.subject_id,
+                    description=prop_desc,
+                    link_type=prop,
+                    onto_hash=self.guidance_man.identifier,
+                    # embedding=prop_embedding,
+                    label=p.label,
+                    instance_count=self.guidance_man.oman.property_count(p.subject_id),
+                )
+            )
+        return subject_links
 
     def embed_relations(self):
         with Session(self.guidance_man.engine) as session:
@@ -289,8 +291,8 @@ class TopicInitator:
                 tqdm(anonymous_props, desc="Saving anonymous properties")
             ):
                 enriched_prop = self.guidance_man.oman.enrich_subject(prop)
-                subject_link = self.embed_property(enriched_prop, thing)
-                session.add(subject_link)
+                subject_links = self.embed_property(enriched_prop, thing)
+                session.add_all(subject_links)
                 if i % 1000 == 0:
                     session.commit()
 
@@ -350,49 +352,49 @@ class TopicInitator:
                 named_individuals = self.guidance_man.oman.get_named_individuals(
                     cls.subject_id
                 )
-                cls_it.set_description(
-                    f"{cls.label} with {len(named_individuals)} named individuals"
-                )
+                # cls_it.set_description(
+                #     f"{cls.label} with {len(named_individuals)} named individuals"
+                # )
 
-                for ne in named_individuals:
-                    existing_individual = session.execute(
-                        select(SubjectInDB)
-                        .where(
-                            SubjectInDB.subject_id == ne.subject_id,
-                            SubjectInDB.onto_hash == self.guidance_man.identifier,
-                        )
-                        .limit(1)
-                    ).first()
-                    if (
-                        ne.subject_id in self.all_classes.keys()
-                        or existing_individual is not None
-                    ):
-                        # print(f"Named individual {ne.subject_id} is a class, skipping")
-                        continue
-                    if ne.subject_id in named_individuals_ids:
-                        named_individuals_ids[ne.subject_id].parent_id = cls.subject_id
-                        continue
-                    ne_desc = f"{ne.label} is a {cls.label}."
-                    ne_embedding = self.guidance_man.embedding_model.encode(ne_desc)
-                    named_individuals_ids[ne.subject_id] = SubjectInDB(
-                        subject_id=ne.subject_id,
-                        embedding=ne_embedding,
-                        label=ne.label if ne.label is not None else ne.subject_id,
-                        onto_hash=self.guidance_man.identifier,
-                        parent_id=cls.subject_id if len(cls.subject_id) > 0 else None,
-                        subject_type=ne.subject_type,
-                        instance_count=ne.instance_count,
-                    )
-                    session.add(named_individuals_ids[ne.subject_id])
-                    session.commit()
+                # for ne in named_individuals:
+                #     existing_individual = session.execute(
+                #         select(SubjectInDB)
+                #         .where(
+                #             SubjectInDB.subject_id == ne.subject_id,
+                #             SubjectInDB.onto_hash == self.guidance_man.identifier,
+                #         )
+                #         .limit(1)
+                #     ).first()
+                #     if (
+                #         ne.subject_id in self.all_classes.keys()
+                #         or existing_individual is not None
+                #     ):
+                #         # print(f"Named individual {ne.subject_id} is a class, skipping")
+                #         continue
+                #     if ne.subject_id in named_individuals_ids:
+                #         named_individuals_ids[ne.subject_id].parent_id = cls.subject_id
+                #         continue
+                #     ne_desc = f"{ne.label} is a {cls.label}."
+                #     ne_embedding = self.guidance_man.embedding_model.encode(ne_desc)
+                #     named_individuals_ids[ne.subject_id] = SubjectInDB(
+                #         subject_id=ne.subject_id,
+                #         embedding=ne_embedding,
+                #         label=ne.label if ne.label is not None else ne.subject_id,
+                #         onto_hash=self.guidance_man.identifier,
+                #         parent_id=cls.subject_id if len(cls.subject_id) > 0 else None,
+                #         subject_type=ne.subject_type,
+                #         instance_count=ne.instance_count,
+                #     )
+                #     session.add(named_individuals_ids[ne.subject_id])
+                #     session.commit()
 
             session.commit()
 
             for cls in tqdm(self.all_classes.values(), desc="Saving relations"):
                 for prop in cls.properties.keys():
                     for p in cls.properties[prop]:
-                        subject_link = self.embed_property(p, cls)
-                        session.add(subject_link)
+                        subject_links = self.embed_property(p, cls)
+                        session.add_all(subject_links)
                         # print(f"Class {to_id} does not exist, skipping")
             session.commit()
 
@@ -414,6 +416,7 @@ class TopicInitator:
             session.commit()
 
             # now do the embeddings in batches
+
             batch_size = 64
             total = session.query(SubjectLinkDB).count()
             iter = tqdm("Embedding links", total=total // batch_size)
