@@ -41,4 +41,6 @@ ADD . /app
 # Sync the project into a new environment, asserting the lockfile is up to date
 ENV PATH="/app/.venv/bin:$PATH"
 
-CMD [ "python", "-m", "uvicorn", "api:app", "--port", "${ONSET_PORT:-80}" ]
+WORKDIR /app/src
+
+CMD [ "python", "-m", "uvicorn", "api:app", "--port", "8000" ]
