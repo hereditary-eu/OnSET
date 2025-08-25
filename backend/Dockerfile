@@ -43,4 +43,4 @@ ENV PATH="/app/.venv/bin:$PATH"
 
 WORKDIR /app/src
 
-CMD [ "python", "-m", "uvicorn", "api:app", "--port", "8000" ]
+CMD [ "python", "-m", "uvicorn", "api:app", "--host", "0.0.0.0", "--port", "8000" ]
