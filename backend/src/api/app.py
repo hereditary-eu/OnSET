@@ -39,7 +39,7 @@ from sqlalchemy.orm import Session
 
 import os
 
-db_config = ALL_CONFIG_MAP["gutbrainie"][-2]
+db_config = ALL_CONFIG_MAP["dbpedia"][-2]
 # db_config = GUTBRAINIE_CONFIGS[1]
 
 db_config.conn_str = os.getenv("DB_CONN_STR", db_config.conn_str)
@@ -88,7 +88,7 @@ config = OntologyConfig()
 
 ontology_manager = OntologyManager(config, graph)
 dataset_manager = DatasetManager(ontology_manager)
-dataset_manager.initialise(glob_path="data/datasets/ALS/**/*.csv")
+# dataset_manager.initialise(glob_path="data/datasets/ALS/**/*.csv")
 
 # ontology_manager.load_full_graph()
 
