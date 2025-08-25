@@ -149,7 +149,8 @@ class LLMQuery(Initationatable):
         topic: GuidanceManager,
         zero_shot=False,
         temperature=0.4,
-        max_tokens=1024,  # 1024 is the default for llama.cpp
+        max_tokens=1024,  # 1024 is the default for llama.cpp,
+        redis_url="redis://localhost:6379/0",
     ):
         self.max_tokens = max_tokens
         self.zero_shot = zero_shot
@@ -165,7 +166,7 @@ class LLMQuery(Initationatable):
         )
         self.grammar_candidates = LlamaGrammar.from_string(self.gbnf_candidates)
         self.query_id_counter = 0
-        self.cache = RedisCache[QueryProgress](model=QueryProgress)
+        self.cache = RedisCache[QueryProgress](model=QueryProgress, redis_url=redis_url)
 
     def run_query(
         self, query: str, progress: QueryProgress | None = None, enable_cache=True

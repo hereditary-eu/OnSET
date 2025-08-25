@@ -19,11 +19,18 @@ from explorative.exp_model import (
     SparqlQuery,
     Topic,
     SubjectLinkDB,
-    FuzzyQuery, 
+    FuzzyQuery,
     FuzzyQueryResults,
 )
 from explorative.llm_query import LLMQuery, QueryProgress, EnrichedEntitiesRelations
-from eval_config import BTO_CONFIGS, DBPEDIA_CONFIGS, UNIPROT_CONFIGS, DNB_CONFIGS, GUTBRAINIE_CONFIGS, ALL_CONFIG_MAP
+from eval_config import (
+    BTO_CONFIGS,
+    DBPEDIA_CONFIGS,
+    UNIPROT_CONFIGS,
+    DNB_CONFIGS,
+    GUTBRAINIE_CONFIGS,
+    ALL_CONFIG_MAP,
+)
 from initiator import InitatorManager
 from assistant.model import QueryGraph, Operations
 from assistant.iterative_assistant import IterativeAssistant
@@ -35,11 +42,11 @@ import os
 db_config = ALL_CONFIG_MAP["gutbrainie"][-2]
 # db_config = GUTBRAINIE_CONFIGS[1]
 
-db_config.conn_str=os.getenv("DB_CONN_STR", db_config.conn_str)
-db_config.sparql_endpoint=os.getenv("SPARQL_ENDPOINT", db_config.sparql_endpoint)
-db_config.model_id=os.getenv("LLM_MODEL_ID", db_config.model_id)
-db_config.model_quant=os.getenv("LLM_MODEL_QUANT", db_config.model_quant)
-db_config.redis_cache_url=os.getenv("REDIS_CACHE_URL", db_config.redis_cache_url)
+db_config.conn_str = os.getenv("DB_CONN_STR", db_config.conn_str)
+db_config.sparql_endpoint = os.getenv("SPARQL_ENDPOINT", db_config.sparql_endpoint)
+db_config.model_id = os.getenv("LLM_MODEL_ID", db_config.model_id)
+db_config.model_quant = os.getenv("LLM_MODEL_QUANT", db_config.model_quant)
+db_config.redis_cache_url = os.getenv("REDIS_CACHE_URL", db_config.redis_cache_url)
 print("Using DB config:", db_config)
 
 base_path = "../../data"
@@ -90,7 +97,7 @@ guidance_man = GuidanceManager(
 )
 # topic_man.initialize_topics(force=False)
 
-llm_query = LLMQuery(topic=guidance_man)
+llm_query = LLMQuery(topic=guidance_man, redis_url=db_config.redis_cache_url)
 
 initatior = InitatorManager()
 initatior.register(guidance_man)
