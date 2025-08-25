@@ -40,7 +40,7 @@ db_config.sparql_endpoint=os.getenv("SPARQL_ENDPOINT", db_config.sparql_endpoint
 db_config.model_id=os.getenv("LLM_MODEL_ID", db_config.model_id)
 db_config.model_quant=os.getenv("LLM_MODEL_QUANT", db_config.model_quant)
 
-
+print("Using DB config:", db_config)
 
 base_path = "../../data"
 onto_path = f"{base_path}/hero-ontology/hereditary_clinical.ttl"
