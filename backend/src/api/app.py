@@ -39,7 +39,7 @@ db_config.conn_str=os.getenv("DB_CONN_STR", db_config.conn_str)
 db_config.sparql_endpoint=os.getenv("SPARQL_ENDPOINT", db_config.sparql_endpoint)
 db_config.model_id=os.getenv("LLM_MODEL_ID", db_config.model_id)
 db_config.model_quant=os.getenv("LLM_MODEL_QUANT", db_config.model_quant)
-
+db_config.redis_cache_url=os.getenv("REDIS_CACHE_URL", db_config.redis_cache_url)
 print("Using DB config:", db_config)
 
 base_path = "../../data"
@@ -100,7 +100,7 @@ iterative_assistant = IterativeAssistant(guidance=guidance_man)
 
 
 assistant_cache = RedisCache(
-    redis_url="redis://localhost:6379/1",
+    redis_url=db_config.redis_cache_url,
     model=Operations,
 )
 
