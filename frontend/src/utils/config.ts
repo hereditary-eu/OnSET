@@ -1,1 +1,1 @@
-export const BACKEND_URL="http://localhost:8001"
+export const BACKEND_URL=import.meta.env.ONSET_API_BASE_URL || "http://localhost:8001"
