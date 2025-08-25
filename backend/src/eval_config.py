@@ -16,6 +16,7 @@ class EvalConfig(BaseModel):
     name: str = "DBpedia"  # DBpedia or OMA
     selection_distribution: SelectionDistribution = SelectionDistribution.INSTANCES
     model_quant: str = "*.Q8_0.gguf"
+    redis_cache_url: str = "redis://localhost:6379/1"
 
 
 DBPEDIA_CONFIGS = [
