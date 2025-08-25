@@ -48,6 +48,7 @@ class GuidanceManager:
                 device = "mps"
             else:
                 device = "cpu"
+        print("Using device", device)
         self.device = device
         # This model supports two prompts: "s2p_query" and "s2s_query" for sentence-to-passage and sentence-to-sentence tasks, respectively.
         # They are defined in `config_sentence_transformers.json`
@@ -106,8 +107,9 @@ class GuidanceManager:
                 "use_memory_efficient_attention": False,
                 "unpad_inputs": False,
             },
-            revision="eb1ce34a33908596b61c83a88903b5f5f30beaa9",  # problematic merge, wrong dimensionality
-        ).to(self.device)
+            revision="eb1ce34a33908596b61c83a88903b5f5f30beaa9",  # problematic merge, wrong dimensionality,
+            device=self.device,
+        )
         # self.embedding_model = SentenceTransformer(
         #     "paraphrase-MiniLM-L6-v2",
         # ).to(device)
