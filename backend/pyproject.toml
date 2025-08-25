@@ -12,9 +12,9 @@ dependencies = [
     "owlready2",
     "networkx",
     "pyvis",
-    "rdflib[networkx,html,lxml,orjson]",
+    "rdflib[networkx,networkx,html,lxml]>=7.1.1",
     "fastapi",
-    "psycopg[binary]",
+    "psycopg[binary]>=3.2.9",
     "sentence-transformers",
     "SQLAlchemy",
     "sqlmodel",
@@ -56,10 +56,10 @@ dev = [
 ]
 
 [tool.uv.sources]
-# llama-cpp-python = [
-#     { index = "llama-metal", marker = "platform_system == 'Darwin'" },
-#     { index = "llama-gpu", marker = "platform_system == 'Linux'" },
-# ]
+torch = [
+    { index = "torch-metal", marker = "platform_system != 'Linux'" },
+    { index = "torch-gpu", marker = "platform_system == 'Linux'" },
+]
 llama-cpp-agent = [
     { git = "https://github.com/Dakantz/llama-cpp-agent.git", branch = "add-literal-support" },
 ]
@@ -67,6 +67,15 @@ tikzplotlib-patched = [
     { git = "https://github.com/JasonGross/tikzplotlib.git", branch = "patched" },
 ]
 
+[[tool.uv.index]]
+name="torch-metal"
+url="https://download.pytorch.org/whl/cpu/"
+explicit = true
+
+[[tool.uv.index]]
+name = "torch-gpu"
+url = "https://download.pytorch.org/whl/cu128"
+explicit = true
 
 # [[tool.uv.index]]
 # name = "llama-metal"
