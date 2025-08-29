@@ -24,6 +24,6 @@ export default defineConfig({
 
     }
   },
-  base: "/demo",
+  // base: "/demo",
   envPrefix: 'ONSET_',
 })
