@@ -45,6 +45,10 @@ export class TopicInCircle implements Topic {
     get label() {
         return `${this.topic} / ${this.depth}`
     }
+    remove(id:string){
+        this.sub_topics = this.sub_topics.filter(st => st.id !== id);
+        this.subjects_ids = this.subjects_ids.filter(s => s !== id);
+    }
 
 }
 export function buildColours(topic: TopicInCircle, start_angle = 0, end_angle = 2 * Math.PI) {
@@ -108,6 +112,11 @@ export class HierarchicalCircleMan3D extends CircleMan3D {
             }
             topic_in_circle.parent = parent
             topic_in_circle.sub_topics = topic.sub_topics.map((st) => revive_topic(st, topic_in_circle))
+            for (let child of topic_in_circle.children) {
+                if (child.sub_topics.length === 0 && child.subjects_ids.length == 0) {
+                    topic_in_circle.remove(child.id);
+                }
+            }
             return topic_in_circle
         }
         this.topics_root = revive_topic(this.topics_root, null)
@@ -154,7 +163,7 @@ export class HierarchicalCircleMan3D extends CircleMan3D {
                 let link = new TopicTreeLink()
                 link.from_subject = this.subjects_by_id[subject_id]
                 if (!link.from_subject) {
-                    console.log('no subject', subject_id)
+                    // console.log('no subject', subject_id)
                     return
                 }
                 link.from_position = link.from_subject.position
@@ -164,7 +173,7 @@ export class HierarchicalCircleMan3D extends CircleMan3D {
                 let link = new TopicTreeLink()
                 link.from_subject = this.properties_by_id[property_id]
                 if (!link.from_subject) {
-                    console.log('no property', property_id)
+                    // console.log('no property', property_id)
                     return
                 }
                 link.from_position = link.from_subject.position
