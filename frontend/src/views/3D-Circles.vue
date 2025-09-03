@@ -25,15 +25,21 @@ const api = new Api({
     baseURL: BACKEND_URL
 })
 const loading = ref(false)
-watch(() => { graph_data.value, topics_root.value }, () => {
+watch(() => { graph_data.value, topics_root.value, ui_state.value.query_mode }, () => {
     console.log('node_links changed')
-    circleman.nodes = graph_data.value as any
-    circleman.topics_root = topics_root.value as any
-    circleman.initPackedCircles()
+    switch (ui_state.value.query_mode) {
+        case TopicMode.THREE_D:
+            circleman.nodes = graph_data.value as any
+            circleman.topics_root = topics_root.value as any
+            circleman.initPackedCircles()
+            break;
+        case TopicMode.EDGE_BUNDLE:
+            bundleman.nodes = graph_data.value as any
+            bundleman.topics_root = topics_root.value as any
+            bundleman.init()
+            break;
+    }
 
-    bundleman.nodes = graph_data.value as any
-    bundleman.topics_root = topics_root.value as any
-    bundleman.init()
 }, { deep: true })
 onMounted(() => {
     // circleman.clicked_node = (node: NodeType) => {
@@ -82,6 +88,15 @@ onMounted(() => {
 </template>
 <style>
 .graph_wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    width: 100%;
+    background-color: #ffffff;
+}
+
+.edge_wrapper {
     display: flex;
     justify-content: center;
     align-items: center;
