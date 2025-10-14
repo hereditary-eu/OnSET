@@ -26,6 +26,7 @@
         <div class="input_step">
             <h3 v-if="store">.. and start querying!</h3>
             <div class="query_build_view">
+                <HistoryView  :store="store"></HistoryView>
                 <QueryBuilder :store="store" :diff="ui_state.diff"></QueryBuilder>
                 <ResultsView :query_string="query_string" :store="store" :diff="ui_state.diff"></ResultsView>
             </div>
@@ -84,6 +85,7 @@ import FuzzyQueryStarter from '@/components/explore/FuzzyQueryStarter.vue';
 import { jsonClone, parseJSON, stringifyJSON } from '@/utils/parsing';
 import { NodeLinkRepositoryDiff } from '@/utils/sparql/diff';
 import { Link, SubjectNode } from '@/utils/sparql/representation';
+import HistoryView from '@/components/explore/history/HistoryView.vue';
 
 
 const api = new Api({
@@ -360,6 +362,7 @@ const colour_config = computed(() => {
     fill: v-bind('colour_config.node_changed');
     stroke-dasharray: 10, 1, 10, 1;
 }
+
 :deep(.node_attaching) {
     fill: v-bind('colour_config.node_normal');
     stroke-width: 3px;

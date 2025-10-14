@@ -3,7 +3,7 @@ import { CONSTRAINT_HEIGHT, CONSTRAINT_WIDTH, NODE_HEIGHT, NODE_WIDTH, OpenEvent
 
 import { registerClass } from "../parsing";
 import { NodeLinkRepository } from "./store";
-import type { Diffable } from "./diff";
+import { DiffList, SubQueryDiff, type Diffable } from "./diff";
 
 
 
@@ -370,14 +370,19 @@ export class SubjectNode implements Subject, Diffable {
     }
 
     changed(other: this): boolean {
+        let subquery_diff = new DiffList(this.subqueries || [], other.subqueries || [], SubQueryDiff)
+        if (subquery_diff.added.length > 0 || subquery_diff.removed.length > 0 || subquery_diff.changed.length > 0) {
+            return true
+        }
+        return false
         return this.subject_id != other.subject_id ||
             this.label != other.label ||
-            this.spos != other.spos ||
+            // this.spos != other.spos ||
             this.subject_type != other.subject_type ||
             this.refcount != other.refcount ||
-            this.descendants != other.descendants ||
-            this.total_descendants != other.total_descendants ||
-            this.properties != other.properties;
+            // this.descendants != other.descendants ||
+            this.total_descendants != other.total_descendants //||
+        // this.properties != other.properties;
     }
     get id(): string | number {
         return this.internal_id
@@ -524,3 +529,47 @@ export class Link<N extends Subject = Subject> implements SubjectLink, Diffable 
     }
 }
 export type FuzzyQueryRequest = Parameters<typeof Api.prototype.classes.searchClassesClassesSearchPost>[0]
+
+
+import { readableName } from "./querymapper";
+@registerClass
+export class InstanceNode extends SubjectNode {
+    instance_label: string = null
+    instance_id: string = null
+    interactive_clone: InstanceNode | null = null
+    expanded: boolean = false
+    instance_data: Record<string, string> = null
+    constructor(base_node?: SubjectNode | InstanceNode, instance_data?: Record<string, string>) {
+        super(base_node)
+        if (!base_node) {
+            this.instance_data = instance_data || {}
+        } else {
+            this.instance_data = instance_data || (base_node as InstanceNode).instance_data || {}
+        }
+        this.instance_id = this.instance_data[this.outputId().replace('?', '')]
+        this.instance_label = this.instance_data[this.labelId().replace('?', '')]
+        this.instance_label = readableName(this.instance_id, this.instance_label)
+    }
+    get id() {
+        return this.instance_id
+    }
+}
+@registerClass
+export class InstanceLink extends Link {
+    instance_label: string = null
+    instance_id: string = null
+    constructor(base_link: Link = null, public instance_data: Record<string, string> = null) {
+        super(base_link)
+        if (!base_link) {
+            this.instance_data = instance_data || {}
+        } else {
+            this.instance_data = instance_data || (base_link as InstanceLink).instance_data || {}
+        }
+        this.instance_id = this.instance_data[this.outputId().replace('?', '')]
+        // this.instance_label = this.instance_data[this.outputId().replace('?', '')]
+        this.instance_label = readableName(this.instance_id, this.label)
+    }
+    get id() {
+        return this.link_id
+    }
+}

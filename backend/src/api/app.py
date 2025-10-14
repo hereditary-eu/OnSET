@@ -139,6 +139,12 @@ def sparql_query_get(query: str = Query(...)) -> dict[str, Any]:
     return {"results": {"bindings": data}}
 
 
+@app.get("/nlp/embeddings")
+def nlp_embeddings(query: str = Query(...)) -> dict[str, Any]:
+    data = guidance_man.embedding_model.encode([query]).squeeze().tolist()
+    return {"embedding": data}
+
+
 @app.post("/management/ontology")
 def load_ontology(
     ontology: UploadFile,

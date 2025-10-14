@@ -382,7 +382,9 @@ OPTIONAL {{?obj rdfs:label ?obj_lbl.}}
                     f"""
                 SELECT DISTINCT ?prop WHERE {{ 
                 ?prop rdf:type {property_type}.
-                ?prop rdfs:domain/(owl:unionOf/rdf:rest*/rdf:first)* {cls}.
+                {{?prop rdfs:domain/(owl:unionOf/rdf:rest*/rdf:first)* {cls}. }}
+                UNION
+                {{?prop rdfs:domain {cls}. }}
                 }} {f"LIMIT {n_props}" if n_props else ""}"""
                 )
             )

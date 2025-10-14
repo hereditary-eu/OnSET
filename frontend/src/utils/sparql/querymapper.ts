@@ -1,5 +1,5 @@
 import { Api } from "@/api/client.ts/Api";
-import { Link, SubjectNode as NodeRepr } from "./representation";
+import { InstanceLink, InstanceNode, Link, SubjectNode as NodeRepr } from "./representation";
 import { BACKEND_URL } from "../config";
 import { Vector2, type Vector2Like } from "three";
 import { parseJSON, registerClass, stringifyJSON } from "../parsing";
@@ -19,47 +19,6 @@ export function readableName(uri?: string, label?: string) {
     }
     return label
 }
-@registerClass
-export class InstanceNode extends NodeRepr {
-    instance_label: string = null
-    instance_id: string = null
-    interactive_clone: InstanceNode | null = null
-    expanded: boolean = false
-    instance_data: Record<string, string> = null
-    constructor(base_node?: NodeRepr | InstanceNode, instance_data?: Record<string, string>) {
-        super(base_node)
-        if (!base_node) {
-            this.instance_data = instance_data || {}
-        } else {
-            this.instance_data = instance_data || (base_node as InstanceNode).instance_data || {}
-        }
-        this.instance_id = this.instance_data[this.outputId().replace('?', '')]
-        this.instance_label = this.instance_data[this.labelId().replace('?', '')]
-        this.instance_label = readableName(this.instance_id, this.instance_label)
-    }
-    get id() {
-        return this.instance_id
-    }
-}
-@registerClass
-export class InstanceLink extends Link {
-    instance_label: string = null
-    instance_id: string = null
-    constructor(base_link: Link = null, public instance_data: Record<string, string> = null) {
-        super(base_link)
-        if (!base_link) {
-            this.instance_data = instance_data || {}
-        } else {
-            this.instance_data = instance_data || (base_link as InstanceLink).instance_data || {}
-        }
-        this.instance_id = this.instance_data[this.outputId().replace('?', '')]
-        // this.instance_label = this.instance_data[this.outputId().replace('?', '')]
-        this.instance_label = readableName(this.instance_id, this.label)
-    }
-    get id() {
-        return this.link_id
-    }
-}
 export class PropertiesOpenEvent {
     node: InstanceNode;
 }
@@ -78,11 +37,6 @@ export class InstanceNodeLinkRepository extends NodeLinkRepository<InstanceNode,
     }
 
 }
-export class DiffInstanceNodeLinkRepository extends NodeLinkRepositoryDiff<InstanceNode, InstanceLink> {
-    constructor(left: InstanceNodeLinkRepository, right: InstanceNodeLinkRepository) {
-        super(left, right)
-    }
-}
 export class ResultList implements Diffable {
     id: number = 0;
     private static id_cntr = 0
@@ -92,6 +46,37 @@ export class ResultList implements Diffable {
     changed(other: this): boolean {
         return other.id != this.id
     }
+}
+export function scalingFactors(store: NodeLinkRepository, target_size: Vector2Like): { offset: Vector2Like, scale: number, size: Vector2Like } {
+    let querySet = store.querySet()
+
+    let bbox = { br: new Vector2(0, 0), tl: new Vector2(Infinity, Infinity) }
+
+    Object.values(querySet.nodes).forEach((node) => {
+        if (node.x < bbox.tl.x) {
+            bbox.tl.x = node.x
+        }
+        if (node.y < bbox.tl.y) {
+            bbox.tl.y = node.y
+        }
+        if (node.x + node.width > bbox.br.x) {
+            bbox.br.x = node.x + node.width
+        }
+        if (node.y + node.height > bbox.br.y) {
+            bbox.br.y = node.y + node.height
+        }
+    })
+
+    let offset = bbox.tl.clone().multiplyScalar(-1)
+    let size = bbox.br.clone().sub(bbox.tl)
+    let scale_vec = new Vector2(target_size.x / size.x, target_size.y / size.y)
+    let scale = Math.min(scale_vec.x, scale_vec.y)
+    console.log(bbox, offset, target_size, scale)
+    offset.multiplyScalar(scale)
+    bbox.tl.multiplyScalar(scale)
+    bbox.br.multiplyScalar(scale)
+    size = bbox.br.clone().sub(bbox.tl)
+    return { offset, scale, size }
 }
 export class QueryMapper {
     api: Api<unknown> = null;
@@ -104,35 +89,7 @@ export class QueryMapper {
 
     }
     scalingFactors() {
-        let querySet = this.store.querySet()
-
-        let bbox = { br: new Vector2(0, 0), tl: new Vector2(Infinity, Infinity) }
-
-        Object.values(querySet.nodes).forEach((node) => {
-            if (node.x < bbox.tl.x) {
-                bbox.tl.x = node.x
-            }
-            if (node.y < bbox.tl.y) {
-                bbox.tl.y = node.y
-            }
-            if (node.x + node.width > bbox.br.x) {
-                bbox.br.x = node.x + node.width
-            }
-            if (node.y + node.height > bbox.br.y) {
-                bbox.br.y = node.y + node.height
-            }
-        })
-
-        let offset = bbox.tl.clone().multiplyScalar(-1)
-        let size = bbox.br.clone().sub(bbox.tl)
-        let scale_vec = new Vector2(this.target_size.x / size.x, this.target_size.y / size.y)
-        let scale = Math.min(scale_vec.x, scale_vec.y)
-        console.log(bbox, offset, this.target_size, scale)
-        offset.multiplyScalar(scale)
-        bbox.tl.multiplyScalar(scale)
-        bbox.br.multiplyScalar(scale)
-        size = bbox.br.clone().sub(bbox.tl)
-        return { offset, scale, size }
+        return scalingFactors(this.store, this.target_size)
     }
     async runAndMap(query: string, skip: number = 0, limit: number = 50) {
         if (!this.store) {

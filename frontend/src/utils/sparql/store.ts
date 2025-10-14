@@ -36,11 +36,15 @@ export class MixedResponse<N extends Subject = Subject> implements FuzzyQueryRes
     }
 
 }
-
+export enum RepositoryState {
+    STABLE,
+    EDITING,
+}
 @registerClass
 export class NodeLinkRepository<N extends SubjectNode = SubjectNode, L extends Link = Link> implements Diffable {
     nodes: N[] = []
     links: L[] = []
+    state: RepositoryState = RepositoryState.STABLE
     private static internal_id_cnt = 0
     _id: string | number
     constructor(nodes: N[] = [], links: L[] = []) {
@@ -180,7 +184,7 @@ export class NodeLinkRepository<N extends SubjectNode = SubjectNode, L extends L
     textAttachPoint(link: L, circular: boolean = false): { x: number, y: number } {
         let from = this.from(link)
         let to = this.to(link)
-        if(!from || !to) {
+        if (!from || !to) {
             console.warn("Link has no from or to node", link, from, to)
             return { x: 0, y: 0 }
         }
@@ -240,9 +244,31 @@ export class NodeLinkRepository<N extends SubjectNode = SubjectNode, L extends L
         }
         return query
     }
+    queryReadable(): string {
+        let set = this.querySet()
+        let text = ""
+        for (let link of this.links) {
+            let from = set.nodes[link.from_internal_id]
+            let to = set.nodes[link.to_internal_id]
+            text += `${from.label} ${link.link_id} ${to.label}\n`
+        }
+        for (let node of Object.values(set.nodes)) {
+            text += `${node.label} a ${node.subject_id}\n`
+            for (let constraint of node.subqueries) {
+                if (constraint instanceof SubjectConstraint) {
+                    if (constraint.instance) {
+                        text += `${node.label} is exactly ${constraint.instance.label}\n`
+                    }
+                } else if (constraint instanceof QueryProp) {
+                    text += `${node.label}'s ${constraint.link.label} ${constraint.expression(constraint.propVar())}\n`
+                }
+            }
+        }
+        return text
+    }
     querySet(): QuerySet {
         let set = new QuerySet()
-        
+
         for (let node of this.nodes) {
             set.nodes[node.internal_id] = node
             set.filter.push(...node.subqueries)
@@ -254,7 +280,7 @@ export class NodeLinkRepository<N extends SubjectNode = SubjectNode, L extends L
             let from = this.from(link)
             let to = this.to(link)
             let link_id = link.queryId()
-            if (link.allow_arbitrary){
+            if (link.allow_arbitrary) {
                 set.output_ids.push(link_id)
             }
             set.link_triplets.push({

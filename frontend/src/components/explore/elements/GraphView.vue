@@ -29,7 +29,7 @@ import { defineProps, onMounted, reactive, useTemplateRef, watch } from 'vue'
 import { Link, SubjectNode } from '@/utils/sparql/representation';
 import NodeComp from './Node.vue';
 import LinkComp from './Link.vue';
-import type { NodeLinkRepository } from '@/utils/sparql/store';
+import { RepositoryState, type NodeLinkRepository } from '@/utils/sparql/store';
 import { DisplayMode, InstanceSelectorOpenEvent, SelectorOpenEvent } from '@/utils/sparql/helpers';
 import type { PropertiesOpenEvent } from '@/utils/sparql/querymapper';
 import type { NodeLinkRepositoryDiff } from '@/utils/sparql/diff';
@@ -95,6 +95,7 @@ const start_simulation = () => {
     if (!simulate) return
     if (!store) return
     console.log("Starting simulation for", store.nodes[0].subject_id, rect)
+    store.state = RepositoryState.EDITING
     let mapped_links = store.links.map((link) => {
         return {
             ...link,
@@ -118,6 +119,7 @@ const start_simulation = () => {
         })
     })
     simulation.on('end', () => {
+        store.state = RepositoryState.STABLE
         console.log("Simulation ended")
     })
     console.log("Started simulation for", store.nodes)
