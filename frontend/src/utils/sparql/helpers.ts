@@ -102,28 +102,28 @@ export function mapERLToStore(step: EntitiesRelations) {
         store.addOutlink(mapped_link, from_subject, to_subject, OpenEventType.TO
         )
     })
-    if ((step as Candidates).constraints) {
-        (step as Candidates).constraints.forEach((candidate) => {
-            let constrained_node = store.nodes.find((n) => n.subject_id == candidate.entity)
-            if (constrained_node) {
-                let constraint_link = new Link({
-                    link_id: 0,
-                    from_id: candidate.entity,
-                    to_id: null,
-                    label: candidate.property,
-                    from_internal_id: candidate.entity,
-                    to_internal_id: candidate.entity,
-                    link_type: 'constraint',
-                    to_proptype: candidate.type,
-                    property_id: candidate.property,
-                    instance_count: 1,
-                    from_subject: constrained_node,
-                    to_subject: null
-                })
-                constrained_node.subqueries.push(SubQuery.construct(constraint_link))
-            }
-        })
-    }
+    // if ((step as Candidates).constraints) {
+    //     (step as Candidates).constraints.forEach((candidate) => {
+    //         let constrained_node = store.nodes.find((n) => n.subject_id == candidate.entity)
+    //         if (constrained_node) {
+    //             let constraint_link = new Link({
+    //                 link_id: 0,
+    //                 from_id: candidate.entity,
+    //                 to_id: null,
+    //                 label: candidate.property,
+    //                 from_internal_id: candidate.entity,
+    //                 to_internal_id: candidate.entity,
+    //                 link_type: 'constraint',
+    //                 to_proptype: candidate.type,
+    //                 property_id: candidate.property,
+    //                 instance_count: 1,
+    //                 from_subject: constrained_node,
+    //                 to_subject: null
+    //             })
+    //             constrained_node.subqueries.push(SubQuery.construct(constraint_link))
+    //         }
+    //     })
+    // }
     store.nodes = store.nodes.map(node => reactive(node))
     store.links = store.links.map(link => reactive(link))
     return store
