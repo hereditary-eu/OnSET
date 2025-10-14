@@ -138,7 +138,8 @@ class GuidanceManager:
                     subjects_ids=[s.subject_id for s in topic.subjects],
                     property_ids=[l.property_id for l in topic.links],
                 )
-
+            if root_topic is None:
+                raise ValueError("No root topic found")
             return topic_tree(root_topic[0])
 
     def search_free(

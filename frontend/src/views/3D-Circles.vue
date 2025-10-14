@@ -16,7 +16,7 @@ enum TopicMode {
 
 const graph_data = ref([] as SubjectInCircle[])
 const ui_state = ref({
-    query_mode: TopicMode.THREE_D,
+    query_mode: TopicMode.EDGE_BUNDLE,
 })
 const topics_root = ref(null as Topic | null)
 const circleman = new HierarchicalCircleMan3D('.graph_wrapper')
@@ -57,7 +57,9 @@ onMounted(() => {
     // }
     (async () => {
         loading.value = true
-        const resp_classes = await api.classes.getFullClassesClassesFullGet()
+        const resp_classes = await api.classes.getFullClassesClassesFullGet({
+            
+        })
         const resp_topics = await api.topics.getTopicsRootTopicsRootGet()
         loading.value = false
         topics_root.value = resp_topics.data

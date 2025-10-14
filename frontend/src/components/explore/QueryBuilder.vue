@@ -32,7 +32,7 @@ import NodeComp from './elements/Node.vue';
 import OutLinkSelector from './elements/panels/LinkSelector.vue';
 import { DisplayMode, InstanceSelectorOpenEvent, LinkEditEvent, OpenEventType, type SelectorOpenEvent } from '@/utils/sparql/helpers';
 import InstanceSelector from './elements/panels/InstanceSelector.vue';
-import type { MixedResponse, NodeLinkRepository } from '@/utils/sparql/store';
+import { RepositoryState, type MixedResponse, type NodeLinkRepository } from '@/utils/sparql/store';
 import GraphView from './elements/GraphView.vue';
 import { OverviewCircles } from '@/utils/three-man/OverviewCircles';
 import { fa } from 'vuetify/locale';
@@ -98,6 +98,7 @@ const clickedOutlink = (evt: SelectorOpenEvent) => {
         ui_state.attaching_event = null
     } else {
         ui_state.editor_mode = EditorMode.CREATE_LINK
+        store.state = RepositoryState.EDITING
         ui_state.attaching_display = true
         ui_state.attaching_event = evt
 
@@ -108,6 +109,7 @@ const clickedOutlink = (evt: SelectorOpenEvent) => {
 const clickedEditLink = (evt: SelectorOpenEvent) => {
     console.log('clickedEditLink', evt)
     ui_state.editor_mode = EditorMode.EDIT
+    store.state = RepositoryState.STABLE
     ui_state.sublink_display = true
     ui_state.sublink_event = evt
 }
@@ -131,6 +133,7 @@ const linkSelectDone = (evt: LinkEditEvent) => {
     ui_state.attaching_event = null
     if (evt.success) {
         ui_state.editor_mode = EditorMode.EDIT
+        store.state = RepositoryState.STABLE
         regenerateQuery()
     } else {
         store.removeLink(evt.link)

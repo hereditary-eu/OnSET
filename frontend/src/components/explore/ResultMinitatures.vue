@@ -21,7 +21,7 @@
 <script setup lang="ts">
 import { ref, watch, reactive, onMounted, defineProps } from 'vue'
 import { PropertiesOpenEvent, QueryMapper, ResultList } from '@/utils/sparql/querymapper';
-import { Vector2 } from 'three';
+import { Vector2, type Vector2Like } from 'three';
 import Loading from '../ui/Loading.vue';
 import Result from '../explore/Result.vue';
 import OnsetBtn from '../ui/OnsetBtn.vue';
@@ -102,8 +102,8 @@ const loadMore = async () => {
     // console.log('Mapped results!', mapped_stores, query_id, ui_state.last_query_id)
     if (query_id == ui_state.last_query_id) {
         ui_state.scale = scalings.scale
-        ui_state.offset = scalings.offset
-        ui_state.computed_size = scalings.size
+        ui_state.offset = new Vector2(scalings.offset.x, scalings.offset.y)
+        ui_state.computed_size = new Vector2(scalings.size.x, scalings.size.y)
 
         ui_state.paging_offset += retrieved_stores.instances.length
         mapped_stores.value.instances = mapped_stores.value.instances.concat(retrieved_stores.instances)

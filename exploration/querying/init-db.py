@@ -86,7 +86,7 @@ if __name__ == "__main__":
     guidance_manager.llama_model
     print(guidance_manager.identifier)
     initiator.initate(force=True, delete_tables=True)
-    llm_man.initate(force=True)
+    llm_man.initiate(force=True)
 
     print("Database initialised with setup:", setup.name)
 # %%

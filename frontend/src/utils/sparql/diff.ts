@@ -1,6 +1,6 @@
 import { jsonClone, stringifyJSON } from "../parsing"
-import { DiffInstanceNodeLinkRepository, type InstanceNodeLinkRepository, type ResultList } from "./querymapper"
-import type { Link, SubjectNode, SubQuery } from "./representation"
+import { type InstanceNodeLinkRepository, type ResultList } from "./querymapper"
+import type { InstanceLink, InstanceNode, Link, SubjectNode, SubQuery } from "./representation"
 import type { NodeLinkRepository } from "./store"
 
 export interface Diffable {
@@ -40,14 +40,15 @@ export class DiffList<T extends Diffable, D extends InstanceDiff<T> = InstanceDi
     constructor(left: T[], right: T[], diff_class: new (left: T, right: T) => D) {
         this.added = right.filter(r => left.filter(l => l.id == r.id).length === 0).map(r => new diff_class(null, r))
         this.removed = left.filter(l => right.filter(r => l.id == r.id).length === 0).map(l => new diff_class(l, null))
-        this.changed = right.map(r => {
+        let mapped = right.map(r => {
             let l = left.find(l => l.id == r.id);
             return l === undefined ? null : {
                 left: l,
                 right: r,
                 changed: l.changed(r)
             }
-        }).filter(lr => lr !== null).filter(lr => lr.changed).map(lr => new diff_class(lr.left, lr.right))
+        }).filter(lr => lr !== null)
+        this.changed = mapped.filter(lr => lr.changed).map(lr => new diff_class(lr.left, lr.right))
     }
 }
 export class NodeDiff<N extends SubjectNode = SubjectNode> extends InstanceDiff<N> {
@@ -76,6 +77,11 @@ export class NodeLinkRepositoryDiff<N extends SubjectNode = SubjectNode, L exten
 
 }
 
+export class DiffInstanceNodeLinkRepository extends NodeLinkRepositoryDiff<InstanceNode, InstanceLink> {
+    constructor(left: InstanceNodeLinkRepository, right: InstanceNodeLinkRepository) {
+        super(left, right)
+    }
+}
 export class ResultListDiff extends InstanceDiff<ResultList> {
     diff_instances: DiffList<InstanceNodeLinkRepository, DiffInstanceNodeLinkRepository>
     constructor(left: ResultList, right: ResultList) {

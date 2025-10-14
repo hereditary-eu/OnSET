@@ -9,8 +9,8 @@
     "preview": "vite preview",
     "build-only": "vite build",
     "type-check": "vue-tsc --build --force",
-    "generate-client": "sta -p http://localhost:8000/openapi.json -o ./src/api/client.ts --axios",
-    "generate-client-mac": "sta -p http://localhost:8001/openapi.json -o ./src/api/client.ts --axios"
+    "generate-client": "sta generate -p http://localhost:8000/openapi.json -o ./src/api/client.ts --axios",
+    "generate-client-mac": "sta generate -p http://localhost:8001/openapi.json -o ./src/api/client.ts --axios"
   },
   "dependencies": {
     "@clalarco/vue3-plotly": "^0.1.5",

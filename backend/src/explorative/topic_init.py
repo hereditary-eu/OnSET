@@ -1,5 +1,6 @@
 from bertopic import BERTopic
 from bertopic.representation import LangChain, LlamaCPP
+from scipy.cluster import hierarchy as sch
 
 
 from sqlalchemy import text, inspect, create_engine, select, delete
@@ -8,6 +9,7 @@ from model import Subject
 from tqdm import tqdm
 import regex as re
 import pandas as pd
+import numpy as np
 
 from eval_config import EvalConfig
 from explorative.exp_model import TopicDB, SubjectLinkDB, SubjectInDB, BasePostgres
@@ -92,16 +94,27 @@ class TopicInitator:
         # Create an instance of the Llama class and load the model
 
         # Create the provider by passing the Llama class instance to the LlamaCppPythonProvider class
-
+        # remove all outliers (-1) by assigning them to the topic with the highest probability
+        # https://github.com/MaartenGr/BERTopic/issues/329
         topic_model_llm = BERTopic(
             embedding_model=self.guidance_man.embedding_model,
             verbose=True,
             representation_model=representation_llama,
+            calculate_probabilities=True,
         )
         topic_model_llm.fit(docs["doc"])
+        topic_ids = np.array(topic_model_llm.topics_)
+        probs = np.array(topic_model_llm.probabilities_)
+        topic_ids[topic_ids == -1] = np.argmax(probs[topic_ids == -1], axis=1) 
+        topic_model_llm.update_topics(docs["doc"], topics=topic_ids.tolist())
         try:
+
+            def linkage_function(x):
+                return sch.linkage(x, "average", optimal_ordering=True, metric="cosine")
+
             hierarchical_topics = topic_model_llm.hierarchical_topics(
                 docs["doc"],
+                linkage_function=linkage_function,
             )
         except Exception as e:
             print(f"Error in hierarchical topics: {e}")
@@ -113,7 +126,7 @@ class TopicInitator:
                     "Child_Right_ID",
                 ]
             )
-        topics = topic_model_llm.get_topic_info()
+        topic_ids = topic_model_llm.get_topic_info()
         # Save the model
         # topic_model_llm.save(f"model_{self.guidance_man.identifier}.pkl")
         with Session(self.guidance_man.engine) as session:
@@ -124,7 +137,7 @@ class TopicInitator:
                 delete(TopicDB).where(TopicDB.onto_hash == self.guidance_man.identifier)
             )
             topic_map: dict[int, TopicDB] = {}
-            for i, topic in topics.iterrows():
+            for i, topic in topic_ids.iterrows():
                 topic_id = topic["Topic"]
                 topic_label = topic_model_llm.get_topic(topic["Topic"])[0][0]
                 repr_docs = "\n".join(topic["Representative_Docs"])
@@ -157,6 +170,7 @@ class TopicInitator:
                     ).first()
                     if subject is not None and topic_id in topic_map:
                         subject[0].topic_id = topic_id
+                        print(topic_id, doc["Document"], doc["subject_id"])
                 elif doc["type"] == "named_individual":
                     subject = session.execute(
                         select(SubjectInDB).where(

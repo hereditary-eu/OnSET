@@ -4,7 +4,7 @@
         <path :d="`M 0,0 V ${subquery.height / 2} H ${subquery.width * 0.2}`" class="subquery_connection" />
         <rect :x="subquery.width * 0.2" :y="0" :width="subquery.width * 0.8" :height="subquery.height"
             class="subquery_box" :class="query_statestyle" />
-        <circle v-show="show_editpoints" :cx="subquery.width" :cy="0" :r="7" class="edit_point edit_point_delete"
+        <circle v-show="show_editpoints && mode == DisplayMode.EDIT" :cx="subquery.width" :cy="0" :r="7" class="edit_point edit_point_delete"
             @click="emit('delete', subquery)">
         </circle>
         <foreignObject :x="subquery.width * 0.2" :y="0" :width="subquery.width * 0.8" :height="subquery.height">
@@ -34,7 +34,7 @@ import NumberConstraintEditor from './constraints/NumberConstraintEditor.vue';
 import StringConstraintEditor from './constraints/StringConstraintEditor.vue';
 import DateConstraintEditor from './constraints/DateConstraintEditor.vue';
 import SubjectConstraintEditor from './constraints/SubjectConstraintEditor.vue';
-import type { InstanceSelectorOpenEvent } from '@/utils/sparql/helpers';
+import { DisplayMode, type InstanceSelectorOpenEvent } from '@/utils/sparql/helpers';
 import BooleanConstraintEditor from './constraints/BooleanConstraintEditor.vue';
 import Property from './Property.vue';
 import type { NodeDiff } from '@/utils/sparql/diff';
@@ -62,7 +62,11 @@ const { extend_path, subquery: subquery, diff } = defineProps({
     diff: {
         type: Object as () => NodeDiff | null,
         default: null
-    }
+    },
+    mode: {
+        type: String as () => DisplayMode,
+        default: DisplayMode.SELECT
+    },
 })
 const editor_data = reactive({
     state: null as NodeState | null

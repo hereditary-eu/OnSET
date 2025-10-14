@@ -25,15 +25,14 @@
     </Expandable>
 </template>
 <script setup lang="ts">
-import { ref, watch, reactive, computed, onMounted, defineProps } from 'vue'
+import { ref, reactive, defineProps } from 'vue'
 import Propview from './elements/panels/Propview.vue';
-import { DiffInstanceNodeLinkRepository, InstanceNode, PropertiesOpenEvent, QueryMapper, type InstanceNodeLinkRepository } from '@/utils/sparql/querymapper';
-import { Vector2, type Vector2Like } from 'three';
+import { PropertiesOpenEvent, type InstanceNodeLinkRepository } from '@/utils/sparql/querymapper';
+import { type Vector2Like } from 'three';
 import { DisplayMode } from '@/utils/sparql/helpers';
-import Loading from '../ui/Loading.vue';
 import Expandable from '../ui/Expandable.vue';
 import GraphView from './elements/GraphView.vue';
-import type { NodeLinkRepositoryDiff, ResultListDiff } from '@/utils/sparql/diff';
+import type { NodeLinkRepositoryDiff } from '@/utils/sparql/diff';
 
 const { store, scale, offset } = defineProps({
     store: {

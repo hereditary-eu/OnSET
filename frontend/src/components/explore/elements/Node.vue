@@ -8,8 +8,7 @@
 
             </rect>
             <rect :width="`${subject.width}px`" :height="`${subject.height}px`" class="node" :class="node_statestyle"
-                @mousedown="mouseDownNode" @mousemove="mouseMoveNode" @mouseup="mouseUpNode"
-                @mouseleave="mouseUpNode">
+                @mousedown="mouseDownNode" @mousemove="mouseMoveNode" @mouseup="mouseUpNode" @mouseleave="mouseUpNode">
             </rect>
 
             <text :x="`${subject.width / 2}px`" :y="`${subject.height / 2}px`" class=node_text>
@@ -17,11 +16,12 @@
                     result_subject.instance_label :
                     subject.label }}
             </text>
-            <g v-if="mode == DisplayMode.EDIT" v-for="constr_info in constraint_list_mapped"
+            <g v-if="mode == DisplayMode.EDIT || mode == DisplayMode.SELECT"
+                v-for="constr_info in constraint_list_mapped"
                 :transform="`translate(${subject.width / 2},${constr_info.y})`">
                 <Sublink :subquery="constr_info.subquery" :extend_path="constr_info.extend_path" :diff="diff_node"
                     :show_editpoints="editor_data.show_editpoints" :node="subject" @delete="deleteConstraint"
-                    @instance-search-clicked="emit('instanceSearchClicked', $event)">
+                    :mode="mode" @instance-search-clicked="emit('instanceSearchClicked', $event)">
 
                 </Sublink>
             </g>
@@ -33,7 +33,8 @@
             </g>
             <g v-show="mode == DisplayMode.EDIT && editor_data.show_editpoints">
                 <circle :cx="0" :cy="subject.height / 2" :r="editor_data.editpoint_r" class="edit_point edit_point_link"
-                    @click="emit('linkPointClicked', { side: OpenEventType.FROM, node: subject, evt: $event })"></circle>
+                    @click="emit('linkPointClicked', { side: OpenEventType.FROM, node: subject, evt: $event })">
+                </circle>
                 <text :x="`${-editor_data.editpoint_r}px`" :y="`${subject.height / 2}px`"
                     class="help_text_left">From</text>
 
@@ -68,10 +69,10 @@
 </template>
 <script setup lang="ts">
 import { ref, watch, reactive, computed, onMounted, defineProps, onBeforeUpdate, type Prop, onUpdated, onRenderTriggered } from 'vue'
-import { SubjectNode as NodeRepr, NodeState, SubQuery } from '@/utils/sparql/representation';
+import { InstanceNode, SubjectNode as NodeRepr, NodeState, SubQuery } from '@/utils/sparql/representation';
 import { CONSTRAINT_PADDING, CONSTRAINT_WIDTH, DisplayMode, InstanceSelectorOpenEvent, OpenEventType, SelectorOpenEvent } from '@/utils/sparql/helpers';
 import Sublink from './Subquery.vue';
-import type { InstanceNode, PropertiesOpenEvent } from '@/utils/sparql/querymapper';
+import type { PropertiesOpenEvent } from '@/utils/sparql/querymapper';
 import type { NodeLinkRepository } from '@/utils/sparql/store';
 import type { NodeLinkRepositoryDiff } from '@/utils/sparql/diff';
 
