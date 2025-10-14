@@ -117,8 +117,8 @@ const loadMore = async () => {
     // console.log('Mapped results!', mapped_stores, query_id, ui_state.last_query_id)
     if (query_id == ui_state.last_query_id) {
         ui_state.scale = scalings.scale
-        ui_state.offset = scalings.offset
-        ui_state.computed_size = scalings.size
+        ui_state.offset = new Vector2(scalings.offset.x, scalings.offset.y)
+        ui_state.computed_size = new Vector2(scalings.size.x, scalings.size.y)
 
         ui_state.paging_offset += retrieved_stores.instances.length
         mapped_stores.value.instances = mapped_stores.value.instances.concat(retrieved_stores.instances)

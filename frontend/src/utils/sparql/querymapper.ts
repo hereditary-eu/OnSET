@@ -122,3 +122,5 @@ export class QueryMapper {
 
 
 }
+
+export { InstanceLink };
