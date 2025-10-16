@@ -1,7 +1,7 @@
 import type { FuzzyQueryResult, QueryGraph, Subject } from "@/api/client.ts/Api";
 import { jsonClone, registerClass } from "../parsing";
 import { OpenEventType } from "./helpers";
-import { Link, QueryProp, QuerySet, SubjectConstraint, SubjectNode, SubQuery } from "./representation";
+import { Link, QueryProp, QuerySet, SubjectConstraint, SubjectNode, SubQuery, type QuerySetGenerator } from "./representation";
 import type { Diffable } from "./diff";
 
 
@@ -41,7 +41,7 @@ export enum RepositoryState {
     EDITING,
 }
 @registerClass
-export class NodeLinkRepository<N extends SubjectNode = SubjectNode, L extends Link = Link> implements Diffable {
+export class NodeLinkRepository<N extends SubjectNode = SubjectNode, L extends Link = Link> implements Diffable, QuerySetGenerator {
     nodes: N[] = []
     links: L[] = []
     state: RepositoryState = RepositoryState.STABLE

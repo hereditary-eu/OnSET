@@ -104,13 +104,14 @@ const start_simulation = () => {
         }
     })
     const simulation = d3.forceSimulation(store.nodes)
-        .force('charge', d3.forceManyBody())
+        .force('charge', d3.forceManyBody().strength(2).distanceMax(500).distanceMin(50))
         .force('center', d3.forceCenter(rect.width / 2, rect.height / 2).strength(0.1))
         .force('link', d3.forceLink<SubjectNode, typeof mapped_links[0]>(mapped_links)
             .id((d) => d.internal_id)
             .strength(0.5)
         )
         .force('collide', d3.forceCollide<SubjectNode>(d => d.width / 2).strength(0.05))
+
 
     simulation.on('tick', () => {
         store.nodes.forEach((node) => {

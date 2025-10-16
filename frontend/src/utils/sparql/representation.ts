@@ -284,6 +284,24 @@ export class QuerySet {
         this.filter = [];
         this.output_ids = [];
     }
+    merge(other: QuerySet) {
+        for (let key in other.nodes) {
+            if (!(key in this.nodes)) {
+                this.nodes[key] = other.nodes[key]
+            }
+        }
+        this.filter.push(...other.filter)
+        this.output_ids.push(...other.output_ids)
+        for (let triplet of other.link_triplets) {
+            if (this.link_triplets.filter(t => t.from_id == triplet.from_id && t.link_id == triplet.link_id && t.to_id == triplet.to_id).length == 0) {
+                this.link_triplets.push(triplet)
+            }
+        }
+        return this
+    }
+}
+export interface QuerySetGenerator {
+    querySet(): QuerySet
 }
 let internal_id_counter: number = 0;
 @registerClass

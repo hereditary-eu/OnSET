@@ -52,6 +52,7 @@ function update(evt) {
     align-items: center;
     justify-content: center;
     justify-items: center;
+    background-color: white;
 }
 
 .clickable_container:hover {
