@@ -26,8 +26,17 @@
         <div class="input_step">
             <h3 v-if="store">.. and start querying!</h3>
             <div class="query_build_view">
-                <HistoryView  :store="store"></HistoryView>
-                <QueryBuilder :store="store" :diff="ui_state.diff"></QueryBuilder>
+                <div class="show_history_btn">
+                    <OnsetBtn @click="ui_state.show_history = !ui_state.show_history">{{ !ui_state.show_history ?
+                        "Show" : "Hide" }} History
+                    </OnsetBtn>
+                    <HistoryView v-if="ui_state.show_history" :history='ui_state.history' @compare="compareToCurrent"
+                        @revert="revertToEntry"></HistoryView>
+                </div>
+                <div ref="graph_view" class="query_builder_wrapper">
+                    <QueryBuilder :store="store" :diff="ui_state.diff" :simulate="ui_state.simulate">
+                    </QueryBuilder>
+                </div>
                 <ResultsView :query_string="query_string" :store="store" :diff="ui_state.diff"></ResultsView>
             </div>
             <div class="diff_controls">
@@ -79,13 +88,14 @@ import { Api, OperationType, type AssistantLink, type AssistantSubjectInput } fr
 import { BACKEND_URL } from '@/utils/config';
 import type { SubjectInCircle } from '@/utils/d3-man/CircleMan';
 import OnsetBtn from '@/components/ui/OnsetBtn.vue';
-import { NodeLinkRepository, type MixedResponse } from '@/utils/sparql/store';
+import { NodeLinkRepository, RepositoryState, type MixedResponse } from '@/utils/sparql/store';
 import SelectorGroup from '@/components/ui/SelectorGroup.vue';
 import FuzzyQueryStarter from '@/components/explore/FuzzyQueryStarter.vue';
 import { jsonClone, parseJSON, stringifyJSON } from '@/utils/parsing';
 import { NodeLinkRepositoryDiff } from '@/utils/sparql/diff';
 import { Link, SubjectNode } from '@/utils/sparql/representation';
 import HistoryView from '@/components/explore/history/HistoryView.vue';
+import { HistoryEntry, QueryHistory } from '@/utils/sparql/history';
 
 
 const api = new Api({
@@ -95,6 +105,9 @@ const api = new Api({
 // window.Prism = window.Prism || {};
 // window.Prism.manual = true;
 // loadLanguages(['sparql']);
+
+const graph_view = ref<HTMLElement | null>(null)
+
 const selected_topic_ids = ref([] as number[])
 const query_string_html = ref('')
 const query_string = ref('')
@@ -114,6 +127,9 @@ const ui_state = reactive({
     diff: null as NodeLinkRepositoryDiff | null,
     diff_active: false,
     colour_blind: false,
+    show_history: false,
+    history: new QueryHistory(),
+    simulate: false,
 })
 const store = ref(null as NodeLinkRepository | null)
 const old_store = ref(null as NodeLinkRepository | null)
@@ -125,12 +141,30 @@ watch(() => selected_start, () => {
     if (!selected_start.value) {
         return
     } else {
-        store.value = selected_start.value.store
+
+        // console.log('selected_root', root)
+        const target_size = graph_view.value ? {
+            x: graph_view.value.clientWidth,
+            y: graph_view.value.clientHeight
+        } : { x: 1000, y: 500 }
+        console.log('target_size', target_size, graph_view.value)
+        // circular placement using indices
+        for (let i = 0; i < selected_start.value.store.nodes.length; i++) {
+            const angle = (i / selected_start.value.store.nodes.length) * Math.PI * 2
+            selected_start.value.store.nodes[i].x = target_size.x / 2 + Math.cos(angle) * (target_size.x / 4)
+            selected_start.value.store.nodes[i].y = target_size.y / 2 + Math.sin(angle) * (target_size.y / 4)
+        }
+
+        store.value = jsonClone(selected_start.value.store)
     }
 }, { deep: true })
 watch(() => store, () => {
+    if (store.value.state != RepositoryState.STABLE) {
+        return
+    }
     let new_query_string = store.value.generateQuery()
     if (query_string.value != new_query_string) {
+        ui_state.history.tryAddEntry(store.value)
         updateDiff()
         query_string.value = new_query_string
         query_string_html.value = Prism.highlight(
@@ -139,8 +173,8 @@ watch(() => store, () => {
         // query_string.value = selected_start.value.link.from_subject.generateQuery()
     }
 }, { deep: true })
+
 const selected_root = (root: MixedResponse) => {
-    // console.log('selected_root', root)
     selected_start.value = root
 }
 watch(() => ui_state.diff_active, (new_val) => {
@@ -173,6 +207,26 @@ const clearDiff = () => {
     old_store.value = null
     ui_state.diff = null
 }
+
+const compareToCurrent = (entry: HistoryEntry) => {
+    if (!entry.query || !store.value) {
+        return
+    }
+    ui_state.diff_active = true
+    ui_state.diff = new NodeLinkRepositoryDiff(entry.query, store.value)
+}
+const revertToEntry = (entry: HistoryEntry) => {
+    if (!entry.query || !store.value) {
+        return
+    }
+    ui_state.diff_active = false
+    ui_state.simulate = false
+    store.value = jsonClone(entry.query)
+    old_store.value = null
+    ui_state.diff = null
+    ui_state.simulate = true
+}
+
 const submit_assistant = () => {
     if (assistant_state.query_string.length == 0) {
         return
@@ -287,6 +341,7 @@ const colour_config = computed(() => {
 <style lang="scss" scoped>
 .query_build_view {
     display: flex;
+    position: relative;
     justify-content: center;
     align-items: start;
     flex-direction: row;
@@ -298,6 +353,11 @@ const colour_config = computed(() => {
         width: 25%;
         height: 100%;
     }
+}
+
+.query_builder_wrapper {
+    width: 80%;
+    height: 95%;
 }
 
 .diff_controls {
@@ -343,6 +403,19 @@ const colour_config = computed(() => {
     margin: 0 10px;
 }
 
+.show_history_btn {
+    position: absolute;
+    display: inline-block;
+    top: 10px;
+    left: 10px;
+    z-index: 100;
+    height: 100%;
+    width: 30%;
+    display: flex;
+    flex-direction: column;
+    align-items: start;
+    justify-content: start;
+}
 
 :deep(.node_normal) {
     fill: v-bind('colour_config.node_normal');

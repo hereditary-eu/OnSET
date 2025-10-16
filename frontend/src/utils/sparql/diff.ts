@@ -1,6 +1,6 @@
-import { jsonClone, stringifyJSON } from "../parsing"
+import { jsonClone, registerClass, stringifyJSON } from "../parsing"
 import { type InstanceNodeLinkRepository, type ResultList } from "./querymapper"
-import type { InstanceLink, InstanceNode, Link, SubjectNode, SubQuery } from "./representation"
+import type { InstanceLink, InstanceNode, Link, QuerySet, QuerySetGenerator, SubjectNode, SubQuery } from "./representation"
 import type { NodeLinkRepository } from "./store"
 
 export interface Diffable {
@@ -61,20 +61,26 @@ export class NodeDiff<N extends SubjectNode = SubjectNode> extends InstanceDiff<
             right?.subqueries || [], SubQueryDiff)
     }
 }
-
+@registerClass
 export class NodeLinkRepositoryDiff<N extends SubjectNode = SubjectNode, L extends Link = Link>
-    extends InstanceDiff<NodeLinkRepository<N, L>> {
+    extends InstanceDiff<NodeLinkRepository<N, L>> implements QuerySetGenerator {
 
     diff_nodes: DiffList<N, NodeDiff<N>> = null
     diff_links: DiffList<L, LinkDiff<L>> = null
+    
 
-
-    constructor(left: NodeLinkRepository<N, L>, right: NodeLinkRepository<N, L>) {
+    constructor(left?: NodeLinkRepository<N, L>, right?: NodeLinkRepository<N, L>) {
         super(left, right)
         this.diff_nodes = new DiffList(left ? left.nodes : [], right ? right.nodes : [], NodeDiff)
         this.diff_links = new DiffList(left ? left.links : [], right ? right.links : [], LinkDiff)
     }
-
+    querySet(): QuerySet {
+        let left_qs = this.left ? this.left.querySet() : null
+        let right_qs = this.right ? this.right.querySet() : null
+        if (!left_qs) return right_qs
+        if (!right_qs) return left_qs
+        return left_qs.merge(right_qs)
+    }
 }
 
 export class DiffInstanceNodeLinkRepository extends NodeLinkRepositoryDiff<InstanceNode, InstanceLink> {

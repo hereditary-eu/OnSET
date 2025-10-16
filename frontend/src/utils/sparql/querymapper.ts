@@ -1,5 +1,5 @@
 import { Api } from "@/api/client.ts/Api";
-import { InstanceLink, InstanceNode, Link, SubjectNode as NodeRepr } from "./representation";
+import { InstanceLink, InstanceNode, Link, SubjectNode as NodeRepr, type QuerySetGenerator } from "./representation";
 import { BACKEND_URL } from "../config";
 import { Vector2, type Vector2Like } from "three";
 import { parseJSON, registerClass, stringifyJSON } from "../parsing";
@@ -47,7 +47,8 @@ export class ResultList implements Diffable {
         return other.id != this.id
     }
 }
-export function scalingFactors(store: NodeLinkRepository, target_size: Vector2Like): { offset: Vector2Like, scale: number, size: Vector2Like } {
+export function scalingFactors(store: QuerySetGenerator, target_size: Vector2Like): { offset: Vector2Like, scale: number, size: Vector2Like } {
+    console.log("Scaling factors for", store, target_size)
     let querySet = store.querySet()
 
     let bbox = { br: new Vector2(0, 0), tl: new Vector2(Infinity, Infinity) }

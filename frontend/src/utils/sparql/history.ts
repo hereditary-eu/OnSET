@@ -27,7 +27,7 @@ export class HistoryEntry {
         this.embedding = null
     }
     rescale(target_size: Vector2Like,) {
-        let { offset, scale, size } = scalingFactors(this.query, target_size)
+        let { offset, scale, size } = scalingFactors(this.previous_diff || this.query, target_size)
         if(isNaN(scale)) {
             scale = 1.0
             offset = { x: 0, y: 0 }
@@ -42,6 +42,7 @@ export class HistoryEntry {
 export class QueryHistory {
     private history: Record<number, HistoryEntry> = {};
     get length(): number { return Object.keys(this.history).length }
+    get reverse_entries(): HistoryEntry[] { return Object.values(this.history).reverse() }
     get entries(): HistoryEntry[] { return Object.values(this.history) }
     tryAddEntry(
         query: NodeLinkRepository): NodeLinkRepositoryDiff | null {

@@ -4,7 +4,7 @@
             <GraphView :store="store" :display-mode="DisplayMode.EDIT" :diff="diff"
                 @link-point-clicked="clickedOutlink($event)" @instance-search-clicked="clickedInstance($event)"
                 @type-point-clicked="clickedType($event)" @link-edit-clicked="clickedEditLink($event)"
-                :simulate="ui_state.simulate" @trigger-interface="ui_state.trigger_sim = $event.trigger"
+                :simulate="ui_state.run_simulation" @trigger-interface="ui_state.trigger_sim = $event.trigger"
                 :rect="ui_state.rect"></GraphView>
             <LinkComposer :store="store" :evt="ui_state.attaching_event" @selection-complete="linkEditDone($event)">
             </LinkComposer>
@@ -51,7 +51,7 @@ const svg_wrapper = ref<HTMLElement | null>(null)
 const api = new Api({
     baseURL: BACKEND_URL
 })
-const { store, diff } = defineProps({
+const { store, diff, simulate } = defineProps({
     store: {
         type: Object as () => NodeLinkRepository,
         required: true
@@ -60,6 +60,11 @@ const { store, diff } = defineProps({
         type: Object as () => NodeLinkRepositoryDiff | null,
         default: null
     },
+    simulate: {
+        type: Boolean,
+        required: false,
+        default: false
+    }
 })
 enum EditorMode {
     EDIT = 'edit',
@@ -75,9 +80,9 @@ const ui_state = reactive({
     type_display: false,
     type_event: null as SelectorOpenEvent,
     loading: false,
+    run_simulation: false,
     query_string: '',
     editor_mode: EditorMode.EDIT,
-    simulate: false,
     trigger_sim: null as (() => void) | null,
     rect: {
         x: 0,
@@ -164,7 +169,10 @@ watch(() => store, () => {
     regenerateQuery()
 }, { deep: true })
 watch(() => store, () => {
-    ui_state.simulate = true
+
+    if (simulate) {
+        ui_state.run_simulation = true
+    }
     if (ui_state.trigger_sim) {
         ui_state.trigger_sim()
     }
@@ -230,8 +238,8 @@ const previewLink = (l: Link | null) => {
 </script>
 <style lang="scss" scoped>
 .query_builder {
-    width: 80%;
-    height: 95%;
+    width: 100%;
+    height: 100%;
 }
 
 .query_build_wrapper {
