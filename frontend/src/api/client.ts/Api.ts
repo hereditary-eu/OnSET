@@ -389,6 +389,22 @@ export interface Instance {
   label?: string;
 }
 
+/** ManifoldRequest */
+export interface ManifoldRequest {
+  /** Embeddings */
+  embeddings: number[][];
+  /**
+   * N Out
+   * @default 2
+   */
+  n_out?: number;
+  /**
+   * Alg
+   * @default "TSNE"
+   */
+  alg?: string;
+}
+
 /** Match */
 export interface Match {
   /**
@@ -914,29 +930,6 @@ export class Api<
         ...params,
       }),
   };
-  nlp = {
-    /**
-     * No description
-     *
-     * @name NlpEmbeddingsNlpEmbeddingsGet
-     * @summary Nlp Embeddings
-     * @request GET:/nlp/embeddings
-     */
-    nlpEmbeddingsNlpEmbeddingsGet: (
-      query: {
-        /** Query */
-        query: string;
-      },
-      params: RequestParams = {},
-    ) =>
-      this.request<Record<string, any>, HTTPValidationError>({
-        path: `/nlp/embeddings`,
-        method: "GET",
-        query: query,
-        format: "json",
-        ...params,
-      }),
-  };
   management = {
     /**
      * No description
@@ -958,177 +951,33 @@ export class Api<
         ...params,
       }),
   };
+  topics = {
+    /**
+     * No description
+     *
+     * @name GetTopicsRootTopicsRootGet
+     * @summary Get Topics Root
+     * @request GET:/topics/root
+     */
+    getTopicsRootTopicsRootGet: (
+      query?: {
+        /**
+         * Force Initialize
+         * @default false
+         */
+        force_initialize?: boolean;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<Topic, HTTPValidationError>({
+        path: `/topics/root`,
+        method: "GET",
+        query: query,
+        format: "json",
+        ...params,
+      }),
+  };
   classes = {
-    /**
-     * No description
-     *
-     * @name GetFullClassesClassesFullGet
-     * @summary Get Full Classes
-     * @request GET:/classes/full
-     */
-    getFullClassesClassesFullGet: (params: RequestParams = {}) =>
-      this.request<Subject[], any>({
-        path: `/classes/full`,
-        method: "GET",
-        format: "json",
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @name GetRootClassesClassesRootsGet
-     * @summary Get Root Classes
-     * @request GET:/classes/roots
-     */
-    getRootClassesClassesRootsGet: (params: RequestParams = {}) =>
-      this.request<Subject[], any>({
-        path: `/classes/roots`,
-        method: "GET",
-        format: "json",
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @name GetClassClassesSubclassesGet
-     * @summary Get Class
-     * @request GET:/classes/subclasses
-     */
-    getClassClassesSubclassesGet: (
-      query: {
-        /** Cls */
-        cls: string;
-      },
-      params: RequestParams = {},
-    ) =>
-      this.request<Subject[], HTTPValidationError>({
-        path: `/classes/subclasses`,
-        method: "GET",
-        query: query,
-        format: "json",
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @name GetClassSearchClassesSubclassesSearchPost
-     * @summary Get Class Search
-     * @request POST:/classes/subclasses/search
-     */
-    getClassSearchClassesSubclassesSearchPost: (
-      data: FuzzyQuery,
-      params: RequestParams = {},
-    ) =>
-      this.request<FuzzyQueryResults, HTTPValidationError>({
-        path: `/classes/subclasses/search`,
-        method: "POST",
-        body: data,
-        type: ContentType.Json,
-        format: "json",
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @name GetMostGenericsClassesParentsMostGenericPost
-     * @summary Get Most Generics
-     * @request POST:/classes/parents/most_generic
-     */
-    getMostGenericsClassesParentsMostGenericPost: (
-      data: GeneralizationQuery,
-      params: RequestParams = {},
-    ) =>
-      this.request<Subject, HTTPValidationError>({
-        path: `/classes/parents/most_generic`,
-        method: "POST",
-        body: data,
-        type: ContentType.Json,
-        format: "json",
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @name GetNamedInstanceClassesInstancesGet
-     * @summary Get Named Instance
-     * @request GET:/classes/instances
-     */
-    getNamedInstanceClassesInstancesGet: (
-      query: {
-        /** Cls */
-        cls: string;
-      },
-      params: RequestParams = {},
-    ) =>
-      this.request<Subject[], HTTPValidationError>({
-        path: `/classes/instances`,
-        method: "GET",
-        query: query,
-        format: "json",
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @name GetNamedInstanceSearchClassesInstancesSearchGet
-     * @summary Get Named Instance Search
-     * @request GET:/classes/instances/search
-     */
-    getNamedInstanceSearchClassesInstancesSearchGet: (
-      query: {
-        /** Cls */
-        cls: string;
-        /** Q */
-        q?: string | null;
-        /**
-         * Limit
-         * @default 10
-         */
-        limit?: number;
-        /**
-         * Skip
-         * @default 0
-         */
-        skip?: number;
-      },
-      params: RequestParams = {},
-    ) =>
-      this.request<Instance[], HTTPValidationError>({
-        path: `/classes/instances/search`,
-        method: "GET",
-        query: query,
-        format: "json",
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @name GetNamedInstancePropertiesClassesInstancesPropertiesGet
-     * @summary Get Named Instance Properties
-     * @request GET:/classes/instances/properties
-     */
-    getNamedInstancePropertiesClassesInstancesPropertiesGet: (
-      query: {
-        /** Instance Id */
-        instance_id: string;
-      },
-      params: RequestParams = {},
-    ) =>
-      this.request<Record<string, Property>, HTTPValidationError>({
-        path: `/classes/instances/properties`,
-        method: "GET",
-        query: query,
-        format: "json",
-        ...params,
-      }),
-
     /**
      * No description
      *
@@ -1330,29 +1179,216 @@ export class Api<
         format: "json",
         ...params,
       }),
-  };
-  topics = {
+
     /**
      * No description
      *
-     * @name GetTopicsRootTopicsRootGet
-     * @summary Get Topics Root
-     * @request GET:/topics/root
+     * @name GetFullClassesClassesFullGet
+     * @summary Get Full Classes
+     * @request GET:/classes/full
      */
-    getTopicsRootTopicsRootGet: (
-      query?: {
-        /**
-         * Force Initialize
-         * @default false
-         */
-        force_initialize?: boolean;
+    getFullClassesClassesFullGet: (params: RequestParams = {}) =>
+      this.request<Subject[], any>({
+        path: `/classes/full`,
+        method: "GET",
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @name GetRootClassesClassesRootsGet
+     * @summary Get Root Classes
+     * @request GET:/classes/roots
+     */
+    getRootClassesClassesRootsGet: (params: RequestParams = {}) =>
+      this.request<Subject[], any>({
+        path: `/classes/roots`,
+        method: "GET",
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @name GetClassClassesSubclassesGet
+     * @summary Get Class
+     * @request GET:/classes/subclasses
+     */
+    getClassClassesSubclassesGet: (
+      query: {
+        /** Cls */
+        cls: string;
       },
       params: RequestParams = {},
     ) =>
-      this.request<Topic, HTTPValidationError>({
-        path: `/topics/root`,
+      this.request<Subject[], HTTPValidationError>({
+        path: `/classes/subclasses`,
         method: "GET",
         query: query,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @name GetClassSearchClassesSubclassesSearchPost
+     * @summary Get Class Search
+     * @request POST:/classes/subclasses/search
+     */
+    getClassSearchClassesSubclassesSearchPost: (
+      data: FuzzyQuery,
+      params: RequestParams = {},
+    ) =>
+      this.request<FuzzyQueryResults, HTTPValidationError>({
+        path: `/classes/subclasses/search`,
+        method: "POST",
+        body: data,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @name GetMostGenericsClassesParentsMostGenericPost
+     * @summary Get Most Generics
+     * @request POST:/classes/parents/most_generic
+     */
+    getMostGenericsClassesParentsMostGenericPost: (
+      data: GeneralizationQuery,
+      params: RequestParams = {},
+    ) =>
+      this.request<Subject, HTTPValidationError>({
+        path: `/classes/parents/most_generic`,
+        method: "POST",
+        body: data,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @name GetNamedInstanceClassesInstancesGet
+     * @summary Get Named Instance
+     * @request GET:/classes/instances
+     */
+    getNamedInstanceClassesInstancesGet: (
+      query: {
+        /** Cls */
+        cls: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<Subject[], HTTPValidationError>({
+        path: `/classes/instances`,
+        method: "GET",
+        query: query,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @name GetNamedInstanceSearchClassesInstancesSearchGet
+     * @summary Get Named Instance Search
+     * @request GET:/classes/instances/search
+     */
+    getNamedInstanceSearchClassesInstancesSearchGet: (
+      query: {
+        /** Cls */
+        cls: string;
+        /** Q */
+        q?: string | null;
+        /**
+         * Limit
+         * @default 10
+         */
+        limit?: number;
+        /**
+         * Skip
+         * @default 0
+         */
+        skip?: number;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<Instance[], HTTPValidationError>({
+        path: `/classes/instances/search`,
+        method: "GET",
+        query: query,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @name GetNamedInstancePropertiesClassesInstancesPropertiesGet
+     * @summary Get Named Instance Properties
+     * @request GET:/classes/instances/properties
+     */
+    getNamedInstancePropertiesClassesInstancesPropertiesGet: (
+      query: {
+        /** Instance Id */
+        instance_id: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<Record<string, Property>, HTTPValidationError>({
+        path: `/classes/instances/properties`,
+        method: "GET",
+        query: query,
+        format: "json",
+        ...params,
+      }),
+  };
+  nlp = {
+    /**
+     * No description
+     *
+     * @name NlpEmbeddingsNlpEmbeddingsGet
+     * @summary Nlp Embeddings
+     * @request GET:/nlp/embeddings
+     */
+    nlpEmbeddingsNlpEmbeddingsGet: (
+      query: {
+        /** Query */
+        query: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<Record<string, any>, HTTPValidationError>({
+        path: `/nlp/embeddings`,
+        method: "GET",
+        query: query,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @name NlpEmbeddingsManifoldNlpEmbeddingsManifoldPost
+     * @summary Nlp Embeddings Manifold
+     * @request POST:/nlp/embeddings/manifold
+     */
+    nlpEmbeddingsManifoldNlpEmbeddingsManifoldPost: (
+      data: ManifoldRequest,
+      params: RequestParams = {},
+    ) =>
+      this.request<number[][], HTTPValidationError>({
+        path: `/nlp/embeddings/manifold`,
+        method: "POST",
+        body: data,
+        type: ContentType.Json,
         format: "json",
         ...params,
       }),

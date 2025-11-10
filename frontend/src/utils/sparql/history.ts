@@ -1,9 +1,11 @@
-import type { Vector2, Vector2Like } from "three"
+import { Vector2, type Vector2Like } from "three"
 import { NodeLinkRepositoryDiff } from "./diff"
-import { RepositoryState, type NodeLinkRepository } from "./store"
+import { NodeLinkRepository, RepositoryState } from "./store"
 import { scalingFactors } from "./querymapper"
-import { jsonClone } from "../parsing"
-
+import { jsonClone, registerClass } from "../parsing"
+import { Api } from "@/api/client.ts/Api"
+import { BACKEND_URL } from "../config"
+@registerClass
 export class HistoryEntry {
     query: NodeLinkRepository
     previous_diff: NodeLinkRepositoryDiff | null
@@ -15,20 +17,43 @@ export class HistoryEntry {
     offset: Vector2Like = { x: 0, y: 0 }
     scale: number = 1.0
     size: Vector2Like = { x: 0, y: 0 }
+
     constructor(
-        query: NodeLinkRepository,
-        previous_diff: NodeLinkRepositoryDiff | null,
+        query?: NodeLinkRepository,
+        previous_diff?: NodeLinkRepositoryDiff | null,
     ) {
+        if (!query) {
+            this.query = new NodeLinkRepository()
+        }
+        if (!previous_diff) {
+            this.previous_diff = null
+        }
         this.query = jsonClone(query)
         this.previous_diff = jsonClone(previous_diff)
         this.timestamp = Date.now()
-        
-        this.text_representation = query.queryReadable()
+
         this.embedding = null
+        this.fillEmbedding()
+    }
+    private fillEmbedding() {
+        if (this.embedding === null) {
+            (async () => {
+                this.text_representation = this.query.queryReadable()
+                let api = new Api({
+                    baseURL: BACKEND_URL,
+                })
+                const response = await api.nlp.nlpEmbeddingsNlpEmbeddingsGet({
+                    query: this.text_representation,
+                })
+                this.embedding = response.data.embedding
+            })().catch((e) => {
+                console.error("Error generating embedding for history entry:", e)
+            })
+        }
     }
     rescale(target_size: Vector2Like,) {
         let { offset, scale, size } = scalingFactors(this.previous_diff || this.query, target_size)
-        if(isNaN(scale)) {
+        if (isNaN(scale)) {
             scale = 1.0
             offset = { x: 0, y: 0 }
             size = { x: 0, y: 0 }
@@ -38,7 +63,7 @@ export class HistoryEntry {
         this.size = size
     }
 }
-
+@registerClass
 export class QueryHistory {
     private history: Record<number, HistoryEntry> = {};
     get length(): number { return Object.keys(this.history).length }
@@ -48,7 +73,7 @@ export class QueryHistory {
         query: NodeLinkRepository): NodeLinkRepositoryDiff | null {
         let diff: NodeLinkRepositoryDiff | null = null
         let add = false
-        if(query.state === RepositoryState.EDITING) {
+        if (query.state === RepositoryState.EDITING) {
             // do not add entries while editing
             return null
         }
@@ -75,5 +100,25 @@ export class QueryHistory {
             this.history[new_entry.timestamp] = new_entry
         }
         return add ? diff : null
+    }
+    async dimReduceEmbeddings(n_out: number = 2, alg: "TSNE" | "MDS" = "TSNE") {
+        let api = new Api({
+            baseURL: BACKEND_URL,
+        })
+        let embeddings: number[][] = []
+        let entries = this.entries
+        for (let entry of entries) {
+            if (entry.embedding !== null) {
+                embeddings.push(entry.embedding)
+            }
+        }
+        const response = await api.nlp.nlpEmbeddingsManifoldNlpEmbeddingsManifoldPost({
+            embeddings: embeddings,
+            n_out: n_out,
+            alg: alg,
+        })
+        return response.data.map((v, i) => {
+            return { v: new Vector2(v[0], v[1]), entry: entries[i] }
+        })
     }
 }

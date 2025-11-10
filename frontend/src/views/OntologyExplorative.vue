@@ -30,8 +30,10 @@
                     <OnsetBtn @click="ui_state.show_history = !ui_state.show_history">{{ !ui_state.show_history ?
                         "Show" : "Hide" }} History
                     </OnsetBtn>
-                    <HistoryView v-if="ui_state.show_history" :history='ui_state.history' @compare="compareToCurrent"
-                        @revert="revertToEntry"></HistoryView>
+                </div>
+                <div class="history_view_container" v-show="ui_state.show_history">
+                    <HistoryView v-show="ui_state.show_history" :history='(ui_state.history as QueryHistory)'
+                        @compare="compareToCurrent" @revert="revertToEntry"></HistoryView>
                 </div>
                 <div ref="graph_view" class="query_builder_wrapper">
                     <QueryBuilder :store="store" :diff="ui_state.diff" :simulate="ui_state.simulate">
@@ -43,6 +45,8 @@
                 <OnsetBtn @click="saveState()" :height="'2.8rem'" :width="'3rem'" :toggleable="false">Save
                 </OnsetBtn>
                 <OnsetBtn @click="loadState()" :height="'2.8rem'" :width="'3rem'" :toggleable="false">Load
+                </OnsetBtn>
+                <OnsetBtn @click="clearState()" :height="'2.8rem'" :width="'3rem'" :toggleable="false">Clear
                 </OnsetBtn>
                 <div class="vertical_line">
 
@@ -164,7 +168,10 @@ watch(() => store, () => {
     }
     let new_query_string = store.value.generateQuery()
     if (query_string.value != new_query_string) {
-        ui_state.history.tryAddEntry(store.value)
+        if (ui_state.history && store.value) {
+            console.log('Adding history entry', ui_state.history, store.value)
+            ui_state.history.tryAddEntry(store.value)
+        }
         updateDiff()
         query_string.value = new_query_string
         query_string_html.value = Prism.highlight(
@@ -303,16 +310,30 @@ const saveState = () => {
     }
     const store_json = stringifyJSON(store.value)
     localStorage.setItem('store', store_json)
-    console.log('Saved store', store_json)
+    localStorage.setItem('history', stringifyJSON(ui_state.history))
+    console.log('Saved store and history to localStorage', store_json, ui_state.history)
 }
 const loadState = () => {
     const store_json = localStorage.getItem('store')
-    if (!store_json) {
-        return
+    const history_json = localStorage.getItem('history')
+    if (store_json) {
+        const store_obj = parseJSON<NodeLinkRepository>(store_json)
+        store.value = store_obj
+        console.log('Loaded store', store.value)
     }
-    const store_obj = parseJSON<NodeLinkRepository>(store_json)
-    store.value = store_obj
-    console.log('Loaded store', store.value)
+    if (history_json) {
+        const history_obj = parseJSON<QueryHistory>(history_json)
+        console.log('Loaded history', history_obj)
+        ui_state.history = history_obj
+    }
+}
+const clearState = () => {
+    localStorage.removeItem('store')
+    store.value = null
+    old_store.value = null
+    ui_state.diff = null
+    ui_state.diff_active = false
+    console.log('Cleared store')
 }
 
 const colour_config = computed(() => {
@@ -336,7 +357,9 @@ const colour_config = computed(() => {
         }
     }
 })
-
+onMounted(() => {
+    loadState()
+})
 </script>
 <style lang="scss" scoped>
 .query_build_view {
@@ -409,8 +432,20 @@ const colour_config = computed(() => {
     top: 10px;
     left: 10px;
     z-index: 100;
+    display: flex;
+    flex-direction: column;
+    align-items: start;
+    justify-content: start;
+}
+
+.history_view_container {
+    position: absolute;
+    display: inline-block;
+    top: 4rem;
+    left: 10px;
+    z-index: 100;
     height: 100%;
-    width: 30%;
+    width: 40%;
     display: flex;
     flex-direction: column;
     align-items: start;

@@ -48,7 +48,7 @@ export class ResultList implements Diffable {
     }
 }
 export function scalingFactors(store: QuerySetGenerator, target_size: Vector2Like): { offset: Vector2Like, scale: number, size: Vector2Like } {
-    console.log("Scaling factors for", store, target_size)
+    
     let querySet = store.querySet()
 
     let bbox = { br: new Vector2(0, 0), tl: new Vector2(Infinity, Infinity) }
