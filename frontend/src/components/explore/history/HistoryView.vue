@@ -16,6 +16,9 @@
             <historyPlot :store="store" :query_string="query_string" :diff="diff"></historyPlot>
             -->
         </div>
+        <div v-else class="history_overview_container">
+            <TimeEmbeddingsOverlay :history="(history as QueryHistory)"></TimeEmbeddingsOverlay>
+        </div>
     </div>
 </template>
 <script setup lang="ts">
@@ -25,18 +28,19 @@ import SelectorGroup from '@/components/ui/SelectorGroup.vue';
 import { HistoryEntry, QueryHistory } from '@/utils/sparql/history';
 import { DisplayMode } from '@/utils/sparql/helpers';
 import HistoryElement from './HistoryElement.vue';
+import TimeEmbeddingsOverlay from './TimeEmbeddingsOverlay.vue';
 enum HistoryMode {
     OVERVIEW = 'Overview',
     DETAILED = 'Detailed',
 }
 const { history } = defineProps({
     history: {
-        type: Object,
+        type: Object as () => QueryHistory,
         required: true
     },
 })
 const ui_state = reactive({
-    history_mode: HistoryMode.DETAILED,
+    history_mode: HistoryMode.OVERVIEW,
 })
 
 const emit = defineEmits<{
@@ -44,7 +48,7 @@ const emit = defineEmits<{
     compare: [HistoryEntry]
 }>()
 </script>
-<style lang="scss" scoped>
+<style lang="scss">
 .history_view {
     display: flex;
     flex-direction: column;
@@ -76,5 +80,17 @@ const emit = defineEmits<{
     border-bottom: 1px solid rgb(192, 213, 191);
     width: 100%;
     margin-bottom: 12px;
+}
+
+.history_overview_container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    padding: 5px;
+    margin-top: 10px;
 }
 </style>

@@ -12,6 +12,7 @@ every axis/.style={
 \definecolor{lightblue161201244}{RGB}{161,201,244}
 \definecolor{lightgreen141229161}{RGB}{141,229,161}
 \definecolor{lightgrey203}{RGB}{203,203,203}
+\definecolor{lightgrey204}{RGB}{204,204,204}
 \definecolor{lightsalmon255159155}{RGB}{255,159,155}
 \definecolor{lightsalmon255180130}{RGB}{255,180,130}
 \definecolor{thistle208187255}{RGB}{208,187,255}
@@ -20,6 +21,16 @@ every axis/.style={
 \begin{axis}[
 axis line style={whitesmoke240},
 height=1.5\textwidth,
+legend cell align={left},
+legend columns=2,
+legend style={
+  fill opacity=0.8,
+  draw opacity=1,
+  text opacity=1,
+  at={(0.5,0.09)},
+  anchor=south,
+  draw=lightgrey204
+},
 tick align=outside,
 tick pos=left,
 width=2\textwidth,
@@ -40,7 +51,7 @@ xticklabels={
   \(\displaystyle {8}\)
 },
 y grid style={lightgrey203},
-ylabel={Mean \(\displaystyle F_{1,rel.}\) },
+ylabel={Mean \(\displaystyle F_{1,node}\)},
 ymajorgrids,
 ymin=0, ymax=1,
 ytick style={color=black},
@@ -56,74 +67,84 @@ yticklabels={
 ]
 \addplot [thick, lightblue161201244, mark=x, mark size=5, mark options={solid,fill opacity=0}]
 table {%
-2 0.854430379746835
-3 0.908070175438596
-5 0.823045822102426
-7 0.814918414918415
+2 0.579376498800959
+3 0.62218045112782
+5 0.647066787807529
+7 0.641831560252613
 };
+\addlegendentry{Hermes 3 3B aligned}
 \addplot [thick, lightblue161201244, dashed, mark=x, mark size=5, mark options={solid,fill opacity=0}]
 table {%
-2 0.208227848101266
-3 0.274210526315789
-5 0.295297993411201
-7 0.350815850815851
+2 0.540287769784173
+3 0.493358395989975
+5 0.527071899294121
+7 0.551150311676627
 };
+\addlegendentry{raw}
 \addplot [thick, lightsalmon255180130, mark=x, mark size=5, mark options={solid,fill opacity=0}]
 table {%
-2 0.852201257861635
-3 0.843906810035842
-5 0.86109693877551
-7 0.840981240981241
+2 0.47673860911271
+3 0.646947496947497
+5 0.683169269754636
+7 0.786010480747323
 };
+\addlegendentry{Hermes 3 8B aligned}
 \addplot [thick, lightsalmon255180130, dashed, mark=x, mark size=5, mark options={solid,fill opacity=0}]
 table {%
-2 0.223270440251572
-3 0.213184843830005
-5 0.356221655328798
-7 0.458874458874459
+2 0.497122302158273
+3 0.605860805860806
+5 0.633809347833738
+7 0.757411448200922
 };
+\addlegendentry{raw}
 \addplot [thick, lightgreen141229161, mark=x, mark size=5, mark options={solid,fill opacity=0}]
 table {%
-2 0.88125
-3 0.90977312390925
-5 0.857142857142857
-7 0.856204906204906
+2 0.748441247002398
+3 0.728937728937729
+5 0.791044698273614
+7 0.874381474381474
 };
+\addlegendentry{Hermes 3 70B aligned}
 \addplot [thick, lightgreen141229161, dashed, mark=x, mark size=5, mark options={solid,fill opacity=0}]
 table {%
-2 0.257291666666667
-3 0.393891797556719
-5 0.516510770975057
-7 0.539033189033189
+2 0.609832134292566
+3 0.716636141636142
+5 0.731100158208592
+7 0.845823545823546
 };
+\addlegendentry{raw}
 \addplot [thick, lightsalmon255159155, mark=x, mark size=5, mark options={solid,fill opacity=0}]
 table {%
-2 0.883821932681867
-3 0.881454348121015
-5 0.881550671550672
-7 0.841870864984072
+2 0.616312056737589
+3 0.571904761904762
+5 0.679339562876148
+7 0.69040959040959
 };
+\addlegendentry{Qwen2.5 Coder 32B aligned}
 \addplot [thick, lightsalmon255159155, dashed, mark=x, mark size=5, mark options={solid,fill opacity=0}]
 table {%
-2 0.311617806731813
-3 0.383143399810066
-5 0.459271469271469
-7 0.354731955675352
+2 0.504491725768322
+3 0.527916666666667
+5 0.643576951503781
+7 0.651272151272151
 };
+\addlegendentry{raw}
 \addplot [thick, thistle208187255, mark=x, mark size=5, mark options={solid,fill opacity=0}]
 table {%
-2 0.870020964360587
-3 0.859162303664921
-5 0.867316017316017
-7 0.872882672882673
+2 0.621276595744681
+3 0.647678571428571
+5 0.770918367346939
+7 0.705992253360674
 };
+\addlegendentry{Qwen2.5 Instruct 32B aligned}
 \addplot [thick, thistle208187255, dashed, mark=x, mark size=5, mark options={solid,fill opacity=0}]
 table {%
-2 0.270440251572327
-3 0.241012216404887
-5 0.277489177489178
-7 0.26993006993007
+2 0.520567375886525
+3 0.692619047619048
+5 0.746678519892806
+7 0.72421000052579
 };
+\addlegendentry{raw}
 \end{axis}
 
 \end{tikzpicture}

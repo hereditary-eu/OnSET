@@ -45,7 +45,7 @@ function rescaleToFit() {
         return
     }
     let rect = svg_ref.value.getBoundingClientRect()
-    console.log("SVG ref", svg_ref, rect.width, rect.height, entry);
+    // console.log("SVG ref", svg_ref, rect.width, rect.height, entry);
     if (svg_ref && rect.width > 0 && rect.height > 0) {
         entry.rescale({
             x: rect.width,

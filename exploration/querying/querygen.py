@@ -16,11 +16,11 @@ from typing import TypeVar
 from sqlalchemy.orm import aliased
 from sqlalchemy.sql import text
 from rdflib.plugins.stores.sparqlstore import SPARQLStore
-from backend.model import Session, Subject, SubjectLink
+from model import Session, Subject, SubjectLink
 
-from backend.ontology import OntologyManager, OntologyConfig, Graph
-from backend.explorative.explorative_support import GuidanceManager, select
-from backend.explorative.llm_query import (
+from ontology import OntologyManager, OntologyConfig, Graph
+from explorative.explorative_support import GuidanceManager, select
+from explorative.llm_query import (
     Entity,
     Relation,
     EntitiesRelations,
@@ -30,7 +30,7 @@ from backend.explorative.llm_query import (
     SubjectInDB,
     SubjectLinkDB,
 )
-from backend.explorative.llm_query_gen import (
+from explorative.llm_query_gen import (
     choose_graph,
     reduce_erl,
     erl_to_templated_query,
@@ -40,7 +40,7 @@ from tqdm import tqdm
 import pandas as pd
 
 # %%
-from backend.eval_config import (
+from eval_config import (
     DBPEDIA_CONFIGS,
     OMA_CONFIGS,
     UNIPROT_CONFIGS,

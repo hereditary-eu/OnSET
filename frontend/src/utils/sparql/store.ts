@@ -250,10 +250,10 @@ export class NodeLinkRepository<N extends SubjectNode = SubjectNode, L extends L
         for (let link of this.links) {
             let from = set.nodes[link.from_internal_id]
             let to = set.nodes[link.to_internal_id]
-            text += `${from.label} ${link.link_id} ${to.label}\n`
+            text += `${from.label} ${link.label} ${to.label}\n`
         }
         for (let node of Object.values(set.nodes)) {
-            text += `${node.label} a ${node.subject_id}\n`
+            text += `${node.id} a ${node.label}\n`
             for (let constraint of node.subqueries) {
                 if (constraint instanceof SubjectConstraint) {
                     if (constraint.instance) {
