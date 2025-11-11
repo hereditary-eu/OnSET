@@ -35,6 +35,13 @@ export enum OperationType {
   Remove = "remove",
 }
 
+/** ManifoldAlg */
+export enum ManifoldAlg {
+  TSNE = "TSNE",
+  MDS = "MDS",
+  Smacof = "smacof",
+}
+
 /** FUZZY_QUERY_ORDER */
 export enum FUZZY_QUERY_ORDER {
   Score = "score",
@@ -197,6 +204,29 @@ export interface Candidates {
    * @default "Found Relations and Entities"
    */
   message?: string;
+}
+
+/** ClosestRequest */
+export interface ClosestRequest {
+  /** Embedding */
+  embedding: number[] | null;
+  /** Query */
+  query: string | null;
+  /** All Embeddings */
+  all_embeddings: number[][];
+  /**
+   * N Closest
+   * @default 5
+   */
+  n_closest?: number;
+}
+
+/** ClosestResponse */
+export interface ClosestResponse {
+  /** Index */
+  index: number;
+  /** Distance */
+  distance: number;
 }
 
 /** Constraint */
@@ -398,11 +428,13 @@ export interface ManifoldRequest {
    * @default 2
    */
   n_out?: number;
+  /** @default "TSNE" */
+  alg?: ManifoldAlg;
   /**
-   * Alg
-   * @default "TSNE"
+   * Metric
+   * @default "cosine"
    */
-  alg?: string;
+  metric?: string;
 }
 
 /** Match */
@@ -1369,6 +1401,26 @@ export class Api<
         path: `/nlp/embeddings`,
         method: "GET",
         query: query,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @name NlpEmbeddingsClosestNlpEmbeddingsClosestPost
+     * @summary Nlp Embeddings Closest
+     * @request POST:/nlp/embeddings/closest
+     */
+    nlpEmbeddingsClosestNlpEmbeddingsClosestPost: (
+      data: ClosestRequest,
+      params: RequestParams = {},
+    ) =>
+      this.request<ClosestResponse[], HTTPValidationError>({
+        path: `/nlp/embeddings/closest`,
+        method: "POST",
+        body: data,
+        type: ContentType.Json,
         format: "json",
         ...params,
       }),

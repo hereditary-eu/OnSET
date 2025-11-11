@@ -33,7 +33,20 @@
                 </div>
                 <div class="history_view_container" v-show="ui_state.show_history">
                     <HistoryView v-show="ui_state.show_history" :history='(ui_state.history as QueryHistory)'
-                        @compare="compareToCurrent" @revert="revertToEntry"></HistoryView>
+                        @compare="compareToCurrent" @revert="revertToEntry" @show-tooltip="showTooltip"></HistoryView>
+
+                    <div ref="tooltip_div">
+                        <div v-if="ui_state.history_interactive.tooltip.visible" class="history_tooltip"
+                            @mouseleave="ui_state.history_interactive.tooltip.visible = false"
+                            :style="`top: ${ui_state.history_interactive.tooltip.position.y}px; left: ${ui_state.history_interactive.tooltip.position.x}px;`">
+                            <HistoryElement :entry='(ui_state.history_interactive.tooltip.entry as HistoryEntry)'
+                                @compare="compareToCurrent"
+                                @revert="revertToEntry"
+                            >
+
+                            </HistoryElement>
+                        </div>
+                    </div>
                 </div>
                 <div ref="graph_view" class="query_builder_wrapper">
                     <QueryBuilder :store="store" :diff="ui_state.diff" :simulate="ui_state.simulate">
@@ -81,7 +94,7 @@
 <script setup lang="ts">
 import Prism from 'prismjs';
 import 'prismjs/themes/prism.css';
-import { ref, watch, reactive, computed, onMounted, onBeforeMount } from 'vue'
+import { ref, watch, reactive, computed, onMounted, onBeforeMount, h } from 'vue'
 import TopicSelector from '@/components/explore/TopicSelector.vue';
 import NodeLinkSelector from '@/components/explore/NodeLinkSelector.vue';
 import QueryBuilder from '@/components/explore/QueryBuilder.vue';
@@ -100,6 +113,9 @@ import { NodeLinkRepositoryDiff } from '@/utils/sparql/diff';
 import { Link, SubjectNode } from '@/utils/sparql/representation';
 import HistoryView from '@/components/explore/history/HistoryView.vue';
 import { HistoryEntry, QueryHistory } from '@/utils/sparql/history';
+import type { Vector2 } from 'three';
+import type { HistoryTooltipEvent } from '@/utils/sparql/helpers';
+import HistoryElement from '@/components/explore/history/HistoryElement.vue';
 
 
 const api = new Api({
@@ -134,6 +150,13 @@ const ui_state = reactive({
     show_history: false,
     history: new QueryHistory(),
     simulate: false,
+    history_interactive: {
+        tooltip: {
+            visible: false,
+            position: { x: 0, y: 0 },
+            entry: null as HistoryEntry | null,
+        }
+    }
 })
 const store = ref(null as NodeLinkRepository | null)
 const old_store = ref(null as NodeLinkRepository | null)
@@ -316,15 +339,18 @@ const saveState = () => {
 const loadState = () => {
     const store_json = localStorage.getItem('store')
     const history_json = localStorage.getItem('history')
-    if (store_json) {
-        const store_obj = parseJSON<NodeLinkRepository>(store_json)
-        store.value = store_obj
-        console.log('Loaded store', store.value)
-    }
     if (history_json) {
         const history_obj = parseJSON<QueryHistory>(history_json)
         console.log('Loaded history', history_obj)
         ui_state.history = history_obj
+    }
+    if (store_json) {
+        const store_obj = parseJSON<NodeLinkRepository>(store_json)
+        store.value = store_obj
+        console.log('Loaded store', store.value)
+    }else if(ui_state.history?.entries.length > 0){
+        console.log('No store found in localStorage, but history exists.')
+        store.value = jsonClone(ui_state.history.entries[ui_state.history.entries.length -1].query)
     }
 }
 const clearState = () => {
@@ -357,6 +383,15 @@ const colour_config = computed(() => {
         }
     }
 })
+
+function showTooltip(evt: HistoryTooltipEvent) {
+    console.log("Showing History tooltip", evt)
+    ui_state.history_interactive.tooltip.visible = true
+    ui_state.history_interactive.tooltip.position.x = evt.position.x
+    ui_state.history_interactive.tooltip.position.y = evt.position.y
+    ui_state.history_interactive.tooltip.entry = evt.entry
+}
+
 onMounted(() => {
     loadState()
 })
@@ -431,7 +466,7 @@ onMounted(() => {
     display: inline-block;
     top: 10px;
     left: 10px;
-    z-index: 100;
+    z-index: 50;
     display: flex;
     flex-direction: column;
     align-items: start;
@@ -443,7 +478,7 @@ onMounted(() => {
     display: inline-block;
     top: 4rem;
     left: 10px;
-    z-index: 100;
+    z-index: 50;
     height: 100%;
     width: 40%;
     display: flex;
