@@ -3,8 +3,11 @@ import { NodeLinkRepositoryDiff } from "./diff"
 import { NodeLinkRepository, RepositoryState } from "./store"
 import { scalingFactors } from "./querymapper"
 import { jsonClone, registerClass } from "../parsing"
-import { Api } from "@/api/client.ts/Api"
+import { Api, ManifoldAlg } from "@/api/client.ts/Api"
 import { BACKEND_URL } from "../config"
+
+
+
 @registerClass
 export class HistoryEntry {
     query: NodeLinkRepository
@@ -37,6 +40,7 @@ export class HistoryEntry {
     }
     private fillEmbedding() {
         if (this.embedding === null) {
+            console.log("Generating embedding for history entry:", this);
             (async () => {
                 this.text_representation = this.query.queryReadable()
                 let api = new Api({
@@ -101,7 +105,7 @@ export class QueryHistory {
         }
         return add ? diff : null
     }
-    async dimReduceEmbeddings(n_out: number = 2, alg: "TSNE" | "MDS" = "TSNE") {
+    async dimReduceEmbeddings(n_out: number = 2, alg: ManifoldAlg = ManifoldAlg.TSNE) {
         let api = new Api({
             baseURL: BACKEND_URL,
         })
@@ -119,6 +123,20 @@ export class QueryHistory {
         })
         return response.data.map((v, i) => {
             return { v: new Vector2(v[0], v[1]), entry: entries[i] }
+        })
+    }
+    async searchSimilarEntries(query: string, n_results: number = 5) {
+        let api = new Api({
+            baseURL: BACKEND_URL,
+        })
+        const response = await api.nlp.nlpEmbeddingsClosestNlpEmbeddingsClosestPost({
+            query: query,
+            n_closest: n_results,
+            all_embeddings: this.entries.map(e => e.embedding || []),
+            embedding: null,
+        })
+        return response.data.map(r => {
+            return { entry: this.entries[r.index], distance: r.distance }
         })
     }
 }

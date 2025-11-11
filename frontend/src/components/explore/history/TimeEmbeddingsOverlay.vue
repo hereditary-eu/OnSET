@@ -12,7 +12,11 @@ import HistoryElement from './HistoryElement.vue';
 import * as d3 from 'd3'
 import { Vector2 } from 'three';
 import { CatmullRomSplits } from '@/utils/d3-man/CatmullRomSplits';
+import { ManifoldAlg } from '@/api/client.ts/Api';
+import { c } from 'node_modules/vite/dist/node/types.d-aGj9QkWt';
+import type { HistoryTooltipEvent } from '@/utils/sparql/helpers';
 const svg_ref = ref(null as SVGSVGElement | null)
+const tooltip_div = ref(null as HTMLDivElement | null)
 const history_overview_box = ref(null as SVGGElement | null)
 enum HistoryMode {
     OVERVIEW = 'Overview',
@@ -26,11 +30,15 @@ const { history } = defineProps({
 })
 const ui_state = reactive({
     history_mode: HistoryMode.DETAILED,
+    tooltip: {
+        visible: false,
+        position: { x: 0, y: 0 },
+        entry: null as HistoryEntry | null,
+    }
 })
 
 const emit = defineEmits<{
-    revert: [HistoryEntry],
-    compare: [HistoryEntry]
+    showTooltip: [HistoryTooltipEvent],
 }>()
 
 function updateSvgSize() {
@@ -45,7 +53,14 @@ function recomputeEmbeddings() {
     const rect = updateSvgSize();
     const PADDING = 20;
     (async () => {
-        const embeddings = await history.dimReduceEmbeddings(2, "MDS")
+        const embeddings = await history.dimReduceEmbeddings(2, ManifoldAlg.Smacof)
+
+        const embeddings_mapped = embeddings.map((emb, idx) => {
+            return {
+                ...emb,
+                r: 5 + Math.log(history.entries[idx].query.nodes.length || 0 + 1) * 3 || 5,
+            }
+        })
         type embeddings_rval = typeof embeddings[0]
         //normalize embeddings to [0,1] and scale to fit in svg
         const xExtent = d3.extent(embeddings, (d) => d.v.x);
@@ -66,7 +81,7 @@ function recomputeEmbeddings() {
             let scaled_embeddings = embeddings.map(
                 emb => new Vector2(xScale(emb.v.x), yScale(emb.v.y))
             )
-            let catmulSplits = new CatmullRomSplits(scaled_embeddings, 0.15);
+            let catmulSplits = new CatmullRomSplits(scaled_embeddings, 0.3);
             let splitPaths = catmulSplits.getPaths();
             for (const segment of splitPaths) {
                 let entry = embeddings[segment.idx + 1].entry;
@@ -95,16 +110,37 @@ function recomputeEmbeddings() {
                 }
             }
             const circles = root_g.selectAll("circle")
-                .data(embeddings)
+                .data(embeddings_mapped)
                 .join("circle")
                 .attr("cx", (d) => xScale(d.v.x))
                 .attr("cy", (d) => yScale(d.v.y))
                 .attr("r", (d) => {
-                    return 5 + Math.log(d.entry.query.nodes.length || 0 + 1) * 3
+                    return d.r
                 })
                 .attr("stroke", "white")
                 .attr("fill", "darkgrey")
                 .attr("opacity", 0.9)
+                .on("mouseover", function (event: MouseEvent, d) {
+
+                    console.log("Hovering over entry", d, embeddings_mapped)
+                    const coord = new Vector2(xScale(d.v.x), yScale(d.v.y));
+                    const tooltip_div_pos = new Vector2(tooltip_div.value?.clientLeft || 0, tooltip_div.value?.clientTop || 0)
+                    // const offset_pos = new Vector2(150, 100)
+                    // const margin_pos = new Vector2(5, 5)
+                    const r_offset = new Vector2(d.r, d.r)
+                    const relative_pos = coord
+                        .add(tooltip_div_pos)
+                        // .add(offset_pos)
+                        .add(r_offset)
+                    // .add(margin_pos)
+                    emit("showTooltip", {
+                        position: relative_pos, entry: d.entry, event: event
+                    })
+                })
+                .on("mouseleave", function () {
+                    // ui_state.tooltip.visible = false
+                    // ui_state.tooltip.entry = null
+                });
         }
 
 
@@ -158,6 +194,7 @@ watch(() => history, (new_length) => {
 <style lang="scss">
 .history_view_overview {
     display: flex;
+    position: relative;
     flex-direction: column;
     align-items: center;
     justify-content: start;
@@ -168,5 +205,20 @@ watch(() => history, (new_length) => {
 .starting_arrow {
     fill: rgba(6, 151, 35, 0.608);
     stroke: rgba(255, 255, 255, 0.99);
+}
+
+.history_tooltip {
+    position: absolute;
+    background-color: rgba(255, 255, 255, 0.95);
+    border: 1px solid rgb(192, 213, 191);
+    padding: 10px;
+    z-index: 100;
+    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3);
+
+    min-width: 400px;
+    max-width: 400px;
+
+    min-height: 200px;
+    max-height: 200px;
 }
 </style>

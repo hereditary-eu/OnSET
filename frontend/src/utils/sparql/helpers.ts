@@ -2,6 +2,8 @@ import type { Candidates, EnrichedEntity, EnrichedRelation, EntitiesRelations, E
 import { SubQuery, Link, SubjectNode, type SubjectConstraint } from "./representation";
 import { NodeLinkRepository } from "./store";
 import { reactive } from "vue";
+import type { Vector2Like } from "three";
+import type { HistoryEntry } from "./history";
 
 export enum OpenEventType {
     TO = 'to_link',
@@ -150,4 +152,10 @@ export function extentNodes(nodes: SubjectNode[] = []) {
         }
     }
     return { x: min_x, y: min_y, width: max_x - min_x, height: max_y - min_y }
+}
+
+export class HistoryTooltipEvent {
+    position: Vector2Like
+    entry: HistoryEntry | null = null
+    event: MouseEvent
 }

@@ -70,6 +70,8 @@ onMounted(() => {
     right: 5px;
     display: flex;
     flex-direction: row;
+    align-items: center;
+    justify-content: space-evenly;
     gap: 5px;
     z-index: 150;
 }
@@ -86,6 +88,7 @@ onMounted(() => {
     border-bottom: 1px solid rgb(192, 213, 191);
     position: relative;
     cursor: pointer;
+    z-index: inherit;
 }
 
 .result_instance_element {
