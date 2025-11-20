@@ -13,7 +13,6 @@ import * as d3 from 'd3'
 import { Vector2 } from 'three';
 import { CatmullRomSplits } from '@/utils/d3-man/CatmullRomSplits';
 import { ManifoldAlg } from '@/api/client.ts/Api';
-import { c } from 'node_modules/vite/dist/node/types.d-aGj9QkWt';
 import type { HistoryTooltipEvent } from '@/utils/sparql/helpers';
 const svg_ref = ref(null as SVGSVGElement | null)
 const tooltip_div = ref(null as HTMLDivElement | null)
