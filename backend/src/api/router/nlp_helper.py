@@ -60,9 +60,14 @@ def nlp_embeddings_closest(request: ClosestRequest) -> list[ClosestResponse]:
     if embedding is None:
         raise ValueError("Either 'query' or 'embedding' must be provided.")
     embedding = np.array(embedding)
-    all_embeddings = np.array(request.all_embeddings)
+    all_embeddings = [
+        emb for emb in request.all_embeddings if len(emb) == len(embedding)
+    ]
+    all_embeddings = np.array(all_embeddings)
 
-    distances = pairwise_distances(all_embeddings, embedding.reshape(1, -1), metric="cosine").squeeze()
+    distances = pairwise_distances(
+        all_embeddings, embedding.reshape(1, -1), metric="cosine"
+    ).squeeze()
     closest_indices = np.argsort(distances)[: request.n_closest]
     closest = [
         ClosestResponse(index=int(idx), distance=float(distances[idx]))

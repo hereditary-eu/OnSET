@@ -40,9 +40,7 @@
                             @mouseleave="ui_state.history_interactive.tooltip.visible = false"
                             :style="`top: ${ui_state.history_interactive.tooltip.position.y}px; left: ${ui_state.history_interactive.tooltip.position.x}px;`">
                             <HistoryElement :entry='(ui_state.history_interactive.tooltip.entry as HistoryEntry)'
-                                @compare="compareToCurrent"
-                                @revert="revertToEntry"
-                            >
+                                @compare="compareToCurrent" @revert="revertToEntry">
 
                             </HistoryElement>
                         </div>
@@ -83,11 +81,16 @@
             </OnsetBtn>
             <pre v-if="ui_state.show_query" v-html="query_string_html" />
         </div>
-        <div>
+        <div class="diff_controls">
 
             <OnsetBtn @click="ui_state.colour_blind = !ui_state.colour_blind">
                 <v-icon icon="mdi-eye-off" /> Red-Green Colourblindness Mode
             </OnsetBtn>
+            <OnsetBtn @click="downloadState()" :toggleable="false">Download Query History
+            </OnsetBtn>
+            <OnsetBtn @click="loadStateFromFile" :toggleable="false">Load Query History
+            </OnsetBtn>
+            <input type="file" ref="state_file" />
         </div>
     </div>
 </template>
@@ -127,6 +130,7 @@ const api = new Api({
 // loadLanguages(['sparql']);
 
 const graph_view = ref<HTMLElement | null>(null)
+const state_file = ref<HTMLInputElement | null>(null)
 
 const selected_topic_ids = ref([] as number[])
 const query_string_html = ref('')
@@ -186,7 +190,7 @@ watch(() => selected_start, () => {
     }
 }, { deep: true })
 watch(() => store, () => {
-    if (store.value.state != RepositoryState.STABLE) {
+    if (!store.value || store.value.state != RepositoryState.STABLE) {
         return
     }
     let new_query_string = store.value.generateQuery()
@@ -348,9 +352,9 @@ const loadState = () => {
         const store_obj = parseJSON<NodeLinkRepository>(store_json)
         store.value = store_obj
         console.log('Loaded store', store.value)
-    }else if(ui_state.history?.entries.length > 0){
+    } else if (ui_state.history?.entries.length > 0) {
         console.log('No store found in localStorage, but history exists.')
-        store.value = jsonClone(ui_state.history.entries[ui_state.history.entries.length -1].query)
+        store.value = jsonClone(ui_state.history.entries[ui_state.history.entries.length - 1].query)
     }
 }
 const clearState = () => {
@@ -359,7 +363,42 @@ const clearState = () => {
     old_store.value = null
     ui_state.diff = null
     ui_state.diff_active = false
+    ui_state.history = new QueryHistory()
+
     console.log('Cleared store')
+}
+
+const downloadState = () => {
+    if (!store.value) {
+        return
+    }
+    const store_json = stringifyJSON(ui_state.history)
+    const blob = new Blob([store_json], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'query_history.json'
+    a.click()
+    URL.revokeObjectURL(url)
+    console.log('Downloaded store as JSON', store_json)
+}
+const loadStateFromFile = () => {
+    const input = state_file.value
+    if (!input || !input.files || input.files.length == 0) {
+        return
+    }
+    const file = input.files[0]
+    const reader = new FileReader()
+    reader.onload = (e) => {
+        const content = e.target?.result
+        if (typeof content === 'string') {
+            const hist_obj = parseJSON<QueryHistory>(content)
+            ui_state.history = hist_obj
+            store.value = jsonClone(ui_state.history.entries[ui_state.history.entries.length - 1].query)
+            console.log('Loaded history from file', ui_state.history)
+        }
+    }
+    reader.readAsText(file)
 }
 
 const colour_config = computed(() => {
@@ -371,6 +410,10 @@ const colour_config = computed(() => {
             node_changed: 'rgb(232,224,253)',
             node_added_light: 'rgba(51,114,237,0.506)',
             node_removed_light: 'rgba(248,212,150,0.506)',
+
+            link_normal: '#999',
+            link_added: 'rgb(51,114,237)',
+            link_removed: 'rgb(248,212,150)',
         }
     } else {
         return {
@@ -380,6 +423,10 @@ const colour_config = computed(() => {
             node_changed: '#bbd8ff',
             node_added_light: 'rgba(228, 119, 119, 0.506)',
             node_removed_light: 'rgba(109, 209, 109, 0.506)',
+
+            link_normal: '#999',
+            link_added: 'var(--vt-c-green-strong)',
+            link_removed: '#f26c6c',
         }
     }
 })
@@ -480,7 +527,7 @@ onMounted(() => {
     left: 10px;
     z-index: 50;
     height: 100%;
-    width: 40%;
+    width: 80%;
     display: flex;
     flex-direction: column;
     align-items: start;
@@ -518,5 +565,20 @@ onMounted(() => {
 
 :deep(.result_instance_left) {
     background-color: v-bind('colour_config.node_removed_light');
+}
+
+
+:deep(.link_normal) {
+    stroke: v-bind('colour_config.link_normal');
+}
+
+:deep(.link_added) {
+    stroke: v-bind('colour_config.link_added');
+    stroke-dasharray: 10, 2, 10, 2;
+}
+
+:deep(.link_removed) {
+    stroke: v-bind('colour_config.link_removed');
+    stroke-dasharray: 10, 4, 10, 4;
 }
 </style>

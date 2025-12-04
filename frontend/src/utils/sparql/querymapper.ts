@@ -35,6 +35,7 @@ export class InstanceNodeLinkRepository extends NodeLinkRepository<InstanceNode,
         // console.log("ID", node_ids)
         return node_ids as string | number
     }
+    // changed(other: 
 
 }
 export class ResultList implements Diffable {
