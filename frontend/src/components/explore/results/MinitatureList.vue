@@ -4,12 +4,12 @@
 
         <div v-if="combined_stores.instances.length > 0" class="result_instance_element"
             v-for="s of combined_stores.instances">
-            <Result :store="s" :expanded="false" :scale="ui_state.scale" :offset="ui_state.offset"
+            <Result :store="jsonClone(s)" :expanded="false" :scale="ui_state.scale" :offset="ui_state.offset"
                 :miniature-type="miniatureType(s)" :diff="diff">
             </Result>
         </div>
         <div v-else class="result_instance_element" v-for="s of mapped_stores.instances">
-            <Result :store="s" :expanded="false" :scale="ui_state.scale" :offset="ui_state.offset">
+            <Result :store="jsonClone(s)" :expanded="false" :scale="ui_state.scale" :offset="ui_state.offset">
             </Result>
         </div>
         <Loading v-if="ui_state.loading"></Loading>
@@ -30,6 +30,7 @@ import type { NodeLinkRepository } from '@/utils/sparql/store';
 import { ResultListDiff, type NodeLinkRepositoryDiff } from '@/utils/sparql/diff';
 import { instance } from 'three/webgpu';
 import { MiniatureType } from '@/utils/result-plot/plot-types';
+import { jsonClone } from '@/utils/parsing';
 const { store, query_string, diff } = defineProps({
     store: {
         type: Object as () => NodeLinkRepository,
@@ -68,13 +69,8 @@ const startLoading = () => {
     if (!store) {
         return
     }
-    if (mapped_stores.value.instances.length == 0) {
-        ui_state.initial_size.x = view_container.value?.clientWidth || 0
-        ui_state.initial_size.y = view_container.value?.clientHeight || 0
-        // ui_state.initial_size.x -= 50
-        // ui_state.initial_size.y -= 50
-    }
     mapper.value = new QueryMapper(store, ui_state.initial_size)
+    mapper.value.target_size = ui_state.computed_size
     ui_state.paging_offset = 0
     ui_state.paging_end = false
     mapped_stores.value = new ResultList()
@@ -88,9 +84,12 @@ watch(() => query_string, () => {
 }, { deep: true })
 const updateSize = () => {
     if (view_container.value) {
-        ui_state.computed_size.x = view_container.value?.clientWidth || 0
-        ui_state.computed_size.y = view_container.value?.clientHeight || 0
+        let rect = view_container.value.getBoundingClientRect()
+
+        ui_state.computed_size.x = rect.width || 0
+        ui_state.computed_size.y = rect.height || 0
     }
+    console.log("Updated size:", ui_state.computed_size)
     mapper.value.target_size = ui_state.computed_size
 }
 const miniatureType = (s: InstanceNodeLinkRepository) => {

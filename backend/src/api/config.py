@@ -44,7 +44,7 @@ class ManMan:
         self.config_name = config_name
         self.idx = idx
 
-        db_config = ALL_CONFIG_MAP["dbpedia"][-2]
+        db_config = ALL_CONFIG_MAP["gutbrainie"][-2]
         # db_config = GUTBRAINIE_CONFIGS[1]
 
         db_config.conn_str = os.getenv("DB_CONN_STR", db_config.conn_str)

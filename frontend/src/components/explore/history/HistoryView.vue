@@ -103,7 +103,7 @@ function submit_query(event: KeyboardEvent | MouseEvent) {
     height: 100%;
     width: 80%;
     border: 1px solid rgb(192, 213, 191);
-    background-color: rgba(251, 248, 243, 0.905);
+    background-color: white;
     z-index: inherit;
 }
 
