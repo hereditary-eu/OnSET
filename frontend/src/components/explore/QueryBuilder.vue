@@ -26,7 +26,7 @@
     </div>
 </template>
 <script setup lang="ts">
-import { ref, watch, reactive, computed, onMounted, defineProps, onBeforeMount } from 'vue'
+import { ref, watch, reactive, computed, onMounted, onBeforeMount } from 'vue'
 import { SubjectNode, Link } from '@/utils/sparql/representation';
 import NodeComp from './elements/Node.vue';
 import OutLinkSelector from './elements/panels/LinkSelector.vue';

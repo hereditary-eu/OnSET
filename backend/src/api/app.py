@@ -19,28 +19,39 @@ from explorative.exp_model import (
     SparqlQuery,
     Topic,
     SubjectLinkDB,
-    FuzzyQuery, 
+    FuzzyQuery,
     FuzzyQueryResults,
 )
 from explorative.llm_query import LLMQuery, QueryProgress, EnrichedEntitiesRelations
-from eval_config import BTO_CONFIGS, DBPEDIA_CONFIGS, UNIPROT_CONFIGS, DNB_CONFIGS, GUTBRAINIE_CONFIGS, ALL_CONFIG_MAP
+from eval_config import (
+    BTO_CONFIGS,
+    DBPEDIA_CONFIGS,
+    UNIPROT_CONFIGS,
+    DNB_CONFIGS,
+    GUTBRAINIE_CONFIGS,
+    ALL_CONFIG_MAP,
+)
 from initiator import InitatorManager
 from assistant.model import QueryGraph, Operations
 from assistant.iterative_assistant import IterativeAssistant
 from redis_cache import RedisCache
 from sqlalchemy.orm import Session
 
+import uvicorn
+import logging
 import os
 
-db_config = ALL_CONFIG_MAP["gutbrainie"][-2]
+logger = logging.getLogger("uvicorn.error")
+
+db_config = ALL_CONFIG_MAP["dbpedia"][-1]
 # db_config = GUTBRAINIE_CONFIGS[1]
 
-db_config.conn_str=os.getenv("DB_CONN_STR", db_config.conn_str)
-db_config.sparql_endpoint=os.getenv("SPARQL_ENDPOINT", db_config.sparql_endpoint)
-db_config.model_id=os.getenv("LLM_MODEL_ID", db_config.model_id)
-db_config.model_quant=os.getenv("LLM_MODEL_QUANT", db_config.model_quant)
+db_config.conn_str = os.getenv("DB_CONN_STR", db_config.conn_str)
+db_config.sparql_endpoint = os.getenv("SPARQL_ENDPOINT", db_config.sparql_endpoint)
+db_config.model_id = os.getenv("LLM_MODEL_ID", db_config.model_id)
+db_config.model_quant = os.getenv("LLM_MODEL_QUANT", db_config.model_quant)
 
-
+logger.info(f"Using config: {db_config}")
 
 base_path = "../../data"
 onto_path = f"{base_path}/hero-ontology/hereditary_clinical.ttl"
