@@ -35,7 +35,7 @@ class GuidanceManager:
         oman: OntologyManager,
         device=None,
         conn_str: str = "postgresql+psycopg://postgres:postgres@localhost:5434/onset",
-        llm_model_id: str = "NousResearch/Hermes-3-Llama-3.1-8B-GGUF",
+        llm_model_id: str = "bartowski/Hermes-3-Llama-3.2-3B-GGUF",
         llm_quant_model: str = "*.Q8_0.gguf",
         langchain_model: LLM = None,
         ctx_size=10000,

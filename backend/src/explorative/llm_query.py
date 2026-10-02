@@ -707,4 +707,7 @@ class LLMQuery(Initationatable):
                     )
                     query_graph.relations.append(enriched_relation)
                 examples.append(query_graph)
+            if len(examples) == 0:
+                self.initiate(force=True, n_queries=n)
+                return self.get_examples(n)
             return examples

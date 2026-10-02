@@ -39,7 +39,7 @@ DBPEDIA_CONFIGS = [
         name="DBpedia large",
     ),
     EvalConfig(
-        model_id="NousResearch/Hermes-3-Llama-3.2-3B-GGUF",
+        model_id="NousResearch/Hermes-3-Llama-3.2-3B-GGUF", model_quant="*.Q4_0.gguf"
     ),
 ]
 OMA_CONFIGS = [
@@ -165,7 +165,6 @@ BTO_CONFIGS = [
     ),
 ]
 DNB_CONFIGS = [
-    
     EvalConfig(
         model_id="bartowski/Mistral-Small-Instruct-2409-GGUF",
         model_quant="*-Q6_K.gguf",
@@ -244,7 +243,6 @@ YAGO_CONFIGS = [
         name="Yago",
         selection_distribution=SelectionDistribution.INSTANCES,
     ),
-    
 ]
 GUTBRAINIE_CONFIGS = [
     EvalConfig(
@@ -270,7 +268,7 @@ GUTBRAINIE_CONFIGS = [
         selection_distribution=SelectionDistribution.UNIFORM,
     ),
 ]
-DBLP_CONFIGS=[
+DBLP_CONFIGS = [
     EvalConfig(
         model_id="NousResearch/Hermes-3-Llama-3.2-3B-GGUF",
         conn_str="postgresql+psycopg://postgres:postgres@localhost:5434/onset-dblp",
@@ -280,9 +278,9 @@ DBLP_CONFIGS=[
     ),
 ]
 
-ALL_CONFIG_MAP={
+ALL_CONFIG_MAP = {
     "dbpedia": DBPEDIA_CONFIGS,
-    "oma": OMA_CONFIGS, 
+    "oma": OMA_CONFIGS,
     "uniprot": UNIPROT_CONFIGS,
     "bto": BTO_CONFIGS,
     "dnb": DNB_CONFIGS,
