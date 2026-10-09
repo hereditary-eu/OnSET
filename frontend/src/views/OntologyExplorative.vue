@@ -104,7 +104,7 @@ import QueryBuilder from '@/components/explore/QueryBuilder.vue';
 import ResultsView from '@/components/explore/ResultsView.vue';
 import Loading from '@/components/ui/Loading.vue';
 import { OverviewCircles } from '@/utils/three-man/OverviewCircles';
-import { Api, OperationType, type AssistantLink, type AssistantSubjectInput } from '@/api/client.ts/Api';
+import { Api, OperationType, type AssistantLink, type AssistantSubject } from '@/api/client.ts/Api';
 import { BACKEND_URL } from '@/utils/config';
 import type { SubjectInCircle } from '@/utils/d3-man/CircleMan';
 import OnsetBtn from '@/components/ui/OnsetBtn.vue';
@@ -282,7 +282,7 @@ const submit_assistant = () => {
             if (step.operation == OperationType.Add) {
                 switch (step.data.type) {
                     case 'subject':
-                        const op_subject = step.data as AssistantSubjectInput
+                        const op_subject = step.data as AssistantSubject
                         const full_subject = await api.classes.getSubjectClassesSubjectsGet({
                             subject_id: op_subject.subject_id
                         })
@@ -296,7 +296,7 @@ const submit_assistant = () => {
             } else if (step.operation == OperationType.Remove) {
                 switch (step.data.type) {
                     case 'subject':
-                        const op_subject = step.data as AssistantSubjectInput
+                        const op_subject = step.data as AssistantSubject
                         const subject = store.value.nodes.find((s) => s.id == op_subject.subject_id)
                         store.value.nodes.splice(store.value.nodes.indexOf(subject), 1)
                         break

@@ -33,8 +33,8 @@ export enum SubQueryType {
 @registerClass
 export class SubQuery implements Diffable {
     link: Link;
-    private _height: number;
-    private _width: number;
+    _height: number;
+    _width: number;
     constraint_type: SubQueryType;
     id: string | number;
     static id_counter: number = 0;
