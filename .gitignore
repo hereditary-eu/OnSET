@@ -14,3 +14,5 @@ node_modules
 *.out
 **/user-study/private
 demo-video
+Qleverfile-ui.yml
+*.ui-db.sqlite3

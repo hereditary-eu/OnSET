@@ -23,5 +23,10 @@ export default defineConfig({
       "plotly.js-basic-dist": fileURLToPath(new URL("node_modules/plotly.js-dist/plotly.js", import.meta.url))
 
     }
+  },
+  // base: "/demo",
+  envPrefix: 'ONSET_',
+  server:{
+    port: 5174,
   }
 })

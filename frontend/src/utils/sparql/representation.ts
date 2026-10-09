@@ -3,7 +3,7 @@ import { CONSTRAINT_HEIGHT, CONSTRAINT_WIDTH, NODE_HEIGHT, NODE_WIDTH, OpenEvent
 
 import { registerClass } from "../parsing";
 import { NodeLinkRepository } from "./store";
-import type { Diffable } from "./diff";
+import { DiffList, SubQueryDiff, type Diffable } from "./diff";
 
 
 
@@ -25,21 +25,35 @@ export enum SubQueryType {
     BOOLEAN = "boolean",
     DATE = "date",
     SUBJECT = "subject",
-    QUERY_PROP = "query_prop"
+    QUERY_PROP = "query_prop",
+
+    VECTOR_SORT = "vector_sort"
 }
 
 @registerClass
 export class SubQuery implements Diffable {
     link: Link;
-    height: number
-    width: number
+    private _height: number;
+    private _width: number;
     constraint_type: SubQueryType;
     id: string | number;
     static id_counter: number = 0;
     constructor() {
-        this.height = CONSTRAINT_HEIGHT / 2
-        this.width = CONSTRAINT_WIDTH
+        this._width = CONSTRAINT_WIDTH
+        this._height = CONSTRAINT_HEIGHT/2
         this.id = SubQuery.id_counter++
+    }
+    get height(): number {
+        return this._height
+    }
+    set height(value: number) {
+        this._height = value
+    }
+    get width(): number {
+        return this._width
+    }
+    set width(value: number) {
+        this._width = value
     }
     changed(other: Diffable): boolean {
         const testvar = "?test"
@@ -53,7 +67,6 @@ export class SubQuery implements Diffable {
     }
     static construct(link: Link): SubQuery {
         let constraint = null
-
         if (StringConstraint.validPropType(link.to_proptype)) {
             constraint = new StringConstraint("", StringConstraintType.CONTAINS);
         } else if (NumberConstraint.validPropType(link.to_proptype)) {
@@ -62,6 +75,8 @@ export class SubQuery implements Diffable {
             constraint = new BooleanConstraint(true);
         } else if (DateConstraint.validPropType(link.to_proptype)) {
             constraint = new DateConstraint(new Date(), NumberConstraintType.GREATER);
+        } else if (VectorSort.validPropType(link.to_proptype)) {
+            constraint = new VectorSort(VectorSortModality.IMAGE, VectorSortDirection.DESCENDING, VectorSortDistance.COSINE);
         }
         if (constraint) {
             constraint.link = link;
@@ -72,7 +87,10 @@ export class SubQuery implements Diffable {
         return ""
     }
     expression(property: string): string {
-        return this.filterExpression(property);
+        return `FILTER(${this.filterExpression(property)})`;
+    }
+    postQueryExpression(property: string): string {
+        return "";
     }
 }
 
@@ -82,6 +100,9 @@ export class QueryProp extends SubQuery {
     constructor() {
         super();
         this.constraint_type = SubQueryType.QUERY_PROP
+    }
+    get height(): number {
+        return CONSTRAINT_HEIGHT / 2
     }
     static construct(link: Link): QueryProp {
         let query_prop = new QueryProp();
@@ -262,11 +283,141 @@ export class DateConstraint extends SubQuery {
         return propType == 'xsd:date'
     }
 }
+
+export enum VectorSortModality {
+    IMAGE = "image",
+    TEXT = "text",
+}
+export enum VectorSortDirection {
+    ASCENDING = "ascending",
+    DESCENDING = "descending",
+}
+export enum VectorSortDistance {
+    COSINE = "cosine",
+    EUCLIDEAN = "euclidean",
+    MANHATTAN = "manhattan",
+}
+@registerClass
+export class VectorData {
+    data: number[];
+    type: string;
+    shape: number[];
+    static propType: string = "<https://w3id.org/rdf-tensor/datatypes#NumericDataTensor>"
+    constructor(data: number[] = [], type: string = "float32", shape: number[] = []) {
+        this.data = data;
+        this.type = type;
+        this.shape = shape.length > 0 ? shape : [data.length];
+
+    }
+    toString(): string {
+        let json_str = JSON.stringify({
+            "type": this.type,
+            "shape": this.shape,
+            "data": this.data,
+        })
+        json_str = json_str.replace(/"/g, '\\"')
+        return `"${json_str}"^^${VectorData.propType}`
+    }
+
+}
+@registerClass
+export class VectorSort extends SubQuery {
+    modality: VectorSortModality;
+    direction: VectorSortDirection;
+    distance: VectorSortDistance;
+    vector: number[] | null = null;
+
+    input_state: {
+        image: string | null;
+        text: string | null;
+    } = {
+            image: null,
+            text: null,
+        }
+    constructor(modality: VectorSortModality = VectorSortModality.IMAGE, direction: VectorSortDirection = VectorSortDirection.DESCENDING, distance: VectorSortDistance = VectorSortDistance.COSINE) {
+        super();
+        this.modality = modality;
+        this.direction = direction;
+        this.distance = distance;
+        this.constraint_type = SubQueryType.VECTOR_SORT
+    }
+    set height(value: number) {
+        // no-op, height is determined by modality
+    }
+    get height(): number {
+        switch (this.modality) {
+            case VectorSortModality.IMAGE:
+                return CONSTRAINT_HEIGHT * 4
+            case VectorSortModality.TEXT:
+                return CONSTRAINT_HEIGHT * 1
+        }
+    }
+
+    async reloadVectorFromState(api: Api<any>) {
+        this.vector = null
+        let vector_resp = null
+        switch (this.modality) {
+            case VectorSortModality.TEXT:
+                if (this.input_state.text && this.input_state.text.length > 0) {
+                    vector_resp = await api.classes.encodeTextClassesSearchEncodeTextPost(this.input_state.text)
+                }
+                break
+            case VectorSortModality.IMAGE:
+                if (this.input_state.image) {
+                    vector_resp = await api.classes.encodeImageClassesSearchEncodeImagePost(this.input_state.image)
+                }
+                break
+        }
+        this.vector = vector_resp.data.data
+    }
+    expression(property: string): string {
+        let distance_func = ""
+        switch (this.distance) {
+            case VectorSortDistance.COSINE:
+                distance_func = "dtf:cosineSimilarity"
+                break;
+            case VectorSortDistance.EUCLIDEAN:
+                distance_func = "dtf:euclideanDistance"
+                break;
+            case VectorSortDistance.MANHATTAN:
+                distance_func = "dtf:manhattanDistance"
+                break;
+        }
+        return `BIND(${distance_func}(${property}, ${this.vectorExpression()}) AS ?sim_${toVar(this.id)})`
+    }
+    postQueryExpression(property: string): string {
+        let order_dir = this.direction == VectorSortDirection.ASCENDING ? "ASC" : "DESC"
+        return `ORDER BY ${order_dir}(?sim_${toVar(this.id)})`
+    }
+    static validPropType(propType: string): boolean {
+        // console.log("Checking if propType is valid for vector sort", propType, VectorData.propType)
+        return propType == VectorData.propType
+    }
+    vectorExpression(): string {
+        if (!this.vector) {
+            return ""
+        } else {
+            return new VectorData(this.vector).toString()
+        }
+
+    }
+}
+
+
+
+export enum LinkType {
+    STRUCTURAL = "structural",
+    SIMILARITY = "similarity",
+}
 @registerClass
 export class LinkTriplet {
     from_id: string;
     link_id: string;
     to_id: string;
+    semantic_link_type: LinkType;
+    constructor(link_type: LinkType = LinkType.STRUCTURAL) {
+        this.semantic_link_type = link_type;
+    }
 }
 @registerClass
 export class QuerySet {
@@ -284,6 +435,24 @@ export class QuerySet {
         this.filter = [];
         this.output_ids = [];
     }
+    merge(other: QuerySet) {
+        for (let key in other.nodes) {
+            if (!(key in this.nodes)) {
+                this.nodes[key] = other.nodes[key]
+            }
+        }
+        this.filter.push(...other.filter)
+        this.output_ids.push(...other.output_ids)
+        for (let triplet of other.link_triplets) {
+            if (this.link_triplets.filter(t => t.from_id == triplet.from_id && t.link_id == triplet.link_id && t.to_id == triplet.to_id).length == 0) {
+                this.link_triplets.push(triplet)
+            }
+        }
+        return this
+    }
+}
+export interface QuerySetGenerator {
+    querySet(): QuerySet
 }
 let internal_id_counter: number = 0;
 @registerClass
@@ -370,14 +539,19 @@ export class SubjectNode implements Subject, Diffable {
     }
 
     changed(other: this): boolean {
+        let subquery_diff = new DiffList(this.subqueries || [], other.subqueries || [], SubQueryDiff)
+        if (subquery_diff.added.length > 0 || subquery_diff.removed.length > 0 || subquery_diff.changed.length > 0) {
+            return true
+        }
+        return false
         return this.subject_id != other.subject_id ||
             this.label != other.label ||
-            this.spos != other.spos ||
+            // this.spos != other.spos ||
             this.subject_type != other.subject_type ||
             this.refcount != other.refcount ||
-            this.descendants != other.descendants ||
-            this.total_descendants != other.total_descendants ||
-            this.properties != other.properties;
+            // this.descendants != other.descendants ||
+            this.total_descendants != other.total_descendants //||
+        // this.properties != other.properties;
     }
     get id(): string | number {
         return this.internal_id
@@ -440,6 +614,8 @@ export class Link<N extends Subject = Subject> implements SubjectLink, Diffable 
     to_id: string;
     to_proptype: string | null;
     property_id: string | null;
+
+    semantic_link_type: LinkType = LinkType.STRUCTURAL;
 
     allow_arbitrary: boolean = false;
     quantifier: LinkQuantifier | null = null;
@@ -524,3 +700,47 @@ export class Link<N extends Subject = Subject> implements SubjectLink, Diffable 
     }
 }
 export type FuzzyQueryRequest = Parameters<typeof Api.prototype.classes.searchClassesClassesSearchPost>[0]
+
+
+import { readableName } from "./querymapper";
+@registerClass
+export class InstanceNode extends SubjectNode {
+    instance_label: string = null
+    instance_id: string = null
+    interactive_clone: InstanceNode | null = null
+    expanded: boolean = false
+    instance_data: Record<string, string> = null
+    constructor(base_node?: SubjectNode | InstanceNode, instance_data?: Record<string, string>) {
+        super(base_node)
+        if (!base_node) {
+            this.instance_data = instance_data || {}
+        } else {
+            this.instance_data = instance_data || (base_node as InstanceNode).instance_data || {}
+        }
+        this.instance_id = this.instance_data[this.outputId().replace('?', '')]
+        this.instance_label = this.instance_data[this.labelId().replace('?', '')]
+        this.instance_label = readableName(this.instance_id, this.instance_label)
+    }
+    get id() {
+        return this.instance_id
+    }
+}
+@registerClass
+export class InstanceLink extends Link {
+    instance_label: string = null
+    instance_id: string = null
+    constructor(base_link: Link = null, public instance_data: Record<string, string> = null) {
+        super(base_link)
+        if (!base_link) {
+            this.instance_data = instance_data || {}
+        } else {
+            this.instance_data = instance_data || (base_link as InstanceLink).instance_data || {}
+        }
+        this.instance_id = this.instance_data[this.outputId().replace('?', '')]
+        // this.instance_label = this.instance_data[this.outputId().replace('?', '')]
+        this.instance_label = readableName(this.instance_id, this.label)
+    }
+    get id() {
+        return this.link_id
+    }
+}

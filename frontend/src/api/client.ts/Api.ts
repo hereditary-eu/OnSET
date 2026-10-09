@@ -1,5 +1,6 @@
 /* eslint-disable */
 /* tslint:disable */
+// @ts-nocheck
 /*
  * ---------------------------------------------------------------
  * ## THIS FILE WAS GENERATED VIA SWAGGER-TYPESCRIPT-API        ##
@@ -8,6 +9,54 @@
  * ## SOURCE: https://github.com/acacode/swagger-typescript-api ##
  * ---------------------------------------------------------------
  */
+
+/** ResultAttributionType */
+export enum ResultAttributionType {
+  Topic = "topic",
+  Query = "query",
+}
+
+/** RETURN_TYPE */
+export enum RETURN_TYPE {
+  Subject = "subject",
+  Link = "link",
+  Both = "both",
+}
+
+/** RELATION_TYPE */
+export enum RELATION_TYPE {
+  Property = "property",
+  Instance = "instance",
+}
+
+/** OperationType */
+export enum OperationType {
+  Add = "add",
+  Remove = "remove",
+}
+
+/** ManifoldAlg */
+export enum ManifoldAlg {
+  TSNE = "TSNE",
+  MDS = "MDS",
+  Smacof = "smacof",
+}
+
+/** FUZZY_QUERY_ORDER */
+export enum FUZZY_QUERY_ORDER {
+  Score = "score",
+  Instances = "instances",
+}
+
+/** AssistantSubQueryType */
+export enum AssistantSubQueryType {
+  String = "string",
+  Number = "number",
+  Boolean = "boolean",
+  Date = "date",
+  Subject = "subject",
+  QueryProp = "query_prop",
+}
 
 /** AssistantLink */
 export interface AssistantLink {
@@ -44,46 +93,8 @@ export interface AssistantSubQuery {
   from_id: string;
 }
 
-/** AssistantSubQueryType */
-export enum AssistantSubQueryType {
-  String = "string",
-  Number = "number",
-  Boolean = "boolean",
-  Date = "date",
-  Subject = "subject",
-  QueryProp = "query_prop",
-}
-
 /** AssistantSubject */
-export interface AssistantSubjectInput {
-  /**
-   * Type
-   * @default "subject"
-   */
-  type?: "subject";
-  /** Subject Id */
-  subject_id: string;
-  /** Internal Id */
-  internal_id: string;
-  /**
-   * Subqueries
-   * @default []
-   */
-  subqueries?: AssistantSubQuery[];
-  /**
-   * X
-   * @default 0
-   */
-  x?: number;
-  /**
-   * Y
-   * @default 0
-   */
-  y?: number;
-}
-
-/** AssistantSubject */
-export interface AssistantSubjectOutput {
+export interface AssistantSubject {
   /**
    * Type
    * @default "subject"
@@ -112,28 +123,8 @@ export interface AssistantSubjectOutput {
 
 /** Body_load_ontology_management_ontology_post */
 export interface BodyLoadOntologyManagementOntologyPost {
-  /**
-   * Ontology
-   * @format binary
-   */
-  ontology: File;
-}
-
-/** CandidateConstraint */
-export interface CandidateConstraint {
-  /** Property */
-  property: string;
-  /** Value */
-  value: string | null;
-  /** Modifier */
-  modifier: string | null;
-  /** Score */
-  score: number;
-  /** Type */
-  type: string;
-  /** Entity */
-  entity: string;
-  link?: SubjectLink | null;
+  /** Ontology */
+  ontology: string;
 }
 
 /** CandidateEntity */
@@ -182,11 +173,29 @@ export interface Candidates {
    * @default "Found Relations and Entities"
    */
   message?: string;
+}
+
+/** ClosestRequest */
+export interface ClosestRequest {
+  /** Embedding */
+  embedding: number[] | null;
+  /** Query */
+  query: string | null;
+  /** All Embeddings */
+  all_embeddings: number[][];
   /**
-   * Constraints
-   * @default []
+   * N Closest
+   * @default 5
    */
-  constraints?: CandidateConstraint[];
+  n_closest?: number;
+}
+
+/** ClosestResponse */
+export interface ClosestResponse {
+  /** Index */
+  index: number;
+  /** Distance */
+  distance: number;
 }
 
 /** Constraint */
@@ -199,15 +208,14 @@ export interface Constraint {
   modifier: string | null;
 }
 
-/** EnrichedConstraint */
-export interface EnrichedConstraint {
-  /** Property */
-  property: string;
-  /** Value */
-  value: string | null;
-  /** Modifier */
-  modifier: string | null;
-  constraint: SubjectLink | null;
+/** DataTensorResp */
+export interface DataTensorResp {
+  /** Data */
+  data: number[];
+  /** Type */
+  type: "float32" | "float64" | "int32" | "int64";
+  /** Shape */
+  shape: number[];
 }
 
 /** EnrichedEntitiesRelations */
@@ -239,7 +247,7 @@ export interface EnrichedEntity {
    * Constraints
    * @default []
    */
-  constraints?: EnrichedConstraint[];
+  constraints?: Constraint[];
   subject: Subject;
 }
 
@@ -286,12 +294,6 @@ export interface Entity {
   constraints?: Constraint[];
 }
 
-/** FUZZY_QUERY_ORDER */
-export enum FUZZY_QUERY_ORDER {
-  Score = "score",
-  Instances = "instances",
-}
-
 /** FuzzyQuery */
 export interface FuzzyQuery {
   /** Q */
@@ -328,6 +330,11 @@ export interface FuzzyQuery {
    * @default true
    */
   include_thing?: boolean;
+  /**
+   * Entity Type
+   * @default "class"
+   */
+  entity_type?: string | null;
 }
 
 /** FuzzyQueryResult */
@@ -391,6 +398,24 @@ export interface Instance {
   label?: string;
 }
 
+/** ManifoldRequest */
+export interface ManifoldRequest {
+  /** Embeddings */
+  embeddings: number[][];
+  /**
+   * N Out
+   * @default 2
+   */
+  n_out?: number;
+  /** @default "TSNE" */
+  alg?: ManifoldAlg;
+  /**
+   * Metric
+   * @default "cosine"
+   */
+  metric?: string;
+}
+
 /** Match */
 export interface Match {
   /**
@@ -419,13 +444,7 @@ export interface Match {
 export interface Operation {
   operation: OperationType;
   /** Data */
-  data: AssistantLink | AssistantSubjectOutput | AssistantSubQuery;
-}
-
-/** OperationType */
-export enum OperationType {
-  Add = "add",
-  Remove = "remove",
+  data: AssistantLink | AssistantSubject | AssistantSubQuery;
 }
 
 /** Operations */
@@ -482,7 +501,7 @@ export interface QueryGraph {
    * Subjects
    * @default []
    */
-  subjects?: AssistantSubjectInput[];
+  subjects?: AssistantSubject[];
   /**
    * Links
    * @default []
@@ -512,21 +531,12 @@ export interface QueryProgress {
    * Relations Steps
    * @default []
    */
-  relations_steps?: (EntitiesRelations | Candidates | EnrichedEntitiesRelations)[];
+  relations_steps?: (
+    | EntitiesRelations
+    | Candidates
+    | EnrichedEntitiesRelations
+  )[];
   enriched_relations?: EnrichedEntitiesRelations | null;
-}
-
-/** RELATION_TYPE */
-export enum RELATION_TYPE {
-  Property = "property",
-  Instance = "instance",
-}
-
-/** RETURN_TYPE */
-export enum RETURN_TYPE {
-  Subject = "subject",
-  Link = "link",
-  Both = "both",
 }
 
 /** Relation */
@@ -573,12 +583,6 @@ export interface ResultAttribution {
    * @default 0
    */
   score?: number;
-}
-
-/** ResultAttributionType */
-export enum ResultAttributionType {
-  Topic = "topic",
-  Query = "query",
 }
 
 /** SparqlQuery */
@@ -698,14 +702,25 @@ export interface ValidationError {
   msg: string;
   /** Error Type */
   type: string;
+  /** Input */
+  input?: any;
+  /** Context */
+  ctx?: object;
 }
 
-import type { AxiosInstance, AxiosRequestConfig, AxiosResponse, HeadersDefaults, ResponseType } from "axios";
+import type {
+  AxiosInstance,
+  AxiosRequestConfig,
+  AxiosResponse,
+  HeadersDefaults,
+  ResponseType,
+} from "axios";
 import axios from "axios";
 
 export type QueryParamsType = Record<string | number, any>;
 
-export interface FullRequestParams extends Omit<AxiosRequestConfig, "data" | "params" | "url" | "responseType"> {
+export interface FullRequestParams
+  extends Omit<AxiosRequestConfig, "data" | "params" | "url" | "responseType"> {
   /** set parameter to `true` for call `securityWorker` for this request */
   secure?: boolean;
   /** request path */
@@ -720,9 +735,13 @@ export interface FullRequestParams extends Omit<AxiosRequestConfig, "data" | "pa
   body?: unknown;
 }
 
-export type RequestParams = Omit<FullRequestParams, "body" | "method" | "query" | "path">;
+export type RequestParams = Omit<
+  FullRequestParams,
+  "body" | "method" | "query" | "path"
+>;
 
-export interface ApiConfig<SecurityDataType = unknown> extends Omit<AxiosRequestConfig, "data" | "cancelToken"> {
+export interface ApiConfig<SecurityDataType = unknown>
+  extends Omit<AxiosRequestConfig, "data" | "cancelToken"> {
   securityWorker?: (
     securityData: SecurityDataType | null,
   ) => Promise<AxiosRequestConfig | void> | AxiosRequestConfig | void;
@@ -732,6 +751,7 @@ export interface ApiConfig<SecurityDataType = unknown> extends Omit<AxiosRequest
 
 export enum ContentType {
   Json = "application/json",
+  JsonApi = "application/vnd.api+json",
   FormData = "multipart/form-data",
   UrlEncoded = "application/x-www-form-urlencoded",
   Text = "text/plain",
@@ -744,8 +764,16 @@ export class HttpClient<SecurityDataType = unknown> {
   private secure?: boolean;
   private format?: ResponseType;
 
-  constructor({ securityWorker, secure, format, ...axiosConfig }: ApiConfig<SecurityDataType> = {}) {
-    this.instance = axios.create({ ...axiosConfig, baseURL: axiosConfig.baseURL || "" });
+  constructor({
+    securityWorker,
+    secure,
+    format,
+    ...axiosConfig
+  }: ApiConfig<SecurityDataType> = {}) {
+    this.instance = axios.create({
+      ...axiosConfig,
+      baseURL: axiosConfig.baseURL || "",
+    });
     this.secure = secure;
     this.format = format;
     this.securityWorker = securityWorker;
@@ -755,7 +783,10 @@ export class HttpClient<SecurityDataType = unknown> {
     this.securityData = data;
   };
 
-  protected mergeRequestParams(params1: AxiosRequestConfig, params2?: AxiosRequestConfig): AxiosRequestConfig {
+  protected mergeRequestParams(
+    params1: AxiosRequestConfig,
+    params2?: AxiosRequestConfig,
+  ): AxiosRequestConfig {
     const method = params1.method || (params2 && params2.method);
 
     return {
@@ -763,7 +794,11 @@ export class HttpClient<SecurityDataType = unknown> {
       ...params1,
       ...(params2 || {}),
       headers: {
-        ...((method && this.instance.defaults.headers[method.toLowerCase() as keyof HeadersDefaults]) || {}),
+        ...((method &&
+          this.instance.defaults.headers[
+            method.toLowerCase() as keyof HeadersDefaults
+          ]) ||
+          {}),
         ...(params1.headers || {}),
         ...((params2 && params2.headers) || {}),
       },
@@ -784,11 +819,15 @@ export class HttpClient<SecurityDataType = unknown> {
     }
     return Object.keys(input || {}).reduce((formData, key) => {
       const property = input[key];
-      const propertyContent: any[] = property instanceof Array ? property : [property];
+      const propertyContent: any[] =
+        property instanceof Array ? property : [property];
 
       for (const formItem of propertyContent) {
         const isFileType = formItem instanceof Blob || formItem instanceof File;
-        formData.append(key, isFileType ? formItem : this.stringifyFormItem(formItem));
+        formData.append(
+          key,
+          isFileType ? formItem : this.stringifyFormItem(formItem),
+        );
       }
 
       return formData;
@@ -812,11 +851,21 @@ export class HttpClient<SecurityDataType = unknown> {
     const requestParams = this.mergeRequestParams(params, secureParams);
     const responseFormat = format || this.format || undefined;
 
-    if (type === ContentType.FormData && body && body !== null && typeof body === "object") {
+    if (
+      type === ContentType.FormData &&
+      body &&
+      body !== null &&
+      typeof body === "object"
+    ) {
       body = this.createFormData(body as Record<string, unknown>);
     }
 
-    if (type === ContentType.Text && body && body !== null && typeof body !== "string") {
+    if (
+      type === ContentType.Text &&
+      body &&
+      body !== null &&
+      typeof body !== "string"
+    ) {
       body = JSON.stringify(body);
     }
 
@@ -838,7 +887,9 @@ export class HttpClient<SecurityDataType = unknown> {
  * @title Ontology Provenance API
  * @version 0.1.0
  */
-export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDataType> {
+export class Api<
+  SecurityDataType extends unknown,
+> extends HttpClient<SecurityDataType> {
   /**
    * No description
    *
@@ -863,7 +914,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @request POST:/sparql
      */
     sparqlQuerySparqlPost: (data: SparqlQuery, params: RequestParams = {}) =>
-      this.request<object[], HTTPValidationError>({
+      this.request<Record<string, any>[], HTTPValidationError>({
         path: `/sparql`,
         method: "POST",
         body: data,
@@ -886,7 +937,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<object, HTTPValidationError>({
+      this.request<Record<string, any>, HTTPValidationError>({
         path: `/sparql`,
         method: "GET",
         query: query,
@@ -902,7 +953,10 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @summary Load Ontology
      * @request POST:/management/ontology
      */
-    loadOntologyManagementOntologyPost: (data: BodyLoadOntologyManagementOntologyPost, params: RequestParams = {}) =>
+    loadOntologyManagementOntologyPost: (
+      data: BodyLoadOntologyManagementOntologyPost,
+      params: RequestParams = {},
+    ) =>
       this.request<any, HTTPValidationError>({
         path: `/management/ontology`,
         method: "POST",
@@ -912,53 +966,52 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         ...params,
       }),
   };
+  topics = {
+    /**
+     * No description
+     *
+     * @name GetTopicsRootTopicsRootGet
+     * @summary Get Topics Root
+     * @request GET:/topics/root
+     */
+    getTopicsRootTopicsRootGet: (
+      query?: {
+        /**
+         * Force Initialize
+         * @default false
+         */
+        force_initialize?: boolean;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<Topic, HTTPValidationError>({
+        path: `/topics/root`,
+        method: "GET",
+        query: query,
+        format: "json",
+        ...params,
+      }),
+  };
   classes = {
     /**
      * No description
      *
-     * @name GetFullClassesClassesFullGet
-     * @summary Get Full Classes
-     * @request GET:/classes/full
+     * @name GetLlmResultsClassesSearchLlmGet
+     * @summary Get Llm Results
+     * @request GET:/classes/search/llm
      */
-    getFullClassesClassesFullGet: (params: RequestParams = {}) =>
-      this.request<Subject[], any>({
-        path: `/classes/full`,
-        method: "GET",
-        format: "json",
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @name GetRootClassesClassesRootsGet
-     * @summary Get Root Classes
-     * @request GET:/classes/roots
-     */
-    getRootClassesClassesRootsGet: (params: RequestParams = {}) =>
-      this.request<Subject[], any>({
-        path: `/classes/roots`,
-        method: "GET",
-        format: "json",
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @name GetClassClassesSubclassesGet
-     * @summary Get Class
-     * @request GET:/classes/subclasses
-     */
-    getClassClassesSubclassesGet: (
-      query: {
-        /** Cls */
-        cls: string;
+    getLlmResultsClassesSearchLlmGet: (
+      query?: {
+        /**
+         * Q
+         * @default "working field of person"
+         */
+        q?: string;
       },
       params: RequestParams = {},
     ) =>
-      this.request<Subject[], HTTPValidationError>({
-        path: `/classes/subclasses`,
+      this.request<QueryProgress, HTTPValidationError>({
+        path: `/classes/search/llm`,
         method: "GET",
         query: query,
         format: "json",
@@ -968,13 +1021,53 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
     /**
      * No description
      *
-     * @name GetClassSearchClassesSubclassesSearchPost
-     * @summary Get Class Search
-     * @request POST:/classes/subclasses/search
+     * @name GetLlmResultsRunningClassesSearchLlmRunningGet
+     * @summary Get Llm Results Running
+     * @request GET:/classes/search/llm/running
      */
-    getClassSearchClassesSubclassesSearchPost: (data: FuzzyQuery, params: RequestParams = {}) =>
+    getLlmResultsRunningClassesSearchLlmRunningGet: (
+      query: {
+        /** Query Id */
+        query_id: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<QueryProgress | null, HTTPValidationError>({
+        path: `/classes/search/llm/running`,
+        method: "GET",
+        query: query,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @name GetLlmExamplesClassesSearchLlmExamplesGet
+     * @summary Get Llm Examples
+     * @request GET:/classes/search/llm/examples
+     */
+    getLlmExamplesClassesSearchLlmExamplesGet: (params: RequestParams = {}) =>
+      this.request<EnrichedEntitiesRelations[], any>({
+        path: `/classes/search/llm/examples`,
+        method: "GET",
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @name SearchClassesClassesSearchPost
+     * @summary Search Classes
+     * @request POST:/classes/search
+     */
+    searchClassesClassesSearchPost: (
+      data: FuzzyQuery,
+      params: RequestParams = {},
+    ) =>
       this.request<FuzzyQueryResults, HTTPValidationError>({
-        path: `/classes/subclasses/search`,
+        path: `/classes/search`,
         method: "POST",
         body: data,
         type: ContentType.Json,
@@ -985,13 +1078,64 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
     /**
      * No description
      *
-     * @name GetMostGenericsClassesParentsMostGenericPost
-     * @summary Get Most Generics
-     * @request POST:/classes/parents/most_generic
+     * @name GetAssistantResultsClassesSearchAssistantPost
+     * @summary Get Assistant Results
+     * @request POST:/classes/search/assistant
      */
-    getMostGenericsClassesParentsMostGenericPost: (data: GeneralizationQuery, params: RequestParams = {}) =>
-      this.request<Subject, HTTPValidationError>({
-        path: `/classes/parents/most_generic`,
+    getAssistantResultsClassesSearchAssistantPost: (
+      data: QueryGraph,
+      query?: {
+        /**
+         * Q
+         * @default "working field of person"
+         */
+        q?: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<Operations, HTTPValidationError>({
+        path: `/classes/search/assistant`,
+        method: "POST",
+        query: query,
+        body: data,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @name EncodeTextClassesSearchEncodeTextPost
+     * @summary Encode Text
+     * @request POST:/classes/search/encode/text
+     */
+    encodeTextClassesSearchEncodeTextPost: (
+      data: string,
+      params: RequestParams = {},
+    ) =>
+      this.request<DataTensorResp, HTTPValidationError>({
+        path: `/classes/search/encode/text`,
+        method: "POST",
+        body: data,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @name EncodeImageClassesSearchEncodeImagePost
+     * @summary Encode Image
+     * @request POST:/classes/search/encode/image
+     */
+    encodeImageClassesSearchEncodeImagePost: (
+      data: string,
+      params: RequestParams = {},
+    ) =>
+      this.request<DataTensorResp, HTTPValidationError>({
+        path: `/classes/search/encode/image`,
         method: "POST",
         body: data,
         type: ContentType.Json,
@@ -1146,23 +1290,6 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
     /**
      * No description
      *
-     * @name SearchClassesClassesSearchPost
-     * @summary Search Classes
-     * @request POST:/classes/search
-     */
-    searchClassesClassesSearchPost: (data: FuzzyQuery, params: RequestParams = {}) =>
-      this.request<FuzzyQueryResults, HTTPValidationError>({
-        path: `/classes/search`,
-        method: "POST",
-        body: data,
-        type: ContentType.Json,
-        format: "json",
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
      * @name GetRelationsClassesRelationsGet
      * @summary Get Relations
      * @request GET:/classes/relations
@@ -1189,24 +1316,14 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
     /**
      * No description
      *
-     * @name GetLlmResultsClassesSearchLlmGet
-     * @summary Get Llm Results
-     * @request GET:/classes/search/llm
+     * @name GetFullClassesClassesFullGet
+     * @summary Get Full Classes
+     * @request GET:/classes/full
      */
-    getLlmResultsClassesSearchLlmGet: (
-      query?: {
-        /**
-         * Q
-         * @default "working field of person"
-         */
-        q?: string;
-      },
-      params: RequestParams = {},
-    ) =>
-      this.request<QueryProgress, HTTPValidationError>({
-        path: `/classes/search/llm`,
+    getFullClassesClassesFullGet: (params: RequestParams = {}) =>
+      this.request<Subject[], any>({
+        path: `/classes/full`,
         method: "GET",
-        query: query,
         format: "json",
         ...params,
       }),
@@ -1214,19 +1331,34 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
     /**
      * No description
      *
-     * @name GetLlmResultsRunningClassesSearchLlmRunningGet
-     * @summary Get Llm Results Running
-     * @request GET:/classes/search/llm/running
+     * @name GetRootClassesClassesRootsGet
+     * @summary Get Root Classes
+     * @request GET:/classes/roots
      */
-    getLlmResultsRunningClassesSearchLlmRunningGet: (
+    getRootClassesClassesRootsGet: (params: RequestParams = {}) =>
+      this.request<Subject[], any>({
+        path: `/classes/roots`,
+        method: "GET",
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @name GetClassClassesSubclassesGet
+     * @summary Get Class
+     * @request GET:/classes/subclasses
+     */
+    getClassClassesSubclassesGet: (
       query: {
-        /** Query Id */
-        query_id: string;
+        /** Cls */
+        cls: string;
       },
       params: RequestParams = {},
     ) =>
-      this.request<QueryProgress | null, HTTPValidationError>({
-        path: `/classes/search/llm/running`,
+      this.request<Subject[], HTTPValidationError>({
+        path: `/classes/subclasses`,
         method: "GET",
         query: query,
         format: "json",
@@ -1236,68 +1368,102 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
     /**
      * No description
      *
-     * @name GetLlmExamplesClassesSearchLlmExamplesGet
-     * @summary Get Llm Examples
-     * @request GET:/classes/search/llm/examples
+     * @name GetClassSearchClassesSubclassesSearchPost
+     * @summary Get Class Search
+     * @request POST:/classes/subclasses/search
      */
-    getLlmExamplesClassesSearchLlmExamplesGet: (params: RequestParams = {}) =>
-      this.request<EnrichedEntitiesRelations[], any>({
-        path: `/classes/search/llm/examples`,
-        method: "GET",
-        format: "json",
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @name GetAssistantResultsClassesSearchAssistantPost
-     * @summary Get Assistant Results
-     * @request POST:/classes/search/assistant
-     */
-    getAssistantResultsClassesSearchAssistantPost: (
-      data: QueryGraph,
-      query?: {
-        /**
-         * Q
-         * @default "working field of person"
-         */
-        q?: string;
-      },
+    getClassSearchClassesSubclassesSearchPost: (
+      data: FuzzyQuery,
       params: RequestParams = {},
     ) =>
-      this.request<Operations, HTTPValidationError>({
-        path: `/classes/search/assistant`,
+      this.request<FuzzyQueryResults, HTTPValidationError>({
+        path: `/classes/subclasses/search`,
         method: "POST",
-        query: query,
+        body: data,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @name GetMostGenericsClassesParentsMostGenericPost
+     * @summary Get Most Generics
+     * @request POST:/classes/parents/most_generic
+     */
+    getMostGenericsClassesParentsMostGenericPost: (
+      data: GeneralizationQuery,
+      params: RequestParams = {},
+    ) =>
+      this.request<Subject, HTTPValidationError>({
+        path: `/classes/parents/most_generic`,
+        method: "POST",
         body: data,
         type: ContentType.Json,
         format: "json",
         ...params,
       }),
   };
-  topics = {
+  nlp = {
     /**
      * No description
      *
-     * @name GetTopicsRootTopicsRootGet
-     * @summary Get Topics Root
-     * @request GET:/topics/root
+     * @name NlpEmbeddingsNlpEmbeddingsGet
+     * @summary Nlp Embeddings
+     * @request GET:/nlp/embeddings
      */
-    getTopicsRootTopicsRootGet: (
-      query?: {
-        /**
-         * Force Initialize
-         * @default false
-         */
-        force_initialize?: boolean;
+    nlpEmbeddingsNlpEmbeddingsGet: (
+      query: {
+        /** Query */
+        query: string;
       },
       params: RequestParams = {},
     ) =>
-      this.request<Topic, HTTPValidationError>({
-        path: `/topics/root`,
+      this.request<Record<string, any>, HTTPValidationError>({
+        path: `/nlp/embeddings`,
         method: "GET",
         query: query,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @name NlpEmbeddingsClosestNlpEmbeddingsClosestPost
+     * @summary Nlp Embeddings Closest
+     * @request POST:/nlp/embeddings/closest
+     */
+    nlpEmbeddingsClosestNlpEmbeddingsClosestPost: (
+      data: ClosestRequest,
+      params: RequestParams = {},
+    ) =>
+      this.request<ClosestResponse[], HTTPValidationError>({
+        path: `/nlp/embeddings/closest`,
+        method: "POST",
+        body: data,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @name NlpEmbeddingsManifoldNlpEmbeddingsManifoldPost
+     * @summary Nlp Embeddings Manifold
+     * @request POST:/nlp/embeddings/manifold
+     */
+    nlpEmbeddingsManifoldNlpEmbeddingsManifoldPost: (
+      data: ManifoldRequest,
+      params: RequestParams = {},
+    ) =>
+      this.request<number[][], HTTPValidationError>({
+        path: `/nlp/embeddings/manifold`,
+        method: "POST",
+        body: data,
+        type: ContentType.Json,
         format: "json",
         ...params,
       }),

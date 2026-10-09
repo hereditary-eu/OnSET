@@ -2,6 +2,8 @@ import type { Candidates, EnrichedEntity, EnrichedRelation, EntitiesRelations, E
 import { SubQuery, Link, SubjectNode, type SubjectConstraint } from "./representation";
 import { NodeLinkRepository } from "./store";
 import { reactive } from "vue";
+import type { Vector2Like } from "three";
+import type { HistoryEntry } from "./history";
 
 export enum OpenEventType {
     TO = 'to_link',
@@ -102,28 +104,28 @@ export function mapERLToStore(step: EntitiesRelations) {
         store.addOutlink(mapped_link, from_subject, to_subject, OpenEventType.TO
         )
     })
-    if ((step as Candidates).constraints) {
-        (step as Candidates).constraints.forEach((candidate) => {
-            let constrained_node = store.nodes.find((n) => n.subject_id == candidate.entity)
-            if (constrained_node) {
-                let constraint_link = new Link({
-                    link_id: 0,
-                    from_id: candidate.entity,
-                    to_id: null,
-                    label: candidate.property,
-                    from_internal_id: candidate.entity,
-                    to_internal_id: candidate.entity,
-                    link_type: 'constraint',
-                    to_proptype: candidate.type,
-                    property_id: candidate.property,
-                    instance_count: 1,
-                    from_subject: constrained_node,
-                    to_subject: null
-                })
-                constrained_node.subqueries.push(SubQuery.construct(constraint_link))
-            }
-        })
-    }
+    // if ((step as Candidates).constraints) {
+    //     (step as Candidates).constraints.forEach((candidate) => {
+    //         let constrained_node = store.nodes.find((n) => n.subject_id == candidate.entity)
+    //         if (constrained_node) {
+    //             let constraint_link = new Link({
+    //                 link_id: 0,
+    //                 from_id: candidate.entity,
+    //                 to_id: null,
+    //                 label: candidate.property,
+    //                 from_internal_id: candidate.entity,
+    //                 to_internal_id: candidate.entity,
+    //                 link_type: 'constraint',
+    //                 to_proptype: candidate.type,
+    //                 property_id: candidate.property,
+    //                 instance_count: 1,
+    //                 from_subject: constrained_node,
+    //                 to_subject: null
+    //             })
+    //             constrained_node.subqueries.push(SubQuery.construct(constraint_link))
+    //         }
+    //     })
+    // }
     store.nodes = store.nodes.map(node => reactive(node))
     store.links = store.links.map(link => reactive(link))
     return store
@@ -150,4 +152,10 @@ export function extentNodes(nodes: SubjectNode[] = []) {
         }
     }
     return { x: min_x, y: min_y, width: max_x - min_x, height: max_y - min_y }
+}
+
+export class HistoryTooltipEvent {
+    position: Vector2Like
+    entry: HistoryEntry | null = null
+    event: MouseEvent
 }
