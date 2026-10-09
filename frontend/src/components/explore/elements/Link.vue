@@ -12,13 +12,15 @@
                 L ${to.x},${to.y - to.height * 2}
                 C ${from.x - from.width},${to.y - from.height * 2} 
                 ${from.x - from.width},${to.y + from.height / 2} 
-                ${from.x},${to.y + from.height / 2}`" fill="none" stroke="#f00" class="link_path"></path>
+                ${from.x},${to.y + from.height / 2}`" fill="none" stroke="#f00" class="link_path"
+                :class="link_statestyle"></path>
         </g>
         <g v-else>
             <path :d="`M ${from.x + from.width},${from.y + from.height / 2} 
                 C ${to.x},${from.y + from.height / 2} 
                 ${from.x + from.width},${to.y + to.height / 2} 
-                ${to.x},${to.y + to.height / 2}`" fill="none" stroke="#666" class="link_path"></path>
+                ${to.x},${to.y + to.height / 2}`" fill="none" stroke="#666" class="link_path" :class="link_statestyle">
+            </path>
         </g>
         <g :transform="`translate(${text_attach_pt.x},${text_attach_pt.y})`">
             <!-- <circle :cx="text_attach_pt.x" :cy="text_attach_pt.y" :r="link_width" class="link_text_circle"></circle> -->
@@ -44,7 +46,7 @@
 import type { NodeLinkRepositoryDiff } from '@/utils/sparql/diff';
 import { DisplayMode, extentNodes, OpenEventType, type SelectorOpenEvent } from '@/utils/sparql/helpers';
 import type { InstanceLink } from '@/utils/sparql/querymapper';
-import type { Link } from '@/utils/sparql/representation';
+import { NodeState, type Link } from '@/utils/sparql/representation';
 import type { NodeLinkRepository } from '@/utils/sparql/store';
 import { ref, watch, reactive, computed, onMounted, defineProps } from 'vue'
 
@@ -79,6 +81,7 @@ let editor_data = reactive({
     show_editpoints: false,
     hover_deletion: false,
     editpoint_r: 7,
+    state: NodeState.NORMAL,
 })
 let extent = computed(() => {
     if (circular_detected.value) {
@@ -144,11 +147,39 @@ const doDeletion = () => {
 
 watch(() => link, () => {
 }, { deep: true })
+watch(() => diff, () => {
+    updateLinkState()
+}, { deep: true })
 onMounted(() => {
     // console.log('Link', link)
+    updateLinkState()
 })
 const link_width = computed(() => {
     return Math.log10(link.instance_count + 1) + 1
+})
+
+const updateLinkState = () => {
+    if (diff) {
+        let diff_link_added = diff.diff_links.added.find(l => l.right?.identifier() == link.identifier())
+        let diff_link_removed = diff.diff_links.removed.find(l => l.left?.identifier() == link.identifier())
+        if (diff_link_added) {
+            editor_data.state = NodeState.ADDED
+            return
+        } else if (diff_link_removed) {
+            editor_data.state = NodeState.REMOVED
+            return
+        }
+
+    }
+    editor_data.state = NodeState.NORMAL
+}
+const link_statestyle = computed(() => {
+    // console.log('subject.state', subject.state)
+    let state = editor_data.state.toLowerCase()
+    if (!state) {
+        return ''
+    }
+    return `link_${state.toLowerCase()}`
 })
 </script>
 <style lang="scss">

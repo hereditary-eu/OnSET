@@ -1,6 +1,6 @@
-import { jsonClone, stringifyJSON } from "../parsing"
-import { DiffInstanceNodeLinkRepository, type InstanceNodeLinkRepository, type ResultList } from "./querymapper"
-import type { Link, SubjectNode, SubQuery } from "./representation"
+import { jsonClone, registerClass, stringifyJSON } from "../parsing"
+import { type InstanceNodeLinkRepository, type ResultList } from "./querymapper"
+import type { InstanceLink, InstanceNode, Link, QuerySet, QuerySetGenerator, SubjectNode, SubQuery } from "./representation"
 import type { NodeLinkRepository } from "./store"
 
 export interface Diffable {
@@ -40,14 +40,15 @@ export class DiffList<T extends Diffable, D extends InstanceDiff<T> = InstanceDi
     constructor(left: T[], right: T[], diff_class: new (left: T, right: T) => D) {
         this.added = right.filter(r => left.filter(l => l.id == r.id).length === 0).map(r => new diff_class(null, r))
         this.removed = left.filter(l => right.filter(r => l.id == r.id).length === 0).map(l => new diff_class(l, null))
-        this.changed = right.map(r => {
+        let mapped = right.map(r => {
             let l = left.find(l => l.id == r.id);
             return l === undefined ? null : {
                 left: l,
                 right: r,
                 changed: l.changed(r)
             }
-        }).filter(lr => lr !== null).filter(lr => lr.changed).map(lr => new diff_class(lr.left, lr.right))
+        }).filter(lr => lr !== null)
+        this.changed = mapped.filter(lr => lr.changed).map(lr => new diff_class(lr.left, lr.right))
     }
 }
 export class NodeDiff<N extends SubjectNode = SubjectNode> extends InstanceDiff<N> {
@@ -60,22 +61,33 @@ export class NodeDiff<N extends SubjectNode = SubjectNode> extends InstanceDiff<
             right?.subqueries || [], SubQueryDiff)
     }
 }
-
+@registerClass
 export class NodeLinkRepositoryDiff<N extends SubjectNode = SubjectNode, L extends Link = Link>
-    extends InstanceDiff<NodeLinkRepository<N, L>> {
+    extends InstanceDiff<NodeLinkRepository<N, L>> implements QuerySetGenerator {
 
     diff_nodes: DiffList<N, NodeDiff<N>> = null
     diff_links: DiffList<L, LinkDiff<L>> = null
+    
 
-
-    constructor(left: NodeLinkRepository<N, L>, right: NodeLinkRepository<N, L>) {
+    constructor(left?: NodeLinkRepository<N, L>, right?: NodeLinkRepository<N, L>) {
         super(left, right)
         this.diff_nodes = new DiffList(left ? left.nodes : [], right ? right.nodes : [], NodeDiff)
         this.diff_links = new DiffList(left ? left.links : [], right ? right.links : [], LinkDiff)
     }
-
+    querySet(): QuerySet {
+        let left_qs = this.left ? this.left.querySet() : null
+        let right_qs = this.right ? this.right.querySet() : null
+        if (!left_qs) return right_qs
+        if (!right_qs) return left_qs
+        return left_qs.merge(right_qs)
+    }
 }
 
+export class DiffInstanceNodeLinkRepository extends NodeLinkRepositoryDiff<InstanceNode, InstanceLink> {
+    constructor(left: InstanceNodeLinkRepository, right: InstanceNodeLinkRepository) {
+        super(left, right)
+    }
+}
 export class ResultListDiff extends InstanceDiff<ResultList> {
     diff_instances: DiffList<InstanceNodeLinkRepository, DiffInstanceNodeLinkRepository>
     constructor(left: ResultList, right: ResultList) {

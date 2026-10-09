@@ -30,8 +30,9 @@ from explorative.exp_model import (
     SubjectInDB
 )
 from typing import Literal
-from enum import Enum
+from enum import Enum 
 from sqlalchemy.orm import Session
+
 
 
 class IterativeAssistant:

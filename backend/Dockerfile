@@ -1,6 +1,6 @@
 FROM ubuntu:24.04 AS build-stage
 WORKDIR /conda
-RUN apt-get update && apt-get install -y  --no-install-recommends cmake build-essential wget ca-certificates git
+RUN apt-get update && apt-get install -y  --no-install-recommends cmake build-essential wget ca-certificates git gcc g++ libssl-dev libxml2-dev libxslt-dev libffi-dev
 
 RUN mkdir -p ./miniconda3
 RUN wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ./miniconda3/miniconda.sh
@@ -41,4 +41,6 @@ ADD . /app
 # Sync the project into a new environment, asserting the lockfile is up to date
 ENV PATH="/app/.venv/bin:$PATH"
 
-CMD [ "python", "-m", "uvicorn", "api:app", "--port", "${ONSET_PORT:-80}" ]
+WORKDIR /app/src
+
+CMD [ "python", "-m", "uvicorn", "api:app", "--host", "0.0.0.0", "--port", "8000" ]
