@@ -1,9 +1,14 @@
+from logging import Logger
+
 from fastapi import FastAPI, Query, UploadFile, Body
 from fastapi.middleware.cors import CORSMiddleware
 
 from typing import Any
 
-from api.config import DEFAULT_MANMAN
+from langchain_classic.smith.evaluation.config import EvalConfig
+
+from api.config import DEFAULT_MANMAN, ManMan
+from pydantic import BaseModel
 from ontology import Graph
 from explorative.exp_model import (
     SparqlQuery,
@@ -11,11 +16,12 @@ from explorative.exp_model import (
 )
 from api.router.classes import classes_router
 from api.router.nlp_helper import nlp_router
+from eval_config import MultimodalConfig
 
-
-logger.info(f"Using config: {db_config}")
+logger = Logger(__name__)
 
 manman = DEFAULT_MANMAN
+logger.info(f"Using config: {manman.db_config}")
 
 app = FastAPI(title="Ontology Provenance API", version="0.1.0")
 app.add_middleware(
@@ -43,18 +49,42 @@ def sparql_query_get(query: str = Query(...)) -> dict[str, Any]:
     return {"results": {"bindings": data}}
 
 
+class ConfigCollection(BaseModel):
+    multimodal: MultimodalConfig
+    name: str
+
+    @classmethod
+    def from_manman(cls, manman: ManMan):
+        return cls(
+            multimodal=manman.db_config.multimodal_config,
+            name=manman.config_name,
+            model_id=manman.db_config.model_id,
+            model_quant=manman.db_config.model_quant,
+        )
+
+
+@app.get("/ontology/config")
+def get_ontology_config():
+    return ConfigCollection.from_manman(manman)
+
+
 @app.post("/management/ontology")
 def load_ontology(
     ontology: UploadFile,
 ):
-    brainteaser_graph = Graph().parse(ontology.file, format="turtle")
+    graph = Graph().parse(ontology.file, format="turtle")
     for prefix in manman.db_config.ttl_prefixes:
-        brainteaser_graph.bind(prefix.ttl_prefix, prefix.uri)
-    return {"ontology": ontology.filename, "prefixes": manman.db_config.ttl_prefixes}
+        graph.bind(prefix.ttl_prefix, prefix.uri)
+
+    return {
+        "ontology": ontology.filename,
+        "prefixes": manman.db_config.ttl_prefixes,
+    }
 
 
 @app.get("/topics/root")
 def get_topics_root(force_initialize: bool = Query(False)) -> Topic:
+    logger.info("Fetching root topics")
     # guidance_man.initialize_topics(force_initialize)
     return manman.guidance_man.get_topic_tree()
 

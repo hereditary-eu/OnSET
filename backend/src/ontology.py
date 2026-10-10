@@ -14,6 +14,7 @@ from rdflib.plugins.sparql import prepareQuery
 from tqdm import tqdm
 import traceback
 from rdflib.plugins.parsers.notation3 import BadSyntax
+from eval_config import MultimodalConfig
 
 
 class Prefix(BaseModel):
@@ -64,14 +65,14 @@ class OntologyConfig(BaseModel):
     language: str = Field(
         "en", title="Language", description="Language of the ontology"
     )
-    encoding_model: str = Field(
-        "clip-ViT-B-32",
-        title="Encoding Model",
-        description="Model to be used for encoding",
-    )
     ontology_extension: str = Field(
         """
         """
+    )
+    multimodal_config: MultimodalConfig = Field(
+        MultimodalConfig(),
+        title="Multimodal Config",
+        description="Configuration for the multimodal model",
     )
 
 

@@ -195,7 +195,7 @@ const prepareTarget = (link: Link<SubjectNode>) => {
     target.y = selection_event.node.y
     return target
 }
-const select_option = (selected_option: MixedResponse<SubjectNode>, event: MouseEvent) => {
+const select_option = async (selected_option: MixedResponse<SubjectNode>, event: MouseEvent) => {
     display.value = false
     switch (selection_event.side) {
         case OpenEventType.TO:
@@ -205,7 +205,8 @@ const select_option = (selected_option: MixedResponse<SubjectNode>, event: Mouse
             break
         case OpenEventType.PROP:
             selected_option.link.from_internal_id = selection_event.node.internal_id
-            let constraint = SubQuery.construct(selected_option.link)
+            selected_option.link.from_subject = selection_event.node
+            let constraint = await SubQuery.construct(selected_option.link)
             if (!selection_event.node.subqueries) {
                 selection_event.node.subqueries = []
             }
@@ -219,7 +220,7 @@ const select_option = (selected_option: MixedResponse<SubjectNode>, event: Mouse
     }
     emit('select', selected_option)
 }
-const addLabelProp = () => {
+const addLabelProp = async () => {
     const link = new Link()
     link.from_id = selection_event.node.subject_id
     link.from_internal_id = selection_event.node.internal_id
@@ -227,17 +228,17 @@ const addLabelProp = () => {
     link.property_id = 'rdfs:label'
     link.to_proptype = 'xsd:string'
     link.label = selection_event.node.label
-    const constraint = QueryProp.construct(link)
+    const constraint = await QueryProp.construct(link)
     if (!selection_event.node.subqueries) {
         selection_event.node.subqueries = []
     }
     selection_event.node.subqueries.push(constraint)
     display.value = false
 }
-const select_prop = (option: MixedResponse<SubjectNode>, event: MouseEvent) => {
+const select_prop = async (option: MixedResponse<SubjectNode>, event: MouseEvent) => {
     display.value = false
     option.link.from_internal_id = selection_event.node.internal_id
-    let query_prop = QueryProp.construct(option.link)
+    let query_prop = await QueryProp.construct(option.link)
     if (selection_event.node.subqueries) {
         selection_event.node.subqueries.push(query_prop)
     } else {
@@ -256,7 +257,7 @@ const selected_options_filtered = computed(() => {
 const edit_point_hover = (event: MouseEvent, state: boolean) => {
     editor_data.show_editpoints = state
 }
-const addLabelConstraint = () => {
+const addLabelConstraint = async () => {
     const link = new Link()
     link.from_id = selection_event.node.subject_id
     link.from_internal_id = selection_event.node.internal_id
@@ -264,14 +265,14 @@ const addLabelConstraint = () => {
     link.property_id = 'rdfs:label'
     link.to_proptype = 'xsd:string'
     link.label = 'Label'
-    const constraint = SubQuery.construct(link)
+    const constraint = await SubQuery.construct(link)
     if (!selection_event.node.subqueries) {
         selection_event.node.subqueries = []
     }
     selection_event.node.subqueries.push(constraint)
     display.value = false
 }
-const addInstanceConstraint = () => {
+const addInstanceConstraint = async () => {
     const link = new Link()
     link.from_id = selection_event.node.subject_id
     link.from_internal_id = selection_event.node.internal_id

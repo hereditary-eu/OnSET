@@ -1,6 +1,6 @@
 import { jsonClone, registerClass, stringifyJSON } from "../parsing"
 import { type InstanceNodeLinkRepository, type ResultList } from "./querymapper"
-import type { InstanceLink, InstanceNode, Link, QuerySet, QuerySetGenerator, SubjectNode, SubQuery } from "./representation"
+import type { InstanceLink, InstanceNode, Link, QuerySet, QuerySetGenerator, SubjectNode, SubQuery } from "./representation/index"
 import type { NodeLinkRepository } from "./store"
 
 export interface Diffable {
