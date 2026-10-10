@@ -1,38 +1,19 @@
-from fastapi.middleware.cors import CORSMiddleware
-
-from typing import Any
-from rdflib.plugins.stores.sparqlstore import SPARQLStore
-
-from ontology import OntologyManager, OntologyConfig, Graph, InstanceQuery
-from datasetmatcher import DatasetManager
-from explorative.explorative_support import GuidanceManager
-from explorative.exp_model import (
-    SparqlQuery,
-    Topic,
-    SubjectLinkDB,
-    FuzzyQuery,
-    FuzzyQueryResults,
-)
-from explorative.llm_query import LLMQuery, QueryProgress, EnrichedEntitiesRelations
-from eval_config import (
-    BTO_CONFIGS,
-    DBPEDIA_CONFIGS,
-    UNIPROT_CONFIGS,
-    DNB_CONFIGS,
-    GUTBRAINIE_CONFIGS,
-    ALL_CONFIG_MAP,
-)
-from initiator import InitatorManager
-from assistant.model import QueryGraph, Operations
-from assistant.iterative_assistant import IterativeAssistant
-from redis_cache import RedisCache
-from sqlalchemy.orm import Session
-
-from sklearn.manifold import TSNE, MDS
-from sklearn.decomposition import PCA
-import numpy as np
 import os
 
+from assistant.iterative_assistant import IterativeAssistant
+from assistant.model import Operations
+from datasetmatcher import DatasetManager
+from eval_config import (
+    ALL_CONFIG_MAP,
+)
+from explorative.explorative_support import GuidanceManager
+from explorative.llm_query import LLMQuery
+from initiator import InitatorManager
+from ontology import Graph, OntologyConfig, OntologyManager
+from redis_cache import RedisCache
+
+from eval_config import MultimodalConfig
+from rdflib.plugins.stores.sparqlstore import SPARQLStore
 
 base_path = "../../data"
 onto_path = f"{base_path}/hero-ontology/hereditary_clinical.ttl"
@@ -82,7 +63,11 @@ class ManMan:
         self.graph = Graph(store=self.store)
 
         self.config = OntologyConfig()
-        self.config.encoding_model = db_config.encoding_model
+        self.config.multimodal_config = (
+            db_config.multimodal_config
+            if db_config.multimodal_config
+            else MultimodalConfig()
+        )
         self.config.ontology_extension = db_config.ontology_extension
         self.ontology_manager = OntologyManager(self.config, self.graph)
         self.dataset_manager = DatasetManager(self.ontology_manager)

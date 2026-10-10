@@ -7,6 +7,12 @@ class SelectionDistribution(str, Enum):
     UNIFORM = "uniform"
 
 
+class MultimodalConfig(BaseModel):
+    encoding_model: str = "clip-ViT-B-32"
+    image_vector_properties: list[str] = ["dbo:thumbnail_embedding"]
+    image_properties: list[str] = ["<http://dbpedia.org/ontology/Image>"]
+
+
 class EvalConfig(BaseModel):
     model_id: str = Field(
         "NousResearch/Hermes-3-Llama-3.1-8B-GGUF"
@@ -18,7 +24,7 @@ class EvalConfig(BaseModel):
     model_quant: str = "*.Q8_0.gguf"
     redis_cache_url: str = "redis://localhost:6379/1"
     ontology_extension: str = ""
-    encoding_model: str = "clip-ViT-B-32"
+    multimodal_config: MultimodalConfig | None = None
 
 
 DBPEDIA_ONTOLOGY_EXTENSION = """
@@ -38,27 +44,32 @@ DBPEDIA_CONFIGS = [
         model_quant="*-Q6_K.gguf",
         name="DBpedia Mistral",
         ontology_extension=DBPEDIA_ONTOLOGY_EXTENSION,
+        multimodal_config=MultimodalConfig(),
     ),
     EvalConfig(
         model_id="bartowski/Qwen2.5-Coder-32B-Instruct-GGUF",
         model_quant="*-Q4_K_L.gguf",
         name="DBpedia Qwen2.5 Coder 32B",
         ontology_extension=DBPEDIA_ONTOLOGY_EXTENSION,
+        multimodal_config=MultimodalConfig(),
     ),
     EvalConfig(
         model_id="bartowski/Qwen2.5-32B-Instruct-GGUF",
         model_quant="*-Q4_K_L.gguf",
         name="DBpedia Qwen2.5 Coder 32B",
         ontology_extension=DBPEDIA_ONTOLOGY_EXTENSION,
+        multimodal_config=MultimodalConfig(),
     ),
     EvalConfig(
         model_id="NousResearch/Hermes-3-Llama-3.1-8B-GGUF",
         name="DBpedia large",
         ontology_extension=DBPEDIA_ONTOLOGY_EXTENSION,
+        multimodal_config=MultimodalConfig(),
     ),
     EvalConfig(
         model_id="NousResearch/Hermes-3-Llama-3.2-3B-GGUF",
         ontology_extension=DBPEDIA_ONTOLOGY_EXTENSION,
+        multimodal_config=MultimodalConfig(),
     ),
 ]
 OMA_CONFIGS = [
