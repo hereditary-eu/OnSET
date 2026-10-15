@@ -17,7 +17,7 @@ import { Bar } from 'vue-chartjs'
 import type { NodeLinkRepository } from '@/utils/sparql/store';
 import { Api } from '@/api/client.ts/Api';
 import { BACKEND_URL } from '@/utils/config';
-import { QueryProp, SubQueryType } from '@/utils/sparql/representation';
+import { QueryProp, SubQueryType, VectorData } from '@/utils/sparql/representation';
 import Loading from '../../ui/Loading.vue';
 import type * as  Plotly from 'plotly.js';
 import { VuePlotly } from '@clalarco/vue3-plotly';
@@ -82,9 +82,22 @@ const ui_data = reactive({
 const loadData = async () => {
     ui_data.loading = true
     let query_limitless = store.generateQuery(null, null, false);
-    let data = await api.sparql.sparqlQuerySparqlPost({
-        query: query_limitless
-    })
+    let vector_props = store.nodes
+        .flatMap((node) => node.subqueries)
+        .filter((subquery) => subquery.constraint_type == SubQueryType.QUERY_PROP && subquery.link.to_proptype == VectorData.propType)
+    console.log('Vector props', vector_props)
+    ui_data.message = "Loading data..."
+    let data = null
+    if (vector_props.length > 0) {
+        data = await api.search.dimReduceSearchDimReducePost({
+            query: query_limitless,
+            target_properties: vector_props.map((p) => /\?(.*)/.exec(p.propVar())[1])
+        })
+    } else {
+        data = await api.sparql.sparqlQuerySparqlPost({
+            query: query_limitless
+        })
+    }
     result_set.value = data.data
     let props_of_interest = store.nodes
         .map((node) => node.subqueries
@@ -97,7 +110,7 @@ const loadData = async () => {
             chart_mode: mode,
             chart_options: options,
             trace
-        } = buildChartTraces(analyzed_props, result_set.value)
+        } = buildChartTraces(analyzed_props, result_set.value, query_limitless, store)
         console.log('Chart mode', mode, 'Chart options', options, 'Trace', trace)
 
         ui_data.chart_mode = mode
@@ -204,7 +217,8 @@ watch(() => diff, () => {
     width: 100%;
     height: 100%;
 }
-.spacer{
+
+.spacer {
     margin: 10px;
 }
 </style>

@@ -121,6 +121,19 @@ export interface AssistantSubject {
   y?: number;
 }
 
+/** Body_dim_reduce_search_dim_reduce_post */
+export interface BodyDimReduceSearchDimReducePost {
+  /** Query */
+  query: string;
+  /** Target Properties */
+  target_properties: string[];
+  /**
+   * Algorithm
+   * @default "umap"
+   */
+  algorithm?: string;
+}
+
 /** Body_load_ontology_management_ontology_post */
 export interface BodyLoadOntologyManagementOntologyPost {
   /** Ontology */
@@ -196,6 +209,13 @@ export interface ClosestResponse {
   index: number;
   /** Distance */
   distance: number;
+}
+
+/** ConfigCollection */
+export interface ConfigCollection {
+  multimodal: MultimodalConfig;
+  /** Name */
+  name: string;
 }
 
 /** Constraint */
@@ -438,6 +458,30 @@ export interface Match {
    * @default -1
    */
   rank?: number;
+}
+
+/** MultimodalConfig */
+export interface MultimodalConfig {
+  /**
+   * Encoding Model
+   * @default "clip-ViT-B-32"
+   */
+  encoding_model?: string;
+  /**
+   * Image Vector Properties
+   * @default ["dbo:thumbnail_embedding"]
+   */
+  image_vector_properties?: string[];
+  /**
+   * Image Properties
+   * @default ["dbo:thumbnail"]
+   */
+  image_properties?: string[];
+  /**
+   * Image Types
+   * @default ["<http://dbpedia.org/ontology/Image>"]
+   */
+  image_types?: string[];
 }
 
 /** Operation */
@@ -945,6 +989,22 @@ export class Api<
         ...params,
       }),
   };
+  ontology = {
+    /**
+     * No description
+     *
+     * @name GetOntologyConfigOntologyConfigGet
+     * @summary Get Ontology Config
+     * @request GET:/ontology/config
+     */
+    getOntologyConfigOntologyConfigGet: (params: RequestParams = {}) =>
+      this.request<ConfigCollection, any>({
+        path: `/ontology/config`,
+        method: "GET",
+        format: "json",
+        ...params,
+      }),
+  };
   management = {
     /**
      * No description
@@ -1097,46 +1157,6 @@ export class Api<
         path: `/classes/search/assistant`,
         method: "POST",
         query: query,
-        body: data,
-        type: ContentType.Json,
-        format: "json",
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @name EncodeTextClassesSearchEncodeTextPost
-     * @summary Encode Text
-     * @request POST:/classes/search/encode/text
-     */
-    encodeTextClassesSearchEncodeTextPost: (
-      data: string,
-      params: RequestParams = {},
-    ) =>
-      this.request<DataTensorResp, HTTPValidationError>({
-        path: `/classes/search/encode/text`,
-        method: "POST",
-        body: data,
-        type: ContentType.Json,
-        format: "json",
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @name EncodeImageClassesSearchEncodeImagePost
-     * @summary Encode Image
-     * @request POST:/classes/search/encode/image
-     */
-    encodeImageClassesSearchEncodeImagePost: (
-      data: string,
-      params: RequestParams = {},
-    ) =>
-      this.request<DataTensorResp, HTTPValidationError>({
-        path: `/classes/search/encode/image`,
-        method: "POST",
         body: data,
         type: ContentType.Json,
         format: "json",
@@ -1464,6 +1484,89 @@ export class Api<
         method: "POST",
         body: data,
         type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+  };
+  search = {
+    /**
+     * No description
+     *
+     * @name EncodeTextSearchEncodeTextPost
+     * @summary Encode Text
+     * @request POST:/search/encode/text
+     */
+    encodeTextSearchEncodeTextPost: (
+      data: string,
+      params: RequestParams = {},
+    ) =>
+      this.request<DataTensorResp, HTTPValidationError>({
+        path: `/search/encode/text`,
+        method: "POST",
+        body: data,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @name EncodeImageSearchEncodeImagePost
+     * @summary Encode Image
+     * @request POST:/search/encode/image
+     */
+    encodeImageSearchEncodeImagePost: (
+      data: string,
+      params: RequestParams = {},
+    ) =>
+      this.request<DataTensorResp, HTTPValidationError>({
+        path: `/search/encode/image`,
+        method: "POST",
+        body: data,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @name DimReduceSearchDimReducePost
+     * @summary Dim Reduce
+     * @request POST:/search/dim-reduce
+     */
+    dimReduceSearchDimReducePost: (
+      data: BodyDimReduceSearchDimReducePost,
+      params: RequestParams = {},
+    ) =>
+      this.request<Record<string, any>[], HTTPValidationError>({
+        path: `/search/dim-reduce`,
+        method: "POST",
+        body: data,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @name WikimediaProxySearchWikimediaProxyGet
+     * @summary Wikimedia Proxy
+     * @request GET:/search/wikimedia/proxy
+     */
+    wikimediaProxySearchWikimediaProxyGet: (
+      query: {
+        /** Url */
+        url: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<any, HTTPValidationError>({
+        path: `/search/wikimedia/proxy`,
+        method: "GET",
+        query: query,
         format: "json",
         ...params,
       }),

@@ -6,7 +6,7 @@ from fastapi import (
 from api.config import DEFAULT_MANMAN
 from model import Instance, Property, Subject
 from ontology import InstanceQuery
-
+from utils import wrap_iri
 
 manman = DEFAULT_MANMAN
 
@@ -25,4 +25,5 @@ def get_named_instance_search(query: InstanceQuery = Query()) -> list[Instance]:
 
 @instances_router.get("/properties")
 def get_named_instance_properties(instance_id: str = Query()) -> dict[str, Property]:
+    instance_id = wrap_iri(instance_id)
     return manman.ontology_manager.outgoing_edges_for(instance_id)

@@ -1,16 +1,15 @@
 <template>
     <div class="constraint">
         <div class="constraint_label">{{ constraint.link.label }}</div>
-        <div>
-            <span class="constraint_select"><select @change="change_operator" :value="constraint.type">
-                    <option v-for="option in operator_options" :value="option.value">{{ option.label }}</option>
-                </select></span><span><input type="date" v-model="date_value" class="constraint_input"></span>
-        </div>
+        <span class="constraint_select"><select @change="change_operator" :value="constraint.type">
+                <option v-for="option in operator_options" :value="option.value">{{ option.label }}</option>
+            </select></span><span><input type="date" v-model="date_value" class="constraint_input"></span>
+
     </div>
 </template>
 <script setup lang="ts">
-import { SubQuery, DateConstraint, NumberConstraint, NumberConstraintType, StringConstraint, StringConstraintType } from '@/utils/sparql/representation';
-import { defineProps, defineModel, computed, ref, watch } from 'vue'
+import { DateConstraint, NumberConstraintType } from '@/utils/sparql/representation';
+import { defineProps, ref, watch } from 'vue'
 
 const { constraint } = defineProps({
     constraint: {
@@ -19,7 +18,7 @@ const { constraint } = defineProps({
     }
 })
 console.log('DateConstraintEditor', constraint)
-const date_value = ref(constraint.value ? constraint.value.toISOString().split('T')[0] : "")
+const date_value = ref((constraint.value && constraint.value instanceof Date) ? constraint.value.toISOString().split('T')[0] : "")
 
 const operator_options = [
     { value: NumberConstraintType.EQUALS, label: '=' },
@@ -48,8 +47,13 @@ watch(() => date_value, () => {
 }
 
 .constraint_input {
-    width: 50px;
+    width: 100px;
     border: rgb(105, 132, 99) 1px solid;
     border-radius: 0px;
+}
+
+.constraint {
+    display: flex;
+    flex-direction: row;
 }
 </style>

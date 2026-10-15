@@ -2,7 +2,7 @@ import { Api } from "@/api/client.ts/Api";
 import { InstanceLink, InstanceNode, Link, SubjectNode as NodeRepr, type QuerySetGenerator } from "./representation";
 import { BACKEND_URL } from "../config";
 import { Vector2, type Vector2Like } from "three";
-import { parseJSON, registerClass, stringifyJSON } from "../parsing";
+import { parseJSON, ReconstructableClass, registerClass, stringifyJSON } from "../parsing";
 import { NodeLinkRepository as NodeLinkRepository } from "./store";
 import { DiffList, InstanceDiff, NodeLinkRepositoryDiff, type Diffable } from "./diff";
 export function readableName(uri?: string, label?: string) {
@@ -23,7 +23,7 @@ export class PropertiesOpenEvent {
     node: InstanceNode;
 }
 @registerClass
-export class InstanceNodeLinkRepository extends NodeLinkRepository<InstanceNode, InstanceLink> {
+export class InstanceNodeLinkRepository extends NodeLinkRepository<InstanceNode, InstanceLink> implements ReconstructableClass {
 
     constructor(links?: InstanceLink[], nodes?: InstanceNode[]) {
         super();
@@ -34,6 +34,8 @@ export class InstanceNodeLinkRepository extends NodeLinkRepository<InstanceNode,
         let node_ids = this.nodes.map(n => n.instance_id).reduce((p, c) => `${p}-${c}`, '')
         // console.log("ID", node_ids)
         return node_ids as string | number
+    }
+    postConstruct(): void {
     }
     // changed(other: 
 

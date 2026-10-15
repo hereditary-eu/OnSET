@@ -34,26 +34,20 @@
     </div>
 </template>
 <script setup lang="ts">
-import { ref, watch, reactive, computed, onMounted, onBeforeMount } from 'vue'
-import { SubjectNode, Link } from '@/utils/sparql/representation';
-import NodeComp from './elements/Node.vue';
+import { ref, watch, reactive, onMounted } from 'vue'
+import { Link } from '@/utils/sparql/representation';
 import OutLinkSelector from './elements/panels/LinkSelector.vue';
-import OverviewBox from './elements/OverviewBox.vue';
 import { DisplayMode, InstanceSelectorOpenEvent, LinkEditEvent, OpenEventType, type SelectorOpenEvent } from '@/utils/sparql/helpers';
 import InstanceSelector from './elements/panels/InstanceSelector.vue';
-import { RepositoryState, type MixedResponse, type NodeLinkRepository } from '@/utils/sparql/store';
+import { RepositoryState, type NodeLinkRepository } from '@/utils/sparql/store';
 import GraphView from './elements/GraphView.vue';
-import { OverviewCircles } from '@/utils/three-man/OverviewCircles';
-import { fa } from 'vuetify/locale';
 import { Api } from '@/api/client.ts/Api';
 import { BACKEND_URL } from '@/utils/config';
 // import type { SubjectInCircle } from '@/utils/d3-man/CircleMan';
 
 import type { NodeLinkRepositoryDiff } from '@/utils/sparql/diff';
 import TypeSelector from './elements/panels/TypeSelector.vue';
-import type { PropertiesOpenEvent } from '@/utils/sparql/querymapper';
 import LinkComposer from './elements/LinkComposer.vue';
-import type { SubjectInCircle } from '@/utils/three-man/CircleMan3D';
 import { ViewPortState } from '@/utils/editing';
 import { MOUSE } from 'three';
 

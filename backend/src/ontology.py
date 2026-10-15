@@ -16,6 +16,8 @@ import traceback
 from rdflib.plugins.parsers.notation3 import BadSyntax
 from eval_config import MultimodalConfig
 
+from utils import wrap_iri
+
 
 class Prefix(BaseModel):
     ttl_prefix: str = Field(
@@ -29,11 +31,6 @@ class Prefix(BaseModel):
 
 
 class OntologyConfig(BaseModel):
-    ttl_prefixes: list[Prefix] = Field(
-        [Prefix()],
-        title="Prefixes",
-        description="List of prefixes to be used in the ontology",
-    )
     parent_class_query: str = Field(
         f"""SELECT ?cls
             WHERE {{
@@ -74,6 +71,14 @@ class OntologyConfig(BaseModel):
         title="Multimodal Config",
         description="Configuration for the multimodal model",
     )
+    additional_namespaces: dict[str, str] = Field(
+        {
+            "rdfs": "http://www.w3.org/2000/01/rdf-schema#",
+            "owl": "http://www.w3.org/2002/07/owl#",
+        },
+        title="Additional Namespaces",
+        description="Additional namespaces to be used in the ontology",
+    )
 
 
 INT_COMPATIBLE_TYPES = [
@@ -94,6 +99,8 @@ class OntologyManager:
     def __init__(self, config: OntologyConfig, brainteaser_graph: Graph):
         self.config = config
         self.onto = brainteaser_graph
+        for prefix, ns in config.additional_namespaces.items():
+            self.onto.namespace_manager.bind(prefix, ns)
         self.addtional_graph: Graph | None = None
         if len(config.ontology_extension.strip()) > 0:
             try:
@@ -549,16 +556,19 @@ OPTIONAL {{?obj rdfs:label ?obj_lbl.}}
         return graph
 
     def instance_count(self, cls: str):
+        cls = wrap_iri(cls)
         return self.q_to_df(
             f"SELECT DISTINCT (COUNT(?s) as ?count) WHERE {{?s a {cls}}}"
-        )[0][0].value
+        )[0][0]
 
     def property_count(self, cls: str):
+        cls = wrap_iri(cls)
         return list(
             self.__query(f"SELECT DISTINCT (COUNT(?s) as ?count) WHERE {{?s {cls} ?o}}")
-        )[0][0].value
+        )[0][0]
 
     def get_parents(self, cls: str) -> list[str]:
+        cls = wrap_iri(cls)
         parents = self.q_to_df_values(
             f"""SELECT DISTINCT ?p WHERE {{ {cls} rdfs:subClassOf* ?p. }}"""
         )

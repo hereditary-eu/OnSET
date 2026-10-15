@@ -1,6 +1,9 @@
+import type { Subject } from "@/api/client.ts/Api";
 import { getMax, getMin } from "../helpers";
-import type { QueryProp } from "../sparql/representation";
+import { Link, SubjectNode, VectorData, type QueryProp } from "../sparql/representation";
+import type { NodeLinkRepository } from "../sparql/store";
 import type { PlotCacheEntry } from "./plot-cache";
+import { buildEmbeddingPlotData as buildEmbeddingPlotTraces } from "./plot-embedding-builder";
 import { BucketSpecifier, ChartMode, ContinuousBucketSpecifier, DiscreteBucketSpecifier, PropSpecificType, PropType, type AnalyzedProp } from "./plot-types";
 
 //https://stackoverflow.com/questions/12303989/cartesian-product-of-multiple-arrays-in-javascript
@@ -72,7 +75,10 @@ export function analyzeProps(prop: QueryProp, result_set: Record<string, any>[])
     let prop_data = result_set.map((row) => row[query_id])
     let prop_type = PropType.DISCRETE
     let prop_specific_type = PropSpecificType.STRING
-    if (prop_data.length > 0) {
+    if (prop.link.to_proptype == VectorData.propType) {
+        prop_type = PropType.VECTOR
+        prop_specific_type = PropSpecificType.VECTOR
+    } else if (prop_data.length > 0) {
         if (typeof prop_data[0] == 'number') {
             prop_type = PropType.CONTINOUS
             prop_specific_type = PropSpecificType.NUMBER
@@ -97,6 +103,11 @@ export function analyzeProps(prop: QueryProp, result_set: Record<string, any>[])
         query_id
     } as AnalyzedProp
 }
+export interface BuildTrace {
+    trace: Plotly.PlotData
+    chart_mode: ChartMode
+    chart_options: Plotly.Layout
+}
 
 /**
  * Lets do some heuristics
@@ -111,14 +122,19 @@ export function analyzeProps(prop: QueryProp, result_set: Record<string, any>[])
  *   - 2 continous, 1 discrete: scatter plot, color by discrete
  *   - 1 continous, 2 discrete: ??
  *   - 3 discrete: ??
- *  
+ * - 1 var vector
+ *   - embedding plot, calculate umap in backend, return x,y coordinates
+ *   - 1+ continous props: color by continous
+ *   - 1+ discrete props: color by discrete
  */
-
-export function buildChartTraces(analyzed_props: AnalyzedProp[], result_set: Record<string, any>[]) {
+export function buildChartTraces(analyzed_props: AnalyzedProp[], result_set: Record<string, any>[], query_limitless: string, store: NodeLinkRepository<SubjectNode, Link<Subject>>): BuildTrace {
     let continous_props = analyzed_props.filter((prop) => prop.prop_type == PropType.CONTINOUS)
     let trace = {} as Plotly.PlotData
     let chart_mode = ChartMode.BAR
     let chart_options = {} as Plotly.Layout
+    if (analyzed_props.filter((prop) => prop.prop_type == PropType.VECTOR).length > 0) {
+        return buildEmbeddingPlotTraces(analyzed_props, result_set, query_limitless, store)
+    }
     switch (analyzed_props.length) {
         case 0:
             throw Error('No properties to display')

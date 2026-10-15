@@ -15,6 +15,7 @@ from explorative.exp_model import (
     Topic,
 )
 from api.router.classes import classes_router
+from api.router.multimodal import multimodal_router
 from api.router.nlp_helper import nlp_router
 from eval_config import MultimodalConfig
 
@@ -64,7 +65,7 @@ class ConfigCollection(BaseModel):
 
 
 @app.get("/ontology/config")
-def get_ontology_config():
+def get_ontology_config() -> ConfigCollection:
     return ConfigCollection.from_manman(manman)
 
 
@@ -91,3 +92,4 @@ def get_topics_root(force_initialize: bool = Query(False)) -> Topic:
 
 app.include_router(classes_router)
 app.include_router(nlp_router)
+app.include_router(multimodal_router)

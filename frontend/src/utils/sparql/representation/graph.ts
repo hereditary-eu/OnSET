@@ -2,11 +2,11 @@
 
 
 import type { Subject, Property, SubjectLink, Api } from "@/api/client.ts/Api";
-import { registerClass } from "@/utils/parsing";
-import { NODE_HEIGHT, NODE_WIDTH, toVar, OpenEventType } from "../helpers";
+import { ReconstructableClass, registerClass } from "@/utils/parsing";
+import { NODE_HEIGHT, NODE_WIDTH, toVar, OpenEventType, CONSTRAINT_HEIGHT, CONSTRAINT_WIDTH } from "../helpers";
 import { NodeLinkRepository } from "../store";
 import { readableName } from "../querymapper";
-import type { SubQuery } from "./subqueries";
+import { ALLOWED_IMAGE_PROP_TYPES, QueryProp, SubQueryType, type SubQuery } from "./subqueries";
 import { DiffList, SubQueryDiff, type Diffable } from "../diff";
 
 
@@ -25,7 +25,7 @@ export enum LinkType {
     SIMILARITY = "similarity",
 }
 @registerClass
-export class LinkTriplet {
+export class LinkTriplet implements ReconstructableClass {
     from_id: string;
     link_id: string;
     to_id: string;
@@ -33,9 +33,11 @@ export class LinkTriplet {
     constructor(link_type: LinkType = LinkType.STRUCTURAL) {
         this.semantic_link_type = link_type;
     }
+    postConstruct(): void {
+    }
 }
 @registerClass
-export class QuerySet {
+export class QuerySet implements ReconstructableClass {
     //from internal_id to subject_id
     nodes: Record<string, SubjectNode>;
     link_triplets: LinkTriplet[];
@@ -65,13 +67,16 @@ export class QuerySet {
         }
         return this
     }
+    postConstruct(): void {
+
+    }
 }
 export interface QuerySetGenerator {
     querySet(): QuerySet
 }
 let internal_id_counter: number = 0;
 @registerClass
-export class SubjectNode implements Subject, Diffable {
+export class SubjectNode implements Subject, Diffable, ReconstructableClass {
     subject_id: string;
     label: string;
     spos?: Record<string, Property>;
@@ -171,6 +176,10 @@ export class SubjectNode implements Subject, Diffable {
     get id(): string | number {
         return this.internal_id
     }
+
+    postConstruct(): void {
+
+    }
 }
 @registerClass
 export class UnknownNode extends SubjectNode {
@@ -196,7 +205,7 @@ export enum LinkQuantifierType {
     EXACTLY = "EXACTLY",
 }
 @registerClass
-export class LinkQuantifier {
+export class LinkQuantifier implements ReconstructableClass {
     min: number | null;
     max: number | null;
     type: LinkQuantifierType;
@@ -219,9 +228,13 @@ export class LinkQuantifier {
         }
         return "";
     }
+
+    postConstruct(): void {
+
+    }
 }
 @registerClass
-export class Link<N extends Subject = Subject> implements SubjectLink, Diffable {
+export class Link<N extends Subject = Subject> implements SubjectLink, Diffable, ReconstructableClass {
 
     link_id: number;
     from_id: string;
@@ -313,8 +326,54 @@ export class Link<N extends Subject = Subject> implements SubjectLink, Diffable 
     get id(): string | number {
         return this.link_id
     }
+
+    postConstruct(): void {
+
+    }
 }
 export type FuzzyQueryRequest = Parameters<typeof Api.prototype.classes.searchClassesClassesSearchPost>[0]
+
+@registerClass
+export class InstanceQueryProp extends QueryProp {
+    value: string;
+    constructor() {
+        super();
+        this.value = null;
+        this.constraint_type = SubQueryType.INSTANCE_PROP;
+    }
+    get is_image_prop(): boolean {
+        if (this.link.to_proptype && ALLOWED_IMAGE_PROP_TYPES.includes(this.link.to_proptype)) {
+            return true
+        }
+        return false
+    }
+    get height(): number {
+        if (this.is_image_prop) {
+            return CONSTRAINT_HEIGHT
+        }
+        return CONSTRAINT_HEIGHT / 2
+    }
+    get width(): number {
+        if (this.is_image_prop) {
+            return CONSTRAINT_HEIGHT + 15
+        }
+        return CONSTRAINT_WIDTH / 2
+    }
+    fillFromQueryProp(prop: QueryProp) {
+        for (const key in prop) {
+            if (Object.prototype.hasOwnProperty.call(prop, key)) {
+                this[key] = prop[key];
+            }
+        }
+        this.constraint_type = SubQueryType.INSTANCE_PROP;
+    }
+    changed(other: Diffable): boolean {
+        if (!(other instanceof InstanceQueryProp)) {
+            return true
+        }
+        return super.changed(other) || this.value != other.value
+    }
+}
 
 @registerClass
 export class InstanceNode extends SubjectNode {
@@ -323,16 +382,28 @@ export class InstanceNode extends SubjectNode {
     interactive_clone: InstanceNode | null = null
     expanded: boolean = false
     instance_data: Record<string, string> = null
+    base_node: SubjectNode = null
+    instance_query_props: InstanceQueryProp[] = []
     constructor(base_node?: SubjectNode | InstanceNode, instance_data?: Record<string, string>) {
         super(base_node)
         if (!base_node) {
             this.instance_data = instance_data || {}
         } else {
+            this.base_node = base_node
             this.instance_data = instance_data || (base_node as InstanceNode).instance_data || {}
         }
         this.instance_id = this.instance_data[this.outputId().replace('?', '')]
         this.instance_label = this.instance_data[this.labelId().replace('?', '')]
         this.instance_label = readableName(this.instance_id, this.instance_label)
+    }
+    postConstruct(): void {
+        console.log("Post construct for instance node", this)
+        this.instance_query_props = this.subqueries?.filter(sq => sq.constraint_type == SubQueryType.QUERY_PROP).map(sq => {
+            let prop = new InstanceQueryProp()
+            prop.fillFromQueryProp(sq as QueryProp)
+            prop.value = this.instance_data[prop.propVar().replace('?', '')]
+            return prop
+        }) || []
     }
     get id() {
         return this.instance_id

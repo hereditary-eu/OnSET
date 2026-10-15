@@ -16,7 +16,7 @@
                     result_subject.instance_label :
                     subject.label }}
             </text>
-            <g v-if="mode == DisplayMode.EDIT || mode == DisplayMode.SELECT"
+            <g v-if="mode == DisplayMode.EDIT || mode == DisplayMode.SELECT || DisplayMode.RESULT_INTERACTIVE || DisplayMode.RESULTS"
                 v-for="constr_info in constraint_list_mapped"
                 :transform="`translate(${subject.width / 2},${constr_info.y})`">
                 <Sublink :subquery="constr_info.subquery" :extend_path="constr_info.extend_path" :diff="diff_node"
@@ -68,7 +68,7 @@
     </g>
 </template>
 <script setup lang="ts">
-import { ref, watch, reactive, computed, onMounted, onBeforeUpdate, type Prop, onUpdated, onRenderTriggered } from 'vue'
+import { watch, reactive, computed, onMounted } from 'vue'
 import { InstanceNode, SubjectNode as NodeRepr, NodeState, SubQuery } from '@/utils/sparql/representation';
 import { CONSTRAINT_PADDING, CONSTRAINT_WIDTH, DisplayMode, InstanceSelectorOpenEvent, OpenEventType, SelectorOpenEvent } from '@/utils/sparql/helpers';
 import Sublink from './Subquery.vue';
@@ -141,19 +141,7 @@ class SubQueryDisplay {
         this.subquery = subquery
     }
 }
-const constraint_list_mapped = computed(() => {
-    if (!subject.subqueries) {
-        return []
-    }
-
-    let constraints = subject.subqueries.filter(constr => constr != null).map((subquery) => new SubQueryDisplay(subquery))
-    if (diff_node.value) {
-        constraints = constraints.concat(diff_node.value.diff_subqueries.removed.map((subquery) => new SubQueryDisplay(subquery.left, NodeState.REMOVED)))
-    }
-    constraints = constraints.concat()
-    // if (constraints.length > 0) {
-    //     constraints[0].first_prop = true
-    // }
+const calculate_heights = (constraints: SubQueryDisplay[]): SubQueryDisplay[] => {
     let y_pos = subject.height + CONSTRAINT_PADDING
     let last_height = 0
     for (let constr of constraints) {
@@ -167,6 +155,24 @@ const constraint_list_mapped = computed(() => {
         last_height = constr.subquery.height
     }
     return constraints
+}
+const constraint_list_mapped = computed(() => {
+    if (!subject.subqueries) {
+        return []
+    }
+
+    let constraints = subject.subqueries.filter(constr => constr != null).map((subquery) => new SubQueryDisplay(subquery))
+    if (diff_node.value) {
+        constraints = constraints.concat(diff_node.value.diff_subqueries.removed.map((subquery) => new SubQueryDisplay(subquery.left, NodeState.REMOVED)))
+    }
+    if (mode == DisplayMode.RESULTS || mode == DisplayMode.RESULT_INTERACTIVE) {
+        console.log('preparing constraints for instance node', subject)
+        if (!(subject as InstanceNode).instance_query_props) {
+            return []
+        }
+        constraints = (subject as InstanceNode).instance_query_props.map((subquery) => new SubQueryDisplay(subquery))
+    }
+    return calculate_heights(constraints)
 })
 const constraints_height = computed(() => {
     return constraint_list_mapped.value.reduce((acc, constr) => acc + constr.extend_path + constr.subquery.height / 2, 0)
@@ -247,6 +253,7 @@ const deleteConstraint = (constraint) => {
     subject.subqueries = subject.subqueries.filter((constr) => constr != constraint)
 }
 const result_subject = computed(() => subject as InstanceNode)
+
 onMounted(() => {
     // console.log('subject', subject)
     updateNodeState()

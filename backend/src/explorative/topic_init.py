@@ -418,7 +418,7 @@ class TopicInitator:
                     ).first()
                     if (class_exists is None) or (
                         link.to_id
-                        in self.guidance_man.oman.config.multimodal_config.image_properties
+                        in self.guidance_man.oman.config.multimodal_config.image_types
                     ):
                         link.to_proptype = link.to_id
                         link.to_id = None
