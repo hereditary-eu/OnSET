@@ -351,7 +351,9 @@ class GuidanceManager:
     @property
     def encoding_model(self):
         if self._encoding_model is None:
-            self._encoding_model = SentenceTransformer(self.oman.config.encoding_model)
+            self._encoding_model = SentenceTransformer(
+                self.oman.config.multimodal_config.encoding_model
+            )
         return self._encoding_model
 
     def encode(self, text: str | None = None, image: Image | None = None):

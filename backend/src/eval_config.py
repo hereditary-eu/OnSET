@@ -10,7 +10,8 @@ class SelectionDistribution(str, Enum):
 class MultimodalConfig(BaseModel):
     encoding_model: str = "clip-ViT-B-32"
     image_vector_properties: list[str] = ["dbo:thumbnail_embedding"]
-    image_properties: list[str] = ["<http://dbpedia.org/ontology/Image>"]
+    image_properties: list[str] = ["dbo:thumbnail"]
+    image_types: list[str] = ["<http://dbpedia.org/ontology/Image>"]
 
 
 class EvalConfig(BaseModel):

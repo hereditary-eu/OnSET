@@ -1,7 +1,7 @@
 import type { FuzzyQueryResult, QueryGraph, Subject } from "@/api/client.ts/Api";
 import { jsonClone, registerClass } from "../parsing";
 import { OpenEventType } from "./helpers";
-import { Link, LinkType, QueryProp, QuerySet, SubjectConstraint, SubjectNode, SubQuery, type QuerySetGenerator } from "./representation";
+import { Link, LinkTriplet, LinkType, QueryProp, QuerySet, SubjectConstraint, SubjectNode, SubQuery, type QuerySetGenerator } from "./representation";
 import type { Diffable } from "./diff";
 import { el } from "vuetify/locale";
 
@@ -34,6 +34,9 @@ export class MixedResponse<N extends Subject = Subject> implements FuzzyQueryRes
             this.store.nodes.push(...[from_subject, to_subject])
 
         }
+    }
+    postConstruct(): void {
+        
     }
 
 }
@@ -243,6 +246,7 @@ export class NodeLinkRepository<N extends SubjectNode = SubjectNode, L extends L
             }
         }
         for (let constraint of set.filter) {
+            // console.log("Constructing", constraint)
             let from = this.from(constraint.link)
             let constrained_id = constraint.propVar()
             let expression = constraint.expression(constrained_id)
@@ -316,7 +320,7 @@ export class NodeLinkRepository<N extends SubjectNode = SubjectNode, L extends L
                 link_id: link_id,
                 to_id: to.outputId(),
                 semantic_link_type: link.semantic_link_type
-            })
+            } as LinkTriplet)
         }
         return set
     }
@@ -344,6 +348,10 @@ export class NodeLinkRepository<N extends SubjectNode = SubjectNode, L extends L
             }
         })
         return query_graph
+    }
+
+    postConstruct(): void {
+        
     }
 
 }

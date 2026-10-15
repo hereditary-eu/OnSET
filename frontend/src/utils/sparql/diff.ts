@@ -1,4 +1,4 @@
-import { jsonClone, registerClass, stringifyJSON } from "../parsing"
+import { jsonClone, ReconstructableClass, registerClass, stringifyJSON } from "../parsing"
 import { type InstanceNodeLinkRepository, type ResultList } from "./querymapper"
 import type { InstanceLink, InstanceNode, Link, QuerySet, QuerySetGenerator, SubjectNode, SubQuery } from "./representation/index"
 import type { NodeLinkRepository } from "./store"
@@ -7,7 +7,7 @@ export interface Diffable {
     changed(other: this): boolean
     get id(): string | number
 }
-export class InstanceDiff<T extends Diffable> {
+export class InstanceDiff<T extends Diffable> implements ReconstructableClass{
     right: T
     left: T
     change_set: Record<string, any> = {}
@@ -25,6 +25,8 @@ export class InstanceDiff<T extends Diffable> {
                 this.change_set[key] = right[key]
             }
         }
+    }
+    postConstruct(): void {
     }
 }
 export class SubQueryDiff extends InstanceDiff<SubQuery> {
@@ -63,7 +65,7 @@ export class NodeDiff<N extends SubjectNode = SubjectNode> extends InstanceDiff<
 }
 @registerClass
 export class NodeLinkRepositoryDiff<N extends SubjectNode = SubjectNode, L extends Link = Link>
-    extends InstanceDiff<NodeLinkRepository<N, L>> implements QuerySetGenerator {
+    extends InstanceDiff<NodeLinkRepository<N, L>> implements QuerySetGenerator, ReconstructableClass {
 
     diff_nodes: DiffList<N, NodeDiff<N>> = null
     diff_links: DiffList<L, LinkDiff<L>> = null
@@ -81,17 +83,23 @@ export class NodeLinkRepositoryDiff<N extends SubjectNode = SubjectNode, L exten
         if (!right_qs) return left_qs
         return left_qs.merge(right_qs)
     }
+    postConstruct(): void {
+    }
 }
 
-export class DiffInstanceNodeLinkRepository extends NodeLinkRepositoryDiff<InstanceNode, InstanceLink> {
+export class DiffInstanceNodeLinkRepository extends NodeLinkRepositoryDiff<InstanceNode, InstanceLink> implements ReconstructableClass{
     constructor(left: InstanceNodeLinkRepository, right: InstanceNodeLinkRepository) {
         super(left, right)
     }
+    postConstruct(): void {
+    }
 }
-export class ResultListDiff extends InstanceDiff<ResultList> {
+export class ResultListDiff extends InstanceDiff<ResultList> implements ReconstructableClass {
     diff_instances: DiffList<InstanceNodeLinkRepository, DiffInstanceNodeLinkRepository>
     constructor(left: ResultList, right: ResultList) {
         super(left, right)
         this.diff_instances = new DiffList(left.instances, right.instances, DiffInstanceNodeLinkRepository)
+    }
+    postConstruct(): void {     
     }
 }

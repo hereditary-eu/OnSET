@@ -48,27 +48,3 @@ def get_assistant_results(
         operations = manman.iterative_assistant.run_query(q, graph)
         manman.assistant_cache[key] = operations
         return operations
-
-
-@search_router.post("/encode/text")
-def encode_text(
-    text: str = Body(...),
-) -> DataTensorResp:
-    return manman.guidance_man.encode(text=text).to_resp()
-
-
-@search_router.post("/encode/image")
-def encode_image(image: str = Body(...)) -> DataTensorResp:
-    # validate_image_file(image)
-    # url encoded base 64 data
-    image_data = re.match(r"^data:image/([^;]+);base64,(.*)$", image)
-    if not image_data:
-        raise ValueError("Invalid image data")
-    print("Decoding image data of:", format(image_data.group(1)))
-    image_content = b64decode(image_data.group(2))
-    image_pil = Image.open(io.BytesIO(image_content))
-    image_pil = image_pil.convert("RGB")
-    image_pil.save("test_image.png")
-    with open("test_image_raw.png", "wb") as f:
-        f.write(image_content)
-    return manman.guidance_man.encode(image=image_pil).to_resp()

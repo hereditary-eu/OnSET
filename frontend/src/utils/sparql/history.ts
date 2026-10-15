@@ -42,6 +42,9 @@ export class HistoryEntry {
         if (this.embedding === null) {
             console.log("Generating embedding for history entry:", this);
             (async () => {
+                if(!this.query){
+                    return
+                }
                 this.text_representation = this.query.queryReadable()
                 let api = new Api({
                     baseURL: BACKEND_URL,

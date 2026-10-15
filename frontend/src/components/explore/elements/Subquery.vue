@@ -23,14 +23,17 @@
                     :constraint="(subquery as BooleanConstraint)" />
                 <Property v-if="(subquery.constraint_type == SubQueryType.QUERY_PROP)"
                     :query="(subquery as QueryProp)" />
+                <InstanceProperty v-if="(subquery.constraint_type == SubQueryType.INSTANCE_PROP)"
+                    :query="(subquery as InstanceQueryProp)" />
                 <VectorSubquery v-if="(subquery.constraint_type == SubQueryType.VECTOR_SORT)"
                     :constraint="(subquery as VectorSort)" />
+                
             </div>
         </foreignObject>
     </g>
 </template>
 <script setup lang="ts">
-import { SubQuery, SubQueryType, DateConstraint, SubjectNode, NumberConstraint, StringConstraint, SubjectConstraint, BooleanConstraint, QueryProp, NodeState, VectorSort } from '@/utils/sparql/representation';
+import { SubQuery, SubQueryType, DateConstraint, SubjectNode, NumberConstraint, StringConstraint, SubjectConstraint, BooleanConstraint, QueryProp, NodeState, VectorSort, InstanceQueryProp } from '@/utils/sparql/representation';
 import { defineProps, defineModel, computed, reactive, watch } from 'vue'
 import NumberConstraintEditor from './subqueries/NumberConstraintEditor.vue';
 import StringConstraintEditor from './subqueries/StringConstraintEditor.vue';
@@ -39,8 +42,9 @@ import SubjectConstraintEditor from './subqueries/SubjectConstraintEditor.vue';
 import { DisplayMode, type InstanceSelectorOpenEvent } from '@/utils/sparql/helpers';
 import BooleanConstraintEditor from './subqueries/BooleanConstraintEditor.vue';
 import VectorSubquery from './subqueries/VectorSubquery.vue';
-import Property from './Property.vue';
+import Property from './subqueries/Property.vue';
 import type { NodeDiff } from '@/utils/sparql/diff';
+import InstanceProperty from './subqueries/InstanceProperty.vue';
 const emit = defineEmits<{
     delete: [value: SubQuery]
     instanceSearchClicked: [value: InstanceSelectorOpenEvent]
@@ -121,7 +125,7 @@ const query_statestyle = computed(() => {
 }
 
 .subquery {
-    width: 100%;
+    width: v-bind("subquery.width*0.8+'px'");
     height: 100%;
     display: flex;
     align-items: center;
