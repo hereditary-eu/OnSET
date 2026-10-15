@@ -31,6 +31,7 @@ interface SubQueryClass {
 }
 
 const registeredSubQueryClasses: Record<string, SubqueryRegisterEntry> = {}
+
 export function registerSubquery<C extends SubQueryClass>(allowed_prop_types: string[], allowed_filters: string[] | null = null): (constructor: C) => C {
     if (!allowed_filters) {
         allowed_filters = allowed_prop_types
@@ -40,7 +41,7 @@ export function registerSubquery<C extends SubQueryClass>(allowed_prop_types: st
         registerClass(constructor)
         registeredSubQueryClasses[constructor.name] = new SubqueryRegisterEntry(constructor.name, constructor, allowed_prop_types, allowed_filters)
         let anyparam = constructor as { new(...args: any[]): {} }
-        return class extends anyparam {
+        return class extends SubQuery {
             __parseregister = constructor.name
         } as unknown as C
     }
@@ -129,7 +130,7 @@ console.log("Allowed image prop types", ALLOWED_IMAGE_PROP_TYPES)
 
 
 
-@registerSubquery(ALLOWED_IMAGE_PROP_TYPES, [])
+@registerSubquery<typeof QueryProp>(ALLOWED_IMAGE_PROP_TYPES, [])
 export class QueryProp extends SubQuery {
     property_id: string
     constructor() {
@@ -137,7 +138,7 @@ export class QueryProp extends SubQuery {
         this.constraint_type = SubQueryType.QUERY_PROP
     }
     get height(): number {
-        return CONSTRAINT_HEIGHT / 2 
+        return CONSTRAINT_HEIGHT / 2
     }
     static validProp(propType: string): boolean {
         console.log("Checking if propType is valid for query prop", propType, registeredSubQueryClasses)
@@ -381,7 +382,7 @@ export class VectorData {
     }
 
     postConstruct(): void {
-        
+
     }
 
 }

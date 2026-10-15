@@ -24,9 +24,15 @@ export default defineConfig({
 
     }
   },
+  build: {
+    target: ["chrome111", "edge111", "firefox114", "safari16.4"],
+    rolldownOptions: {
+      external: ['plotly.js-basic-dist', "buffer/"],
+    },
+  },
   // base: "/demo",
   envPrefix: 'ONSET_',
-  server:{
+  server: {
     port: 5174,
   }
 })

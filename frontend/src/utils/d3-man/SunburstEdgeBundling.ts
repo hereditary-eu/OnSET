@@ -3,7 +3,7 @@
 import * as d3 from 'd3'
 import * as THREE from 'three';
 import { Api, type Property, type Subject, type Topic } from '@/api/client.ts/Api';
-import { registerClass } from '../parsing';
+import { ReconstructableClass, registerClass } from '../parsing';
 import { buildColours, evalChildren, TopicInCircle } from '../three-man/HierarchicalCircleMan3D';
 import { BaseTopicMap } from '../BaseMap';
 export enum EdgeMode {
@@ -39,7 +39,7 @@ export class SubjectInRadial implements Subject {
 }
 
 @registerClass
-export class TopicInEdges implements Topic {
+export class TopicInEdges implements Topic, ReconstructableClass {
     kind: string = 'topic';
     subjects_ids: string[];
     property_ids: string[];
@@ -76,6 +76,10 @@ export class TopicInEdges implements Topic {
     remove(id: string) {
         this.sub_topics = this.sub_topics.filter(st => st.id !== id);
         this.subjects = this.subjects.filter(s => s.id !== id);
+    }
+
+    postConstruct(): void {
+
     }
 }
 export type EdgeDatum = SubjectInRadial | TopicInEdges;

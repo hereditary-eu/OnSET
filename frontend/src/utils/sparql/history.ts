@@ -2,14 +2,14 @@ import { Vector2, type Vector2Like } from "three"
 import { NodeLinkRepositoryDiff } from "./diff"
 import { NodeLinkRepository, RepositoryState } from "./store"
 import { scalingFactors } from "./querymapper"
-import { jsonClone, registerClass } from "../parsing"
+import { jsonClone, ReconstructableClass, registerClass } from "../parsing"
 import { Api, ManifoldAlg } from "@/api/client.ts/Api"
 import { BACKEND_URL } from "../config"
 
 
 
 @registerClass
-export class HistoryEntry {
+export class HistoryEntry implements ReconstructableClass {
     query: NodeLinkRepository
     previous_diff: NodeLinkRepositoryDiff | null
     timestamp: number
@@ -37,6 +37,9 @@ export class HistoryEntry {
 
         this.embedding = null
         this.fillEmbedding()
+    }
+    postConstruct(): void {
+        //no-op
     }
     private fillEmbedding() {
         if (this.embedding === null) {
@@ -71,7 +74,7 @@ export class HistoryEntry {
     }
 }
 @registerClass
-export class QueryHistory {
+export class QueryHistory implements ReconstructableClass {
     private history: Record<number, HistoryEntry> = {};
     get length(): number { return Object.keys(this.history).length }
     get reverse_entries(): HistoryEntry[] { return Object.values(this.history).reverse() }
@@ -141,5 +144,8 @@ export class QueryHistory {
         return response.data.map(r => {
             return { entry: this.entries[r.index], distance: r.distance }
         })
+    }
+    postConstruct(): void {
+
     }
 }
