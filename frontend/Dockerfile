@@ -1,9 +1,9 @@
-FROM oven/bun:1 AS build-stage
+FROM node:26-alpine AS build-stage
 WORKDIR /app
 COPY package*.json ./
-RUN bun install -D
+RUN npm install -D
 COPY . .
-RUN bun run build
+RUN npm run build
 
 # production stage
 FROM nginx:stable-alpine AS production-stage
