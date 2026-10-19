@@ -192,6 +192,12 @@ def escape_sparql_var(
     return var
 
 
+def wrap_iri(s: str) -> str:
+    if s.startswith("http://") or s.startswith("https://"):
+        return f"<{s}>"
+    return s
+
+
 def fix_json(json_str: str, item_keys: list[str] = []) -> str:
     resp = json_repair.repair_json(json_str, logging=True)
     log = []

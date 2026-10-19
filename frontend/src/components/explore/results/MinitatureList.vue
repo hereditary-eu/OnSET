@@ -28,7 +28,6 @@ import Result from './Miniature.vue';
 import OnsetBtn from '../../ui/OnsetBtn.vue';
 import type { NodeLinkRepository } from '@/utils/sparql/store';
 import { ResultListDiff, type NodeLinkRepositoryDiff } from '@/utils/sparql/diff';
-import { instance } from 'three/webgpu';
 import { MiniatureType } from '@/utils/result-plot/plot-types';
 import { jsonClone } from '@/utils/parsing';
 const { store, query_string, diff } = defineProps({

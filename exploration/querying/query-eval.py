@@ -29,30 +29,13 @@ import networkx as nx
 
 import argparse
 import glob
-from backend.eval_config import (
-    DBPEDIA_CONFIGS,
-    OMA_CONFIGS,
-    DNB_CONFIGS,
-    UNIPROT_CONFIGS,
-    BTO_CONFIGS,
-    YAGO_CONFIGS,
-    GUTBRAINIE_CONFIGS,
-    EvalConfig,
-)
+from eval_config import ALL_CONFIG_MAP, EvalConfig
 # %%
 
 parser = argparse.ArgumentParser()
 
 
-configs = {
-    "dbpedia": DBPEDIA_CONFIGS,
-    "uniprot": UNIPROT_CONFIGS,
-    "bto": BTO_CONFIGS,
-    "dnb": DNB_CONFIGS,
-    "oma": OMA_CONFIGS,
-    "yago": YAGO_CONFIGS,
-    "gutbrainie": GUTBRAINIE_CONFIGS,
-}
+configs = ALL_CONFIG_MAP
 parser.add_argument(
     "--dataset", type=str, choices=list(configs.keys()), default="dbpedia"
 )

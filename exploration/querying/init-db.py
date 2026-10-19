@@ -7,11 +7,11 @@ sys.path.append(os.path.abspath(""))
 
 from rdflib.plugins.stores.sparqlstore import SPARQLStore
 
-from backend.ontology import OntologyManager, OntologyConfig, Graph
-from backend.datasetmatcher import DatasetManager
-from backend.explorative.explorative_support import GuidanceManager
-from backend.explorative.topic_init import TopicInitator
-from backend.explorative.llm_query import (
+from ontology import OntologyManager, OntologyConfig, Graph
+from datasetmatcher import DatasetManager
+from explorative.explorative_support import GuidanceManager
+from explorative.topic_init import TopicInitator
+from explorative.llm_query import (
     EnrichedEntitiesRelations,
     LLMQuery,
     QueryProgress,
@@ -21,28 +21,11 @@ from tqdm import tqdm
 import pandas as pd
 
 # %%
-from backend.eval_config import (
-    DBPEDIA_CONFIGS,
-    OMA_CONFIGS,
-    UNIPROT_CONFIGS,
-    BTO_CONFIGS,
-    DNB_CONFIGS,
-    YAGO_CONFIGS,
-    GUTBRAINIE_CONFIGS,
-    DBLP_CONFIGS,
-    ALL_CONFIG_MAP,
-    EvalConfig,
-)
+from eval_config import ALL_CONFIG_MAP, EvalConfig, MultimodalConfig, get_config
 
 db_setups = [
-    # OLYMPICS_CONFIGS[-1],
-    DBPEDIA_CONFIGS[-1],
-    UNIPROT_CONFIGS[-1],
-    BTO_CONFIGS[-1],
-    DNB_CONFIGS[-1],
-    YAGO_CONFIGS[-1],
-    GUTBRAINIE_CONFIGS[-1],
-    DBLP_CONFIGS[-1],
+    get_config(key)
+    for key in ["dbpedia", "uniprot", "bto", "dnb", "yago", "gutbrainie", "dblp"]
 ]
 # db_setups = []
 
@@ -74,6 +57,8 @@ if __name__ == "__main__":
     graph = Graph(store=store)
 
     config = OntologyConfig()
+    config.ontology_extension = setup.ontology_extension
+    config.multimodal_config = setup.multimodal_config or MultimodalConfig()
 
     ontology_manager = OntologyManager(config, graph)
     dataset_manager = DatasetManager(ontology_manager)

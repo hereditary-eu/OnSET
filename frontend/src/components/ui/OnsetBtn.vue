@@ -14,26 +14,39 @@ const props = defineProps({
     toggleable: {
         type: Boolean,
         default: true
+    },
+    active: {
+        type: Boolean,
+        default: true
     }
 })
 const emit = defineEmits(['click'])
 function update(evt) {
     evt.preventDefault()
+    if (!props.active) {
+        return
+    }
     emit('click', evt)
     if (props.toggleable) {
         model.value = !model.value
     }
 }
+const clses = computed(() => {
+    return {
+        'clickable_container': true,
+        'clickable_disabled': !props.active,
+        'clickable_selected': model.value
+    }
+})
 </script>
 <template>
     <div class="wrapper_clickable">
-        <button v-if="props.toggleable" class="clickable_container" @click="update"
-            :class="model ? 'clickable_selected' : null">
+        <button v-if="props.toggleable" :class="clses" @click="update">
             <slot></slot>
         </button>
         <div v-else @click="update">
             <input type="checkbox" id="btnControl" />
-            <label class="clickable_container" for="btnControl">
+            <label :class="clses" for="btnControl">
                 <slot></slot>
             </label>
 
@@ -55,6 +68,12 @@ function update(evt) {
     background-color: white;
 }
 
+.clickable_disabled {
+    cursor: not-allowed;
+    border-color: #dcdcdc;
+    background-color: #c1c1c1;
+}
+
 .clickable_container:hover {
     border-color: #8fa88f;
 }
@@ -73,6 +92,7 @@ function update(evt) {
     align-items: center;
     padding: 2px;
 }
+
 #btnControl {
     display: none;
 }

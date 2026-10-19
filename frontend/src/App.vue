@@ -1,27 +1,17 @@
 <script setup lang="ts">
-import { RouterLink, RouterView } from 'vue-router'
-import HelloWorld from './components/HelloWorld.vue'
+import { RouterView, useRoute } from 'vue-router'
+import AppHeader from '@/components/ui/AppHeader.vue'
+
+const route = useRoute()
 </script>
 
 <template>
   <v-app>
-    <header>
-
-      <h1 class="heading">Ontology and Semantic data Exploration Tool (OnSET)</h1>
-      <p class="disclaimer">Research use only. Not a medical device. <a href="https://github.com/hereditary-eu/OnSET/blob/main/DISCLAIMER.md" target="_blank" rel="noopener">Disclaimer</a></p>
-      <div class="wrapper">
-        <nav>
-          <RouterLink to="/">Home</RouterLink>
-          <RouterLink to="/explorative">Explore!</RouterLink>
-          <RouterLink to="/3d-circles">Class Tree</RouterLink>
-          <RouterLink to="/linked-circles">Linked Data</RouterLink>
-          <RouterLink to="/graph">Graph</RouterLink>
-          <RouterLink to="/about">About</RouterLink>
-        </nav>
-      </div>
-    </header>
-
-    <RouterView />
+    <AppHeader />
+    <!-- Remount the page when the configuration changes, so no state leaks between configurations -->
+    <div class="page">
+      <RouterView :key="(route.params.configId as string | undefined) ?? 'root'" />
+    </div>
   </v-app>
 </template>
 
@@ -30,7 +20,8 @@ body {
   font-family: 'Roboto Mono', monospace;
   margin: 0px;
 }
-text{
+
+text {
   font-family: 'Roboto Mono', monospace;
 }
 
@@ -44,43 +35,5 @@ header {
   display: flex;
   justify-items: center;
   justify-content: center;
-}
-
-.disclaimer {
-  text-align: center;
-  font-size: 0.75rem;
-  opacity: 0.7;
-  margin: 0;
-}
-
-.logo {
-  display: block;
-  margin: 0 auto 2rem;
-}
-
-.header {
-  display: flex;
-  place-items: center;
-  padding-right: calc(var(--section-gap) / 2);
-}
-
-.logo {
-  margin: 0 2rem 0 0;
-}
-
-header .wrapper {
-  display: flex;
-  place-items: flex-start;
-  flex-wrap: wrap;
-}
-
-nav {
-  text-align: left;
-  margin-left: -1rem;
-  font-size: 1rem;
-
-  padding: 1rem 0;
-  margin-top: 1rem;
-
 }
 </style>

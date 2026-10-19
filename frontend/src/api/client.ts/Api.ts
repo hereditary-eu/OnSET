@@ -94,7 +94,7 @@ export interface AssistantSubQuery {
 }
 
 /** AssistantSubject */
-export interface AssistantSubjectInput {
+export interface AssistantSubject {
   /**
    * Type
    * @default "subject"
@@ -121,41 +121,23 @@ export interface AssistantSubjectInput {
   y?: number;
 }
 
-/** AssistantSubject */
-export interface AssistantSubjectOutput {
+/** Body_dim_reduce_search_dim_reduce_post */
+export interface BodyDimReduceSearchDimReducePost {
+  /** Query */
+  query: string;
+  /** Target Properties */
+  target_properties: string[];
   /**
-   * Type
-   * @default "subject"
+   * Algorithm
+   * @default "umap"
    */
-  type?: "subject";
-  /** Subject Id */
-  subject_id: string;
-  /** Internal Id */
-  internal_id: string;
-  /**
-   * Subqueries
-   * @default []
-   */
-  subqueries?: AssistantSubQuery[];
-  /**
-   * X
-   * @default 0
-   */
-  x?: number;
-  /**
-   * Y
-   * @default 0
-   */
-  y?: number;
+  algorithm?: string;
 }
 
 /** Body_load_ontology_management_ontology_post */
 export interface BodyLoadOntologyManagementOntologyPost {
-  /**
-   * Ontology
-   * @format binary
-   */
-  ontology: File;
+  /** Ontology */
+  ontology: string;
 }
 
 /** CandidateEntity */
@@ -229,6 +211,17 @@ export interface ClosestResponse {
   distance: number;
 }
 
+/** ConfigCollection */
+export interface ConfigCollection {
+  /** Id */
+  id: string;
+  /** Name */
+  name: string;
+  /** Description */
+  description: string;
+  multimodal: MultimodalConfig;
+}
+
 /** Constraint */
 export interface Constraint {
   /** Property */
@@ -237,6 +230,16 @@ export interface Constraint {
   value: string | null;
   /** Modifier */
   modifier: string | null;
+}
+
+/** DataTensorResp */
+export interface DataTensorResp {
+  /** Data */
+  data: number[];
+  /** Type */
+  type: "float32" | "float64" | "int32" | "int64";
+  /** Shape */
+  shape: number[];
 }
 
 /** EnrichedEntitiesRelations */
@@ -461,11 +464,35 @@ export interface Match {
   rank?: number;
 }
 
+/** MultimodalConfig */
+export interface MultimodalConfig {
+  /**
+   * Encoding Model
+   * @default "clip-ViT-B-32"
+   */
+  encoding_model?: string;
+  /**
+   * Image Vector Properties
+   * @default ["dbo:thumbnail_embedding"]
+   */
+  image_vector_properties?: string[];
+  /**
+   * Image Properties
+   * @default ["dbo:thumbnail"]
+   */
+  image_properties?: string[];
+  /**
+   * Image Types
+   * @default ["<http://dbpedia.org/ontology/Image>"]
+   */
+  image_types?: string[];
+}
+
 /** Operation */
 export interface Operation {
   operation: OperationType;
   /** Data */
-  data: AssistantLink | AssistantSubjectOutput | AssistantSubQuery;
+  data: AssistantLink | AssistantSubject | AssistantSubQuery;
 }
 
 /** Operations */
@@ -522,7 +549,7 @@ export interface QueryGraph {
    * Subjects
    * @default []
    */
-  subjects?: AssistantSubjectInput[];
+  subjects?: AssistantSubject[];
   /**
    * Links
    * @default []
@@ -723,6 +750,10 @@ export interface ValidationError {
   msg: string;
   /** Error Type */
   type: string;
+  /** Input */
+  input?: any;
+  /** Context */
+  ctx?: object;
 }
 
 import type {
@@ -962,6 +993,22 @@ export class Api<
         ...params,
       }),
   };
+  ontology = {
+    /**
+     * No description
+     *
+     * @name GetOntologyConfigOntologyConfigGet
+     * @summary Get Ontology Config
+     * @request GET:/ontology/config
+     */
+    getOntologyConfigOntologyConfigGet: (params: RequestParams = {}) =>
+      this.request<ConfigCollection, any>({
+        path: `/ontology/config`,
+        method: "GET",
+        format: "json",
+        ...params,
+      }),
+  };
   management = {
     /**
      * No description
@@ -1010,6 +1057,194 @@ export class Api<
       }),
   };
   classes = {
+    /**
+     * No description
+     *
+     * @name GetLlmResultsClassesSearchLlmGet
+     * @summary Get Llm Results
+     * @request GET:/classes/search/llm
+     */
+    getLlmResultsClassesSearchLlmGet: (
+      query?: {
+        /**
+         * Q
+         * @default "working field of person"
+         */
+        q?: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<QueryProgress, HTTPValidationError>({
+        path: `/classes/search/llm`,
+        method: "GET",
+        query: query,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @name GetLlmResultsRunningClassesSearchLlmRunningGet
+     * @summary Get Llm Results Running
+     * @request GET:/classes/search/llm/running
+     */
+    getLlmResultsRunningClassesSearchLlmRunningGet: (
+      query: {
+        /** Query Id */
+        query_id: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<QueryProgress | null, HTTPValidationError>({
+        path: `/classes/search/llm/running`,
+        method: "GET",
+        query: query,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @name GetLlmExamplesClassesSearchLlmExamplesGet
+     * @summary Get Llm Examples
+     * @request GET:/classes/search/llm/examples
+     */
+    getLlmExamplesClassesSearchLlmExamplesGet: (params: RequestParams = {}) =>
+      this.request<EnrichedEntitiesRelations[], any>({
+        path: `/classes/search/llm/examples`,
+        method: "GET",
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @name SearchClassesClassesSearchPost
+     * @summary Search Classes
+     * @request POST:/classes/search
+     */
+    searchClassesClassesSearchPost: (
+      data: FuzzyQuery,
+      params: RequestParams = {},
+    ) =>
+      this.request<FuzzyQueryResults, HTTPValidationError>({
+        path: `/classes/search`,
+        method: "POST",
+        body: data,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @name GetAssistantResultsClassesSearchAssistantPost
+     * @summary Get Assistant Results
+     * @request POST:/classes/search/assistant
+     */
+    getAssistantResultsClassesSearchAssistantPost: (
+      data: QueryGraph,
+      query?: {
+        /**
+         * Q
+         * @default "working field of person"
+         */
+        q?: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<Operations, HTTPValidationError>({
+        path: `/classes/search/assistant`,
+        method: "POST",
+        query: query,
+        body: data,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @name GetNamedInstanceClassesInstancesGet
+     * @summary Get Named Instance
+     * @request GET:/classes/instances
+     */
+    getNamedInstanceClassesInstancesGet: (
+      query: {
+        /** Cls */
+        cls: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<Subject[], HTTPValidationError>({
+        path: `/classes/instances`,
+        method: "GET",
+        query: query,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @name GetNamedInstanceSearchClassesInstancesSearchGet
+     * @summary Get Named Instance Search
+     * @request GET:/classes/instances/search
+     */
+    getNamedInstanceSearchClassesInstancesSearchGet: (
+      query: {
+        /** Cls */
+        cls: string;
+        /** Q */
+        q?: string | null;
+        /**
+         * Limit
+         * @default 10
+         */
+        limit?: number;
+        /**
+         * Skip
+         * @default 0
+         */
+        skip?: number;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<Instance[], HTTPValidationError>({
+        path: `/classes/instances/search`,
+        method: "GET",
+        query: query,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @name GetNamedInstancePropertiesClassesInstancesPropertiesGet
+     * @summary Get Named Instance Properties
+     * @request GET:/classes/instances/properties
+     */
+    getNamedInstancePropertiesClassesInstancesPropertiesGet: (
+      query: {
+        /** Instance Id */
+        instance_id: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<Record<string, Property>, HTTPValidationError>({
+        path: `/classes/instances/properties`,
+        method: "GET",
+        query: query,
+        format: "json",
+        ...params,
+      }),
+
     /**
      * No description
      *
@@ -1079,26 +1314,6 @@ export class Api<
     /**
      * No description
      *
-     * @name SearchClassesClassesSearchPost
-     * @summary Search Classes
-     * @request POST:/classes/search
-     */
-    searchClassesClassesSearchPost: (
-      data: FuzzyQuery,
-      params: RequestParams = {},
-    ) =>
-      this.request<FuzzyQueryResults, HTTPValidationError>({
-        path: `/classes/search`,
-        method: "POST",
-        body: data,
-        type: ContentType.Json,
-        format: "json",
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
      * @name GetRelationsClassesRelationsGet
      * @summary Get Relations
      * @request GET:/classes/relations
@@ -1118,96 +1333,6 @@ export class Api<
         path: `/classes/relations`,
         method: "GET",
         query: query,
-        format: "json",
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @name GetLlmResultsClassesSearchLlmGet
-     * @summary Get Llm Results
-     * @request GET:/classes/search/llm
-     */
-    getLlmResultsClassesSearchLlmGet: (
-      query?: {
-        /**
-         * Q
-         * @default "working field of person"
-         */
-        q?: string;
-      },
-      params: RequestParams = {},
-    ) =>
-      this.request<QueryProgress, HTTPValidationError>({
-        path: `/classes/search/llm`,
-        method: "GET",
-        query: query,
-        format: "json",
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @name GetLlmResultsRunningClassesSearchLlmRunningGet
-     * @summary Get Llm Results Running
-     * @request GET:/classes/search/llm/running
-     */
-    getLlmResultsRunningClassesSearchLlmRunningGet: (
-      query: {
-        /** Query Id */
-        query_id: string;
-      },
-      params: RequestParams = {},
-    ) =>
-      this.request<QueryProgress | null, HTTPValidationError>({
-        path: `/classes/search/llm/running`,
-        method: "GET",
-        query: query,
-        format: "json",
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @name GetLlmExamplesClassesSearchLlmExamplesGet
-     * @summary Get Llm Examples
-     * @request GET:/classes/search/llm/examples
-     */
-    getLlmExamplesClassesSearchLlmExamplesGet: (params: RequestParams = {}) =>
-      this.request<EnrichedEntitiesRelations[], any>({
-        path: `/classes/search/llm/examples`,
-        method: "GET",
-        format: "json",
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @name GetAssistantResultsClassesSearchAssistantPost
-     * @summary Get Assistant Results
-     * @request POST:/classes/search/assistant
-     */
-    getAssistantResultsClassesSearchAssistantPost: (
-      data: QueryGraph,
-      query?: {
-        /**
-         * Q
-         * @default "working field of person"
-         */
-        q?: string;
-      },
-      params: RequestParams = {},
-    ) =>
-      this.request<Operations, HTTPValidationError>({
-        path: `/classes/search/assistant`,
-        method: "POST",
-        query: query,
-        body: data,
-        type: ContentType.Json,
         format: "json",
         ...params,
       }),
@@ -1303,84 +1428,6 @@ export class Api<
         format: "json",
         ...params,
       }),
-
-    /**
-     * No description
-     *
-     * @name GetNamedInstanceClassesInstancesGet
-     * @summary Get Named Instance
-     * @request GET:/classes/instances
-     */
-    getNamedInstanceClassesInstancesGet: (
-      query: {
-        /** Cls */
-        cls: string;
-      },
-      params: RequestParams = {},
-    ) =>
-      this.request<Subject[], HTTPValidationError>({
-        path: `/classes/instances`,
-        method: "GET",
-        query: query,
-        format: "json",
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @name GetNamedInstanceSearchClassesInstancesSearchGet
-     * @summary Get Named Instance Search
-     * @request GET:/classes/instances/search
-     */
-    getNamedInstanceSearchClassesInstancesSearchGet: (
-      query: {
-        /** Cls */
-        cls: string;
-        /** Q */
-        q?: string | null;
-        /**
-         * Limit
-         * @default 10
-         */
-        limit?: number;
-        /**
-         * Skip
-         * @default 0
-         */
-        skip?: number;
-      },
-      params: RequestParams = {},
-    ) =>
-      this.request<Instance[], HTTPValidationError>({
-        path: `/classes/instances/search`,
-        method: "GET",
-        query: query,
-        format: "json",
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @name GetNamedInstancePropertiesClassesInstancesPropertiesGet
-     * @summary Get Named Instance Properties
-     * @request GET:/classes/instances/properties
-     */
-    getNamedInstancePropertiesClassesInstancesPropertiesGet: (
-      query: {
-        /** Instance Id */
-        instance_id: string;
-      },
-      params: RequestParams = {},
-    ) =>
-      this.request<Record<string, Property>, HTTPValidationError>({
-        path: `/classes/instances/properties`,
-        method: "GET",
-        query: query,
-        format: "json",
-        ...params,
-      }),
   };
   nlp = {
     /**
@@ -1441,6 +1488,89 @@ export class Api<
         method: "POST",
         body: data,
         type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+  };
+  search = {
+    /**
+     * No description
+     *
+     * @name EncodeTextSearchEncodeTextPost
+     * @summary Encode Text
+     * @request POST:/search/encode/text
+     */
+    encodeTextSearchEncodeTextPost: (
+      data: string,
+      params: RequestParams = {},
+    ) =>
+      this.request<DataTensorResp, HTTPValidationError>({
+        path: `/search/encode/text`,
+        method: "POST",
+        body: data,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @name EncodeImageSearchEncodeImagePost
+     * @summary Encode Image
+     * @request POST:/search/encode/image
+     */
+    encodeImageSearchEncodeImagePost: (
+      data: string,
+      params: RequestParams = {},
+    ) =>
+      this.request<DataTensorResp, HTTPValidationError>({
+        path: `/search/encode/image`,
+        method: "POST",
+        body: data,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @name DimReduceSearchDimReducePost
+     * @summary Dim Reduce
+     * @request POST:/search/dim-reduce
+     */
+    dimReduceSearchDimReducePost: (
+      data: BodyDimReduceSearchDimReducePost,
+      params: RequestParams = {},
+    ) =>
+      this.request<Record<string, any>[], HTTPValidationError>({
+        path: `/search/dim-reduce`,
+        method: "POST",
+        body: data,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @name WikimediaProxySearchWikimediaProxyGet
+     * @summary Wikimedia Proxy
+     * @request GET:/search/wikimedia/proxy
+     */
+    wikimediaProxySearchWikimediaProxyGet: (
+      query: {
+        /** Url */
+        url: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<any, HTTPValidationError>({
+        path: `/search/wikimedia/proxy`,
+        method: "GET",
+        query: query,
         format: "json",
         ...params,
       }),

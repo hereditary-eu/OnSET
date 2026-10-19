@@ -18,20 +18,23 @@
                         <input type="text" placeholder="Search..." v-model="editor_data.q" />
                     </div>
                     <div class="selection_element_container">
-                        <div class="selection_element_wrapper" v-for="option of selected_options_filtered">
-                            <div class="selection_element" @click="select_option(option, $event)" @mouseenter.capture="editor_data.hover_add =
-                                option" @mousemove.capture="editor_data.hover_add = option"
+                        <div class="selection_element_wrapper" v-for="subq of selected_options_filtered">
+                            <div :class="sel_clses(subq)" @click="select_option(subq, $event)"
+                                @mouseenter.capture="editor_data.hover_add =
+                                    subq.option" @mousemove.capture="editor_data.hover_add = subq.option"
                                 @mouseleave.capture="editor_data.hover_add = null"
-                                :key="option.link?.property_id || option.subject?.subject_id">
+                                :key="subq.option.link?.property_id || subq.option.subject?.subject_id">
                                 <svg :width="editor_data.select_width" :height="NODE_HEIGHT + 15">
-                                    <g @click="">
-                                        <GraphView :store="option.store" :display-mode="DisplayMode.SELECT"></GraphView>
+                                    <g>
+                                        <GraphView :store="subq.option.store" :display-mode="DisplayMode.SELECT">
+                                        </GraphView>
                                     </g>
                                 </svg>
 
                             </div>
                             <div v-if="selection_event.side == OpenEventType.PROP">
-                                <OnsetBtn :btn_width="'1.5rem'" :toggleable="false" @click="selectProp(option, $event)">
+                                <OnsetBtn :btn_width="'1.5rem'" :toggleable="false"
+                                    @click="selectProp(subq.option, $event)" :active="subq.validProp">
                                     <v-icon icon="mdi-tag"></v-icon>
                                 </OnsetBtn>
                             </div>
@@ -52,12 +55,9 @@
     </g>
 </template>
 <script setup lang="ts">
-import { ref, watch, reactive, computed, onMounted } from 'vue'
-import { SubQuery, Link, SubjectNode, StringConstraint, SubjectConstraint, QueryProp } from '@/utils/sparql/representation';
-import LinkComp from '../Link.vue';
-import NodeComp from '../Node.vue';
-import { BACKEND_URL } from '@/utils/config';
-import { Api, RELATION_TYPE, RETURN_TYPE } from '@/api/client.ts/Api';
+import { ref, watch, reactive, computed } from 'vue'
+import { SubQuery, Link, SubjectNode, SubjectConstraint, QueryProp } from '@/utils/sparql/representation';
+import { RELATION_TYPE, RETURN_TYPE } from '@/api/client.ts/Api';
 import { DisplayMode, LINK_WIDTH, LinkEditEvent, NODE_HEIGHT, NODE_WIDTH, OpenEventType, SelectorOpenEvent } from '@/utils/sparql/helpers';
 import Loading from '@/components/ui/Loading.vue';
 import OnsetBtn from '@/components/ui/OnsetBtn.vue';
@@ -65,6 +65,11 @@ import { MixedResponse, type NodeLinkRepository } from '@/utils/sparql/store';
 import GraphView from '../GraphView.vue';
 import { jsonClone } from '@/utils/parsing';
 import { debounce } from '@/utils/helpers';
+import { api } from '@/utils/api'
+
+class MappedSelection {
+    constructor(public option: MixedResponse<SubjectNode>, public validProp: boolean = true, public validFilter: boolean = true) { }
+}
 
 const NODE_LINK_COUNT = 16
 const emit = defineEmits<{
@@ -72,10 +77,6 @@ const emit = defineEmits<{
     hover_option: [value: Link | null]
     finished: [value: LinkEditEvent]
 }>()
-const api = new Api({
-    baseURL: BACKEND_URL
-
-})
 const { selection_event, store } = defineProps({
     selection_event: {
         type: Object as () => SelectorOpenEvent,
@@ -225,8 +226,13 @@ const prepareTarget = (link: Link<SubjectNode>) => {
     target.y = selection_event.node ? selection_event.node.y : 0
     return target
 }
-const select_option = (selected_option: MixedResponse<SubjectNode>, event: MouseEvent) => {
+const select_option = (sub_selection: MappedSelection, event: MouseEvent) => {
+    if (!sub_selection.option.link || !sub_selection.validFilter) {
+        console.warn('No link in selected option / not a valid filter', sub_selection)
+        return
+    }
     display.value = false
+    const selected_option = sub_selection.option
     console.log('Selected option', selected_option, selection_event)
     switch (selection_event.side) {
         case OpenEventType.TO:
@@ -259,7 +265,7 @@ const select_option = (selected_option: MixedResponse<SubjectNode>, event: Mouse
             break
         case OpenEventType.PROP:
             selected_option.link.from_internal_id = selection_event.node.internal_id
-            let constraint = SubQuery.construct(selected_option.link)
+            let constraint = SubQuery.constructFilter(selected_option.link)
             if (!selection_event.node.subqueries) {
                 selection_event.node.subqueries = []
             }
@@ -286,7 +292,7 @@ const addLabelProp = () => {
     link.property_id = 'rdfs:label'
     link.to_proptype = 'xsd:string'
     link.label = selection_event.node.label
-    const constraint = QueryProp.construct(link)
+    const constraint = QueryProp.constructProp(link)
     if (!selection_event.node.subqueries) {
         selection_event.node.subqueries = []
     }
@@ -296,7 +302,8 @@ const addLabelProp = () => {
 const selectProp = (option: MixedResponse<SubjectNode>, event: MouseEvent) => {
     display.value = false
     option.link.from_internal_id = selection_event.node.internal_id
-    let query_prop = QueryProp.construct(option.link)
+    console.log('Adding property constraint', option.link, selection_event.node)
+    let query_prop = QueryProp.constructProp(option.link)
     if (selection_event.node.subqueries) {
         selection_event.node.subqueries.push(query_prop)
     } else {
@@ -305,11 +312,15 @@ const selectProp = (option: MixedResponse<SubjectNode>, event: MouseEvent) => {
 }
 const selected_options_filtered = computed(() => {
     if (selection_event.side == OpenEventType.PROP) {
-        return selection_options.value.filter((option) => {
-            return SubQuery.construct(option.link) != null
-        })
+        return selection_options.value.map((option) => {
+            const validProp = QueryProp.validProp(option.link.to_proptype)
+            const validFilter = SubQuery.validFilter(option.link.to_proptype)
+            return new MappedSelection(option, validProp, validFilter)
+        }).filter((entry) => entry.validProp || entry.validFilter)
     }
-    return selection_options.value
+    return selection_options.value.map((option) => {
+        return new MappedSelection(option)
+    })
 })
 
 const editPointHover = (event: MouseEvent, state: boolean) => {
@@ -323,7 +334,7 @@ const addLabelConstraint = () => {
     link.property_id = 'rdfs:label'
     link.to_proptype = 'xsd:string'
     link.label = 'Label'
-    const constraint = SubQuery.construct(link)
+    const constraint = SubQuery.constructFilter(link)
     if (!selection_event.node.subqueries) {
         selection_event.node.subqueries = []
     }
@@ -365,7 +376,13 @@ const closePanel = () => {
         side: selection_event.side
     })
 }
-
+const sel_clses = (sub_selection: MappedSelection) => {
+    return {
+        'selection_element': true,
+        'selection_element_valid': sub_selection.validFilter,
+        'selection_element_invalid': !sub_selection.validFilter
+    }
+}
 watch(editor_data, (editor_data) => {
     if (selection_event && selection_event.side != OpenEventType.PROP) {
         if (editor_data.hover_add) {
@@ -432,8 +449,10 @@ watch(display, (new_val) => {
     margin: 5px;
 
 }
-
-.selection_element:hover {
+.selection_element_invalid {
+    background-color: #888888;
+}
+.selection_element_valid:hover {
     background-color: #f0f0f0;
 }
 

@@ -1,5 +1,5 @@
 from abc import ABC
-from eval_config import EvalConfig, DBPEDIA_CONFIGS
+from eval_config import EvalConfig
 
 
 class Initationatable(ABC):
@@ -21,10 +21,10 @@ class InitatorManager(Initationatable):
     def register(self, initatable: Initationatable, *args, **kwargs):
         self.__initatables.append((initatable, args, kwargs))
 
-    def initate(self, reset=True, config=DBPEDIA_CONFIGS[0]):
+    def initate(self, reset=True, config: EvalConfig | None = None):
         for (
             initatable,
             args,
             kwargs,
         ) in self.__initatables:
-            initatable.initate(reset, config * args, **kwargs)
+            initatable.initate(reset, config, *args, **kwargs)

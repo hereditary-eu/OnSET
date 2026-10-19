@@ -1,5 +1,5 @@
 import type { Candidates, EnrichedEntity, EnrichedRelation, EntitiesRelations, Entity, Relation } from "@/api/client.ts/Api";
-import { SubQuery, Link, SubjectNode, type SubjectConstraint } from "./representation";
+import { SubQuery, Link, SubjectNode, type SubjectConstraint } from "./representation/index";
 import { NodeLinkRepository } from "./store";
 import { reactive } from "vue";
 import type { Vector2Like } from "three";
