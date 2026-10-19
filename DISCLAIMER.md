@@ -72,9 +72,6 @@ The committed files under `exploration/` and `test.json` hold ontology class/rel
 ## Responsible use
 
 - **Terms of use.** MIT licence ([LICENSE](LICENSE)), subject to the out-of-scope uses above. Third-party KGs and models remain under their own licences.
-- **Open items before the next release.**
-  - A commented-out bearer token for a partner GraphDB endpoint is still present in `backend/src/api/config.py` and in the git history (since December 2024, including tag `v0.3.0`). It has to be removed from the code **and revoked at the GraphDB endpoint**; deleting the line does not invalidate it.
-  - Replace the default credentials and QLever access tokens noted above in any public deployment.
 - **Contact for misuse or vulnerability reports.** Benedikt Kantz, benedikt.kantz@tugraz.at (Institute of Visual Computing, TU Graz).
 
 ## Acknowledgement
