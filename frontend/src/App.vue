@@ -8,6 +8,7 @@ import HelloWorld from './components/HelloWorld.vue'
     <header>
 
       <h1 class="heading">Ontology and Semantic data Exploration Tool (OnSET)</h1>
+      <p class="disclaimer">Research use only. Not a medical device. <a href="https://github.com/hereditary-eu/OnSET/blob/main/DISCLAIMER.md" target="_blank" rel="noopener">Disclaimer</a></p>
       <div class="wrapper">
         <nav>
           <RouterLink to="/">Home</RouterLink>
@@ -43,6 +44,13 @@ header {
   display: flex;
   justify-items: center;
   justify-content: center;
+}
+
+.disclaimer {
+  text-align: center;
+  font-size: 0.75rem;
+  opacity: 0.7;
+  margin: 0;
 }
 
 .logo {

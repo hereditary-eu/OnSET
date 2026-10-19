@@ -3,7 +3,7 @@ name = "onset-backend"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
-requires-python = ">=3.14"
+requires-python = ">=3.12"
 dependencies = [
     "fastapi[standard]",
     "python-multipart",
@@ -45,7 +45,7 @@ dependencies = [
     "tikzplotlib-patched",
     "seaborn>=0.13.2",
     "scipy>=1.17",
-    "llama-cpp-python>=0.3.9",
+    # "llama-cpp-python==0.3.16",
     "baycomp>=1.0.3",
     "pingouin>=0.5.5",
 ]
@@ -63,9 +63,18 @@ torch = [
 llama-cpp-agent = [
     { git = "https://github.com/Dakantz/llama-cpp-agent.git", branch = "add-literal-support" },
 ]
+# llama-cpp-python = [
+#     { index = "llama-metal", marker = "sys_platform == 'darwin'" },
+#     { index = "llama-gpu", marker = "sys_platform != 'darwin'" },
+# ]
+# llama-cpp-python = [
+#     { git = "https://github.com/abetlen/llama-cpp-python.git", branch = "main" },
+# ]
 tikzplotlib-patched = [
     { git = "https://github.com/JasonGross/tikzplotlib.git", branch = "patched" },
 ]
+
+
 
 [[tool.uv.index]]
 name="torch-metal"
@@ -77,13 +86,17 @@ name = "torch-gpu"
 url = "https://download.pytorch.org/whl/cu128"
 explicit = true
 
-# [[tool.uv.index]]
-# name = "llama-metal"
-# url = "https://abetlen.github.io/llama-cpp-python/whl/metal/"
-# explicit = true
+[[tool.uv.index]]
+name = "llama-metal"
+url = "https://abetlen.github.io/llama-cpp-python/whl/metal/"
+explicit = true
 
-# [[tool.uv.index]]
-# name = "llama-gpu"
-# url = "https://abetlen.github.io/llama-cpp-python/whl/cu124/"
-# explicit = true
+[[tool.uv.index]]
+name = "llama-gpu"
+url = "https://abetlen.github.io/llama-cpp-python/whl/cu124/"
+explicit = true
 
+
+
+[tool.uv]
+index-strategy = "unsafe-best-match"
