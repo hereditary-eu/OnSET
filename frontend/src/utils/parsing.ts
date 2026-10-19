@@ -9,7 +9,7 @@ function reviveRegisteredClasses(key: string, value: any) {
     if (value && value.__parseregister) {
         let entry = registeredClasses[value.__parseregister]
         if (entry) {
-            let obj = new entry.cnstr() as any
+            let obj = new entry.cnstr() as ReconstructableClass
             Object.assign(obj, value)
             if (typeof obj.postConstruct === 'function') {
                 obj.postConstruct()
@@ -29,7 +29,19 @@ export function parseJSON<T>(json: string): T {
 export function jsonClone<T>(obj: T): T {
     return parseJSON(stringifyJSON(obj));
 }
-export function registerClass<C extends { new(): {} }>(constructor: C) {
+
+export class ReconstructableClass {
+    constructor() {
+
+    }
+    postConstruct() {
+
+    }
+}
+interface ReconstructableConstructor {
+    new(): ReconstructableClass
+}
+export function registerClass<C extends ReconstructableConstructor>(constructor: C) {
     constructor.prototype.__parseregister = constructor.name
     registeredClasses[constructor.name] = new RegisterEntry(constructor.name, constructor)
     let anyparam = constructor as { new(...args: any[]): {} }

@@ -5,7 +5,7 @@ import * as THREE from 'three'
 import { Api, type Subject, type Topic } from '@/api/client.ts/Api';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { CircleMan3D, SubjectInCircle } from './CircleMan3D';
-import { registerClass } from '../parsing';
+import { ReconstructableClass, registerClass } from '../parsing';
 export class TopicTreeLink {
     from_topic?: TopicInCircle
     from_subject?: SubjectInCircle
@@ -17,7 +17,7 @@ export class TopicTreeLink {
     mesh: THREE.Mesh<THREE.TubeGeometry, THREE.MeshBasicMaterial, THREE.Object3DEventMap>;
 }
 @registerClass
-export class TopicInCircle implements Topic {
+export class TopicInCircle implements Topic, ReconstructableClass {
     subjects_ids: string[];
     property_ids: string[];
     topic_id: number;
@@ -48,6 +48,9 @@ export class TopicInCircle implements Topic {
     remove(id:string){
         this.sub_topics = this.sub_topics.filter(st => st.id !== id);
         this.subjects_ids = this.subjects_ids.filter(s => s !== id);
+    }
+    postConstruct(): void {
+
     }
 
 }

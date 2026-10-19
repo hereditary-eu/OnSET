@@ -27,16 +27,16 @@
     </div>
 </template>
 <script setup lang="ts">
-import { Api, type FuzzyQueryResult } from '@/api/client.ts/Api';
-import { BACKEND_URL } from '@/utils/config';
+import { type FuzzyQueryResult } from '@/api/client.ts/Api';
 import {  SubjectNode, type FuzzyQueryRequest } from '@/utils/sparql/representation';
-import { ref, watch, reactive, defineEmits } from 'vue';
+import { ref, watch, reactive } from 'vue';
 import NodeComp from './elements/Node.vue';
 import OnsetBtn from '@/components/ui/OnsetBtn.vue';
 import { LINK_WIDTH, NODE_HEIGHT, NODE_WIDTH } from '@/utils/sparql/helpers';
 import Loading from '@/components/ui/Loading.vue';
 import GraphView from './elements/GraphView.vue';
 import { MixedResponse } from '@/utils/sparql/store';
+import { api } from '@/utils/api'
 
 const emits = defineEmits<{
     select: [value: MixedResponse<SubjectNode>]
@@ -54,9 +54,6 @@ const selected_node = (node: MixedResponse<SubjectNode>) => {
     emits('select', node)
 }
 
-const api = new Api({
-    baseURL: BACKEND_URL
-})
 const { query } = defineProps({
     query: {
         type: Object as () => FuzzyQueryRequest,

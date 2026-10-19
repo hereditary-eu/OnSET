@@ -13,18 +13,15 @@
 <script setup lang="ts">
 import { ref, watch, reactive, computed, onMounted } from 'vue'
 import * as d3 from 'd3'
-import { Api, type Subject, type Topic } from '@/api/client.ts/Api';
-import { BACKEND_URL } from '@/utils/config';
+import { type Subject, type Topic } from '@/api/client.ts/Api';
 import { de, tr } from 'vuetify/locale';
 import OnsetBtn from '@/components/ui/OnsetBtn.vue';
 import Loading from '@/components/ui/Loading.vue';
+import { api } from '@/utils/api'
 interface TopicSelection extends Topic {
     selected: boolean
     depth: number
 }
-const api = new Api({
-    baseURL: BACKEND_URL
-})
 const expanded = ref(true)
 const topics = ref([] as TopicSelection[])
 

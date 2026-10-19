@@ -31,14 +31,12 @@
     </div>
 </template>
 <script setup lang="ts">
-import { watch, reactive, defineProps, computed } from 'vue'
-import type { NodeLinkRepository } from '@/utils/sparql/store';
+import { reactive, defineProps, computed } from 'vue'
 import SelectorGroup from '@/components/ui/SelectorGroup.vue';
 import { HistoryEntry, QueryHistory } from '@/utils/sparql/history';
 import { DisplayMode, HistoryTooltipEvent } from '@/utils/sparql/helpers';
 import HistoryElement from './HistoryElement.vue';
 import TimeEmbeddingsOverlay from './TimeEmbeddingsOverlay.vue';
-import type { Vector2 } from 'three';
 import OnsetBtn from '@/components/ui/OnsetBtn.vue';
 import Loading from '@/components/ui/Loading.vue';
 enum HistoryMode {

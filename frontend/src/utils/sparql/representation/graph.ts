@@ -1,11 +1,13 @@
-import type { Api, FuzzyQueryResult, Instance, Property, Subject, SubjectLink } from "@/api/client.ts/Api";
-import { CONSTRAINT_HEIGHT, CONSTRAINT_WIDTH, NODE_HEIGHT, NODE_WIDTH, OpenEventType, toVar } from "./helpers";
-
-import { registerClass } from "../parsing";
-import { NodeLinkRepository } from "./store";
-import { DiffList, SubQueryDiff, type Diffable } from "./diff";
 
 
+
+import type { Subject, Property, SubjectLink, Api } from "@/api/client.ts/Api";
+import { ReconstructableClass, registerClass } from "@/utils/parsing";
+import { NODE_HEIGHT, NODE_WIDTH, toVar, OpenEventType, CONSTRAINT_HEIGHT, CONSTRAINT_WIDTH } from "../helpers";
+import { NodeLinkRepository } from "../store";
+import { readableName } from "../querymapper";
+import { ALLOWED_IMAGE_PROP_TYPES, QueryProp, SubQueryType, type SubQuery } from "./subqueries";
+import { DiffList, SubQueryDiff, type Diffable } from "../diff";
 
 
 export enum NodeState {
@@ -18,258 +20,24 @@ export enum NodeState {
     CHANGED = "changed",
     ATTACHING = "attaching",
 }
-
-export enum SubQueryType {
-    STRING = "string",
-    NUMBER = "number",
-    BOOLEAN = "boolean",
-    DATE = "date",
-    SUBJECT = "subject",
-    QUERY_PROP = "query_prop"
-}
-
-@registerClass
-export class SubQuery implements Diffable {
-    link: Link;
-    height: number
-    width: number
-    constraint_type: SubQueryType;
-    id: string | number;
-    static id_counter: number = 0;
-    constructor() {
-        this.height = CONSTRAINT_HEIGHT / 2
-        this.width = CONSTRAINT_WIDTH
-        this.id = SubQuery.id_counter++
-    }
-    changed(other: Diffable): boolean {
-        const testvar = "?test"
-        return this.filterExpression(testvar) != (other as SubQuery).filterExpression(testvar)!;
-    }
-    propVar(): string {
-        return this.link.outputId()
-    }
-    static validPropType(propType: string): boolean {
-        return false;
-    }
-    static construct(link: Link): SubQuery {
-        let constraint = null
-
-        if (StringConstraint.validPropType(link.to_proptype)) {
-            constraint = new StringConstraint("", StringConstraintType.CONTAINS);
-        } else if (NumberConstraint.validPropType(link.to_proptype)) {
-            constraint = new NumberConstraint(0, NumberConstraintType.GREATER);
-        } else if (BooleanConstraint.validPropType(link.to_proptype)) {
-            constraint = new BooleanConstraint(true);
-        } else if (DateConstraint.validPropType(link.to_proptype)) {
-            constraint = new DateConstraint(new Date(), NumberConstraintType.GREATER);
-        }
-        if (constraint) {
-            constraint.link = link;
-        }
-        return constraint;
-    }
-    filterExpression(property: string): string {
-        return ""
-    }
-    expression(property: string): string {
-        return this.filterExpression(property);
-    }
-}
-
-@registerClass
-export class QueryProp extends SubQuery {
-    property_id: string
-    constructor() {
-        super();
-        this.constraint_type = SubQueryType.QUERY_PROP
-    }
-    static construct(link: Link): QueryProp {
-        let query_prop = new QueryProp();
-        query_prop.link = link;
-        query_prop.property_id = link.property_id;
-        return query_prop;
-    }
-}
-
-@registerClass
-export class SubjectConstraint extends SubQuery {
-    instance: Instance;
-    constructor() {
-        super();
-        this.height = CONSTRAINT_HEIGHT / 2
-        this.instance = null;
-        this.constraint_type = SubQueryType.SUBJECT
-    }
-    filterExpression(property: string): string {
-        if (!this.instance) {
-            return ``;
-        }
-        return `${property} = "${this.instance.id}"`;
-    }
-    static validPropType(propType: string): boolean {
-        return false
-    }
-}
-export enum StringConstraintType {
-    EQUALS = "equals",
-    NEQUALS = "!=",
-    CONTAINS = "contains",
-    STARTSWITH = "startswith",
-    ENDSWITH = "endswith",
-    REGEX = "regex",
+export enum LinkType {
+    STRUCTURAL = "structural",
+    SIMILARITY = "similarity",
 }
 @registerClass
-export class StringConstraint extends SubQuery {
-    value: string;
-    type: StringConstraintType;
-    constructor(value: string = null, type: StringConstraintType = StringConstraintType.CONTAINS) {
-        super();
-        this.height = CONSTRAINT_HEIGHT / 1.3
-        this.value = value;
-        this.type = type;
-        this.constraint_type = SubQueryType.STRING
-    }
-    filterExpression(property: string): string {
-        switch (this.type) {
-            case StringConstraintType.EQUALS:
-                return `${property} ="${this.value}"`;
-            case StringConstraintType.NEQUALS:
-                return `${property} != "${this.value}"`;
-            case StringConstraintType.CONTAINS:
-                return `CONTAINS(${property},"${this.value}")`;
-            case StringConstraintType.STARTSWITH:
-                return `STRSTARTS(${property},"${this.value}")`;
-            case StringConstraintType.ENDSWITH:
-                return `STRENDS(${property},"${this.value}")`;
-            case StringConstraintType.REGEX:
-                return `REGEX(${property} ,"${this.value}")`;
-        }
-    }
-    static validPropType(propType: string): boolean {
-        return propType == 'xsd:string' ||
-            propType == 'rdf:langString'
-            || propType == 'rdfs:label'
-            || propType == 'rdf:PlainLiteral'
-    }
-
-}
-export enum NumberConstraintType {
-    EQUALS = "equals",
-    LESS = "less",
-    GREATER = "greater",
-}
-@registerClass
-export class NumberConstraint extends SubQuery {
-    value: number;
-    type: NumberConstraintType;
-    constructor(value: number = 0, type: NumberConstraintType = NumberConstraintType.GREATER) {
-        super();
-        this.value = value;
-        this.type = type;
-        this.constraint_type = SubQueryType.NUMBER
-    }
-    filterExpression(property: string): string {
-        let filter_cond = ""
-        switch (this.type) {
-            default:
-            case NumberConstraintType.EQUALS:
-                filter_cond = `${property} = `;
-                break;
-            case NumberConstraintType.LESS:
-                filter_cond = `${property} < `;
-                break;
-            case NumberConstraintType.GREATER:
-                filter_cond = `${property} > `;
-                break;
-        }
-        filter_cond = `${filter_cond} "${this.value}"^^${this.link.to_proptype}`;
-        return filter_cond;
-    }
-    static validPropType(propType: string): boolean {
-        return propType == 'xsd:double' ||
-            propType == 'xsd:integer' ||
-            propType == 'xsd:nonNegativeInteger' ||
-            propType == 'xsd:float' ||
-            propType.includes('year') ||
-            propType.includes('Year') ||
-            propType.includes('minutes') ||
-            propType.includes('minute') ||
-            propType.includes('centimetre') ||
-            propType.includes('kilogram')
-    }
-}
-
-@registerClass
-export class BooleanConstraint extends SubQuery {
-    value: boolean;
-    constructor(value: boolean = false) {
-        super();
-        this.value = value;
-        this.constraint_type = SubQueryType.BOOLEAN
-    }
-    filterExpression(property: string): string {
-        return `${property} = ${this.value}`;
-    }
-    static validPropType(propType: string): boolean {
-        return propType == 'xsd:boolean'
-    }
-}
-@registerClass
-export class DateConstraint extends SubQuery {
-    value: Date;
-    type: NumberConstraintType;
-    constructor(value: Date | string = new Date(), type: NumberConstraintType = NumberConstraintType.GREATER) {
-        super();
-        if (typeof value == 'string') {
-            this.value = new Date(value as string)
-        } else {
-            this.value = value as Date;
-        }
-        this.type = type;
-        this.constraint_type = SubQueryType.DATE
-    }
-    postConstruct() {
-        console.log("Postconstruct date constraint", this.value)
-        if (typeof this.value == 'string') {
-            this.value = new Date(this.value as unknown as string)
-        }
-    }
-    valueExpression(): string {
-        let date_str: string | Date = this.value
-        if (!(this.value instanceof String)) {
-            if (this.value.toISOString instanceof Function) {
-                date_str = this.value.toISOString()
-            } else {
-                console.log("Date value is not a string", this.value)
-            }
-
-        }
-        return `"${date_str}"^^xsd:dateTime`
-    }
-    filterExpression(property: string): string {
-        //TODO: test!!
-        switch (this.type) {
-            case NumberConstraintType.EQUALS:
-                return `${property} = ${this.valueExpression()}`;
-            case NumberConstraintType.LESS:
-                return `${property} < ${this.valueExpression()}`;
-            case NumberConstraintType.GREATER:
-                return `${property} > ${this.valueExpression()}`;
-        }
-
-    }
-    static validPropType(propType: string): boolean {
-        return propType == 'xsd:date'
-    }
-}
-@registerClass
-export class LinkTriplet {
+export class LinkTriplet implements ReconstructableClass {
     from_id: string;
     link_id: string;
     to_id: string;
+    semantic_link_type: LinkType;
+    constructor(link_type: LinkType = LinkType.STRUCTURAL) {
+        this.semantic_link_type = link_type;
+    }
+    postConstruct(): void {
+    }
 }
 @registerClass
-export class QuerySet {
+export class QuerySet implements ReconstructableClass {
     //from internal_id to subject_id
     nodes: Record<string, SubjectNode>;
     link_triplets: LinkTriplet[];
@@ -299,13 +67,16 @@ export class QuerySet {
         }
         return this
     }
+    postConstruct(): void {
+
+    }
 }
 export interface QuerySetGenerator {
     querySet(): QuerySet
 }
 let internal_id_counter: number = 0;
 @registerClass
-export class SubjectNode implements Subject, Diffable {
+export class SubjectNode implements Subject, Diffable, ReconstructableClass {
     subject_id: string;
     label: string;
     spos?: Record<string, Property>;
@@ -405,6 +176,10 @@ export class SubjectNode implements Subject, Diffable {
     get id(): string | number {
         return this.internal_id
     }
+
+    postConstruct(): void {
+
+    }
 }
 @registerClass
 export class UnknownNode extends SubjectNode {
@@ -430,7 +205,7 @@ export enum LinkQuantifierType {
     EXACTLY = "EXACTLY",
 }
 @registerClass
-export class LinkQuantifier {
+export class LinkQuantifier implements ReconstructableClass {
     min: number | null;
     max: number | null;
     type: LinkQuantifierType;
@@ -453,9 +228,13 @@ export class LinkQuantifier {
         }
         return "";
     }
+
+    postConstruct(): void {
+
+    }
 }
 @registerClass
-export class Link<N extends Subject = Subject> implements SubjectLink, Diffable {
+export class Link<N extends Subject = Subject> implements SubjectLink, Diffable, ReconstructableClass {
 
     link_id: number;
     from_id: string;
@@ -463,6 +242,8 @@ export class Link<N extends Subject = Subject> implements SubjectLink, Diffable 
     to_id: string;
     to_proptype: string | null;
     property_id: string | null;
+
+    semantic_link_type: LinkType = LinkType.STRUCTURAL;
 
     allow_arbitrary: boolean = false;
     quantifier: LinkQuantifier | null = null;
@@ -545,11 +326,55 @@ export class Link<N extends Subject = Subject> implements SubjectLink, Diffable 
     get id(): string | number {
         return this.link_id
     }
+
+    postConstruct(): void {
+
+    }
 }
 export type FuzzyQueryRequest = Parameters<typeof Api.prototype.classes.searchClassesClassesSearchPost>[0]
 
+@registerClass
+export class InstanceQueryProp extends QueryProp {
+    value: string;
+    constructor() {
+        super();
+        this.value = null;
+        this.constraint_type = SubQueryType.INSTANCE_PROP;
+    }
+    get is_image_prop(): boolean {
+        if (this.link.to_proptype && ALLOWED_IMAGE_PROP_TYPES.includes(this.link.to_proptype)) {
+            return true
+        }
+        return false
+    }
+    get height(): number {
+        if (this.is_image_prop) {
+            return CONSTRAINT_HEIGHT
+        }
+        return CONSTRAINT_HEIGHT / 2
+    }
+    get width(): number {
+        if (this.is_image_prop) {
+            return CONSTRAINT_HEIGHT + 15
+        }
+        return CONSTRAINT_WIDTH / 2
+    }
+    fillFromQueryProp(prop: QueryProp) {
+        for (const key in prop) {
+            if (Object.prototype.hasOwnProperty.call(prop, key)) {
+                this[key] = prop[key];
+            }
+        }
+        this.constraint_type = SubQueryType.INSTANCE_PROP;
+    }
+    changed(other: Diffable): boolean {
+        if (!(other instanceof InstanceQueryProp)) {
+            return true
+        }
+        return super.changed(other) || this.value != other.value
+    }
+}
 
-import { readableName } from "./querymapper";
 @registerClass
 export class InstanceNode extends SubjectNode {
     instance_label: string = null
@@ -557,16 +382,28 @@ export class InstanceNode extends SubjectNode {
     interactive_clone: InstanceNode | null = null
     expanded: boolean = false
     instance_data: Record<string, string> = null
+    base_node: SubjectNode = null
+    instance_query_props: InstanceQueryProp[] = []
     constructor(base_node?: SubjectNode | InstanceNode, instance_data?: Record<string, string>) {
         super(base_node)
         if (!base_node) {
             this.instance_data = instance_data || {}
         } else {
+            this.base_node = base_node
             this.instance_data = instance_data || (base_node as InstanceNode).instance_data || {}
         }
         this.instance_id = this.instance_data[this.outputId().replace('?', '')]
         this.instance_label = this.instance_data[this.labelId().replace('?', '')]
         this.instance_label = readableName(this.instance_id, this.instance_label)
+    }
+    postConstruct(): void {
+        console.log("Post construct for instance node", this)
+        this.instance_query_props = this.subqueries?.filter(sq => sq.constraint_type == SubQueryType.QUERY_PROP).map(sq => {
+            let prop = new InstanceQueryProp()
+            prop.fillFromQueryProp(sq as QueryProp)
+            prop.value = this.instance_data[prop.propVar().replace('?', '')]
+            return prop
+        }) || []
     }
     get id() {
         return this.instance_id

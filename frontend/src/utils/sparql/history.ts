@@ -2,14 +2,14 @@ import { Vector2, type Vector2Like } from "three"
 import { NodeLinkRepositoryDiff } from "./diff"
 import { NodeLinkRepository, RepositoryState } from "./store"
 import { scalingFactors } from "./querymapper"
-import { jsonClone, registerClass } from "../parsing"
-import { Api, ManifoldAlg } from "@/api/client.ts/Api"
-import { BACKEND_URL } from "../config"
+import { jsonClone, ReconstructableClass, registerClass } from "../parsing"
+import { ManifoldAlg } from "@/api/client.ts/Api"
+import { api } from "@/utils/api"
 
 
 
 @registerClass
-export class HistoryEntry {
+export class HistoryEntry implements ReconstructableClass {
     query: NodeLinkRepository
     previous_diff: NodeLinkRepositoryDiff | null
     timestamp: number
@@ -38,14 +38,17 @@ export class HistoryEntry {
         this.embedding = null
         this.fillEmbedding()
     }
+    postConstruct(): void {
+        //no-op
+    }
     private fillEmbedding() {
         if (this.embedding === null) {
             console.log("Generating embedding for history entry:", this);
             (async () => {
+                if(!this.query){
+                    return
+                }
                 this.text_representation = this.query.queryReadable()
-                let api = new Api({
-                    baseURL: BACKEND_URL,
-                })
                 const response = await api.nlp.nlpEmbeddingsNlpEmbeddingsGet({
                     query: this.text_representation,
                 })
@@ -68,7 +71,7 @@ export class HistoryEntry {
     }
 }
 @registerClass
-export class QueryHistory {
+export class QueryHistory implements ReconstructableClass {
     private history: Record<number, HistoryEntry> = {};
     get length(): number { return Object.keys(this.history).length }
     get reverse_entries(): HistoryEntry[] { return Object.values(this.history).reverse() }
@@ -106,9 +109,6 @@ export class QueryHistory {
         return add ? diff : null
     }
     async dimReduceEmbeddings(n_out: number = 2, alg: ManifoldAlg = ManifoldAlg.TSNE) {
-        let api = new Api({
-            baseURL: BACKEND_URL,
-        })
         let embeddings: number[][] = []
         let entries = this.entries
         for (let entry of entries) {
@@ -126,9 +126,6 @@ export class QueryHistory {
         })
     }
     async searchSimilarEntries(query: string, n_results: number = 5) {
-        let api = new Api({
-            baseURL: BACKEND_URL,
-        })
         const response = await api.nlp.nlpEmbeddingsClosestNlpEmbeddingsClosestPost({
             query: query,
             n_closest: n_results,
@@ -138,5 +135,8 @@ export class QueryHistory {
         return response.data.map(r => {
             return { entry: this.entries[r.index], distance: r.distance }
         })
+    }
+    postConstruct(): void {
+
     }
 }

@@ -1,4 +1,4 @@
-FROM node:24-alpine3.21 AS build-stage
+FROM node:26-alpine AS build-stage
 WORKDIR /app
 COPY package*.json ./
 RUN npm install -D

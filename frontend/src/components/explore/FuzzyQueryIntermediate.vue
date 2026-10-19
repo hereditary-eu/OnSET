@@ -15,7 +15,6 @@ import type { Candidates, EnrichedEntitiesRelations, EntitiesRelations } from '@
 import { DisplayMode, mapERLToStore, NODE_HEIGHT, NODE_WIDTH, OpenEventType } from '@/utils/sparql/helpers';
 import { SubQuery, Link, SubjectNode } from '@/utils/sparql/representation';
 import { NodeLinkRepository } from '@/utils/sparql/store';
-import { compute } from 'three/webgpu';
 import { computed, defineProps, onMounted, reactive, useTemplateRef, watch } from 'vue';
 import GraphView from './elements/GraphView.vue';
 import * as d3 from 'd3'

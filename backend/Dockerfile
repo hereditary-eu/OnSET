@@ -1,6 +1,6 @@
 FROM ubuntu:24.04 AS build-stage
 WORKDIR /conda
-RUN apt-get update && apt-get install -y  --no-install-recommends cmake build-essential wget ca-certificates git gcc g++ libssl-dev libxml2-dev libxslt-dev libffi-dev
+RUN apt-get update && apt-get install -y  --no-install-recommends cmake libstdc++6  build-essential wget ca-certificates git gcc g++ libssl-dev libxml2-dev libxslt-dev libffi-dev
 
 RUN mkdir -p ./miniconda3
 RUN wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ./miniconda3/miniconda.sh
@@ -9,14 +9,19 @@ RUN rm ./miniconda3/miniconda.sh
 # RUN sh ~/miniconda3/bin/activate
 
 ENV PATH="/conda/miniconda3/bin/:$PATH"
-ENV CUDA_VERSION=12.8.1
+ENV CUDA_VERSION=13.2.2
 RUN conda tos accept
 
 RUN conda install \
     nvidia/label/cuda-${CUDA_VERSION}::cuda-nvcc \
     nvidia/label/cuda-${CUDA_VERSION}::libcublas-dev \
-    nvidia/label/cuda-${CUDA_VERSION}::cuda-cudart-dev \
-    nvidia/label/cuda-${CUDA_VERSION}::cuda-toolkit
+    nvidia/label/cuda-${CUDA_VERSION}::cuda-cudart-dev
+
+# Force gcc/ld to use the system toolchain, not conda's (conda's binutils'
+# ld is incompatible with the Ubuntu glibc and causes
+# "undefined reference to `__nptl_change_stack_perm@GLIBC_PRIVATE`")
+ENV CFLAGS="-B/usr/bin"
+ENV CXXFLAGS="-B/usr/bin"
 
 
 WORKDIR /uv
@@ -32,7 +37,7 @@ ENV PATH="/root/.local/bin/:$PATH"
 WORKDIR /app
 ADD pyproject.toml /app
 ADD uv.lock /app
-RUN CMAKE_ARGS="-DGGML_CUDA=on  -DLLAVA_BUILD=off" uv sync
+RUN --mount=type=cache,target=/root/.cache CMAKE_ARGS="-DGGML_CUDA=on  -DLLAVA_BUILD=off" uv sync
 
 WORKDIR /app
 

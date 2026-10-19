@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { ref, watch, onMounted } from 'vue'
-import { Api, type Topic } from '@/api/client.ts/Api';
+import { type Topic } from '@/api/client.ts/Api';
 import { SubjectInCircle } from '@/utils/d3-man/CircleMan';
-import { BACKEND_URL } from '@/utils/config';
 import { HierarchicalCircleMan3D } from '@/utils/three-man/HierarchicalCircleMan3D';
 import Loading from '@/components/ui/Loading.vue';
 import { SunburstEdgeBundling } from '@/utils/d3-man/SunburstEdgeBundling';
 import SelectorGroup from '@/components/ui/SelectorGroup.vue';
+import { api } from '@/utils/api'
 
 
 enum TopicMode {
@@ -21,9 +21,6 @@ const ui_state = ref({
 const topics_root = ref(null as Topic | null)
 const circleman = new HierarchicalCircleMan3D('.graph_wrapper')
 const bundleman = new SunburstEdgeBundling('.edge_wrapper')
-const api = new Api({
-    baseURL: BACKEND_URL
-})
 const loading = ref(false)
 watch(() => { graph_data.value, topics_root.value, ui_state.value.query_mode }, () => {
     console.log('node_links changed')

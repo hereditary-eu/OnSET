@@ -2,17 +2,20 @@ import type { QueryProp } from "../sparql/representation"
 
 export enum PropType {
     CONTINOUS = 'continous',
-    DISCRETE = 'discrete'
+    DISCRETE = 'discrete',
+    VECTOR = 'vector'
 }
 export enum PropSpecificType {
     DATE = 'date',
     NUMBER = 'linear',
-    STRING = 'category'
+    STRING = 'category',
+    VECTOR = 'vector'
 }
 export enum ChartMode {
     BAR = 'bar',
     SCATTER = 'scatter',
-    HEATMAP = 'heatmap'
+    HEATMAP = 'heatmap',
+    DIM_REDUCED = 'dim_reduced',
 }
 
 export abstract class BucketSpecifier {
