@@ -6,7 +6,8 @@ enum STATE {
     PAN = 0,
     ROTATE = 1
 }
-//https://github.com/mrdoob/three.js/blob/master/examples/jsm/controls/DragControls.js
+// Adapted from https://github.com/mrdoob/three.js/blob/master/examples/jsm/controls/DragControls.js
+// MIT License, Copyright (c) 2010-2024 three.js authors.
 export class PlaneControls extends Controls<DragControlsEventMap> {
     rotateSpeed: number;
 

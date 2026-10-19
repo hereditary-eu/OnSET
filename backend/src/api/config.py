@@ -71,14 +71,6 @@ class ManMan:
             params={"infer": False, "sameAs": False},
             timeout=300,
         )
-        # store = SPARQLStore(
-        #     "http://examode.dei.unipd.it:7200/repositories/TUGraz_test",
-        #     method="POST_FORM",
-        #     params={"infer": False, "sameAs": False},
-        #     headers={
-        #         "Authorization": "GDB eyJ1c2VybmFtZSI6ImJlbmVkaWt0LmthbnR6IiwiYXV0aGVudGljYXRlZEF0IjoxNzMzODMxOTk3NTIzfQ==.QqebiiJt752/OThRujrJyNg0XXKrrteU7MhNPUCoSBI="
-        #     },
-        # )
         self.graph = Graph(store=self.store)
 
         self.config = OntologyConfig()
