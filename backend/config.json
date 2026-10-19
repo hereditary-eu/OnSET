@@ -1,0 +1,226 @@
+{
+  "default": "${ONSET_DEFAULT_CONFIG:-dbpedia}",
+  "defaults": {
+    "model_id": "${LLM_MODEL_ID:-NousResearch/Hermes-3-Llama-3.2-3B-GGUF}",
+    "model_quant": "${LLM_MODEL_QUANT:-*.Q8_0.gguf}",
+    "conn_str": "postgresql+psycopg://postgres:postgres@${ONSET_DB_HOST:-localhost}:5434/onset",
+    "sparql_endpoint": "http://${ONSET_SPARQL_HOST:-localhost}:7012",
+    "redis_cache_url": "${REDIS_CACHE_URL:-redis://localhost:6379/1}",
+    "selection_distribution": "instances"
+  },
+  "configs": {
+    "dbpedia": {
+      "name": "DBpedia",
+      "description": "DBpedia knowledge graph with multimodal (CLIP) thumbnail embeddings.",
+      "ontology_extension": [
+        "@prefix owl: <http://www.w3.org/2002/07/owl#> .",
+        "@prefix dbo: <http://dbpedia.org/ontology/> .",
+        "@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .",
+        "@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .",
+        "",
+        "dbo:thumbnail_embedding\trdf:type\towl:FunctionalProperty ,",
+        "\t\towl:DatatypeProperty .",
+        "dbo:thumbnail_embedding\trdfs:label\t\"thumbnail embedding\"@en ;",
+        "    \trdfs:domain\towl:Thing ;",
+        "        rdfs:range\t<https://w3id.org/rdf-tensor/datatypes#NumericDataTensor> ."
+      ],
+      "multimodal_config": {
+        "encoding_model": "clip-ViT-B-32",
+        "image_vector_properties": [
+          "dbo:thumbnail_embedding"
+        ],
+        "image_properties": [
+          "dbo:thumbnail"
+        ],
+        "image_types": [
+          "<http://dbpedia.org/ontology/Image>"
+        ]
+      },
+      "variants": [
+        {
+          "name": "DBpedia Mistral",
+          "model_id": "bartowski/Mistral-Small-Instruct-2409-GGUF",
+          "model_quant": "*-Q6_K.gguf"
+        },
+        {
+          "name": "DBpedia Qwen2.5 Coder 32B",
+          "model_id": "bartowski/Qwen2.5-Coder-32B-Instruct-GGUF",
+          "model_quant": "*-Q4_K_L.gguf"
+        },
+        {
+          "name": "DBpedia Qwen2.5 Coder 32B",
+          "model_id": "bartowski/Qwen2.5-32B-Instruct-GGUF",
+          "model_quant": "*-Q4_K_L.gguf"
+        },
+        {
+          "name": "DBpedia large",
+          "model_id": "NousResearch/Hermes-3-Llama-3.1-8B-GGUF"
+        }
+      ]
+    },
+    "oma": {
+      "name": "OMA",
+      "description": "Orthologous MAtrix (OMA) browser data.",
+      "conn_str": "postgresql+psycopg://postgres:postgres@${ONSET_DB_HOST:-localhost}:5434/onset-uniprot",
+      "sparql_endpoint": "http://${ONSET_SPARQL_HOST:-localhost}:7013",
+      "selection_distribution": "uniform",
+      "variants": [
+        {
+          "name": "OMA Mistral",
+          "model_id": "bartowski/Mistral-Small-Instruct-2409-GGUF",
+          "model_quant": "*-Q6_K.gguf"
+        },
+        {
+          "name": "OMA Mistral",
+          "model_id": "bartowski/Qwen2.5-Coder-32B-Instruct-GGUF",
+          "model_quant": "*-Q4_K_L.gguf"
+        },
+        {
+          "name": "OMA Mistral",
+          "model_id": "bartowski/Qwen2.5-32B-Instruct-GGUF",
+          "model_quant": "*-Q4_K_L.gguf"
+        },
+        {
+          "name": "OMA large",
+          "model_id": "NousResearch/Hermes-3-Llama-3.1-8B-GGUF"
+        }
+      ]
+    },
+    "uniprot": {
+      "name": "UniProt",
+      "description": "UniProt protein knowledge base.",
+      "conn_str": "postgresql+psycopg://postgres:postgres@${ONSET_DB_HOST:-localhost}:5434/onset-uniprot",
+      "sparql_endpoint": "http://${ONSET_SPARQL_HOST:-localhost}:7014",
+      "selection_distribution": "uniform",
+      "variants": [
+        {
+          "name": "UniProt Mistral",
+          "model_id": "bartowski/Mistral-Small-Instruct-2409-GGUF",
+          "model_quant": "*-Q6_K.gguf"
+        },
+        {
+          "name": "UniProt Mistral",
+          "model_id": "bartowski/Qwen2.5-Coder-32B-Instruct-GGUF",
+          "model_quant": "*-Q4_K_L.gguf"
+        },
+        {
+          "name": "UniProt Mistral",
+          "model_id": "bartowski/Qwen2.5-32B-Instruct-GGUF",
+          "model_quant": "*-Q4_K_L.gguf"
+        },
+        {
+          "name": "UniProt large",
+          "model_id": "NousResearch/Hermes-3-Llama-3.1-8B-GGUF"
+        }
+      ]
+    },
+    "bto": {
+      "name": "BTO",
+      "description": "BRENDA Tissue Ontology (BTO).",
+      "conn_str": "postgresql+psycopg://postgres:postgres@${ONSET_DB_HOST:-localhost}:5434/onset-bto",
+      "sparql_endpoint": "http://${ONSET_SPARQL_HOST:-localhost}:7015",
+      "selection_distribution": "uniform",
+      "variants": [
+        {
+          "name": "BTO  Mistral",
+          "model_id": "bartowski/Mistral-Small-Instruct-2409-GGUF",
+          "model_quant": "*-Q6_K.gguf"
+        },
+        {
+          "name": "BTO  Mistral",
+          "model_id": "bartowski/Qwen2.5-Coder-32B-Instruct-GGUF",
+          "model_quant": "*-Q4_K_L.gguf"
+        },
+        {
+          "name": "BTO  Mistral",
+          "model_id": "bartowski/Qwen2.5-32B-Instruct-GGUF",
+          "model_quant": "*-Q4_K_L.gguf"
+        },
+        {
+          "name": "BTO large",
+          "model_id": "NousResearch/Hermes-3-Llama-3.1-8B-GGUF"
+        }
+      ]
+    },
+    "dnb": {
+      "name": "DNB",
+      "description": "Deutsche Nationalbibliothek (DNB) catalogue data.",
+      "conn_str": "postgresql+psycopg://postgres:postgres@${ONSET_DB_HOST:-localhost}:5434/onset-dnb",
+      "sparql_endpoint": "http://${ONSET_SPARQL_HOST:-localhost}:7035",
+      "selection_distribution": "uniform",
+      "variants": [
+        {
+          "name": "DNB Mistral",
+          "model_id": "bartowski/Mistral-Small-Instruct-2409-GGUF",
+          "model_quant": "*-Q6_K.gguf"
+        },
+        {
+          "name": "DNB Mistral",
+          "model_id": "bartowski/Qwen2.5-Coder-32B-Instruct-GGUF",
+          "model_quant": "*-Q4_K_L.gguf"
+        },
+        {
+          "name": "DNB Mistral",
+          "model_id": "bartowski/Qwen2.5-32B-Instruct-GGUF",
+          "model_quant": "*-Q4_K_L.gguf"
+        },
+        {
+          "name": "DNB large",
+          "model_id": "NousResearch/Hermes-3-Llama-3.1-8B-GGUF"
+        }
+      ]
+    },
+    "yago": {
+      "name": "Yago",
+      "description": "YAGO knowledge base.",
+      "conn_str": "postgresql+psycopg://postgres:postgres@${ONSET_DB_HOST:-localhost}:5434/onset-yago",
+      "sparql_endpoint": "http://${ONSET_SPARQL_HOST:-localhost}:9024",
+      "variants": [
+        {
+          "name": "Yago Mistral",
+          "model_id": "bartowski/Mistral-Small-Instruct-2409-GGUF",
+          "model_quant": "*-Q6_K.gguf"
+        },
+        {
+          "name": "Yago Mistral",
+          "model_id": "bartowski/Qwen2.5-Coder-32B-Instruct-GGUF",
+          "model_quant": "*-Q4_K_L.gguf"
+        },
+        {
+          "name": "Yago Mistral",
+          "model_id": "bartowski/Qwen2.5-32B-Instruct-GGUF",
+          "model_quant": "*-Q4_K_L.gguf"
+        },
+        {
+          "name": "Yago 8B",
+          "model_id": "NousResearch/Hermes-3-Llama-3.1-8B-GGUF"
+        }
+      ]
+    },
+    "gutbrainie": {
+      "name": "GutBrainIE",
+      "description": "GutBrainIE biomedical relation-extraction corpus.",
+      "conn_str": "postgresql+psycopg://postgres:postgres@${ONSET_DB_HOST:-localhost}:5434/onset-gutbrainie-test",
+      "sparql_endpoint": "http://${ONSET_SPARQL_HOST:-localhost}:9101",
+      "selection_distribution": "uniform",
+      "variants": [
+        {
+          "name": "GutBrainIE 8B",
+          "model_id": "bartowski/Qwen2.5-Coder-32B-Instruct-GGUF",
+          "model_quant": "*-Q4_K_L.gguf"
+        },
+        {
+          "name": "GutBrainIE 8B",
+          "model_id": "NousResearch/Hermes-3-Llama-3.1-8B-GGUF"
+        }
+      ]
+    },
+    "dblp": {
+      "name": "DBLP Dump",
+      "description": "DBLP computer science bibliography dump.",
+      "conn_str": "postgresql+psycopg://postgres:postgres@${ONSET_DB_HOST:-localhost}:5434/onset-dblp",
+      "sparql_endpoint": "http://${ONSET_SPARQL_HOST:-localhost}:9601",
+      "selection_distribution": "uniform"
+    }
+  }
+}

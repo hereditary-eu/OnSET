@@ -20,15 +20,15 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
-      "plotly.js-basic-dist": fileURLToPath(new URL("node_modules/plotly.js-dist/plotly.js", import.meta.url))
+      "plotly.js-basic-dist": fileURLToPath(new URL("./node_modules/plotly.js-dist/plotly.js", import.meta.url))
 
     }
   },
   build: {
     target: ["chrome111", "edge111", "firefox114", "safari16.4"],
-    rolldownOptions: {
-      external: ['plotly.js-basic-dist', "buffer/"],
-    },
+    // rolldownOptions: {
+    // //   external: ['plotly.js-basic-dist', "buffer/"],
+    // },
   },
   // base: "/demo",
   envPrefix: 'ONSET_',

@@ -3,8 +3,8 @@ import { NodeLinkRepositoryDiff } from "./diff"
 import { NodeLinkRepository, RepositoryState } from "./store"
 import { scalingFactors } from "./querymapper"
 import { jsonClone, ReconstructableClass, registerClass } from "../parsing"
-import { Api, ManifoldAlg } from "@/api/client.ts/Api"
-import { BACKEND_URL } from "../config"
+import { ManifoldAlg } from "@/api/client.ts/Api"
+import { api } from "@/utils/api"
 
 
 
@@ -49,9 +49,6 @@ export class HistoryEntry implements ReconstructableClass {
                     return
                 }
                 this.text_representation = this.query.queryReadable()
-                let api = new Api({
-                    baseURL: BACKEND_URL,
-                })
                 const response = await api.nlp.nlpEmbeddingsNlpEmbeddingsGet({
                     query: this.text_representation,
                 })
@@ -112,9 +109,6 @@ export class QueryHistory implements ReconstructableClass {
         return add ? diff : null
     }
     async dimReduceEmbeddings(n_out: number = 2, alg: ManifoldAlg = ManifoldAlg.TSNE) {
-        let api = new Api({
-            baseURL: BACKEND_URL,
-        })
         let embeddings: number[][] = []
         let entries = this.entries
         for (let entry of entries) {
@@ -132,9 +126,6 @@ export class QueryHistory implements ReconstructableClass {
         })
     }
     async searchSimilarEntries(query: string, n_results: number = 5) {
-        let api = new Api({
-            baseURL: BACKEND_URL,
-        })
         const response = await api.nlp.nlpEmbeddingsClosestNlpEmbeddingsClosestPost({
             query: query,
             n_closest: n_results,

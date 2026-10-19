@@ -1,10 +1,10 @@
 import { Api } from "@/api/client.ts/Api";
 import { InstanceLink, InstanceNode, Link, SubjectNode as NodeRepr, type QuerySetGenerator } from "./representation";
-import { BACKEND_URL } from "../config";
 import { Vector2, type Vector2Like } from "three";
 import { parseJSON, ReconstructableClass, registerClass, stringifyJSON } from "../parsing";
 import { NodeLinkRepository as NodeLinkRepository } from "./store";
 import { DiffList, InstanceDiff, NodeLinkRepositoryDiff, type Diffable } from "./diff";
+import { api } from "@/utils/api"
 export function readableName(uri?: string, label?: string) {
 
     uri = uri || "-"
@@ -85,11 +85,7 @@ export function scalingFactors(store: QuerySetGenerator, target_size: Vector2Lik
 export class QueryMapper {
     api: Api<unknown> = null;
     constructor(public store: NodeLinkRepository, public target_size: Vector2Like) {
-        this.api = new Api(
-            {
-                baseURL: BACKEND_URL
-            }
-        )
+        this.api = api
 
     }
     scalingFactors() {

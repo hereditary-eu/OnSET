@@ -8,15 +8,14 @@ from sklearn.metrics import pairwise_distances
 from sklearn.manifold import MDS, TSNE, smacof
 import numpy as np
 
-from api.config import DEFAULT_MANMAN
+from api.config import ManManDep
 
-manman = DEFAULT_MANMAN
 
 nlp_router = APIRouter(prefix="/nlp")
 
 
 @nlp_router.get("/embeddings")
-def nlp_embeddings(query: str = Query(...)) -> dict[str, Any]:
+def nlp_embeddings(manman: ManManDep, query: str = Query(...)) -> dict[str, Any]:
     data = manman.guidance_man.embedding_model.encode([query]).squeeze().tolist()
     return {"embedding": data}
 
@@ -47,7 +46,7 @@ class ClosestResponse(BaseModel):
 
 
 @nlp_router.post("/embeddings/closest")
-def nlp_embeddings_closest(request: ClosestRequest) -> list[ClosestResponse]:
+def nlp_embeddings_closest(manman: ManManDep, request: ClosestRequest) -> list[ClosestResponse]:
     if request.query is not None:
         embedding = (
             manman.guidance_man.embedding_model.encode([request.query])

@@ -1,4 +1,4 @@
-import { Api, type Subject } from "@/api/client.ts/Api";
+import { type Subject } from "@/api/client.ts/Api";
 import { colormaps_d3 } from "../colormaps";
 import type { BuildTrace } from "./plot-builder";
 import type { PlotCacheEntry } from "./plot-cache";
@@ -6,8 +6,7 @@ import { ChartMode, PropType, type AnalyzedProp } from "./plot-types";
 import * as d3 from "d3";
 import type { Link, SubjectNode } from "../sparql/representation";
 import type { NodeLinkRepository } from "../sparql/store";
-import { BACKEND_URL } from "../config";
-const api = new Api<any>({ baseURL: BACKEND_URL });
+import { api } from "@/utils/api"
 export function buildEmbeddingPlotData(analyzed_props: AnalyzedProp[], result_set: Record<string, any>[], query_limitless: string, store: NodeLinkRepository<SubjectNode, Link<Subject>>): BuildTrace {
     let vector_props = analyzed_props.filter(p => p.prop_type == PropType.VECTOR)
     if (vector_props.length == 0) {

@@ -1,26 +1,17 @@
 <script setup lang="ts">
-import { RouterLink, RouterView } from 'vue-router'
-import HelloWorld from './components/HelloWorld.vue'
+import { RouterView, useRoute } from 'vue-router'
+import AppHeader from '@/components/ui/AppHeader.vue'
+
+const route = useRoute()
 </script>
 
 <template>
   <v-app>
-    <header>
-
-      <h1 class="heading">Ontology and Semantic data Exploration Tool (OnSET)</h1>
-      <div class="wrapper">
-        <nav>
-          <RouterLink to="/">Home</RouterLink>
-          <RouterLink to="/explorative">Explore!</RouterLink>
-          <RouterLink to="/3d-circles">Class Tree</RouterLink>
-          <RouterLink to="/linked-circles">Linked Data</RouterLink>
-          <RouterLink to="/graph">Graph</RouterLink>
-          <RouterLink to="/about">About</RouterLink>
-        </nav>
-      </div>
-    </header>
-
-    <RouterView />
+    <AppHeader />
+    <!-- Remount the page when the configuration changes, so no state leaks between configurations -->
+    <div class="page">
+      <RouterView :key="(route.params.configId as string | undefined) ?? 'root'" />
+    </div>
   </v-app>
 </template>
 
@@ -31,48 +22,5 @@ body {
 }
 text{
   font-family: 'Roboto Mono', monospace;
-}
-
-
-header {
-  line-height: 1.5;
-  max-height: 100vh;
-}
-
-.heading {
-  display: flex;
-  justify-items: center;
-  justify-content: center;
-}
-
-.logo {
-  display: block;
-  margin: 0 auto 2rem;
-}
-
-.header {
-  display: flex;
-  place-items: center;
-  padding-right: calc(var(--section-gap) / 2);
-}
-
-.logo {
-  margin: 0 2rem 0 0;
-}
-
-header .wrapper {
-  display: flex;
-  place-items: flex-start;
-  flex-wrap: wrap;
-}
-
-nav {
-  text-align: left;
-  margin-left: -1rem;
-  font-size: 1rem;
-
-  padding: 1rem 0;
-  margin-top: 1rem;
-
 }
 </style>

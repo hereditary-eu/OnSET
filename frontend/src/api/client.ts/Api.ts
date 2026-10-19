@@ -213,9 +213,13 @@ export interface ClosestResponse {
 
 /** ConfigCollection */
 export interface ConfigCollection {
-  multimodal: MultimodalConfig;
+  /** Id */
+  id: string;
   /** Name */
   name: string;
+  /** Description */
+  description: string;
+  multimodal: MultimodalConfig;
 }
 
 /** Constraint */

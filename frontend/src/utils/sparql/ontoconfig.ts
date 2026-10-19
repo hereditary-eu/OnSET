@@ -1,16 +1,40 @@
-import { Api, type ConfigCollection } from "@/api/client.ts/Api"
-import { BACKEND_URL } from "../config"
+import type { ConfigCollection } from "@/api/client.ts/Api"
+import { api, requireActiveConfig } from "../api"
 
-const api = new Api({
-    baseURL: BACKEND_URL
-})
+/**
+ * Property types that hold images for the active configuration.
+ * Updated in place on config changes, as the subquery registry keeps a reference to this array.
+ */
+export const ALLOWED_IMAGE_PROP_TYPES: string[] = []
+
 export class OntoConfig {
-    static config: OntoConfig = null
+    static config: OntoConfig | null = null
+    private static loading: { configId: string, promise: Promise<OntoConfig> } | null = null
+
+    /** Loads (once per configuration) the ontology config of the active configuration. */
     static async ensureConfig(): Promise<OntoConfig> {
-        if (!OntoConfig.config) {
-            OntoConfig.config = new OntoConfig((await api.ontology.getOntologyConfigOntologyConfigGet()).data)
+        const configId = requireActiveConfig()
+        if (OntoConfig.config?.config.id === configId) {
+            return OntoConfig.config
         }
-        return OntoConfig.config
+        if (OntoConfig.loading?.configId !== configId) {
+            const promise = api.ontology.getOntologyConfigOntologyConfigGet().then((resp) => {
+                const config = new OntoConfig(resp.data)
+                // ignore responses for a configuration that is no longer active
+                if (requireActiveConfig() === configId) {
+                    OntoConfig.config = config
+                    ALLOWED_IMAGE_PROP_TYPES.splice(0, ALLOWED_IMAGE_PROP_TYPES.length, ...config.config.multimodal.image_types)
+                    console.log("Allowed image prop types", ALLOWED_IMAGE_PROP_TYPES)
+                }
+                return config
+            }).finally(() => {
+                if (OntoConfig.loading?.configId === configId) {
+                    OntoConfig.loading = null
+                }
+            })
+            OntoConfig.loading = { configId, promise }
+        }
+        return OntoConfig.loading!.promise
     }
     constructor(public config: ConfigCollection) { }
 }

@@ -41,8 +41,6 @@ import { DisplayMode, InstanceSelectorOpenEvent, LinkEditEvent, OpenEventType, t
 import InstanceSelector from './elements/panels/InstanceSelector.vue';
 import { RepositoryState, type NodeLinkRepository } from '@/utils/sparql/store';
 import GraphView from './elements/GraphView.vue';
-import { Api } from '@/api/client.ts/Api';
-import { BACKEND_URL } from '@/utils/config';
 // import type { SubjectInCircle } from '@/utils/d3-man/CircleMan';
 
 import type { NodeLinkRepositoryDiff } from '@/utils/sparql/diff';
@@ -50,12 +48,10 @@ import TypeSelector from './elements/panels/TypeSelector.vue';
 import LinkComposer from './elements/LinkComposer.vue';
 import { ViewPortState } from '@/utils/editing';
 import { MOUSE } from 'three';
+import { api } from '@/utils/api'
 
 const svg_wrapper = ref<HTMLElement | null>(null)
 
-const api = new Api({
-    baseURL: BACKEND_URL
-})
 const { store, diff, simulate } = defineProps({
     store: {
         type: Object as () => NodeLinkRepository,

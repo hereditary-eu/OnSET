@@ -32,8 +32,7 @@
 </template>
 
 <script setup lang="ts">
-import { Api, type Candidates, type QueryProgress, type EntitiesRelations, type EnrichedEntitiesRelations } from '@/api/client.ts/Api';
-import { BACKEND_URL } from '@/utils/config';
+import { type Candidates, type QueryProgress, type EntitiesRelations, type EnrichedEntitiesRelations } from '@/api/client.ts/Api';
 import { ref, watch, reactive, computed, onMounted, onBeforeMount } from 'vue'
 import OnsetProgress from '../ui/OnsetProgress.vue';
 import OnsetBtn from '../ui/OnsetBtn.vue';
@@ -41,6 +40,7 @@ import { MixedResponse, NodeLinkRepository } from '@/utils/sparql/store';
 import { mapERLToStore, OpenEventType } from '@/utils/sparql/helpers';
 import Loading from '../ui/Loading.vue';
 import FuzzyQueryIntermediate from './FuzzyQueryIntermediate.vue';
+import { api } from '@/utils/api'
 const emit = defineEmits<{
     query_complete: [value: MixedResponse]
 }>()
@@ -53,9 +53,6 @@ const state = reactive({
     loading: false,
     loading_example_queries: false,
     example_queries: [] as EnrichedEntitiesRelations[]
-})
-const api = new Api({
-    baseURL: BACKEND_URL
 })
 
 onMounted(() => {

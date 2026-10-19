@@ -28,12 +28,12 @@
 <script setup lang="ts">
 import { ref, watch, reactive, computed, onMounted } from 'vue'
 import { SubQuery } from '@/utils/sparql/representation';
-import { BACKEND_URL } from '@/utils/config';
-import { Api, RELATION_TYPE, RETURN_TYPE, type Property } from '@/api/client.ts/Api';
+import { RELATION_TYPE, RETURN_TYPE, type Property } from '@/api/client.ts/Api';
 import { LINK_WIDTH, NODE_HEIGHT, NODE_WIDTH, OpenEventType, SelectorOpenEvent } from '@/utils/sparql/helpers';
 import Loading from '@/components/ui/Loading.vue';
 import { readableName, type PropertiesOpenEvent } from '@/utils/sparql/querymapper';
 import type { MixedResponse } from '@/utils/sparql/store';
+import { api } from '@/utils/api'
 const dimensions = reactive({
     width: 350,
     height: 600
@@ -41,9 +41,6 @@ const dimensions = reactive({
 const emit = defineEmits<{
     select: [value: MixedResponse]
 }>()
-const api = new Api({
-    baseURL: BACKEND_URL
-})
 const { selection_event } = defineProps({
     selection_event: {
         type: Object as () => PropertiesOpenEvent,

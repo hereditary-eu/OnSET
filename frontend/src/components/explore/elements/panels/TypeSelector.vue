@@ -47,8 +47,7 @@ import { ref, watch, reactive, computed, onMounted } from 'vue'
 import { SubQuery, Link, SubjectNode, StringConstraint, SubjectConstraint, QueryProp } from '@/utils/sparql/representation';
 import LinkComp from '../Link.vue';
 import NodeComp from '../Node.vue';
-import { BACKEND_URL } from '@/utils/config';
-import { Api, RELATION_TYPE, RETURN_TYPE } from '@/api/client.ts/Api';
+import { RELATION_TYPE, RETURN_TYPE } from '@/api/client.ts/Api';
 import { DisplayMode, LINK_WIDTH, NODE_HEIGHT, NODE_WIDTH, OpenEventType, SelectorOpenEvent } from '@/utils/sparql/helpers';
 import Loading from '@/components/ui/Loading.vue';
 import OnsetBtn from '@/components/ui/OnsetBtn.vue';
@@ -57,14 +56,11 @@ import GraphView from '../GraphView.vue';
 import { jsonClone } from '@/utils/parsing';
 import { debounce } from '@/utils/helpers';
 import { de } from 'vuetify/locale';
+import { api } from '@/utils/api'
 
 const emit = defineEmits<{
     select: [value: MixedResponse]
 }>()
-const api = new Api({
-    baseURL: BACKEND_URL
-
-})
 const { selection_event, store } = defineProps({
     selection_event: {
         type: Object as () => SelectorOpenEvent,

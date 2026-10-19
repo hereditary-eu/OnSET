@@ -30,23 +30,16 @@
 </template>
 <script setup lang="ts">
 import { ref, watch, reactive, computed, onMounted } from 'vue'
-import { SubQuery, Link, StringConstraint } from '@/utils/sparql/representation';
-import LinkComp from '../Link.vue';
-import NodeComp from '../Node.vue';
-import { BACKEND_URL } from '@/utils/config';
-import { Api, RELATION_TYPE, RETURN_TYPE, type Instance } from '@/api/client.ts/Api';
-import { CONSTRAINT_PADDING, InstanceSelectorOpenEvent, LINK_WIDTH, NODE_HEIGHT, NODE_WIDTH, OpenEventType } from '@/utils/sparql/helpers';
+import { type Instance } from '@/api/client.ts/Api';
+import { CONSTRAINT_PADDING, InstanceSelectorOpenEvent, LINK_WIDTH, NODE_HEIGHT, NODE_WIDTH } from '@/utils/sparql/helpers';
 import Loading from '@/components/ui/Loading.vue';
 import OnsetBtn from '@/components/ui/OnsetBtn.vue';
 import { readableName } from '@/utils/sparql/querymapper';
 import { debounce } from "@/utils/helpers";
+import { api } from '@/utils/api'
 const emit = defineEmits<{
     select: [value: Instance]
 }>()
-const api = new Api({
-    baseURL: BACKEND_URL
-
-})
 const { selection_event } = defineProps({
     selection_event: {
         type: Object as () => InstanceSelectorOpenEvent,
