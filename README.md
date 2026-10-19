@@ -33,3 +33,25 @@ qlever start
    - then start the frontend using `npm run dev`
 * Profit?
 
+## Configuration
+
+All knowledge graph configurations live in `backend/config.json` (path overridable with `ONSET_CONFIG`), which is used by the backend and the `exploration` scripts alike:
+
+```jsonc
+{
+  "default": "dbpedia",                  // pre-selected configuration
+  "defaults": { "model_id": "...", ... },  // shared by every configuration
+  "configs": {
+    "dbpedia": {
+      "name": "DBpedia", "description": "...", "sparql_endpoint": "...", "conn_str": "...",
+      "variants": [ { "name": "DBpedia Mistral", "model_id": "...", "model_quant": "..." } ]
+    }
+  }
+}
+```
+
+- Each configuration resolves to `defaults <- config <- variant`; `eval_config.ALL_CONFIG_MAP[key]` lists the variants followed by the base configuration, so `[-1]` (or `get_config(key)`) is the base configuration served by the API.
+- String values may reference environment variables as `${VAR}` or `${VAR:-fallback}`, e.g. `ONSET_DB_HOST`, `ONSET_SPARQL_HOST`, `REDIS_CACHE_URL`, `LLM_MODEL_ID`, `LLM_MODEL_QUANT`, `ONSET_DEFAULT_CONFIG`.
+- The API lists configurations at `GET /configs`; every other endpoint is scoped to a configuration as `/{config_id}/...` (e.g. `/dbpedia/classes/roots`, docs at `/dbpedia/docs`). Configurations are loaded lazily on first use; `ONSET_MAX_LOADED_CONFIGS` limits how many stay loaded at once (0 = unlimited).
+- The frontend mirrors this: `/` selects a configuration, `/:configId/explore` and `/:configId/circles` are the pages for it. Regenerate the API client from any configuration's schema, e.g. `sta generate -p http://localhost:8123/dbpedia/openapi.json -o ./src/api/client.ts --axios`.
+

@@ -8,7 +8,7 @@ from fastapi import (
     Body,
 )
 
-from api.config import DEFAULT_MANMAN
+from api.config import ManManDep
 from backend.src.explorative.data_tensor import DataTensorResp
 from PIL import Image
 from base64 import b64decode
@@ -18,19 +18,19 @@ from fastapi.responses import Response
 from explorative.dim_reduction import DimensionalityReducer
 
 
-manman = DEFAULT_MANMAN
 multimodal_router = APIRouter(prefix="/search")
 
 
 @multimodal_router.post("/encode/text")
 def encode_text(
+    manman: ManManDep,
     text: str = Body(...),
 ) -> DataTensorResp:
     return manman.guidance_man.encode(text=text).to_resp()
 
 
 @multimodal_router.post("/encode/image")
-def encode_image(image: str = Body(...)) -> DataTensorResp:
+def encode_image(manman: ManManDep, image: str = Body(...)) -> DataTensorResp:
     # validate_image_file(image)
     # url encoded base 64 data
     image_data = re.match(r"^data:image/([^;]+);base64,(.*)$", image)
@@ -45,6 +45,7 @@ def encode_image(image: str = Body(...)) -> DataTensorResp:
 
 @multimodal_router.post("/dim-reduce")
 def dim_reduce(
+    manman: ManManDep,
     query: str = Body(...),
     target_properties: list[str] = Body(...),
     algorithm: str = Body("umap"),

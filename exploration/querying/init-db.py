@@ -21,28 +21,11 @@ from tqdm import tqdm
 import pandas as pd
 
 # %%
-from eval_config import (
-    DBPEDIA_CONFIGS,
-    OMA_CONFIGS,
-    UNIPROT_CONFIGS,
-    BTO_CONFIGS,
-    DNB_CONFIGS,
-    YAGO_CONFIGS,
-    GUTBRAINIE_CONFIGS,
-    DBLP_CONFIGS,
-    ALL_CONFIG_MAP,
-    EvalConfig,
-)
+from eval_config import ALL_CONFIG_MAP, EvalConfig, MultimodalConfig, get_config
 
 db_setups = [
-    # OLYMPICS_CONFIGS[-1],
-    DBPEDIA_CONFIGS[-1],
-    UNIPROT_CONFIGS[-1],
-    BTO_CONFIGS[-1],
-    DNB_CONFIGS[-1],
-    YAGO_CONFIGS[-1],
-    GUTBRAINIE_CONFIGS[-1],
-    DBLP_CONFIGS[-1],
+    get_config(key)
+    for key in ["dbpedia", "uniprot", "bto", "dnb", "yago", "gutbrainie", "dblp"]
 ]
 # db_setups = []
 
@@ -75,7 +58,7 @@ if __name__ == "__main__":
 
     config = OntologyConfig()
     config.ontology_extension = setup.ontology_extension
-    config.encoding_model = setup.encoding_model
+    config.multimodal_config = setup.multimodal_config or MultimodalConfig()
 
     ontology_manager = OntologyManager(config, graph)
     dataset_manager = DatasetManager(ontology_manager)

@@ -6,19 +6,15 @@
     </div>
 </template>
 <script setup lang="ts">
-import { Api } from '@/api/client.ts/Api';
-import { BACKEND_URL } from '@/utils/config';
 import type { Link } from '@/utils/sparql/representation';
 import type { NodeLinkRepository } from '@/utils/sparql/store';
 import type { SubjectInCircle } from '@/utils/three-man/CircleMan3D';
 import { OverviewCircles } from '@/utils/three-man/OverviewCircles';
 import { onMounted, reactive, watch } from 'vue';
 import Loading from '@/components/ui/Loading.vue';
+import { api } from '@/utils/api'
 
 
-const api = new Api({
-    baseURL: BACKEND_URL
-})
 const { store, query_string, hoveredLink } = defineProps({
     store: {
         type: Object as () => NodeLinkRepository,

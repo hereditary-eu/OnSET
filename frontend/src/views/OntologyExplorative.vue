@@ -104,8 +104,7 @@ import QueryBuilder from '@/components/explore/QueryBuilder.vue';
 import ResultsView from '@/components/explore/ResultsView.vue';
 import Loading from '@/components/ui/Loading.vue';
 import { OverviewCircles } from '@/utils/three-man/OverviewCircles';
-import { Api, OperationType, type AssistantLink, type AssistantSubject } from '@/api/client.ts/Api';
-import { BACKEND_URL } from '@/utils/config';
+import { OperationType, type AssistantLink, type AssistantSubject } from '@/api/client.ts/Api';
 import type { SubjectInCircle } from '@/utils/d3-man/CircleMan';
 import OnsetBtn from '@/components/ui/OnsetBtn.vue';
 import { NodeLinkRepository, RepositoryState, type MixedResponse } from '@/utils/sparql/store';
@@ -119,11 +118,9 @@ import { HistoryEntry, QueryHistory } from '@/utils/sparql/history';
 import type { Vector2 } from 'three';
 import type { HistoryTooltipEvent } from '@/utils/sparql/helpers';
 import HistoryElement from '@/components/explore/history/HistoryElement.vue';
+import { api, configStorageKey } from '@/utils/api'
 
 
-const api = new Api({
-    baseURL: BACKEND_URL
-})
 
 // window.Prism = window.Prism || {};
 // window.Prism.manual = true;
@@ -336,13 +333,13 @@ const saveState = () => {
         return
     }
     const store_json = stringifyJSON(store.value)
-    localStorage.setItem('store', store_json)
-    localStorage.setItem('history', stringifyJSON(ui_state.history))
+    localStorage.setItem(configStorageKey('store'), store_json)
+    localStorage.setItem(configStorageKey('history'), stringifyJSON(ui_state.history))
     console.log('Saved store and history to localStorage', store_json, ui_state.history)
 }
 const loadState = () => {
-    const store_json = localStorage.getItem('store')
-    const history_json = localStorage.getItem('history')
+    const store_json = localStorage.getItem(configStorageKey('store'))
+    const history_json = localStorage.getItem(configStorageKey('history'))
     if (history_json) {
         const history_obj = parseJSON<QueryHistory>(history_json)
         console.log('Loaded history', history_obj)
@@ -358,7 +355,7 @@ const loadState = () => {
     }
 }
 const clearState = () => {
-    localStorage.removeItem('store')
+    localStorage.removeItem(configStorageKey('store'))
     store.value = null
     old_store.value = null
     ui_state.diff = null

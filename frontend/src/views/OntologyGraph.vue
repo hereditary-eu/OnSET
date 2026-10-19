@@ -1,15 +1,12 @@
 <script setup lang="ts">
 import { ref, watch, reactive, computed, onMounted } from 'vue'
 import * as d3 from 'd3'
-import { Api, type Subject } from '@/api/client.ts/Api';
+import { type Subject } from '@/api/client.ts/Api';
 import { de, fa, he } from 'vuetify/locale';
 import type { UnionType } from 'typescript';
 import { type NodeType, type SubjectInGraph, GraphMan } from '@/utils/d3-man/GraphMan';
-import { BACKEND_URL } from '@/utils/config';
+import { api } from '@/utils/api'
 const graph_data = ref([] as SubjectInGraph[])
-const api = new Api({
-    baseURL: BACKEND_URL
-})
 
 const nodes_comp = ref([] as (NodeType)[])
 const links_comp = ref([] as (d3.SimulationLinkDatum<NodeType>)[])

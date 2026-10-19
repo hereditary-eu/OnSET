@@ -15,8 +15,6 @@
 import { ref, onMounted, defineProps, watch, computed, reactive } from 'vue'
 import { Bar } from 'vue-chartjs'
 import type { NodeLinkRepository } from '@/utils/sparql/store';
-import { Api } from '@/api/client.ts/Api';
-import { BACKEND_URL } from '@/utils/config';
 import { QueryProp, SubQueryType, VectorData } from '@/utils/sparql/representation';
 import Loading from '../../ui/Loading.vue';
 import type * as  Plotly from 'plotly.js';
@@ -27,11 +25,7 @@ import { bucketizeData, analyzeProps, buildChartTraces, combineTraces, downloadD
 import { PlotCache, PlotCacheEntry } from '@/utils/result-plot/plot-cache';
 import { jsonClone } from '@/utils/parsing';
 import OnsetBtn from '@/components/ui/OnsetBtn.vue';
-const api = new Api(
-    {
-        baseURL: BACKEND_URL
-    }
-)
+import { api } from '@/utils/api'
 
 const { store, query_string, diff } = defineProps({
     store: {

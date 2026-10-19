@@ -40,24 +40,19 @@ from tqdm import tqdm
 import pandas as pd
 
 # %%
-from eval_config import (
-    DBPEDIA_CONFIGS,
-    OMA_CONFIGS,
-    UNIPROT_CONFIGS,
-    DNB_CONFIGS,
-    BTO_CONFIGS,
-    YAGO_CONFIGS,
-    EvalConfig,
-)
+from eval_config import EvalConfig, get_config
 
 db_setups = [
-    DBPEDIA_CONFIGS[-1],
-    UNIPROT_CONFIGS[-1],
-    BTO_CONFIGS[-1],
-    # DNB_CONFIGS[-1],
-    YAGO_CONFIGS[-1],
+    get_config(key)
+    for key in [
+        "dbpedia",
+        "uniprot",
+        "bto",
+        # "dnb",
+        "yago",
+    ]
 ]
-# db_setups = [BTO_CONFIGS[0]]
+# db_setups = [get_config("bto", 0)]
 
 
 parser = argparse.ArgumentParser()

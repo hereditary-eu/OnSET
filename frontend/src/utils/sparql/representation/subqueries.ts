@@ -122,11 +122,8 @@ export class SubQuery implements Diffable, ReconstructableClass {
 }
 
 
-await OntoConfig.ensureConfig()
-export const ALLOWED_IMAGE_PROP_TYPES = [
-    ...OntoConfig.config.config.multimodal.image_types
-]
-console.log("Allowed image prop types", ALLOWED_IMAGE_PROP_TYPES)
+// filled from the active configuration by OntoConfig.ensureConfig()
+export { ALLOWED_IMAGE_PROP_TYPES }
 
 
 
@@ -344,7 +341,7 @@ export class DateConstraint extends SubQuery {
 
     }
 }
-import { OntoConfig } from "../ontoconfig";
+import { ALLOWED_IMAGE_PROP_TYPES } from "../ontoconfig";
 
 export enum VectorSortModality {
     IMAGE = "image",

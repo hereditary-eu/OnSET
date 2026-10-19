@@ -5,7 +5,7 @@ from fastapi import (
 )
 
 
-from api.config import DEFAULT_MANMAN
+from api.config import ManManDep
 from model import GeneralizationQuery, SparseOutLinks, Subject, SubjectLink
 from explorative.exp_model import (
     SubjectLinkDB,
@@ -18,7 +18,6 @@ from api.router.classes.search import search_router
 from api.router.classes.instances import instances_router
 
 
-manman = DEFAULT_MANMAN
 
 classes_router = APIRouter(prefix="/classes")
 classes_router.include_router(search_router)
@@ -26,7 +25,7 @@ classes_router.include_router(instances_router)
 
 
 @classes_router.get("/outlinks")
-def get_outlinks(subject_id: str = Query()) -> SparseOutLinks:
+def get_outlinks(manman: ManManDep, subject_id: str = Query()) -> SparseOutLinks:
     if not hasattr(manman.dataset_manager, "engine"):
         manman.dataset_manager.initialise(
             glob_path=f"{manman.base_path}/datasets/ALS/**/*.csv"
@@ -36,6 +35,7 @@ def get_outlinks(subject_id: str = Query()) -> SparseOutLinks:
 
 @classes_router.get("/subjects")
 def get_subject(
+    manman: ManManDep,
     subject_id: str = Query(),
 ) -> Subject | None:
     return manman.ontology_manager.enrich_subject(subject_id)
@@ -43,6 +43,7 @@ def get_subject(
 
 @classes_router.get("/links")
 def get_link(
+    manman: ManManDep,
     link_id: str = Query(),
 ) -> SubjectLink | None:
     with Session(manman.guidance_man.engine) as session:
@@ -58,6 +59,7 @@ def get_link(
 
 @classes_router.get("/relations")
 def get_relations(
+    manman: ManManDep,
     q: str | None = Query(None),
     from_id: str | None = Query(None),
     to_id: str | None = Query(None),
@@ -66,28 +68,29 @@ def get_relations(
 
 
 @classes_router.get("/full")
-def get_full_classes() -> list[Subject]:
+def get_full_classes(manman: ManManDep) -> list[Subject]:
     roots = manman.ontology_manager.get_full_classes()
     return roots
 
 
 @classes_router.get("/roots")
-def get_root_classes() -> list[Subject]:
+def get_root_classes(manman: ManManDep) -> list[Subject]:
     return manman.ontology_manager.get_root_classes()
 
 
 @classes_router.get("/subclasses")
-def get_class(cls: str = Query()) -> list[Subject]:
+def get_class(manman: ManManDep, cls: str = Query()) -> list[Subject]:
     return manman.ontology_manager.get_subclasses(cls)
 
 
 @classes_router.post("/subclasses/search")
-def get_class_search(q: FuzzyQuery = Body(FuzzyQuery())) -> FuzzyQueryResults:
+def get_class_search(manman: ManManDep, q: FuzzyQuery = Body(FuzzyQuery())) -> FuzzyQueryResults:
     return manman.guidance_man.search_subclasses(q)
 
 
 @classes_router.post("/parents/most_generic")
 def get_most_generics(
+    manman: ManManDep,
     q: GeneralizationQuery = Body(GeneralizationQuery()),
 ) -> Subject:
     return manman.ontology_manager.get_most_generic_classes(q)

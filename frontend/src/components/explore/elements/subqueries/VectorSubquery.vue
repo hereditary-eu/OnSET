@@ -20,16 +20,12 @@
 
 </template>
 <script setup lang="ts">
-import { Api } from '@/api/client.ts/Api';
 import PictureDrawer from '@/components/ui/PictureDrawer.vue';
-import { BACKEND_URL } from '@/utils/config';
 import { debounce } from '@/utils/helpers';
 import { VectorSort, VectorSortModality } from '@/utils/sparql/representation';
 import { defineProps, reactive, watch } from 'vue'
+import { api } from '@/utils/api'
 
-const api = new Api({
-    baseURL: BACKEND_URL
-})
 const { constraint } = defineProps({
     constraint: {
         type: Object as () => VectorSort,

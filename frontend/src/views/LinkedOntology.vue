@@ -1,21 +1,18 @@
 <script setup lang="ts">
 import { ref, watch, reactive, computed, onMounted } from 'vue'
 import * as d3 from 'd3'
-import { Api, type Subject, type Topic } from '@/api/client.ts/Api';
+import { type Subject, type Topic } from '@/api/client.ts/Api';
 import { de, fa, he } from 'vuetify/locale';
 import type { UnionType } from 'typescript';
 import { type NodeType, type SubjectInGraph, GraphMan } from '@/utils/d3-man/GraphMan';
 import { CircleMan, SubjectInCircle } from '@/utils/d3-man/CircleMan';
-import { BACKEND_URL } from '@/utils/config';
 import { CircleMan3D } from '@/utils/three-man/CircleMan3D';
 import { HierarchicalCircleMan3D } from '@/utils/three-man/HierarchicalCircleMan3D';
 import Loading from '@/components/ui/Loading.vue';
+import { api } from '@/utils/api'
 const graph_data = ref([] as SubjectInCircle[])
 const topics_root = ref(null as Topic | null)
 const circleman = new CircleMan()
-const api = new Api({
-    baseURL: BACKEND_URL
-})
 const loading = ref(false)
 watch(() => { graph_data.value, topics_root.value }, () => {
     console.log('node_links changed')

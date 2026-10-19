@@ -1,44 +1,34 @@
 import os
+import threading
+from collections import OrderedDict
+from typing import Annotated
+
+from fastapi import Depends, HTTPException, Request
 
 from assistant.iterative_assistant import IterativeAssistant
 from assistant.model import Operations
 from datasetmatcher import DatasetManager
-from eval_config import (
-    ALL_CONFIG_MAP,
-)
+from eval_config import CONFIG_FILE, EvalConfig, MultimodalConfig
 from explorative.explorative_support import GuidanceManager
 from explorative.llm_query import LLMQuery
 from initiator import InitatorManager
 from ontology import Graph, OntologyConfig, OntologyManager
 from redis_cache import RedisCache
 
-from eval_config import MultimodalConfig
 from rdflib.plugins.stores.sparqlstore import SPARQLStore
 
 base_path = "../../data"
 onto_path = f"{base_path}/hero-ontology/hereditary_clinical.ttl"
 
+# Name of the URL path parameter selecting the configuration, e.g. /{config_id}/classes/roots
+CONFIG_PATH_PARAM = "config_id"
+
 
 class ManMan:
-    def __init__(self, config_name: str = "dbpedia", idx: int = -1):
-        self.db_config = None
-        self.config_name = config_name
-        self.idx = idx
-
-        db_config = ALL_CONFIG_MAP[config_name][idx]
-        # db_config = GUTBRAINIE_CONFIGS[1]
-
-        db_config.conn_str = os.getenv("DB_CONN_STR", db_config.conn_str)
-        db_config.sparql_endpoint = os.getenv(
-            "SPARQL_ENDPOINT", db_config.sparql_endpoint
-        )
-        db_config.model_id = os.getenv("LLM_MODEL_ID", db_config.model_id)
-        db_config.model_quant = os.getenv("LLM_MODEL_QUANT", db_config.model_quant)
-        db_config.redis_cache_url = os.getenv(
-            "REDIS_CACHE_URL", db_config.redis_cache_url
-        )
-        print("Using DB config:", db_config)
+    def __init__(self, config_id: str, db_config: EvalConfig):
+        self.config_id = config_id
         self.db_config = db_config
+        print(f"Using DB config '{config_id}':", db_config)
 
         self.base_path = base_path
         self.onto_path = onto_path
@@ -98,4 +88,55 @@ class ManMan:
         )
 
 
-DEFAULT_MANMAN = ManMan()
+class ManManRegistry:
+    """Lazily creates one ManMan per configuration and keeps the most recently used ones.
+
+    Each ManMan may hold its own embedding/LLM models, so at most ``max_loaded``
+    of them are kept alive (``ONSET_MAX_LOADED_CONFIGS``, 0 = unlimited).
+    """
+
+    def __init__(self, max_loaded: int = 0):
+        self.max_loaded = max_loaded
+        self._loaded: OrderedDict[str, ManMan] = OrderedDict()
+        self._lock = threading.Lock()
+        self._key_locks: dict[str, threading.Lock] = {}
+
+    def __contains__(self, config_id: str) -> bool:
+        return config_id in CONFIG_FILE.configs
+
+    def get(self, config_id: str) -> ManMan:
+        if config_id not in self:
+            raise KeyError(config_id)
+        with self._lock:
+            if config_id in self._loaded:
+                self._loaded.move_to_end(config_id)
+                return self._loaded[config_id]
+            key_lock = self._key_locks.setdefault(config_id, threading.Lock())
+        # Construct outside the global lock so other configurations stay responsive
+        with key_lock:
+            with self._lock:
+                if config_id in self._loaded:
+                    return self._loaded[config_id]
+            manman = ManMan(config_id, CONFIG_FILE.base(config_id))
+            with self._lock:
+                self._loaded[config_id] = manman
+                while self.max_loaded > 0 and len(self._loaded) > self.max_loaded:
+                    evicted, _ = self._loaded.popitem(last=False)
+                    print(f"Unloading config '{evicted}'")
+            return manman
+
+
+REGISTRY = ManManRegistry(max_loaded=int(os.getenv("ONSET_MAX_LOADED_CONFIGS", "0")))
+
+
+def get_manman(request: Request) -> ManMan:
+    """Resolve the ManMan of the configuration addressed in the URL path."""
+    config_id = request.path_params.get(CONFIG_PATH_PARAM)
+    if config_id is None or config_id not in REGISTRY:
+        raise HTTPException(
+            status_code=404, detail=f"Unknown configuration '{config_id}'"
+        )
+    return REGISTRY.get(config_id)
+
+
+ManManDep = Annotated[ManMan, Depends(get_manman)]

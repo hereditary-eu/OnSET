@@ -5,7 +5,7 @@ import type { NodeLinkRepository } from "../sparql/store";
 import type { PlotCacheEntry } from "./plot-cache";
 import { buildEmbeddingPlotData as buildEmbeddingPlotTraces } from "./plot-embedding-builder";
 import { BucketSpecifier, ChartMode, ContinuousBucketSpecifier, DiscreteBucketSpecifier, PropSpecificType, PropType, type AnalyzedProp } from "./plot-types";
-import * as Plotly from "plotly.js"
+import * as Plotly from "plotly.js-dist-min"
 //https://stackoverflow.com/questions/12303989/cartesian-product-of-multiple-arrays-in-javascript
 function cartesianProduct<T>(arr: T[][]): T[][] {
     return arr.reduce(function (a, b) {

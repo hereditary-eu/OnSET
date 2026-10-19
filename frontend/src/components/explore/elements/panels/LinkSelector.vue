@@ -57,8 +57,7 @@
 <script setup lang="ts">
 import { ref, watch, reactive, computed } from 'vue'
 import { SubQuery, Link, SubjectNode, SubjectConstraint, QueryProp } from '@/utils/sparql/representation';
-import { BACKEND_URL } from '@/utils/config';
-import { Api, RELATION_TYPE, RETURN_TYPE } from '@/api/client.ts/Api';
+import { RELATION_TYPE, RETURN_TYPE } from '@/api/client.ts/Api';
 import { DisplayMode, LINK_WIDTH, LinkEditEvent, NODE_HEIGHT, NODE_WIDTH, OpenEventType, SelectorOpenEvent } from '@/utils/sparql/helpers';
 import Loading from '@/components/ui/Loading.vue';
 import OnsetBtn from '@/components/ui/OnsetBtn.vue';
@@ -66,6 +65,7 @@ import { MixedResponse, type NodeLinkRepository } from '@/utils/sparql/store';
 import GraphView from '../GraphView.vue';
 import { jsonClone } from '@/utils/parsing';
 import { debounce } from '@/utils/helpers';
+import { api } from '@/utils/api'
 
 class MappedSelection {
     constructor(public option: MixedResponse<SubjectNode>, public validProp: boolean = true, public validFilter: boolean = true) { }
@@ -77,10 +77,6 @@ const emit = defineEmits<{
     hover_option: [value: Link | null]
     finished: [value: LinkEditEvent]
 }>()
-const api = new Api({
-    baseURL: BACKEND_URL
-
-})
 const { selection_event, store } = defineProps({
     selection_event: {
         type: Object as () => SelectorOpenEvent,

@@ -12,13 +12,9 @@
     </div>
 </template>
 <script setup lang="ts">
-import { Api } from '@/api/client.ts/Api';
-import { BACKEND_URL } from '@/utils/config';
 import { InstanceQueryProp } from '@/utils/sparql/representation';
 import { computed, defineProps, onMounted, ref, watch } from 'vue'
-const api = new Api({
-    baseURL: BACKEND_URL
-})
+import { api } from '@/utils/api'
 const { query } = defineProps({
     query: {
         type: Object as () => InstanceQueryProp,
