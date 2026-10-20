@@ -13,7 +13,7 @@ import pandas as pd
 
 from explorative.data_tensor import DataTensor
 from model import SubjectLink
-from ontology import OntologyManager
+from ontology import OntologyManager, wrap_iri
 
 from explorative.exp_model import (
     BasePostgres,
@@ -272,6 +272,7 @@ class GuidanceManager:
                     ),
                 ).where(SubjectLinkDB.onto_hash == self.identifier)
                 if query.from_id is not None:
+                    query.from_id = wrap_iri(query.from_id)
                     if isinstance(query.from_id, str):
                         query.from_id = [query.from_id]
                     from_parents = [
@@ -287,6 +288,7 @@ class GuidanceManager:
                         SubjectLinkDB.from_id.in_(from_parents),
                     )
                 if query.to_id is not None:
+                    query.to_id = wrap_iri(query.to_id)
                     to_parents = self.oman.get_parents(query.to_id) + [query.to_id]
                     if query.include_thing:
                         to_parents.append("owl:Thing")
@@ -321,6 +323,7 @@ class GuidanceManager:
         with Session(self.engine) as session:
             query_embedding = self.__embed_query(query, session)
             results: list[FuzzyQueryResult] = []
+            query.from_id = wrap_iri(query.from_id)
             subclasses = self.oman.get_all_subclasses(query.from_id)
             # rerank by embedding
             query = (

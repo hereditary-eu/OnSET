@@ -481,6 +481,7 @@ OPTIONAL {{?obj rdfs:label ?obj_lbl.}}
     ):
         if cls is None:
             return None
+        cls = wrap_iri(cls)
         col_ref = cls.n3(self.onto.namespace_manager) if hasattr(cls, "n3") else cls
 
         # print("Enriching", col_ref)

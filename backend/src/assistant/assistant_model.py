@@ -158,23 +158,34 @@ class AssistantLink(BaseModel):
 
     @staticmethod
     def from_link(
+        graph: "QueryGraph",
         link: SubjectLink,
         from_subject_id: str,
         to_subject_id: str,
         id: str | None = None,
+        force_complete: bool = True,
     ) -> "AssistantLink":
         """from_subject/to_subject are the internal ids of the linked AssistantSubjects."""
-        return AssistantLink(
+        from_subject = graph.get_subject_by_id(from_subject_id)
+        to_subject = graph.get_subject_by_id(to_subject_id)
+        if (from_subject is None or to_subject is None) and force_complete:
+            raise ValueError(
+                f"from_subject_id {from_subject_id} or to_subject_id {to_subject_id} not found in graph."
+            )
+        link = AssistantLink(
             uri=link.property_id,
             label=link.label or link.property_id,
             id=id,
             from_subject_id=from_subject_id,
             to_subject_id=to_subject_id,
-            from_subject_label=link.from_subject.label,
-            from_subject_uri=link.from_subject.subject_id,
-            to_subject_label=link.to_subject.label,
-            to_subject_uri=link.to_subject.subject_id,
         )
+        if from_subject is not None:
+            link.from_subject_label = from_subject.label
+            link.from_subject_uri = from_subject.uri
+        if to_subject is not None:
+            link.to_subject_label = to_subject.label
+            link.to_subject_uri = to_subject.uri
+        return link
 
     def get_full(self, manman: "ManMan"):
         subject = manman.ontology_manager.enrich_subject(self.uri, load_properties=True)
@@ -192,6 +203,12 @@ class QueryGraph(BaseModel):
             if subject.id == id:
                 return subject
         return None
+
+    def has_subject(self, subject_id: str) -> bool:
+        return any(s.id == subject_id for s in self.subjects)
+
+    def has_link(self, link_id: str) -> bool:
+        return any(l.id == link_id for l in self.links)
 
     def next_id(self, prefix: str) -> str:
         existing_ids = []
@@ -212,15 +229,27 @@ class QueryGraph(BaseModel):
 
     def add_subject(self, subject: AssistantSubject):
         if subject.id is None or subject.id == "":
-            subject.id = self.next_subject_id()
+            subject.id = self.next_id(
+                prefix=subject.label.replace(" ", "_").lower() + "_"
+            )
         self.subjects.append(subject)
 
     def add_link(self, link: AssistantLink):
+        assert self.has_subject(link.from_subject_id), (
+            f"from_subject_id {link.from_subject_id} not found in graph."
+        )
+        assert self.has_subject(link.to_subject_id), (
+            f"to_subject_id {link.to_subject_id} not found in graph."
+        )
         if link.id is None or link.id == "":
-            link.id = self.next_link_id()
+            link.id = self.next_id(prefix=link.label.replace(" ", "_").lower() + "_")
+        assert not self.has_link(link.id), f"link id {link.id} already exists in graph."
         self.links.append(link)
 
     def remove_subject(self, subject_id: str):
+        assert self.has_subject(subject_id), (
+            f"subject_id {subject_id} not found in graph."
+        )
         self.subjects = [s for s in self.subjects if s.id != subject_id]
         self.links = [
             l
@@ -229,6 +258,7 @@ class QueryGraph(BaseModel):
         ]
 
     def remove_link(self, link_id: str):
+        assert self.has_link(link_id), f"link_id {link_id} not found in graph."
         self.links = [l for l in self.links if l.id != link_id]
 
     def has_subject(self, subject_id: str) -> bool:
