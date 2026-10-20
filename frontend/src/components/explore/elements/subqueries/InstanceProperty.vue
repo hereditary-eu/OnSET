@@ -1,28 +1,22 @@
 <template>
-    <div class="query">
-        <div class="image_property" v-if="query.is_image_prop">
-            <img :src="image_data" alt="Image property" style="max-width: 100%; max-height: 100%;" />
-
-        </div>
-        <div v-else>
-            <span> <v-icon icon="mdi-tag"></v-icon>
-            </span>
-            <span class="query_label">{{ query.value }}</span>
-        </div>
+    <div class="constraint">
+        <img v-if="query.is_image_prop" :src="image_data" alt="Image property" />
+        <template v-else>
+            <OnsetIcon icon="mdi-tag" />
+            <span class="constraint_label">{{ query.value }}</span>
+        </template>
     </div>
 </template>
 <script setup lang="ts">
 import { InstanceQueryProp } from '@/utils/sparql/representation';
-import { computed, defineProps, onMounted, ref, watch } from 'vue'
+import { onMounted, ref, watch } from 'vue'
+import OnsetIcon from '@/components/ui/OnsetIcon.vue';
 import { api } from '@/utils/api'
 const { query } = defineProps({
     query: {
         type: Object as () => InstanceQueryProp,
         required: true
     }
-})
-onMounted(() => {
-    // console.log("InstanceProperty mounted with query", query, "is image prop?", query.is_image_prop)
 })
 const image_data = ref<string | null>(null)
 const loadImage = async () => {
@@ -53,18 +47,3 @@ onMounted(() => {
     loadImage();
 })
 </script>
-<style lang="scss" scoped>
-.query_label {
-    margin-right: 5px;
-}
-
-.query_select {
-    margin-right: 5px;
-    border: rgb(105, 132, 99) 1px solid;
-    border-radius: 0px;
-}
-
-.image_property {
-    margin: 5px;
-}
-</style>

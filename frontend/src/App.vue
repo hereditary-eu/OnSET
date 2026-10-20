@@ -6,34 +6,18 @@ const route = useRoute()
 </script>
 
 <template>
-  <v-app>
+  <div class="app_root">
     <AppHeader />
     <!-- Remount the page when the configuration changes, so no state leaks between configurations -->
     <div class="page">
       <RouterView :key="(route.params.configId as string | undefined) ?? 'root'" />
     </div>
-  </v-app>
+  </div>
 </template>
 
 <style>
 body {
-  font-family: 'Roboto Mono', monospace;
+  font-family: var(--font-mono);
   margin: 0px;
-}
-
-text {
-  font-family: 'Roboto Mono', monospace;
-}
-
-
-header {
-  line-height: 1.5;
-  max-height: 100vh;
-}
-
-.heading {
-  display: flex;
-  justify-items: center;
-  justify-content: center;
 }
 </style>

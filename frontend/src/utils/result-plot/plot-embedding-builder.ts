@@ -7,6 +7,8 @@ import * as d3 from "d3";
 import type { Link, SubjectNode } from "../sparql/representation";
 import type { NodeLinkRepository } from "../sparql/store";
 import { api } from "@/utils/api"
+import type { ScatterData } from "plotly.js-dist";
+import * as Plotly from "plotly.js-dist";
 export function buildEmbeddingPlotData(analyzed_props: AnalyzedProp[], result_set: Record<string, any>[], query_limitless: string, store: NodeLinkRepository<SubjectNode, Link<Subject>>): BuildTrace {
     let vector_props = analyzed_props.filter(p => p.prop_type == PropType.VECTOR)
     if (vector_props.length == 0) {
@@ -67,7 +69,7 @@ export function buildEmbeddingPlotData(analyzed_props: AnalyzedProp[], result_se
         marker: { size: 8, color: colors || "blue" },
         
 
-    } as Plotly.PlotData
+    } as ScatterData
     return {
         trace,
         chart_mode: ChartMode.DIM_REDUCED,

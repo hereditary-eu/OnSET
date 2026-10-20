@@ -4,13 +4,12 @@ from model import (
     GeneralizationQuery,
     Instance,
     InstanceQuery,
+    LinkedSubject,
     Property,
     PropertyValue,
     Subject,
-    SubjectLink,
 )
 import pandas as pd
-from rdflib.plugins.sparql import prepareQuery
 from tqdm import tqdm
 import traceback
 from rdflib.plugins.parsers.notation3 import BadSyntax
@@ -123,21 +122,15 @@ class OntologyManager:
     def __queries_res_raw(self, q: str):
         res = [self.onto.query(q)]
         if self.addtional_graph is not None:
-            res.extend(self.addtional_graph.query(q))
+            res.append(self.addtional_graph.query(q))
         return res
 
+    def __subjects_for(self, q: str, **enrich_kwargs) -> list[Subject]:
+        """Enrich the first column of every result row of ``q``."""
+        return [self.enrich_subject(row[0], **enrich_kwargs) for row in self.__query(q)]
+
     def q_to_df(self, q: str):
-        results = list(self.__query(q))
-        # for r in results:
-        #     for t in r:
-        #         if isinstance(t, URIRef):
-        #             print(t.n3(onto.namespace_manager))
-        #         else:
-        #             print(t)
-        # return pd.DataFrame(results).map(
-        #     lambda x: x.n3(self.onto.namespace_manager) if hasattr(x, "n3") else x
-        # )
-        return pd.DataFrame(results)
+        return pd.DataFrame(self.__query(q))
 
     def q_to_df_values(self, q: str) -> pd.DataFrame:
         result_sets = self.__queries_res_raw(q)
@@ -149,16 +142,6 @@ class OntologyManager:
         results_df = pd.DataFrame(results)
         results_df = results_df.map(self.to_readable)
         return results_df
-
-    def df_to_labels(self, df: pd.DataFrame):
-        labeled_df = df.copy()
-        for i, row in df.iterrows():
-            for j, col in row.items():
-                data = list(
-                    self.__query(f"SELECT ?label WHERE {{ {col} rdfs:label ?label }}")
-                )
-                labeled_df.at[i, j] = data[0][0] if data else col
-        return labeled_df
 
     def get_root_classes(self, load_properties=False) -> list[Subject]:
         classes = self.q_to_df(self.config.parent_class_query)
@@ -184,22 +167,10 @@ class OntologyManager:
         return onto_classes
 
     def get_subclasses(self, cls: str, load_properties=False) -> list[Subject]:
-        # query = prepareQuery(
-        #     queryString=self.config.sub_class_query,
-        #     initNs={
-        #         prefix.ttl_prefix: prefix.uri for prefix in self.config.ttl_prefixes
-        #     },
-        # )
-        classes = list(
-            self.__query(
-                self.config.sub_class_query.replace("?cls", cls),
-            )
+        return self.__subjects_for(
+            self.config.sub_class_query.replace("?cls", cls),
+            load_properties=load_properties,
         )
-        onto_classes: list[Subject] = [
-            self.enrich_subject(cls[0], load_properties=load_properties)
-            for cls in classes
-        ]
-        return onto_classes
 
     def get_all_subclasses(self, cls: str) -> list[Subject]:
         query = f"""SELECT ?scls
@@ -208,15 +179,7 @@ class OntologyManager:
                          ?scls rdfs:subClassOf* {cls}.
                     }}
                     """
-        classes = list(
-            self.__query(
-                query,
-            )
-        )
-        onto_classes: list[Subject] = [
-            self.enrich_subject(cls[0], subject_type="class") for cls in classes
-        ]
-        return onto_classes
+        return self.__subjects_for(query, subject_type="class")
 
     def get_named_individuals(self, cls: str, limit=128) -> list[Subject]:
         query = f"""SELECT ?ind
@@ -226,18 +189,7 @@ class OntologyManager:
                     }}
                     LIMIT {limit}
                     """
-        individuals = list(
-            self.__query(
-                query,
-                # initBindings={"cls": cls},
-            )
-        )
-        onto_classes: list[Subject] = [
-            self.enrich_subject(ind[0], subject_type="individual")
-            for ind in individuals
-        ]
-
-        return onto_classes
+        return self.__subjects_for(query, subject_type="individual")
 
     def get_instances(self, query: InstanceQuery) -> list[Instance]:
         if query.q is None:
@@ -302,12 +254,6 @@ class OntologyManager:
         else:
             return cls
 
-    def to_readable_literals(self, cls: str | Literal | URIRef):
-        if isinstance(cls, Literal):
-            return cls.value
-        else:
-            return cls
-
     def __label_candidates(self, data: list[tuple[URIRef, Literal]]):
         label_candidates: dict[str, list[str]] = {}
         for ref, label in data:
@@ -332,30 +278,18 @@ class OntologyManager:
             print("Skipping", cls)
             return {}
         try:
-            # print("Loading outgoing edges for", cls, edges)
-            if edges and len(edges) > 0:
-                outgoing_edges = list(
-                    self.__query(
-                        f"""
-                    SELECT DISTINCT ?edge ?edge_lbl ?obj ?obj_lbl WHERE {{ {cls} ?edge ?obj. FILTER (?edge in ({", ".join(edges)})) 
-OPTIONAL {{?edge rdfs:label ?edge_label.}}
-OPTIONAL {{?obj rdfs:label ?obj_lbl.}}
-                    }}
-                    LIMIT {limit}
-                    """
-                    )
-                )
-            else:
-                outgoing_edges = list(
-                    self.__query(
-                        f"""
-                    SELECT DISTINCT ?edge ?edge_lbl ?obj ?obj_lbl WHERE {{ {cls} ?edge ?obj. 
+            edge_filter = (
+                f"FILTER (?edge in ({', '.join(edges)})) " if edges else ""
+            )
+            # NOTE: ?edge_label (not ?edge_lbl) is bound, so edge labels stay empty
+            outgoing_edges = self.__query(
+                f"""
+                    SELECT DISTINCT ?edge ?edge_lbl ?obj ?obj_lbl WHERE {{ {cls} ?edge ?obj. {edge_filter}
 OPTIONAL {{?edge rdfs:label ?edge_label.}}
 OPTIONAL {{?obj rdfs:label ?obj_lbl.}}
                     }}
                     LIMIT {limit}"""
-                    )
-                )
+            )
             outgoing_edge_label_candidates: dict[str, list[str]] = (
                 self.__label_candidates(
                     [(edge, edge_lbl) for edge, edge_lbl, _, _ in outgoing_edges]
@@ -398,19 +332,6 @@ OPTIONAL {{?obj rdfs:label ?obj_lbl.}}
             print(traceback.format_exc(), e, cls)
             return {}
 
-    def refcount(self, cls):
-        try:
-            refcount = list(
-                self.__query(
-                    f"""
-                SELECT (COUNT(?s) as ?count) WHERE {{ ?s ?p {cls}. }}"""
-                )
-            )
-            return refcount[0][0].value
-        except Exception as e:
-            print(traceback.format_exc())
-            return 0
-
     def properties_for(
         self, cls: str, property_type: str = "ObjectProperty", n_props=None
     ) -> list[Subject]:
@@ -418,24 +339,16 @@ OPTIONAL {{?obj rdfs:label ?obj_lbl.}}
             print("Skipping", cls)
             return []
         try:
-            # print("Loading properties for", cls)
-            properties = list(
-                self.__query(
-                    f"""
+            return self.__subjects_for(
+                f"""
                 SELECT DISTINCT ?prop WHERE {{ 
                 ?prop rdf:type {property_type}.
                 {{?prop rdfs:domain/(owl:unionOf/rdf:rest*/rdf:first)* {cls}. }}
                 UNION
                 {{?prop rdfs:domain {cls}. }}
-                }} {f"LIMIT {n_props}" if n_props else ""}"""
-                )
+                }} {f"LIMIT {n_props}" if n_props else ""}""",
+                subject_type="individual",
             )
-            # print("Loaded", len(properties), "properties for", cls)
-            props_mapped: list[Subject] = [
-                self.enrich_subject(prop[0], subject_type="individual")
-                for prop in properties
-            ]
-            return props_mapped
         except Exception as e:
             print(traceback.format_exc())
             print("Failed to load properties for", cls)
@@ -443,20 +356,13 @@ OPTIONAL {{?obj rdfs:label ?obj_lbl.}}
 
     def range_of(self, prop: str, n_ranges: int = None):
         try:
-            # print("Loading properties for", cls)
-            ranges = list(
-                self.__query(
-                    f"""
+            return self.__subjects_for(
+                f"""
                 SELECT DISTINCT ?range WHERE {{ 
                 {prop} rdfs:range/(owl:unionOf/rdf:rest*/rdf:first)* ?range.
-                }} {f"LIMIT {n_ranges}" if n_ranges else ""}"""
-                )
+                }} {f"LIMIT {n_ranges}" if n_ranges else ""}""",
+                subject_type="individual",
             )
-            # print("Loaded", len(properties), "properties for", cls)
-            ranges_mapped: list[Subject] = [
-                self.enrich_subject(r[0], subject_type="individual") for r in ranges
-            ]
-            return ranges_mapped
         except Exception as e:
             print(traceback.format_exc())
             print("Failed to load range of", prop, e)
@@ -577,12 +483,6 @@ OPTIONAL {{?obj rdfs:label ?obj_lbl.}}
             return []
         return parents["p"].to_list()
 
-    def get_instance_properties(self, instance_id: str) -> list[dict[str, str]]:
-        properties = self.q_to_df_values(
-            f"SELECT DISTINCT ?p ?o WHERE {{ {instance_id} ?p ?o }}"
-        )
-        return properties.to_dict(orient="records")
-
     def get_most_generic_classes(self, q: GeneralizationQuery):
         """
         Determine the most generic parent classes for a given class.
@@ -600,19 +500,9 @@ OPTIONAL {{?obj rdfs:label ?obj_lbl.}}
                     group by ?cls ?distance 
                     order by  DESC(?distance) 
                     """
-        classes = list(
-            self.__query(
-                query,
-            )
-        )
-
-        class LinkedSubject(Subject):
-            out_links: list[SubjectLink] = Field([])
-            in_links: list[SubjectLink] = Field([])
-
-        parent_classes: list[LinkedSubject] = [
-            self.enrich_subject(cls[0], subject_type="class") for cls in classes
-        ] + [self.enrich_subject(q.cls, subject_type="class")]
+        parent_classes: list[LinkedSubject] = self.__subjects_for(
+            query, subject_type="class"
+        ) + [self.enrich_subject(q.cls, subject_type="class")]
         parent_classes = [
             LinkedSubject.model_validate(cls.model_dump()) for cls in parent_classes
         ]

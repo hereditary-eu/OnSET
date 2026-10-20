@@ -1,20 +1,15 @@
 <template>
-    <div>
-        <div class="d-flex align-center data_container">
-            <OnsetBtn v-for="topic of shown_components" :key="topic.topic_id" v-model="topic.selected" :btn_width="'18rem'" :btn_height="'4rem'" :toggleable="true"
-                class="flex-grow-1 topic_btn">
-                {{ topic.topic }}
-            </OnsetBtn>
-        </div>
+    <div class="topic_selector">
+        <OnsetBtn v-for="topic of shown_components" :key="topic.topic_id" v-model="topic.selected" :toggleable="true"
+            size="small" class="topic_btn" :title="topic.topic">
+            {{ topic.topic }}
+        </OnsetBtn>
         <Loading v-if="topics.length == 0"></Loading>
     </div>
 </template>
-
 <script setup lang="ts">
-import { ref, watch, reactive, computed, onMounted } from 'vue'
-import * as d3 from 'd3'
-import { type Subject, type Topic } from '@/api/client.ts/Api';
-import { de, tr } from 'vuetify/locale';
+import { ref, watch, computed, onMounted } from 'vue'
+import { type Topic } from '@/api/client.ts/Api';
 import OnsetBtn from '@/components/ui/OnsetBtn.vue';
 import Loading from '@/components/ui/Loading.vue';
 import { api } from '@/utils/api'
@@ -22,22 +17,16 @@ interface TopicSelection extends Topic {
     selected: boolean
     depth: number
 }
-const expanded = ref(true)
 const topics = ref([] as TopicSelection[])
 
-const model = defineModel({ default: [] as number[] })
+const model = defineModel<number[]>({ default: () => [] })
 
 
-const shown_components = computed(() => {
-    //TODO: make reactivity work
-    const topics_reordered = [...topics.value.filter((t) => t.selected == true),
-    ...topics.value.filter((t) => t.selected == false),]
-    if (expanded.value) {
-        return topics_reordered
-    } else {
-        return topics_reordered
-    }
-})
+// selected topics first
+const shown_components = computed(() => [
+    ...topics.value.filter((t) => t.selected == true),
+    ...topics.value.filter((t) => t.selected == false),
+])
 onMounted(() => {
     api.topics.getTopicsRootTopicsRootGet().then(resp => {
         console.log('resp', resp)
@@ -73,24 +62,20 @@ watch(model, (new_val) => {
 }, { deep: true })
 
 </script>
-<style>
-.data_container {
+<style scoped>
+.topic_selector {
     display: flex;
-    justify-content: space-around;
-    justify-items: center;
-    align-items: center;
-    padding: 0.5rem;
     flex-wrap: wrap;
-    overflow-x: auto;
-    max-height: 14rem;
+    gap: 2px;
 }
 
-.show_more_wrapper {
-    display: flex;
-    justify-content: center;
-    margin-top: 1rem;
-}
+/* topic labels can be long: let them wrap inside the button */
 .topic_btn {
-    margin: 0.5rem;
+    height: auto;
+    min-height: var(--control-h-sm);
+    max-width: 100%;
+    padding: 2px var(--space-1);
+    white-space: normal;
+    text-align: left;
 }
 </style>

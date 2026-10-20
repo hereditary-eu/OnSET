@@ -20,9 +20,9 @@
       "@/*": [
         "./src/*"
       ],
-      "plotly.js-basic-dist": [
-        "./node_modules/@types/plotly.js"
-      ]
+      "plotly.js-dist": [
+        "./node_modules/plotly.js-dist-min/plotly.min.js"
+      ],
     }
   }
 }

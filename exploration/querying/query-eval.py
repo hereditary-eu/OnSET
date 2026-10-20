@@ -13,9 +13,9 @@ sys.path.append(os.path.abspath(""))
 import networkx as nx
 from rdflib.plugins.stores.sparqlstore import SPARQLStore
 
-from backend.ontology import OntologyManager, OntologyConfig, Graph
-from backend.explorative.explorative_support import GuidanceManager
-from backend.explorative.llm_query import (
+from ontology import OntologyManager, OntologyConfig, Graph
+from explorative.explorative_support import GuidanceManager
+from explorative.llm_query import (
     EnrichedEntitiesRelations,
     EntitiesRelations,
     LLMQuery,

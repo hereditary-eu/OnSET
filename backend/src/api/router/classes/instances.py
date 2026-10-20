@@ -4,8 +4,7 @@ from fastapi import (
 )
 
 from api.config import ManManDep
-from model import Instance, Property, Subject
-from ontology import InstanceQuery
+from model import Instance, InstanceQuery, Property, Subject
 from utils import wrap_iri
 
 

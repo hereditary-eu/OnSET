@@ -1,38 +1,28 @@
 <template>
-    <div>
-        <div class="node_link_carousel" v-if="!ui_state.collapsed">
+    <div class="node_link_selector">
+        <div class="node_link_list" v-if="!ui_state.collapsed">
             <Loading v-if="ui_state.loading"></Loading>
-            <div v-else v-for="result of node_link_elements">
-                <div class="node_link_element" @click="selected_node(result)">
-                    <div v-if="result.link">
-                        <svg :width="NODE_WIDTH * 2 + LINK_WIDTH" :height="NODE_HEIGHT">
-                            <GraphView :store="result.store"></GraphView>
-                        </svg>
-                    </div>
-                    <div v-else>
-                        <svg :width="NODE_WIDTH" :height="NODE_HEIGHT">
-                            <GraphView :store="result.store"></GraphView>
-                        </svg>
-                    </div>
+            <template v-else>
+                <div v-for="result of node_link_elements" class="node_link_element" @click="selected_node(result)">
+                    <svg :width="previewSize(result).width" :height="previewSize(result).height">
+                        <GraphView :store="result.store"></GraphView>
+                    </svg>
                 </div>
-            </div>
+            </template>
         </div>
-        <div v-else>
-            <OnsetBtn @click="selected_node(null)">Restart (current start: {{ ui_state.selected_link ?
+        <OnsetBtn v-else size="small" :toggleable="false" icon="mdi-restart" @click="selected_node(null)">
+            Restart (current start: {{ ui_state.selected_link ?
                 (ui_state.selected_link.link ? ui_state.selected_link.link.label : ui_state.selected_link.subject.label)
-                : ''
-                }})
-            </OnsetBtn>
-        </div>
+                : '' }})
+        </OnsetBtn>
     </div>
 </template>
 <script setup lang="ts">
 import { type FuzzyQueryResult } from '@/api/client.ts/Api';
 import {  SubjectNode, type FuzzyQueryRequest } from '@/utils/sparql/representation';
 import { ref, watch, reactive } from 'vue';
-import NodeComp from './elements/Node.vue';
 import OnsetBtn from '@/components/ui/OnsetBtn.vue';
-import { LINK_WIDTH, NODE_HEIGHT, NODE_WIDTH } from '@/utils/sparql/helpers';
+import { fitNode, linkWidth, NODE_HEIGHT } from '@/utils/sparql/helpers';
 import Loading from '@/components/ui/Loading.vue';
 import GraphView from './elements/GraphView.vue';
 import { MixedResponse } from '@/utils/sparql/store';
@@ -69,45 +59,52 @@ const fetchNodeLinkElements = async () => {
     node_link_elements.value = response.data.results.map((result) => {
         const resp = new MixedResponse<SubjectNode>(result)
         if (resp.link) {
-            let from = resp.store.from(resp.link)
-            let to = resp.store.to(resp.link)
-            from.width = NODE_WIDTH
-            from.height = NODE_HEIGHT
-            to.x = NODE_WIDTH + LINK_WIDTH
-            to.width = NODE_WIDTH
-            to.height = NODE_HEIGHT
+            let from = fitNode(resp.store.from(resp.link))
+            let to = fitNode(resp.store.to(resp.link))
+            from.x = 0
+            from.y = 0
+            to.x = from.width + linkWidth(resp.link.label)
+            to.y = 0
         } else {
-            resp.subject.width = NODE_WIDTH
-            resp.subject.height = NODE_HEIGHT
+            fitNode(resp.subject)
         }
         return resp
     })
     ui_state.loading = false
 }
 
+const previewSize = (result: MixedResponse<SubjectNode>) => {
+    if (result.link) {
+        const to = result.store.to(result.link)
+        return { width: to.x + to.width, height: NODE_HEIGHT }
+    }
+    return { width: result.subject.width, height: NODE_HEIGHT }
+}
+
 watch(() => query, fetchNodeLinkElements, { immediate: true, deep: true })
 </script>
-<style lang="scss">
-.node_link_carousel {
+<style scoped>
+.node_link_list {
     display: flex;
-    justify-content: space-around;
-    justify-items: center;
-    align-items: center;
-    padding: 0.5rem;
-    flex-wrap: wrap;
-    overflow-x: auto;
-    max-height: 28rem;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
 }
 
 .node_link_element {
-    margin: 0.5rem;
-    padding: 0.5rem;
-    border: 1px solid #8fa88f;
-    border-radius: 0.5rem;
+    max-width: 100%;
+    padding: 2px;
+    overflow: hidden;
+    border: 1px solid var(--c-accent);
+    border-radius: var(--radius);
     cursor: pointer;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    flex-direction: column;
+}
+
+.node_link_element:hover {
+    background: var(--c-hover);
+}
+
+.node_link_element svg {
+    display: block;
 }
 </style>

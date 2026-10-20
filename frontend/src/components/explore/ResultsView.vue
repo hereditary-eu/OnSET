@@ -1,27 +1,23 @@
 <template>
-    <div class="results_view">
-        <div class="result_instance_header">Results</div>
-
-        <SelectorGroup v-model="ui_state.result_mode" :options="Object.keys(ResultMode).map(qm => {
-            return { value: ResultMode[qm], label: ResultMode[qm] }
-        })" :width='"7rem"' :height='"1.2rem"'></SelectorGroup>
-        <div v-if="ui_state.result_mode == ResultMode.MINI" class="results_instance_container">
-            <ResultMinitatures :diff="diff" :store="store" :query_string="query_string"></ResultMinitatures>
+    <section class="panel results_view">
+        <header class="panel_header">
+            <span class="panel_title">Results</span>
+            <span class="toolbar_spacer"></span>
+            <SelectorGroup v-model="ui_state.result_mode" :options="Object.keys(ResultMode).map(qm => {
+                return { value: ResultMode[qm], label: ResultMode[qm] }
+            })"></SelectorGroup>
+        </header>
+        <div class="panel_body">
+            <ResultMinitatures v-if="ui_state.result_mode == ResultMode.MINI" :diff="diff" :store="store"
+                :query_string="query_string"></ResultMinitatures>
+            <ResultPlot v-else :store="store" :query_string="query_string" :diff="diff"></ResultPlot>
         </div>
-        <div v-else class="results_instance_container">
-            <ResultPlot :store="store" :query_string="query_string" :diff="diff"></ResultPlot>
-        </div>
-    </div>
+    </section>
 </template>
 <script setup lang="ts">
-import { ref, watch, reactive } from 'vue'
-import { SubjectNode, Link, SubQueryType } from '@/utils/sparql/representation';
-import { PropertiesOpenEvent, QueryMapper, ResultList } from '@/utils/sparql/querymapper';
-import { Vector2, type Vector2Like } from 'three';
-import Loading from '../ui/Loading.vue';
-import Result from './results/Miniature.vue';
+import { watch, reactive } from 'vue'
+import { SubQueryType } from '@/utils/sparql/representation';
 import ResultPlot from './results/Plot.vue';
-import OnsetBtn from '../ui/OnsetBtn.vue';
 import type { NodeLinkRepository } from '@/utils/sparql/store';
 import SelectorGroup from '../ui/SelectorGroup.vue';
 import type { NodeLinkRepositoryDiff } from '@/utils/sparql/diff';
@@ -59,37 +55,3 @@ watch(() => query_string, () => {
     }
 }, { deep: true })
 </script>
-<style lang="scss">
-.results_view {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: start;
-    height: 95%;
-    width: 30%;
-    border-left: 1px solid rgb(192, 213, 191);
-}
-
-.results_instance_container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: flex-start;
-    width: 100%;
-    height: 100%;
-    overflow: auto;
-    padding: 5px;
-    margin-top: 10px;
-}
-
-
-.result_instance_header {
-    font-size: 1.5rem;
-    font-weight: bold;
-    padding: 5px;
-    border-bottom: 1px solid rgb(192, 213, 191);
-    width: 100%;
-    margin-bottom: 12px;
-}
-
-</style>

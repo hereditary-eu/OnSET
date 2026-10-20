@@ -2,6 +2,7 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { listConfigs, type ConfigSummary } from '@/utils/api'
+import OnsetIcon from '@/components/ui/OnsetIcon.vue'
 
 const route = useRoute()
 const configs = ref([] as ConfigSummary[])
@@ -70,10 +71,10 @@ watch(() => route.query.failed, (failed) => {
             </p>
             <div v-if="selectedConfig" class="actions">
                 <RouterLink class="action primary" :to="{ name: 'explore', params: { configId: selectedConfig.id } }">
-                    <v-icon icon="mdi-graph-outline" size="small"></v-icon> Explore
+                    <OnsetIcon icon="mdi-graph-outline" /> Explore
                 </RouterLink>
                 <RouterLink class="action" :to="{ name: 'circles', params: { configId: selectedConfig.id } }">
-                    <v-icon icon="mdi-chart-bubble" size="small"></v-icon> Class tree
+                    <OnsetIcon icon="mdi-chart-bubble" /> Class tree
                 </RouterLink>
             </div>
         </div>

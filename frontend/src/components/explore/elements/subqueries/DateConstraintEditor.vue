@@ -1,15 +1,15 @@
 <template>
     <div class="constraint">
-        <div class="constraint_label">{{ constraint.link.label }}</div>
-        <span class="constraint_select"><select @change="change_operator" :value="constraint.type">
-                <option v-for="option in operator_options" :value="option.value">{{ option.label }}</option>
-            </select></span><span><input type="date" v-model="date_value" class="constraint_input"></span>
-
+        <span class="constraint_label">{{ constraint.link.label }}</span>
+        <select @change="change_operator" :value="constraint.type">
+            <option v-for="option in operator_options" :value="option.value">{{ option.label }}</option>
+        </select>
+        <input type="date" v-model="date_value">
     </div>
 </template>
 <script setup lang="ts">
 import { DateConstraint, NumberConstraintType } from '@/utils/sparql/representation';
-import { defineProps, ref, watch } from 'vue'
+import { ref, watch } from 'vue'
 
 const { constraint } = defineProps({
     constraint: {
@@ -17,7 +17,6 @@ const { constraint } = defineProps({
         required: true
     }
 })
-console.log('DateConstraintEditor', constraint)
 const date_value = ref((constraint.value && constraint.value instanceof Date) ? constraint.value.toISOString().split('T')[0] : "")
 
 const operator_options = [
@@ -34,26 +33,3 @@ watch(() => date_value, () => {
     constraint.value = new Date(date_value.value)
 }, { deep: true })
 </script>
-<style lang="scss" scoped>
-.constraint_label {
-    margin-right: 5px;
-}
-
-.constraint_select {
-    margin-right: 5px;
-    border: rgb(105, 132, 99) 1px solid;
-    border-radius: 0px;
-
-}
-
-.constraint_input {
-    width: 100px;
-    border: rgb(105, 132, 99) 1px solid;
-    border-radius: 0px;
-}
-
-.constraint {
-    display: flex;
-    flex-direction: row;
-}
-</style>

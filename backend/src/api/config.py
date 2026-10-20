@@ -1,10 +1,14 @@
 import os
 import threading
 from collections import OrderedDict
+from functools import cached_property
 from typing import Annotated
 
-from fastapi import Depends, HTTPException, Request
+from fastapi import Depends, HTTPException, WebSocketException, status
+from starlette.requests import HTTPConnection
 
+from agent.llm import AgentLLM
+from agent.session import AgentSession, AgentSessionStore
 from assistant.iterative_assistant import IterativeAssistant
 from assistant.assistant_model import Operations
 from datasetmatcher import DatasetManager
@@ -18,7 +22,6 @@ from redis_cache import RedisCache
 from rdflib.plugins.stores.sparqlstore import SPARQLStore
 
 base_path = "../../data"
-onto_path = f"{base_path}/hero-ontology/hereditary_clinical.ttl"
 
 # Name of the URL path parameter selecting the configuration, e.g. /{config_id}/classes/roots
 CONFIG_PATH_PARAM = "config_id"
@@ -31,7 +34,6 @@ class ManMan:
         print(f"Using DB config '{config_id}':", eval_cfg)
 
         self.base_path = base_path
-        self.onto_path = onto_path
         self.start_systems()
 
     def start_systems(self):
@@ -52,17 +54,14 @@ class ManMan:
         )
         self.config.ontology_extension = db_config.ontology_extension
         self.ontology_manager = OntologyManager(self.config, self.graph)
+        # initialised lazily by GET /classes/outlinks
         self.dataset_manager = DatasetManager(self.ontology_manager)
-        # dataset_manager.initialise(glob_path="data/datasets/ALS/**/*.csv")
-
-        # ontology_manager.load_full_graph()
 
         self.guidance_man = GuidanceManager(
             self.ontology_manager,
             conn_str=db_config.conn_str,
             llm_model_id=db_config.model_id,
         )
-        # topic_man.initialize_topics(force=False)
 
         self.llm_query = LLMQuery(
             topic=self.guidance_man, redis_url=db_config.redis_cache_url
@@ -77,6 +76,24 @@ class ManMan:
         self.assistant_cache = RedisCache(
             redis_url=db_config.redis_cache_url,
             model=Operations,
+        )
+
+    # --- agent chat (api/router/agent.py), created on first use ---
+
+    @cached_property
+    def agent_llm(self) -> AgentLLM:
+        return AgentLLM(self.db_config.agent)
+
+    @cached_property
+    def agent_sessions(self) -> AgentSessionStore:
+        return AgentSessionStore(
+            lambda session_id: AgentSession(
+                session_id,
+                llm=self.agent_llm,
+                ontology_manager=self.ontology_manager,
+                guidance=self.guidance_man,
+                config=self.db_config.agent,
+            )
         )
 
 
@@ -121,13 +138,17 @@ class ManManRegistry:
 REGISTRY = ManManRegistry(max_loaded=int(os.getenv("ONSET_MAX_LOADED_CONFIGS", "0")))
 
 
-def get_manman(request: Request) -> ManMan:
-    """Resolve the ManMan of the configuration addressed in the URL path."""
-    config_id = request.path_params.get(CONFIG_PATH_PARAM)
+def get_manman(connection: HTTPConnection) -> ManMan:
+    """Resolve the ManMan of the configuration addressed in the URL path.
+
+    Works for HTTP requests and WebSockets alike (both are HTTPConnections).
+    """
+    config_id = connection.path_params.get(CONFIG_PATH_PARAM)
     if config_id is None or config_id not in REGISTRY:
-        raise HTTPException(
-            status_code=404, detail=f"Unknown configuration '{config_id}'"
-        )
+        reason = f"Unknown configuration '{config_id}'"
+        if connection.scope["type"] == "websocket":
+            raise WebSocketException(code=status.WS_1008_POLICY_VIOLATION, reason=reason)
+        raise HTTPException(status_code=404, detail=reason)
     return REGISTRY.get(config_id)
 
 

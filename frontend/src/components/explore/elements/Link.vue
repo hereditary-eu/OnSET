@@ -1,54 +1,47 @@
 <template>
     <g v-if="from && to" @mouseout.capture="editPointHover($event, false)"
         @mouseenter.capture="editPointHover($event, true)" @mouseover="editPointHover($event, true)">
-        <rect :x="`${extent.x}px`" :y="`${extent.y - 30}px`" :width="`${extent.width}px`"
-            :height="`${extent.height + 30}px`" fill="transparent">
-        </rect>
-        <g v-if="circular_detected">
-            <path :d="`M ${from.x + from.width},${from.y + from.height / 2} 
-                C ${to.x + to.width * 2},${to.y + to.height / 2} 
-                ${to.x + to.width * 2},${to.y - to.height * 2} 
+        <!-- invisible hover area around the link and its label -->
+        <rect :x="extent.x" :y="extent.y - LABEL_HOVER_PAD" :width="extent.width"
+            :height="extent.height + LABEL_HOVER_PAD" fill="transparent" />
+        <path v-if="circular_detected" :d="`M ${from.x + from.width},${from.y + from.height / 2}
+                C ${to.x + to.width * 2},${to.y + to.height / 2}
+                ${to.x + to.width * 2},${to.y - to.height * 2}
                 ${to.x + to.width},${to.y - to.height * 2}
                 L ${to.x},${to.y - to.height * 2}
-                C ${from.x - from.width},${to.y - from.height * 2} 
-                ${from.x - from.width},${to.y + from.height / 2} 
-                ${from.x},${to.y + from.height / 2}`" fill="none" stroke="#f00" class="link_path"
-                :class="link_statestyle"></path>
-        </g>
-        <g v-else>
-            <path :d="`M ${from.x + from.width},${from.y + from.height / 2} 
-                C ${to.x},${from.y + from.height / 2} 
-                ${from.x + from.width},${to.y + to.height / 2} 
-                ${to.x},${to.y + to.height / 2}`" fill="none" stroke="#666" class="link_path" :class="link_statestyle">
-            </path>
-        </g>
+                C ${from.x - from.width},${to.y - from.height * 2}
+                ${from.x - from.width},${to.y + from.height / 2}
+                ${from.x},${to.y + from.height / 2}`" class="link_path" :class="link_statestyle"
+            :style="{ strokeWidth: link_width }" />
+        <path v-else :d="`M ${from.x + from.width},${from.y + from.height / 2}
+                C ${to.x},${from.y + from.height / 2}
+                ${from.x + from.width},${to.y + to.height / 2}
+                ${to.x},${to.y + to.height / 2}`" class="link_path" :class="link_statestyle"
+            :style="{ strokeWidth: link_width }" />
         <g :transform="`translate(${text_attach_pt.x},${text_attach_pt.y})`">
-            <!-- <circle :cx="text_attach_pt.x" :cy="text_attach_pt.y" :r="link_width" class="link_text_circle"></circle> -->
+            <text :y="-4" class="link_text">{{ label }}</text>
+            <g v-if="mode == DisplayMode.EDIT" v-show="editor_data.show_editpoints">
+                <circle :cx="0" :cy="EDITPOINT_R + 2" :r="EDITPOINT_R" class="edit_point"
+                    @click="emit('linkEditClicked', { side: OpenEventType.LINK, link: link, evt: $event })" />
+                <text :x="EDITPOINT_R + 3" :y="EDITPOINT_R + 2" class="help_text_right">Edit</text>
 
-            <text :x="`${- 5}px`" :y="`${- 5}px`" fill="#000" class="link_text">{{
-                label
-            }}</text>
-            <g v-show="mode == DisplayMode.EDIT && editor_data.show_editpoints">
-                <circle :cx="0" :cy="10" :r="editor_data.editpoint_r" class="edit_point"
-                    @click="emit('linkEditClicked', { side: OpenEventType.LINK, link: link, evt: $event })">
-                </circle>
-                <text :x="`${20}px`" :y="`10px`" class="help_text_right">Edit</text>
-
-                <circle :cx="0" :cy="-25" :r="editor_data.editpoint_r" @mouseover="hoverDeletion(true)"
-                    @mouseout="hoverDeletion(false)" class="edit_point edit_point_delete" @click="doDeletion()">
-                </circle>
-                <text :x="`${20}px`" :y="`-25px`" class="help_text_right">Delete</text>
+                <circle :cx="0" :cy="-(EDITPOINT_R + 16)" :r="EDITPOINT_R" @mouseover="hoverDeletion(true)"
+                    @mouseout="hoverDeletion(false)" class="edit_point edit_point_delete" @click="doDeletion()" />
+                <text :x="EDITPOINT_R + 3" :y="-(EDITPOINT_R + 16)" class="help_text_right">Delete</text>
             </g>
         </g>
     </g>
 </template>
 <script setup lang="ts">
 import type { NodeLinkRepositoryDiff } from '@/utils/sparql/diff';
-import { DisplayMode, extentNodes, OpenEventType, type SelectorOpenEvent } from '@/utils/sparql/helpers';
+import { DisplayMode, EDITPOINT_R, extentNodes, OpenEventType, type SelectorOpenEvent } from '@/utils/sparql/helpers';
 import type { InstanceLink } from '@/utils/sparql/querymapper';
 import { NodeState, type Link } from '@/utils/sparql/representation';
 import type { NodeLinkRepository } from '@/utils/sparql/store';
-import { ref, watch, reactive, computed, onMounted, defineProps } from 'vue'
+import { watch, reactive, computed, onMounted } from 'vue'
+
+// extra hover area above the link for its label and edit handles
+const LABEL_HOVER_PAD = 30
 
 const emit = defineEmits<{
     (e: 'linkEditClicked', value: SelectorOpenEvent): void
@@ -80,7 +73,6 @@ const { link, store, diff, circular, mode } = defineProps({
 let editor_data = reactive({
     show_editpoints: false,
     hover_deletion: false,
-    editpoint_r: 7,
     state: NodeState.NORMAL,
 })
 let extent = computed(() => {
@@ -145,8 +137,6 @@ const doDeletion = () => {
     store.removeLink(link)
 }
 
-watch(() => link, () => {
-}, { deep: true })
 watch(() => diff, () => {
     updateLinkState()
 }, { deep: true })
@@ -182,46 +172,3 @@ const link_statestyle = computed(() => {
     return `link_${state.toLowerCase()}`
 })
 </script>
-<style lang="scss">
-.link_text {
-    font-size: 10px;
-    text-anchor: middle;
-    text-align: center;
-}
-
-.link_path {
-    fill: none;
-    stroke: #cccccc;
-    stroke-width: v-bind("link_width");
-}
-
-.edit_point {
-    fill: #a0c2a9;
-    cursor: pointer;
-    fill-opacity: 0.4;
-}
-
-.edit_point:hover {
-    stroke: #888888;
-    display: block;
-    fill-opacity: 1;
-}
-
-.edit_point_delete {
-    fill: #ea694f;
-}
-
-@mixin help_text($anchor: middle, $baseline: 0.5em) {
-    font-size: 10px;
-    text-anchor: $anchor;
-    dominant-baseline: central;
-}
-
-.help_text_right {
-    @include help_text(start);
-}
-
-.help_text_bottom {
-    @include help_text(middle, -0.5em);
-}
-</style>

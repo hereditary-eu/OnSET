@@ -5,8 +5,7 @@ from fastapi import (
 )
 
 from api.config import ManManDep
-from explorative.llm_query import QueryProgress, EnrichedEntitiesRelations
-
+from assistant.assistant_model import QueryProgress, EnrichedEntitiesRelations
 
 
 search_llm_router = APIRouter(prefix="/llm")

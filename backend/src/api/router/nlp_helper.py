@@ -16,7 +16,7 @@ nlp_router = APIRouter(prefix="/nlp")
 
 @nlp_router.get("/embeddings")
 def nlp_embeddings(manman: ManManDep, query: str = Query(...)) -> dict[str, Any]:
-    data = manman.guidance_man.embedding_model.encode([query]).squeeze().tolist()
+    data = manman.guidance_man.encode_query(query).tolist()
     return {"embedding": data}
 
 
@@ -47,12 +47,9 @@ class ClosestResponse(BaseModel):
 
 @nlp_router.post("/embeddings/closest")
 def nlp_embeddings_closest(manman: ManManDep, request: ClosestRequest) -> list[ClosestResponse]:
+    embedding = None
     if request.query is not None:
-        embedding = (
-            manman.guidance_man.embedding_model.encode([request.query])
-            .squeeze()
-            .tolist()
-        )
+        embedding = manman.guidance_man.encode_query(request.query).tolist()
     elif request.embedding is not None:
         embedding = request.embedding
 

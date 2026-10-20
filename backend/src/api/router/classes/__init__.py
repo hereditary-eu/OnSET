@@ -6,17 +6,12 @@ from fastapi import (
 
 
 from api.config import ManManDep
-from model import GeneralizationQuery, SparseOutLinks, Subject, SubjectLink
-from explorative.exp_model import (
-    SubjectLinkDB,
-    FuzzyQuery,
-    FuzzyQueryResults,
-)
-from sqlalchemy.orm import Session
+from datasetmatcher import SparseOutLinks
+from model import GeneralizationQuery, Subject, SubjectLink
+from explorative.exp_model import FuzzyQuery, FuzzyQueryResults
 
 from api.router.classes.search import search_router
 from api.router.classes.instances import instances_router
-
 
 
 classes_router = APIRouter(prefix="/classes")
@@ -46,15 +41,7 @@ def get_link(
     manman: ManManDep,
     link_id: str = Query(),
 ) -> SubjectLink | None:
-    with Session(manman.guidance_man.engine) as session:
-        link = (
-            session.query(SubjectLinkDB)
-            .filter(SubjectLinkDB.property_id == link_id)
-            .first()
-        )
-        if link is None:
-            return None
-        return link.from_db(oman=manman.ontology_manager)
+    return manman.guidance_man.get_link(link_id)
 
 
 @classes_router.get("/relations")
@@ -69,8 +56,7 @@ def get_relations(
 
 @classes_router.get("/full")
 def get_full_classes(manman: ManManDep) -> list[Subject]:
-    roots = manman.ontology_manager.get_full_classes()
-    return roots
+    return manman.ontology_manager.get_full_classes()
 
 
 @classes_router.get("/roots")

@@ -5,7 +5,8 @@ import type { NodeLinkRepository } from "../sparql/store";
 import type { PlotCacheEntry } from "./plot-cache";
 import { buildEmbeddingPlotData as buildEmbeddingPlotTraces } from "./plot-embedding-builder";
 import { BucketSpecifier, ChartMode, ContinuousBucketSpecifier, DiscreteBucketSpecifier, PropSpecificType, PropType, type AnalyzedProp } from "./plot-types";
-import * as Plotly from "plotly.js-dist-min"
+
+import * as Plotly from "plotly.js-dist";
 //https://stackoverflow.com/questions/12303989/cartesian-product-of-multiple-arrays-in-javascript
 function cartesianProduct<T>(arr: T[][]): T[][] {
     return arr.reduce(function (a, b) {
@@ -103,8 +104,9 @@ export function analyzeProps(prop: QueryProp, result_set: Record<string, any>[])
         query_id
     } as AnalyzedProp
 }
+export type TraceData = Plotly.ScatterData | Plotly.BarData | Plotly.HeatmapData 
 export interface BuildTrace {
-    trace: Plotly.PlotData
+    trace: TraceData
     chart_mode: ChartMode
     chart_options: Plotly.Layout
 }
@@ -129,7 +131,7 @@ export interface BuildTrace {
  */
 export function buildChartTraces(analyzed_props: AnalyzedProp[], result_set: Record<string, any>[], query_limitless: string, store: NodeLinkRepository<SubjectNode, Link<Subject>>): BuildTrace {
     let continous_props = analyzed_props.filter((prop) => prop.prop_type == PropType.CONTINOUS)
-    let trace = {} as Plotly.PlotData
+    let trace = {} as TraceData
     let chart_mode = ChartMode.BAR
     let chart_options = {} as Plotly.Layout
     if (analyzed_props.filter((prop) => prop.prop_type == PropType.VECTOR).length > 0) {
@@ -141,7 +143,8 @@ export function buildChartTraces(analyzed_props: AnalyzedProp[], result_set: Rec
             break
         case 1:
             chart_mode = ChartMode.BAR
-            trace.type = 'bar'
+            let bar_trace = {} as Plotly.BarData
+            bar_trace.type = 'bar'
 
             let prop = analyzed_props[0]
 
@@ -165,11 +168,12 @@ export function buildChartTraces(analyzed_props: AnalyzedProp[], result_set: Rec
                 }
             } as Plotly.Layout
             let buckets = bucketizeData(analyzed_props)
-            trace.x = buckets[prop.query_id].map((bucket) => bucket.display())
-            trace.y = buckets[prop.query_id].map((bucket) => bucket.count)
-            trace.marker = {
+            bar_trace.x = buckets[prop.query_id].map((bucket) => bucket.display())
+            bar_trace.y = buckets[prop.query_id].map((bucket) => bucket.count)
+            bar_trace.marker = {
                 color: '#8fa88f',
             }
+            trace = bar_trace
             break
         case 2: {
             if (continous_props.length == 2 && continous_props[0].prop_data.length < 1024) {
@@ -191,13 +195,15 @@ export function buildChartTraces(analyzed_props: AnalyzedProp[], result_set: Rec
                         }
                     }
                 } as Plotly.Layout
-                trace.type = 'scatter'
-                trace.mode = 'markers'
-                trace.x = continous_props[0].prop_data
-                trace.y = continous_props[1].prop_data
-                trace.marker = {
+                let scatter_trace = {} as Plotly.ScatterData
+                scatter_trace.type = 'scatter'
+                scatter_trace.mode = 'markers'
+                scatter_trace.x = continous_props[0].prop_data
+                scatter_trace.y = continous_props[1].prop_data
+                scatter_trace.marker = {
                     color: '#8fa88f',
                 }
+                trace = scatter_trace
             } else {
                 console.log("Using heatmap", continous_props)
                 chart_mode = ChartMode.HEATMAP
@@ -219,10 +225,11 @@ export function buildChartTraces(analyzed_props: AnalyzedProp[], result_set: Rec
                 let buckets = bucketizeData(analyzed_props)
                 let x_buckets = buckets[analyzed_props[0].query_id]
                 let y_buckets = buckets[analyzed_props[1].query_id]
-                trace.x = x_buckets.map((bucket) => bucket.display())
-                trace.y = y_buckets.map((bucket) => bucket.display())
-                let heatmap_data = new Array(trace.y.length).fill(0).map(() => new Array(trace.x.length).fill(0))
-                trace.type = 'heatmap'
+                let heatmap_trace = {} as Plotly.HeatmapData
+                heatmap_trace.x = x_buckets.map((bucket) => bucket.display())
+                heatmap_trace.y = y_buckets.map((bucket) => bucket.display())
+                let heatmap_data = new Array(heatmap_trace.y.length).fill(0).map(() => new Array(heatmap_trace.x.length).fill(0))
+                heatmap_trace.type = 'heatmap'
                 for (let row of result_set) {
                     let bucket_assocs = Object.entries(buckets).map((bucket_prop) => {
                         let value = row[bucket_prop[0]]
@@ -246,9 +253,10 @@ export function buildChartTraces(analyzed_props: AnalyzedProp[], result_set: Rec
                         heatmap_data[bucket_assocs[1]][bucket_assocs[0]] += 1
                     }
                 }
-                trace.z = heatmap_data
+                heatmap_trace.z = heatmap_data
+                trace = heatmap_trace
             }
-            console.log('Trace', trace)
+            // console.log('Trace', trace)
 
             break
         }
@@ -280,7 +288,7 @@ export function combineTraces(caches: PlotCacheEntry[]) {
         }
     })
     console.log('Combined props', combined_props)
-    let traces = [] as Plotly.PlotData[]
+    let traces = [] as TraceData[]
     let chart_mode = caches[0].chart_mode
     let chart_options = caches[0].chart_options
     switch (guiding_cache.chart_mode) {
@@ -290,7 +298,7 @@ export function combineTraces(caches: PlotCacheEntry[]) {
                 let cache = caches[i]
                 let prop = combined_props[0]
 
-                let trace = {} as Plotly.PlotData
+                let trace = {} as Plotly.BarData
                 trace.type = 'bar'
                 trace.x = combined_buckets[prop.query_id].map((bucket) => bucket.display())
                 trace.y = combined_buckets[prop.query_id].map((bucket) => {
@@ -305,7 +313,7 @@ export function combineTraces(caches: PlotCacheEntry[]) {
             break;
         case ChartMode.SCATTER:
             traces = caches.map((cache) => {
-                let trace = {} as Plotly.PlotData
+                let trace = {} as Plotly.ScatterData
                 trace.type = 'scatter'
                 trace.mode = 'markers'
                 trace.x = cache.analyzed_props[0].prop_data

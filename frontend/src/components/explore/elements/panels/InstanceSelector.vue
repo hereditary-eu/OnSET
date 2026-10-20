@@ -2,41 +2,38 @@
     <g id="outlink_selector" @mouseout.capture="edit_point_hover($event, false)"
         @mouseenter.capture="edit_point_hover($event, true)" @mouseover="edit_point_hover($event, true)">
         <g :transform="`translate(${attachment_pt.x},${attachment_pt.y})`" v-if="display">
-            <foreignObject :height="(NODE_HEIGHT + 10) * 5" :width="NODE_WIDTH + LINK_WIDTH + 35">
-                <div class="selection_div_container" :style="{ 'height': `${NODE_HEIGHT * 5 + 10}px` }">
-
-                    <div class="selection_search">
-                        <input type="text" placeholder="Search..." v-model="editor_data.q" />
-                    </div>
+            <foreignObject :height="PANEL_HEIGHT" :width="PANEL_WIDTH">
+                <div class="selection_div_container">
+                    <input type="text" class="text_input selection_search" placeholder="Search..."
+                        v-model="editor_data.q" />
                     <div class="selection_element_container">
                         <div class="selection_element" v-for="instance of selection_options"
                             @click="select_option(instance, $event)" :key="instance.id">
                             {{ readableName(instance.id, instance.label) }}
                         </div>
                         <Loading v-if="editor_data.loading"></Loading>
-                        <OnsetBtn @click="loadMore" btn_width="100%"
+                        <OnsetBtn size="small" @click="loadMore"
                             v-if="selection_options.length > 0 && !editor_data.reached_end" :toggleable="false">More
                         </OnsetBtn>
                     </div>
                 </div>
             </foreignObject>
 
-            <g v-show="editor_data.show_editpoints">
-                <circle :cx="NODE_WIDTH + LINK_WIDTH + 35" :cy="0" :r="editor_data.editpoint_r"
-                    class="edit_point edit_point_delete" @click="display = false"></circle>
-            </g>
+            <circle v-show="editor_data.show_editpoints" :cx="PANEL_WIDTH" :cy="0" :r="EDITPOINT_R"
+                class="edit_point edit_point_delete" @click="display = false" />
         </g>
     </g>
 </template>
 <script setup lang="ts">
 import { ref, watch, reactive, computed, onMounted } from 'vue'
 import { type Instance } from '@/api/client.ts/Api';
-import { CONSTRAINT_PADDING, InstanceSelectorOpenEvent, LINK_WIDTH, NODE_HEIGHT, NODE_WIDTH } from '@/utils/sparql/helpers';
+import { CONSTRAINT_PADDING, EDITPOINT_R, InstanceSelectorOpenEvent, PANEL_WIDTH } from '@/utils/sparql/helpers';
 import Loading from '@/components/ui/Loading.vue';
 import OnsetBtn from '@/components/ui/OnsetBtn.vue';
 import { readableName } from '@/utils/sparql/querymapper';
 import { debounce } from "@/utils/helpers";
 import { api } from '@/utils/api'
+const PANEL_HEIGHT = 200
 const emit = defineEmits<{
     select: [value: Instance]
 }>()
@@ -49,7 +46,6 @@ const { selection_event } = defineProps({
 
 const editor_data = reactive({
     show_editpoints: false,
-    editpoint_r: 7,
     loading: false,
     q: '',
     query_id: 0,
@@ -139,71 +135,3 @@ onMounted(() => {
     loadMore()
 })
 </script>
-<style lang="scss" scoped>
-.selection_search {
-    padding: 5px;
-
-    input {
-        padding: 0 5px 0 5px;
-        border: 1px solid rgb(197, 196, 168);
-    }
-}
-
-.selection_div_container {
-    display: flex;
-    flex-direction: column;
-    // justify-content: ;
-    align-items: center;
-    background-color: white;
-    border: 1px solid rgb(197, 196, 168);
-    // border-radius: 5px;
-    padding: 5px;
-}
-
-.selection_element_container {
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-start;
-    align-items: center;
-    overflow-y: auto;
-    width: 100%;
-}
-
-.selection_element {
-    padding: 2px;
-    cursor: pointer;
-    display: flex;
-    justify-items: center;
-    align-items: center;
-    width: 100%;
-    border: 1px solid rgb(214, 214, 214);
-}
-
-.selection_element:hover {
-    background-color: #f0f0f0;
-}
-
-.selection_defaults {
-    display: flex;
-    justify-content: space-around;
-    flex-direction: column;
-    width: 100%;
-    padding: 4px;
-}
-
-.edit_point {
-    fill: #a0c2a9;
-    cursor: pointer;
-    fill-opacity: 0.4;
-}
-
-.edit_point:hover {
-    stroke: #888888;
-    display: block;
-    fill-opacity: 1;
-}
-
-.edit_point_delete {
-    fill: #ea694f;
-}
-</style>

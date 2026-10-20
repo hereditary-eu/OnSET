@@ -1,130 +1,109 @@
 <template>
-
-    <div>
-        <div class="mode_selector input_step">
-            <h3>Mode</h3>
-            <SelectorGroup v-model="ui_state.query_mode" :options="Object.keys(QueryMode).map(qm => {
-                return { value: QueryMode[qm], label: QueryMode[qm] }
-            })"></SelectorGroup>
-        </div>
-        <div v-if="ui_state.query_mode == QueryMode.TOPICS">
-            <div class="input_step">
-                <h3>Select one or more topics...</h3>
-                <TopicSelector v-model="selected_topic_ids"></TopicSelector>
-            </div>
-
-            <div class="input_step">
-                <h3>...pick a relation to start with...</h3>
-                <NodeLinkSelector :query="{ topic_ids: selected_topic_ids }" @select="selected_root"></NodeLinkSelector>
-            </div>
-        </div>
-        <div v-else>
-            <div class="input_step">
-                <FuzzyQueryStarter @query_complete="selected_root"></FuzzyQueryStarter>
-            </div>
-        </div>
-        <div class="input_step">
-            <h3 v-if="store">.. and start querying!</h3>
-            <div class="query_build_view">
-                <div class="show_history_btn">
-                    <OnsetBtn @click="ui_state.show_history = !ui_state.show_history">{{ !ui_state.show_history ?
-                        "Show" : "Hide" }} History
+    <div class="explore" :style="colour_vars">
+        <div class="explore_main">
+            <!-- (a) query graph editor -->
+            <section class="panel explore_editor">
+                <header class="panel_header">
+                    <span class="panel_title">Query</span>
+                    <OnsetBtn v-model="ui_state.show_examples" size="small" icon="mdi-lightbulb-outline"
+                        title="Start from an example query">Examples</OnsetBtn>
+                    <OnsetBtn v-model="ui_state.show_history" size="small" icon="mdi-history">History</OnsetBtn>
+                    <OnsetBtn v-model="ui_state.show_query" size="small" icon="mdi-code-braces">SPARQL</OnsetBtn>
+                    <span class="vsep"></span>
+                    <!-- change tracking: highlights changes (incl. the agent's) against the state it started from -->
+                    <OnsetBtn size="small" :toggleable="false" icon="mdi-source-branch"
+                        :class="{ onset_btn_selected: ui_state.diff_active }"
+                        :title="ui_state.diff_active ? 'Accept the tracked changes' : 'Highlight changes from now on'"
+                        @click="ui_state.diff_active = !ui_state.diff_active">
+                        {{ ui_state.diff_active ? "Apply Changes" : "Track Changes" }}
                     </OnsetBtn>
-                </div>
-                <div class="history_view_container" v-show="ui_state.show_history">
-                    <HistoryView v-show="ui_state.show_history" :history='(ui_state.history as QueryHistory)'
-                        @compare="compareToCurrent" @revert="revertToEntry" @show-tooltip="showTooltip"></HistoryView>
-
-                    <div ref="tooltip_div">
+                    <OnsetBtn v-if="ui_state.diff_active" size="small" :toggleable="false" icon="mdi-close"
+                        title="Revert to the state the tracking started from" @click="clearDiff()">Discard</OnsetBtn>
+                    <span class="toolbar_spacer"></span>
+                    <OnsetBtn @click="saveState()" size="small" :toggleable="false" icon="mdi-content-save"
+                        title="Save query and history in the browser">Save</OnsetBtn>
+                    <OnsetBtn @click="loadState()" size="small" :toggleable="false" icon="mdi-folder-open"
+                        title="Load the saved query and history">Load</OnsetBtn>
+                    <OnsetBtn @click="clearState()" size="small" :toggleable="false" icon="mdi-delete-outline"
+                        title="Clear the query and history">Clear</OnsetBtn>
+                    <span class="vsep"></span>
+                    <OnsetBtn @click="downloadState()" size="small" :toggleable="false" icon="mdi-download"
+                        title="Download the query history as JSON" />
+                    <OnsetBtn @click="state_file?.click()" size="small" :toggleable="false" icon="mdi-upload"
+                        title="Load a query history JSON file" />
+                    <input type="file" ref="state_file" accept="application/json,.json" hidden
+                        @change="loadStateFromFile" />
+                    <OnsetBtn v-model="ui_state.colour_blind" size="small" icon="mdi-eye-off"
+                        title="Red-green colour-blindness mode" />
+                </header>
+                <div ref="graph_view" class="panel_body explore_editor_body">
+                    <QueryBuilder :store="store" :diff="ui_state.diff" :simulate="ui_state.simulate">
+                    </QueryBuilder>
+                    <div class="explore_overlay explore_history" v-show="ui_state.show_history">
+                        <HistoryView :history='(ui_state.history as QueryHistory)' @compare="compareToCurrent"
+                            @revert="revertToEntry" @show-tooltip="showTooltip"></HistoryView>
                         <div v-if="ui_state.history_interactive.tooltip.visible" class="history_tooltip"
                             @mouseleave="ui_state.history_interactive.tooltip.visible = false"
                             :style="`top: ${ui_state.history_interactive.tooltip.position.y}px; left: ${ui_state.history_interactive.tooltip.position.x}px;`">
                             <HistoryElement :entry='(ui_state.history_interactive.tooltip.entry as HistoryEntry)'
                                 @compare="compareToCurrent" @revert="revertToEntry">
-
                             </HistoryElement>
                         </div>
                     </div>
+                    <pre v-if="ui_state.show_query" class="explore_overlay explore_sparql"
+                        v-html="query_string_html" />
+                    <ExampleQueries v-if="ui_state.show_examples" class="explore_overlay explore_examples"
+                        @select="selected_example"></ExampleQueries>
                 </div>
-                <div ref="graph_view" class="query_builder_wrapper">
-                    <QueryBuilder :store="store" :diff="ui_state.diff" :simulate="ui_state.simulate">
-                    </QueryBuilder>
-                </div>
-                <ResultsView :query_string="query_string" :store="store" :diff="ui_state.diff"></ResultsView>
-            </div>
-            <div class="diff_controls">
-                <OnsetBtn @click="saveState()" :height="'2.8rem'" :width="'3rem'" :toggleable="false">Save
-                </OnsetBtn>
-                <OnsetBtn @click="loadState()" :height="'2.8rem'" :width="'3rem'" :toggleable="false">Load
-                </OnsetBtn>
-                <OnsetBtn @click="clearState()" :height="'2.8rem'" :width="'3rem'" :toggleable="false">Clear
-                </OnsetBtn>
-                <div class="vertical_line">
+            </section>
 
-                </div>
-                <OnsetBtn :toggleable="false" @click="ui_state.diff_active = !ui_state.diff_active">{{
-                    !ui_state.diff_active ? "Start Change Tracking" :
-                        "Apply Changes" }} </OnsetBtn>
-                <OnsetBtn @click="clearDiff()" v-if="ui_state.diff_active">Clear Changes</OnsetBtn>
-                <div class="vertical_line">
+            <!-- (b) results -->
+            <ResultsView class="explore_results" :query_string="query_string" :store="store" :diff="ui_state.diff">
+            </ResultsView>
 
-                </div>
-                <input type="text" v-model="assistant_state.query_string" placeholder="Tell me what to change ..."
-                    class="query_input" />
-                <Loading v-if="assistant_state.loading" :height="'2.8rem'" :width="'3rem'"></Loading>
-                <OnsetBtn @click="submit_assistant()" :toggleable="false" btn_width="4rem">Start</OnsetBtn>
-            </div>
+            <!-- (c) side panel: agent chat and topics -->
+            <SidePanel :tabs="side_tabs" v-model:active="ui_state.side_tab" v-model:collapsed="ui_state.side_collapsed">
+                <template #chat>
+                    <AgentChat :session="agent"></AgentChat>
+                </template>
+                <template #topics>
+                    <div class="explore_topics">
+                        <h3>Topics</h3>
+                        <TopicSelector v-model="selected_topic_ids"></TopicSelector>
+                        <h3>Start from a relation</h3>
+                        <NodeLinkSelector :query="{ topic_ids: selected_topic_ids }" @select="selected_root">
+                        </NodeLinkSelector>
+                    </div>
+                </template>
+            </SidePanel>
         </div>
-        <div>
-            <OnsetBtn @click="ui_state.show_query = !ui_state.show_query">{{ !ui_state.show_query ? "Show" : "Hide" }}
-                Query
-            </OnsetBtn>
-            <pre v-if="ui_state.show_query" v-html="query_string_html" />
-        </div>
-        <div class="diff_controls">
 
-            <OnsetBtn @click="ui_state.colour_blind = !ui_state.colour_blind">
-                <v-icon icon="mdi-eye-off" /> Red-Green Colourblindness Mode
-            </OnsetBtn>
-            <OnsetBtn @click="downloadState()" :toggleable="false">Download Query History
-            </OnsetBtn>
-            <OnsetBtn @click="loadStateFromFile" :toggleable="false">Load Query History
-            </OnsetBtn>
-            <input type="file" ref="state_file" />
-        </div>
     </div>
 </template>
 <script setup lang="ts">
 import Prism from 'prismjs';
 import 'prismjs/themes/prism.css';
-import { ref, watch, reactive, computed, onMounted, onBeforeMount, h } from 'vue'
+import { ref, watch, reactive, computed, onMounted } from 'vue'
 import TopicSelector from '@/components/explore/TopicSelector.vue';
 import NodeLinkSelector from '@/components/explore/NodeLinkSelector.vue';
 import QueryBuilder from '@/components/explore/QueryBuilder.vue';
 import ResultsView from '@/components/explore/ResultsView.vue';
-import Loading from '@/components/ui/Loading.vue';
-import { OverviewCircles } from '@/utils/three-man/OverviewCircles';
-import { OperationType, type AssistantLink, type AssistantSubject } from '@/api/client.ts/Api';
-import type { SubjectInCircle } from '@/utils/d3-man/CircleMan';
 import OnsetBtn from '@/components/ui/OnsetBtn.vue';
 import { NodeLinkRepository, RepositoryState, type MixedResponse } from '@/utils/sparql/store';
-import SelectorGroup from '@/components/ui/SelectorGroup.vue';
-import FuzzyQueryStarter from '@/components/explore/FuzzyQueryStarter.vue';
+import SidePanel, { type SidePanelTab } from '@/components/explore/SidePanel.vue';
+import ExampleQueries from '@/components/explore/ExampleQueries.vue';
+import AgentChat from '@/components/explore/chat/AgentChat.vue';
 import { jsonClone, parseJSON, stringifyJSON } from '@/utils/parsing';
 import { NodeLinkRepositoryDiff } from '@/utils/sparql/diff';
-import { Link, SubjectNode } from '@/utils/sparql/representation';
 import HistoryView from '@/components/explore/history/HistoryView.vue';
 import { HistoryEntry, QueryHistory } from '@/utils/sparql/history';
-import type { Vector2 } from 'three';
 import type { HistoryTooltipEvent } from '@/utils/sparql/helpers';
 import HistoryElement from '@/components/explore/history/HistoryElement.vue';
-import { api, configStorageKey } from '@/utils/api'
+import { activeConfigId, configStorageKey } from '@/utils/api'
+import { useAgentSession } from '@/utils/agent/agentSession'
+import { applyGraphChange, toAgentGraph } from '@/utils/agent/graph_sync'
+import type { GraphChange, GraphDetails } from '@/utils/agent/protocol'
 
-
-
-// window.Prism = window.Prism || {};
-// window.Prism.manual = true;
-// loadLanguages(['sparql']);
 
 const graph_view = ref<HTMLElement | null>(null)
 const state_file = ref<HTMLInputElement | null>(null)
@@ -133,18 +112,17 @@ const selected_topic_ids = ref([] as number[])
 const query_string_html = ref('')
 const query_string = ref('')
 const selected_start = ref(null as MixedResponse | null)
-enum QueryMode {
-    FUZZY = 'Fuzzy',
-    TOPICS = 'Topics',
-}
-const assistant_state = reactive({
-    query_string: '',
-    loading: false,
-})
+// tabs of the side panel, each rendered from the slot with its id
+const side_tabs: SidePanelTab[] = [
+    { id: 'chat', label: 'Agent', icon: 'mdi-robot-outline' },
+    { id: 'topics', label: 'Topics', icon: 'mdi-shape-outline' },
+]
 const ui_state = reactive({
     loading: false,
     show_query: false,
-    query_mode: QueryMode.FUZZY,
+    show_examples: false,
+    side_tab: 'chat',
+    side_collapsed: false,
     diff: null as NodeLinkRepositoryDiff | null,
     diff_active: false,
     colour_blind: false,
@@ -258,75 +236,27 @@ const revertToEntry = (entry: HistoryEntry) => {
     ui_state.simulate = true
 }
 
-const submit_assistant = () => {
-    if (assistant_state.query_string.length == 0) {
-        return
-    }
-    console.log('Assistant query', assistant_state.query_string);
-
-    (async () => {
-        assistant_state.loading = true
-        const graph = store.value.toQueryGraph()
-        const response = await api.classes.getAssistantResultsClassesSearchAssistantPost(graph, {
-            q: assistant_state.query_string,
-        })
-        assistant_state.loading = false
-        if (!ui_state.diff_active) {
-            ui_state.diff_active = true
-            startDiff()
-        }
-        for (const step of response.data.operations) {
-            if (step.operation == OperationType.Add) {
-                switch (step.data.type) {
-                    case 'subject':
-                        const op_subject = step.data as AssistantSubject
-                        const full_subject = await api.classes.getSubjectClassesSubjectsGet({
-                            subject_id: op_subject.subject_id
-                        })
-                        const subject = full_subject.data
-                        const new_subject = new SubjectNode(subject)
-                        new_subject.internal_id = op_subject.internal_id
-                        console.log('new_subject', new_subject)
-                        store.value.nodes.push(new_subject)
-                        break
-                }
-            } else if (step.operation == OperationType.Remove) {
-                switch (step.data.type) {
-                    case 'subject':
-                        const op_subject = step.data as AssistantSubject
-                        const subject = store.value.nodes.find((s) => s.id == op_subject.subject_id)
-                        store.value.nodes.splice(store.value.nodes.indexOf(subject), 1)
-                        break
-                    case 'link':
-                        const op_link = step.data as AssistantLink
-                        const link = store.value.links.find((l) => l.id == op_link.link_id)
-                        store.value.links.splice(store.value.links.indexOf(link), 1)
-                        break
-                }
-            }
-        }
-        for (const step of response.data.operations) {
-            if (step.operation == OperationType.Add) {
-                switch (step.data.type) {
-                    case 'link':
-                        const op_link = step.data as AssistantLink
-                        const full_link = await api.classes.getLinkClassesLinksGet({
-                            link_id: op_link.link_id
-                        })
-                        const link = full_link.data
-                        const new_link = new Link(link)
-                        new_link.from_internal_id = op_link.from_internal_id
-                        new_link.to_internal_id = op_link.to_internal_id
-                        store.value.links.push(new_link)
-                        store.value.to(new_link).x = store.value.from(new_link).x + store.value.from(new_link).width + 100
-                        store.value.to(new_link).y = store.value.from(new_link).y
-                        break
-                }
-            }
-        }
-        console.log('store after changes', store.value)
-    })().catch(console.error)
+const selected_example = (example: MixedResponse) => {
+    ui_state.show_examples = false
+    selected_root(example)
 }
+
+// agent chat: the agent edits the editor graph like any other edit, i.e. the change
+// shows up in the change tracking diff and as a history entry (store watcher above)
+const applyAgentChange = (change: GraphChange, _graph: unknown, details: GraphDetails) => {
+    if (!store.value) {
+        store.value = new NodeLinkRepository()
+    }
+    if (!ui_state.diff_active) {
+        ui_state.diff_active = true
+        startDiff()
+    }
+    applyGraphChange(store.value, change, details)
+}
+const agent = useAgentSession(activeConfigId, {
+    read: () => toAgentGraph(store.value),
+    apply: applyAgentChange,
+}, () => store.value)
 
 const saveState = () => {
     if (!store.value) {
@@ -396,35 +326,23 @@ const loadStateFromFile = () => {
         }
     }
     reader.readAsText(file)
+    // allow loading the same file again
+    input.value = ''
 }
 
-const colour_config = computed(() => {
-    if (ui_state.colour_blind) {
-        return {
-            node_normal: '#ccc',
-            node_added: 'rgb(51,114,237)',
-            node_removed: 'rgb(248,212,150)',
-            node_changed: 'rgb(232,224,253)',
-            node_added_light: 'rgba(51,114,237,0.506)',
-            node_removed_light: 'rgba(248,212,150,0.506)',
-
-            link_normal: '#999',
-            link_added: 'rgb(51,114,237)',
-            link_removed: 'rgb(248,212,150)',
-        }
-    } else {
-        return {
-            node_normal: '#ccc',
-            node_added: 'var(--vt-c-green-strong)',
-            node_removed: '#f26c6c',
-            node_changed: '#bbd8ff',
-            node_added_light: 'rgba(228, 119, 119, 0.506)',
-            node_removed_light: 'rgba(109, 209, 109, 0.506)',
-
-            link_normal: '#999',
-            link_added: 'var(--vt-c-green-strong)',
-            link_removed: '#f26c6c',
-        }
+// state colours of the query graph, consumed by assets/graph.css and assets/onset.css
+const colour_vars = computed(() => {
+    if (!ui_state.colour_blind) {
+        return {}
+    }
+    return {
+        '--c-node-added': 'rgb(51,114,237)',
+        '--c-node-removed': 'rgb(248,212,150)',
+        '--c-node-changed': 'rgb(232,224,253)',
+        '--c-node-added-light': 'rgba(51,114,237,0.506)',
+        '--c-node-removed-light': 'rgba(248,212,150,0.506)',
+        '--c-link-added': 'rgb(51,114,237)',
+        '--c-link-removed': 'rgb(248,212,150)',
     }
 })
 
@@ -440,142 +358,76 @@ onMounted(() => {
     loadState()
 })
 </script>
-<style lang="scss" scoped>
-.query_build_view {
+<style scoped>
+.explore {
     display: flex;
-    position: relative;
-    justify-content: center;
-    align-items: start;
+    flex-direction: column;
+    gap: var(--space-1);
+    /* fill the viewport below the app header (2rem) and the page padding */
+    height: calc(100vh - 2rem - 2 * var(--space-2));
+    min-height: 28rem;
+    /* the side panel hosts the agent chat */
+    --side-panel-width: 22rem;
+}
+
+.explore_main {
+    display: flex;
     flex-direction: row;
-    width: 100%;
-    //overflow: auto;
-    height: 60vh;
-
-    pre {
-        width: 25%;
-        height: 100%;
-    }
+    gap: var(--space-1);
+    flex: 1 1 auto;
+    min-height: 0;
 }
 
-.query_builder_wrapper {
-    width: 80%;
-    height: 95%;
+.explore_editor {
+    flex: 1 1 auto;
 }
 
-.diff_controls {
-    display: flex;
-    justify-items: start;
-    justify-items: start;
-    align-items: center;
-    flex-direction: row;
-    margin: 20px;
+.explore_editor_body {
+    overflow: hidden;
 }
 
-.input_step {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    border-bottom: 1px solid #e0e0e0;
-    margin: 0.5rem;
-    padding: 0.5rem;
+.explore_results {
+    flex: 0 0 26%;
 }
 
-.mode_selector {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    border-bottom: 1px solid #e0e0e0;
-}
-
-.query_input {
-    width: 20vw;
-    height: 2.8rem;
-    font-size: 1rem;
-    padding: 0.5rem;
-    margin: 0.5rem;
-    border: 1px solid #8fa88f;
-}
-
-.vertical_line {
-    width: 1px;
-    height: 2.8rem;
-    background-color: #8fa88f;
-    margin: 0 10px;
-}
-
-.show_history_btn {
+.explore_overlay {
     position: absolute;
-    display: inline-block;
-    top: 10px;
-    left: 10px;
     z-index: 50;
+    background: var(--c-surface);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+}
+
+.explore_history {
+    top: var(--space-1);
+    left: var(--space-1);
+    bottom: var(--space-1);
+    width: min(32rem, 70%);
+}
+
+.explore_sparql {
+    right: var(--space-1);
+    bottom: var(--space-1);
+    max-width: 60%;
+    max-height: 60%;
+    margin: 0;
+    padding: var(--space-2);
+    overflow: auto;
+    font-size: var(--fs-xs);
+    border: 1px solid var(--c-border);
+}
+
+.explore_examples {
+    top: var(--space-1);
+    left: var(--space-1);
+    max-width: min(40rem, 80%);
+    padding: var(--space-2);
+    border: 1px solid var(--c-border);
+}
+
+.explore_topics {
     display: flex;
     flex-direction: column;
-    align-items: start;
-    justify-content: start;
+    gap: var(--space-1);
 }
 
-.history_view_container {
-    position: absolute;
-    display: inline-block;
-    top: 4rem;
-    left: 10px;
-    z-index: 50;
-    height: 100%;
-    width: 80%;
-    display: flex;
-    flex-direction: column;
-    align-items: start;
-    justify-content: start;
-}
-
-:deep(.node_normal) {
-    fill: v-bind('colour_config.node_normal');
-}
-
-:deep(.node_added) {
-    fill: v-bind('colour_config.node_added');
-    stroke-dasharray: 10, 2, 10, 2;
-}
-
-:deep(.node_removed) {
-    fill: v-bind('colour_config.node_removed');
-    stroke-dasharray: 10, 4, 10, 4;
-}
-
-:deep(.node_changed) {
-    fill: v-bind('colour_config.node_changed');
-    stroke-dasharray: 10, 1, 10, 1;
-}
-
-:deep(.node_attaching) {
-    fill: v-bind('colour_config.node_normal');
-    stroke-width: 3px;
-    stroke-dasharray: 1, 1, 1, 1;
-}
-
-:deep(.result_instance_right) {
-    background-color: v-bind('colour_config.node_added_light');
-}
-
-:deep(.result_instance_left) {
-    background-color: v-bind('colour_config.node_removed_light');
-}
-
-
-:deep(.link_normal) {
-    stroke: v-bind('colour_config.link_normal');
-}
-
-:deep(.link_added) {
-    stroke: v-bind('colour_config.link_added');
-    stroke-dasharray: 10, 2, 10, 2;
-}
-
-:deep(.link_removed) {
-    stroke: v-bind('colour_config.link_removed');
-    stroke-dasharray: 10, 4, 10, 4;
-}
 </style>

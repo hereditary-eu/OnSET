@@ -209,15 +209,12 @@ watch(() => history, (new_length) => {
 .history_tooltip {
     position: absolute;
     background-color: rgba(255, 255, 255, 0.95);
-    border: 1px solid rgb(192, 213, 191);
-    padding: 10px;
+    border: 1px solid var(--c-border);
+    padding: var(--space-1);
     z-index: 100;
     box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3);
 
-    min-width: 400px;
-    max-width: 400px;
-
-    min-height: 200px;
-    max-height: 200px;
+    width: 360px;
+    height: 180px;
 }
 </style>

@@ -8,8 +8,17 @@ if TYPE_CHECKING:
     from api.config import ManMan
 
 
-# Subject/Link/SubQuery for agentic graph editing.
-# The subqueries mirror frontend/src/utils/sparql/representation/subqueries.ts
+# Canonical query-graph representations of the backend.
+#
+# 1. QueryGraph (AssistantSubject/AssistantLink/subqueries) and Operations:
+#    the state of the visual query editor, used for agentic graph editing.
+#    The subqueries mirror frontend/src/utils/sparql/representation/subqueries.ts
+# 2. EntitiesRelations and its Candidate*/Enriched* variants: the prototype
+#    query graphs of the NL -> entities/relations pipeline (explorative.llm_query),
+#    which double as the grammar for constrained LLM output, so their field
+#    names are part of the prompts and must not change.
+#
+# NOTE: exploration/llm_tool_exploration.ipynb star-imports this module.
 
 
 class AssistantSubQueryType(str, enum.Enum):
@@ -254,15 +263,12 @@ class QueryGraph(BaseModel):
         self.links = [
             l
             for l in self.links
-            if l.from_subject != subject_id and l.to_subject != subject_id
+            if l.from_subject_id != subject_id and l.to_subject_id != subject_id
         ]
 
     def remove_link(self, link_id: str):
         assert self.has_link(link_id), f"link_id {link_id} not found in graph."
         self.links = [l for l in self.links if l.id != link_id]
-
-    def has_subject(self, subject_id: str) -> bool:
-        return any(s.id == subject_id for s in self.subjects)
 
 
 class OperationType(str, enum.Enum):
@@ -277,3 +283,85 @@ class Operation(BaseModel):
 
 class Operations(BaseModel):
     operations: list[Operation] = Field([])
+
+
+# --- Prototype query graphs of the NL -> entities/relations (ERL) pipeline ---
+
+
+class Constraint(BaseModel):
+    property: str
+    value: str | None
+    modifier: str | None
+
+
+class Entity(BaseModel):
+    identifier: str
+    type: str
+    constraints: list[Constraint] = Field([])
+
+
+class Relation(BaseModel):
+    entity: str
+    relation: str
+    target: str
+
+
+class EntitiesRelations(BaseModel):
+    relations: list[Relation] = Field([])
+    entities: list[Entity] = Field([])
+    message: str = Field("Found Relations and Entities")
+
+
+class CandidateRelation(Relation):
+    score: float
+    link: SubjectLink | None = Field(None)
+
+
+class CandidateConstraint(Constraint):
+    score: float
+    type: str
+    property: str
+    entity: str
+    link: SubjectLink | None = Field(None)
+
+
+class CandidateEntity(Entity):
+    score: float
+    type: str
+    subject: Subject | None = Field(None)
+
+
+class Candidates(EntitiesRelations):
+    relations: list[CandidateRelation] = Field([])
+    entities: list[CandidateEntity] = Field([])
+    # constraints: list[CandidateConstraint] = Field([])
+
+
+class EnrichedConstraint(Constraint):
+    constraint: SubjectLink | None
+
+
+class EnrichedEntity(Entity):
+    subject: Subject
+    # constraints: list[EnrichedConstraint] = Field([])
+
+
+class EnrichedRelation(Relation):
+    link: SubjectLink | None
+
+
+class EnrichedEntitiesRelations(EntitiesRelations):
+    relations: list[EnrichedRelation] = Field([])
+    entities: list[EnrichedEntity] = Field([])
+
+
+class QueryProgress(BaseModel):
+    id: str
+    start_time: str
+    progress: int = Field(0)
+    max_steps: int
+    message: str = Field("")
+    relations_steps: list[
+        EntitiesRelations | Candidates | EnrichedEntitiesRelations
+    ] = Field([])
+    enriched_relations: EnrichedEntitiesRelations | None = None

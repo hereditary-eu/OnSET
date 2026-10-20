@@ -12,7 +12,7 @@ export class CylinderMan {
     three_div: HTMLElement = null
     camera: THREE.PerspectiveCamera = null
     scene: THREE.Scene = null
-    renderer: THREE.Renderer = null
+    renderer: THREE.WebGLRenderer = null
     dimensions = {
         width: 1000,
         height: 1000,

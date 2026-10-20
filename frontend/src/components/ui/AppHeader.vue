@@ -2,6 +2,7 @@
 import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { listConfigs, type ConfigSummary } from '@/utils/api'
+import OnsetIcon from './OnsetIcon.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -25,7 +26,7 @@ const switchConfig = (event: Event) => {
 <template>
     <header class="app_header">
         <RouterLink v-if="configId" :to="{ name: 'configs' }" class="back" title="Back to the configurations">
-            <v-icon icon="mdi-arrow-left" size="small"></v-icon>
+            <OnsetIcon icon="mdi-arrow-left" />
         </RouterLink>
         <RouterLink :to="{ name: 'configs' }" class="brand">OnSET</RouterLink>
         <template v-if="configId">
@@ -51,9 +52,10 @@ const switchConfig = (event: Event) => {
     z-index: 10;
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    height: 2.75rem;
-    padding: 0 1rem;
+    gap: var(--space-2);
+    height: 2rem;
+    padding: 0 var(--space-3);
+    font-size: var(--fs-sm);
     border-bottom: 1px solid var(--color-border);
     background: var(--color-background);
 }
@@ -75,16 +77,16 @@ const switchConfig = (event: Event) => {
 
 .config {
     font: inherit;
-    padding: 0.15rem 0.4rem;
+    padding: 0.1rem var(--space-1);
     border: 1px solid transparent;
-    border-radius: 4px;
+    border-radius: var(--radius);
     background: transparent;
     cursor: pointer;
 }
 
 .config:hover,
 .config:focus {
-    border-color: #b8b7b7;
+    border-color: var(--c-border-ctrl);
 }
 
 .views {
@@ -94,14 +96,14 @@ const switchConfig = (event: Event) => {
 }
 
 .views a {
-    padding: 0.2rem 0.6rem;
-    border-radius: 4px;
+    padding: 0.1rem var(--space-2);
+    border-radius: var(--radius);
     color: var(--color-text);
 }
 
 .disclaimer {
     margin-left: auto;
-    font-size: 0.75rem;
+    font-size: var(--fs-xs);
     color: var(--color-text);
     opacity: 0.7;
 }

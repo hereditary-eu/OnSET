@@ -1,16 +1,19 @@
 <script setup lang="ts">
-import { ref, watch, reactive, computed, onMounted, type ModelRef, defineEmits } from 'vue'
+import { computed, type ModelRef } from 'vue'
+import OnsetIcon from './OnsetIcon.vue'
 
-const model: ModelRef<boolean> = defineModel({})
+const model: ModelRef<boolean> = defineModel({ type: Boolean, default: false })
 const props = defineProps({
+    // explicit sizes are optional: buttons size to their content by default
     btn_height: {
         type: String,
-        default: '2.8rem'
+        default: ''
     },
     btn_width: {
         type: String,
-        default: '16rem'
+        default: ''
     },
+    // toggleable buttons flip v-model on click and show a selected state
     toggleable: {
         type: Boolean,
         default: true
@@ -18,10 +21,19 @@ const props = defineProps({
     active: {
         type: Boolean,
         default: true
+    },
+    // optional leading mdi icon, e.g. "mdi-history"
+    icon: {
+        type: String,
+        default: ''
+    },
+    size: {
+        type: String as () => 'small' | 'default',
+        default: 'default'
     }
 })
 const emit = defineEmits(['click'])
-function update(evt) {
+function update(evt: MouseEvent) {
     evt.preventDefault()
     if (!props.active) {
         return
@@ -31,69 +43,63 @@ function update(evt) {
         model.value = !model.value
     }
 }
-const clses = computed(() => {
-    return {
-        'clickable_container': true,
-        'clickable_disabled': !props.active,
-        'clickable_selected': model.value
-    }
-})
+const clses = computed(() => ({
+    'onset_btn_small': props.size == 'small',
+    'onset_btn_disabled': !props.active,
+    'onset_btn_selected': props.toggleable && model.value,
+}))
+const sizing = computed(() => ({
+    height: props.btn_height || undefined,
+    width: props.btn_width || undefined,
+}))
 </script>
 <template>
-    <div class="wrapper_clickable">
-        <button v-if="props.toggleable" :class="clses" @click="update">
-            <slot></slot>
-        </button>
-        <div v-else @click="update">
-            <input type="checkbox" id="btnControl" />
-            <label :class="clses" for="btnControl">
-                <slot></slot>
-            </label>
-
-        </div>
-    </div>
+    <button type="button" class="onset_btn" :class="clses" :style="sizing" :aria-disabled="!props.active"
+        @click="update">
+        <OnsetIcon v-if="props.icon" :icon="props.icon" />
+        <slot></slot>
+    </button>
 </template>
-<style scoped>
-.clickable_container {
-    cursor: pointer;
-    padding: 0.5rem;
-    border: 1px solid #b8b7b7;
-    height: v-bind("props.btn_height");
-    width: v-bind("props.btn_width");
-    text-align: center;
-    display: flex;
+<style>
+.onset_btn {
+    display: inline-flex;
     align-items: center;
     justify-content: center;
-    justify-items: center;
-    background-color: white;
+    gap: var(--space-1);
+    flex: 0 0 auto;
+    height: var(--control-h);
+    min-width: var(--control-h);
+    padding: 0 var(--space-2);
+    font: inherit;
+    font-size: var(--fs-sm);
+    line-height: 1;
+    white-space: nowrap;
+    color: inherit;
+    border: 1px solid var(--c-border-ctrl);
+    border-radius: var(--radius);
+    background-color: var(--c-surface);
+    cursor: pointer;
 }
 
-.clickable_disabled {
+.onset_btn_small {
+    height: var(--control-h-sm);
+    min-width: var(--control-h-sm);
+    padding: 0 var(--space-1);
+    font-size: var(--fs-xs);
+}
+
+.onset_btn:hover,
+.onset_btn:active {
+    border-color: var(--c-accent);
+}
+
+.onset_btn_selected {
+    background-color: var(--c-accent-soft);
+}
+
+.onset_btn_disabled {
     cursor: not-allowed;
     border-color: #dcdcdc;
-    background-color: #c1c1c1;
-}
-
-.clickable_container:hover {
-    border-color: #8fa88f;
-}
-
-.clickable_container:active {
-    border-color: #8fa88f;
-}
-
-.clickable_selected {
-    background-color: #d5edde;
-}
-
-.wrapper_clickable {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: 2px;
-}
-
-#btnControl {
-    display: none;
+    background-color: var(--c-disabled);
 }
 </style>

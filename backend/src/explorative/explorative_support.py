@@ -1,22 +1,23 @@
 from __future__ import annotations
-from tkinter import Image
-from sentence_transformers import SentenceTransformer
+
+from contextlib import contextmanager
+from hashlib import sha256
+from typing import Iterator
+
 import torch
 from langchain_core.language_models import LLM
 from llama_cpp import Llama
-from hashlib import sha256
-import regex as re
-from sqlalchemy import create_engine, select, delete, or_
+from PIL.Image import Image
+from sentence_transformers import SentenceTransformer
+from sqlalchemy import Engine, create_engine, select, text
 from sqlalchemy.orm import Session
-from tqdm import tqdm
-import pandas as pd
 
 from explorative.data_tensor import DataTensor
 from model import SubjectLink
-from ontology import OntologyManager, wrap_iri
+from ontology import OntologyManager
+from utils import wrap_iri
 
 from explorative.exp_model import (
-    BasePostgres,
     TopicDB,
     SubjectLinkDB,
     SubjectInDB,
@@ -29,6 +30,15 @@ from explorative.exp_model import (
     FuzzyQueryResults,
     Topic,
 )
+
+
+@contextmanager
+def read_only_session(engine: Engine) -> Iterator[Session]:
+    """A session in a read-only transaction that does not autoflush."""
+    with Session(engine) as session:
+        session.execute(text("SET TRANSACTION READ ONLY"))
+        session.autoflush = False
+        yield session
 
 
 class GuidanceManager:
@@ -118,7 +128,7 @@ class GuidanceManager:
         # ).to(device)
         return self.__embedding_model
 
-    def get_topic_tree(self) -> list[Topic]:
+    def get_topic_tree(self) -> Topic:
         with Session(self.engine) as session:
             root_topic = session.execute(
                 select(TopicDB).where(
@@ -146,34 +156,6 @@ class GuidanceManager:
                 raise ValueError("No root topic found")
             return topic_tree(root_topic[0])
 
-    def search_free(
-        self,
-        query: str,
-        limit=25,
-    ):
-        query_embedding = self.embedding_model.encode(query)
-        with Session(self.engine) as session:
-            subjects = session.execute(
-                select(SubjectInDB)
-                .where(SubjectInDB.onto_hash == self.identifier)
-                .order_by(SubjectInDB.embedding.cosine_distance(query_embedding))
-                .limit(limit)
-            ).all()
-            subjects_enriched = [
-                self.oman.enrich_subject(s[0].subject_id) for s in subjects
-            ]
-            links = session.execute(
-                select(SubjectLinkDB)
-                .where(SubjectLinkDB.onto_hash == self.identifier)
-                .order_by(SubjectLinkDB.embedding.cosine_distance(query_embedding))
-                .limit(limit)
-            ).all()
-            links_enriched = [l[0].from_db(self.oman) for l in links]
-            return FuzzyQueryResults(
-                links=links_enriched,
-                subjects=subjects_enriched,
-            )
-
     def search_links(
         self, querystring: str = None, from_id: str = None, to_id: str = None
     ):
@@ -193,6 +175,22 @@ class GuidanceManager:
             links = session.execute(query.limit(25)).all()
             links_enriched = [l[0].from_db(self.oman) for l in links]
             return links_enriched
+
+    def get_link(self, property_id: str) -> SubjectLink | None:
+        """The first stored link of a property, enriched from the ontology."""
+        with Session(self.engine) as session:
+            link = (
+                session.query(SubjectLinkDB)
+                .filter(SubjectLinkDB.property_id == property_id)
+                .first()
+            )
+            if link is None:
+                return None
+            return link.from_db(oman=self.oman)
+
+    def encode_query(self, query: str):
+        """Embed a single text with the sentence embedding model."""
+        return self.embedding_model.encode([query]).squeeze()
 
     def __embed_query(
         self,
@@ -272,9 +270,9 @@ class GuidanceManager:
                     ),
                 ).where(SubjectLinkDB.onto_hash == self.identifier)
                 if query.from_id is not None:
-                    query.from_id = wrap_iri(query.from_id)
                     if isinstance(query.from_id, str):
                         query.from_id = [query.from_id]
+                    query.from_id = [wrap_iri(from_id) for from_id in query.from_id]
                     from_parents = [
                         self.oman.get_parents(from_id) + [from_id]
                         for from_id in query.from_id

@@ -8,10 +8,8 @@ from typing import Any
 from api.config import CONFIG_PATH_PARAM, ManMan, ManManDep
 from pydantic import BaseModel
 from ontology import Graph
-from explorative.exp_model import (
-    SparqlQuery,
-    Topic,
-)
+from explorative.exp_model import SparqlQuery, Topic
+from api.router.agent import agent_router
 from api.router.classes import classes_router
 from api.router.multimodal import multimodal_router
 from api.router.nlp_helper import nlp_router
@@ -124,12 +122,12 @@ def get_topics_root(
     manman: ManManDep, force_initialize: bool = Query(False)
 ) -> Topic:
     logger.info("Fetching root topics")
-    # guidance_man.initialize_topics(force_initialize)
     return manman.guidance_man.get_topic_tree()
 
 
 config_app.include_router(classes_router)
 config_app.include_router(nlp_router)
 config_app.include_router(multimodal_router)
+config_app.include_router(agent_router)
 
 app.mount(f"/{{{CONFIG_PATH_PARAM}}}", config_app)

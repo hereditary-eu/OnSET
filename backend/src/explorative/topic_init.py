@@ -1,13 +1,12 @@
 from bertopic import BERTopic
-from bertopic.representation import LangChain, LlamaCPP
+from bertopic.representation import LlamaCPP
 from scipy.cluster import hierarchy as sch
 
 
-from sqlalchemy import text, inspect, create_engine, select, delete
+from sqlalchemy import text, inspect, select, delete
 from sqlalchemy.orm import Session
 from model import Subject
 from tqdm import tqdm
-import regex as re
 import pandas as pd
 import numpy as np
 
@@ -15,7 +14,6 @@ from eval_config import EvalConfig
 from explorative.exp_model import TopicDB, SubjectLinkDB, SubjectInDB, BasePostgres
 from explorative.explorative_support import GuidanceManager
 
-from initiator import Initationatable, InitatorManager
 from utils import to_readable
 
 # System prompt describes information given to all conversations

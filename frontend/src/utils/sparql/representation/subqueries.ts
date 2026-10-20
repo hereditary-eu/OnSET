@@ -32,18 +32,22 @@ interface SubQueryClass {
 
 const registeredSubQueryClasses: Record<string, SubqueryRegisterEntry> = {}
 
-export function registerSubquery<C extends SubQueryClass>(allowed_prop_types: string[], allowed_filters: string[] | null = null): (constructor: C) => C {
+export function registerSubquery(allowed_prop_types: string[], allowed_filters: string[] | null = null): <C extends SubQueryClass>(constructor: C) => C {
     if (!allowed_filters) {
         allowed_filters = allowed_prop_types
     }
-    return (constructor: C) => {
-        constructor.prototype.__parseregister = constructor.name
-        registerClass(constructor)
-        registeredSubQueryClasses[constructor.name] = new SubqueryRegisterEntry(constructor.name, constructor, allowed_prop_types, allowed_filters)
-        let anyparam = constructor as { new(...args: any[]): {} }
-        return class extends SubQuery {
-            __parseregister = constructor.name
+    return <C extends SubQueryClass>(constructor: C): C => {
+        // Extend the decorated class (keeping its constructor and statics) and tag instances with an own
+        // __parseregister field, so the class survives (de)serialisation; the extended class is what gets
+        // registered, so revived instances pass instanceof checks against the exported class.
+        const name = constructor.name
+        const wrapped = class extends (constructor as unknown as { new(...args: any[]): SubQuery }) {
+            __parseregister = name
         } as unknown as C
+        Object.defineProperty(wrapped, 'name', { value: name })
+        registerClass(wrapped)
+        registeredSubQueryClasses[name] = new SubqueryRegisterEntry(name, wrapped, allowed_prop_types, allowed_filters)
+        return wrapped
     }
 }
 
@@ -52,6 +56,9 @@ export class SubQuery implements Diffable, ReconstructableClass {
     link: Link;
     _height: number;
     _width: number;
+    // size of the rendered content, measured by the editor (Subquery.vue); overrides the defaults
+    _fit_width: number | null = null;
+    _fit_height: number | null = null;
     constraint_type: SubQueryType;
     id: string | number;
     static allowed_prop_types = []
@@ -64,13 +71,13 @@ export class SubQuery implements Diffable, ReconstructableClass {
     postConstruct(): void {
     }
     get height(): number {
-        return this._height
+        return this._fit_height ?? this._height
     }
     set height(value: number) {
         this._height = value
     }
     get width(): number {
-        return this._width
+        return this._fit_width ?? this._width
     }
     set width(value: number) {
         this._width = value
@@ -127,7 +134,7 @@ export { ALLOWED_IMAGE_PROP_TYPES }
 
 
 
-@registerSubquery<typeof QueryProp>(ALLOWED_IMAGE_PROP_TYPES, [])
+@registerSubquery(ALLOWED_IMAGE_PROP_TYPES, [])
 export class QueryProp extends SubQuery {
     property_id: string
     constructor() {
@@ -135,7 +142,7 @@ export class QueryProp extends SubQuery {
         this.constraint_type = SubQueryType.QUERY_PROP
     }
     get height(): number {
-        return CONSTRAINT_HEIGHT / 2
+        return this._fit_height ?? CONSTRAINT_HEIGHT / 2
     }
     static validProp(propType: string): boolean {
         console.log("Checking if propType is valid for query prop", propType, registeredSubQueryClasses)
@@ -412,6 +419,9 @@ export class VectorSort extends SubQuery {
         // no-op, height is determined by modality
     }
     get height(): number {
+        if (this._fit_height != null) {
+            return this._fit_height
+        }
         switch (this.modality) {
             case VectorSortModality.IMAGE:
                 return CONSTRAINT_HEIGHT * 4

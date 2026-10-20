@@ -1,8 +1,10 @@
 import type { NodeLinkRepository } from "../sparql/store";
+import type { TraceData } from "./plot-builder";
 import type { AnalyzedProp, ChartMode } from "./plot-types";
 
+import * as Plotly from "plotly.js-dist";
 export class PlotCacheEntry {
-    traces: Plotly.PlotData[]
+    traces: TraceData[]
     results: Record<string, any>[]
     chart_mode: ChartMode
     chart_options: Plotly.Layout

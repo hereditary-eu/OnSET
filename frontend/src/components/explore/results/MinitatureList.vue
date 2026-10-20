@@ -1,20 +1,20 @@
 <template>
-    <div class="result_plot_wrapper">
-
-
-        <div v-if="combined_stores.instances.length > 0" class="result_instance_element"
-            v-for="s of combined_stores.instances">
-            <Result :store="jsonClone(s)" :expanded="false" :scale="ui_state.scale" :offset="ui_state.offset"
-                :miniature-type="miniatureType(s)" :diff="diff">
-            </Result>
-        </div>
-        <div v-else class="result_instance_element" v-for="s of mapped_stores.instances">
-            <Result :store="jsonClone(s)" :expanded="false" :scale="ui_state.scale" :offset="ui_state.offset">
-            </Result>
-        </div>
+    <div class="result_list">
+        <template v-if="combined_stores.instances.length > 0">
+            <div class="result_instance_element" v-for="s of combined_stores.instances">
+                <Result :store="jsonClone(s)" :expanded="false" :miniature-type="miniatureType(s)" :diff="diff">
+                </Result>
+            </div>
+        </template>
+        <template v-else>
+            <div class="result_instance_element" v-for="s of mapped_stores.instances">
+                <Result :store="jsonClone(s)" :expanded="false"></Result>
+            </div>
+        </template>
         <Loading v-if="ui_state.loading"></Loading>
-        <OnsetBtn v-if="mapped_stores.instances.length > 0 && !ui_state.paging_end" @click="loadMore" btn_width="100%"
-            :toggleable="false">Load more</OnsetBtn>
+        <OnsetBtn v-if="mapped_stores.instances.length > 0 && !ui_state.paging_end" @click="loadMore"
+            :toggleable="false" size="small">Load more</OnsetBtn>
+        <!-- empty placeholder used to measure the size available for a miniature -->
         <div class="result_instance_element" ref="view_container" v-show="mapped_stores.instances.length == 0">
         </div>
     </div>
@@ -152,37 +152,22 @@ onMounted(() => {
     startLoading()
 })
 </script>
-<style lang="scss">
-.results_instance_container {
+<style scoped>
+.result_list {
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: flex-start;
-    width: 100%;
-    height: 100%;
-    overflow: auto;
-    padding: 5px;
-    margin-top: 10px;
+    gap: var(--space-1);
+    padding: var(--space-1);
 }
 
 .result_instance_element {
-    max-width: 95%;
-    max-height: 20%;
-
-    height: 10vh;
     display: flex;
     justify-content: center;
     align-items: center;
-    margin: 4px;
-}
-
-.result_instance_svg {
     width: 100%;
-    height: 100%;
-}
-
-.result_interact_svg {
-    width: 100%;
-    height: 100%;
+    height: 4.5rem;
+    flex: 0 0 auto;
+    border-bottom: 1px solid var(--c-border);
 }
 </style>

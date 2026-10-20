@@ -13,10 +13,10 @@ import networkx as nx
 
 from langchain_core.prompts import ChatPromptTemplate
 from typing import TypeVar
-from sqlalchemy.orm import aliased
+from sqlalchemy.orm import aliased, Session
 from sqlalchemy.sql import text
 from rdflib.plugins.stores.sparqlstore import SPARQLStore
-from model import Session, Subject, SubjectLink
+from model import Subject, SubjectLink
 
 from ontology import OntologyManager, OntologyConfig, Graph
 from explorative.explorative_support import GuidanceManager, select

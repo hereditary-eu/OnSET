@@ -1,76 +1,53 @@
 <template>
-    <g>
-        <g :transform="`translate(${subject.x},${subject.y})`" @mouseout.capture="editPointHover($event, false)"
-            @mouseenter.capture="editPointHover($event, true)" @mouseover="editPointHover($event, true)">
-            <rect :x="`${-7}px`" :y="`${-7}px`"
-                :width="`${subject.width + editor_data.editpoint_r * 2 + (constraint_list_mapped.length > 0 ? CONSTRAINT_WIDTH : 0)}px`"
-                :height="`${constraints_height + subject.height + editor_data.editpoint_r * 2}px`" fill-opacity="0">
+    <g :transform="`translate(${subject.x},${subject.y})`" @mouseout.capture="editPointHover($event, false)"
+        @mouseenter.capture="editPointHover($event, true)" @mouseover="editPointHover($event, true)">
+        <!-- invisible hover area covering the node, its handles and its subqueries -->
+        <rect :x="-EDITPOINT_R" :y="-EDITPOINT_R" :width="hover_extent.width" :height="hover_extent.height"
+            fill-opacity="0" />
+        <rect :width="subject.width" :height="subject.height" class="node" :class="node_statestyle"
+            @mousedown="mouseDownNode" @mousemove="mouseMoveNode" @mouseup="mouseUpNode" @mouseleave="mouseUpNode" />
+        <text :x="subject.width / 2" :y="subject.height / 2" class="node_text">{{ display_label }}</text>
 
-            </rect>
-            <rect :width="`${subject.width}px`" :height="`${subject.height}px`" class="node" :class="node_statestyle"
-                @mousedown="mouseDownNode" @mousemove="mouseMoveNode" @mouseup="mouseUpNode" @mouseleave="mouseUpNode">
-            </rect>
+        <g v-for="constr_info in constraint_list_mapped" :transform="`translate(${subject.width / 2},${constr_info.y})`">
+            <Sublink :subquery="constr_info.subquery" :extend_path="constr_info.extend_path" :diff="diff_node"
+                :show_editpoints="editor_data.show_editpoints" :node="subject" @delete="deleteConstraint"
+                :mode="mode" @instance-search-clicked="emit('instanceSearchClicked', $event)" />
+        </g>
 
-            <text :x="`${subject.width / 2}px`" :y="`${subject.height / 2}px`" class=node_text>
-                {{ (mode == DisplayMode.RESULTS || mode == DisplayMode.RESULT_INTERACTIVE) ?
-                    result_subject.instance_label :
-                    subject.label }}
-            </text>
-            <g v-if="mode == DisplayMode.EDIT || mode == DisplayMode.SELECT || DisplayMode.RESULT_INTERACTIVE || DisplayMode.RESULTS"
-                v-for="constr_info in constraint_list_mapped"
-                :transform="`translate(${subject.width / 2},${constr_info.y})`">
-                <Sublink :subquery="constr_info.subquery" :extend_path="constr_info.extend_path" :diff="diff_node"
-                    :show_editpoints="editor_data.show_editpoints" :node="subject" @delete="deleteConstraint"
-                    :mode="mode" @instance-search-clicked="emit('instanceSearchClicked', $event)">
+        <circle v-if="mode == DisplayMode.RESULT_INTERACTIVE" v-show="editor_data.show_editpoints"
+            :cx="subject.width / 2" :cy="subject.height" :r="EDITPOINT_R" class="edit_point edit_point_prop"
+            @click="emit('propPointClicked', { node: subject as InstanceNode })" />
+        <g v-if="mode == DisplayMode.EDIT" v-show="editor_data.show_editpoints">
+            <circle :cx="0" :cy="subject.height / 2" :r="EDITPOINT_R" class="edit_point edit_point_link"
+                @click="emit('linkPointClicked', { side: OpenEventType.FROM, node: subject, evt: $event })" />
+            <text :x="-EDITPOINT_R - 2" :y="subject.height / 2" class="help_text_left">From</text>
 
-                </Sublink>
-            </g>
+            <circle :cx="subject.width / 2" :cy="constraints_height + subject.height" :r="EDITPOINT_R"
+                class="edit_point edit_point_prop"
+                @click="emit('linkPointClicked', { side: OpenEventType.PROP, node: subject, evt: $event })" />
+            <text :x="subject.width / 2 + EDITPOINT_R + 2" :y="constraints_height + subject.height"
+                class="help_text_right">Constraint/Property</text>
 
-            <g v-show="mode == DisplayMode.RESULT_INTERACTIVE && editor_data.show_editpoints">
-                <circle :cx="subject.width / 2" :cy="subject.height" :r="editor_data.editpoint_r"
-                    class="edit_point edit_point_prop"
-                    @click="emit('propPointClicked', { node: subject as InstanceNode })"></circle>
-            </g>
-            <g v-show="mode == DisplayMode.EDIT && editor_data.show_editpoints">
-                <circle :cx="0" :cy="subject.height / 2" :r="editor_data.editpoint_r" class="edit_point edit_point_link"
-                    @click="emit('linkPointClicked', { side: OpenEventType.FROM, node: subject, evt: $event })">
-                </circle>
-                <text :x="`${-editor_data.editpoint_r}px`" :y="`${subject.height / 2}px`"
-                    class="help_text_left">From</text>
+            <circle :cx="subject.width" :cy="subject.height / 2" :r="EDITPOINT_R"
+                @click="emit('linkPointClicked', { side: OpenEventType.TO, node: subject, evt: $event })"
+                class="edit_point edit_point_link" />
+            <text :x="subject.width + EDITPOINT_R + 2" :y="subject.height / 2" class="help_text_right">To</text>
 
-                <circle :cx="subject.width / 2" :cy="constraints_height + subject.height" :r="editor_data.editpoint_r"
-                    class="edit_point edit_point_prop"
-                    @click="emit('linkPointClicked', { side: OpenEventType.PROP, node: subject, evt: $event })">
-                </circle>
-                <text :x="`${subject.width / 2}px`" :y="`${subject.height + editor_data.editpoint_r * 3}px`"
-                    class="help_text_bottom">Constraint/Property</text>
+            <circle :cx="subject.width / 2" :cy="0" :r="EDITPOINT_R"
+                @click="emit('typePointClicked', { side: OpenEventType.TO, node: subject, evt: $event })"
+                class="edit_point edit_point_type" />
+            <text :x="subject.width / 2" :y="-EDITPOINT_R * 2" class="help_text_top">Specify</text>
 
-                <circle :cx="subject.width" :cy="subject.height / 2" :r="editor_data.editpoint_r"
-                    @click="emit('linkPointClicked', { side: OpenEventType.TO, node: subject, evt: $event })"
-                    class="edit_point edit_point_link">
-                </circle>
-                <text :x="`${subject.width + editor_data.editpoint_r}px`" :y="`${subject.height / 2}px`"
-                    class="help_text_right">To</text>
-
-                <circle :cx="subject.width / 2" :cy="0" :r="editor_data.editpoint_r"
-                    @click="emit('typePointClicked', { side: OpenEventType.TO, node: subject, evt: $event })"
-                    class="edit_point edit_point_type">
-                </circle>
-                <text :x="`${subject.width / 2}px`" :y="`${-editor_data.editpoint_r * 3}px`"
-                    class="help_text_top">Specify</text>
-
-                <circle :cx="subject.width" :cy="0" :r="editor_data.editpoint_r" @mouseover="hoverDeletion(true)"
-                    @mouseout="hoverDeletion(false)" class="edit_point edit_point_delete" @click="doDeletion()">
-                </circle>
-
-            </g>
+            <circle :cx="subject.width" :cy="0" :r="EDITPOINT_R" @mouseover="hoverDeletion(true)"
+                @mouseout="hoverDeletion(false)" class="edit_point edit_point_delete" @click="doDeletion()" />
         </g>
     </g>
 </template>
 <script setup lang="ts">
 import { watch, reactive, computed, onMounted } from 'vue'
 import { InstanceNode, SubjectNode as NodeRepr, NodeState, SubQuery } from '@/utils/sparql/representation';
-import { CONSTRAINT_PADDING, CONSTRAINT_WIDTH, DisplayMode, InstanceSelectorOpenEvent, OpenEventType, SelectorOpenEvent } from '@/utils/sparql/helpers';
+import { CONSTRAINT_PADDING, DisplayMode, EDITPOINT_R, fitNode, InstanceSelectorOpenEvent, NODE_PADDING_X, OpenEventType, SelectorOpenEvent } from '@/utils/sparql/helpers';
+import { truncateText } from '@/utils/sparql/measure';
 import Sublink from './Subquery.vue';
 import type { PropertiesOpenEvent } from '@/utils/sparql/querymapper';
 import type { NodeLinkRepository } from '@/utils/sparql/store';
@@ -109,9 +86,7 @@ const editor_data = reactive({
     mouse_down: false,
     mouse_x: 0,
     mouse_y: 0,
-    constraint_padding: 5,
     show_editpoints: false,
-    editpoint_r: 7,
     hover_deletion: false,
     state: NodeState.NORMAL
 })
@@ -166,7 +141,6 @@ const constraint_list_mapped = computed(() => {
         constraints = constraints.concat(diff_node.value.diff_subqueries.removed.map((subquery) => new SubQueryDisplay(subquery.left, NodeState.REMOVED)))
     }
     if (mode == DisplayMode.RESULTS || mode == DisplayMode.RESULT_INTERACTIVE) {
-        console.log('preparing constraints for instance node', subject)
         if (!(subject as InstanceNode).instance_query_props) {
             return []
         }
@@ -252,81 +226,30 @@ const editPointHover = (event: MouseEvent, state: boolean) => {
 const deleteConstraint = (constraint) => {
     subject.subqueries = subject.subqueries.filter((constr) => constr != constraint)
 }
-const result_subject = computed(() => subject as InstanceNode)
+const is_result_mode = computed(() => mode == DisplayMode.RESULTS || mode == DisplayMode.RESULT_INTERACTIVE)
+// Query nodes are sized to their class label. Result nodes keep the layout of the query
+// (positions are computed from it), so their instance label is shortened to fit instead.
+const display_label = computed(() => {
+    if (is_result_mode.value) {
+        return truncateText((subject as InstanceNode).instance_label, subject.width - NODE_PADDING_X)
+    }
+    return subject.label
+})
+watch(() => subject.label, () => {
+    if (!is_result_mode.value) {
+        fitNode(subject)
+    }
+}, { immediate: true })
+const hover_extent = computed(() => {
+    const subquery_width = constraint_list_mapped.value.reduce((acc, c) => Math.max(acc, c.subquery.width), 0)
+    return {
+        width: Math.max(subject.width, subject.width / 2 + subquery_width) + EDITPOINT_R * 2,
+        height: constraints_height.value + subject.height + EDITPOINT_R * 2,
+    }
+})
 
 onMounted(() => {
     // console.log('subject', subject)
     updateNodeState()
 })
 </script>
-<style lang="scss">
-.node {
-    cursor: pointer;
-    // fill: #ccc;
-    stroke: #000;
-    stroke-width: 1.5px;
-
-}
-
-.node_deletion_imminent {
-    fill: #f2b56c;
-    stroke-dasharray: 5, 5;
-}
-
-.node_text {
-    font-size: 10px;
-    text-anchor: middle;
-    pointer-events: none;
-}
-
-.edit_point {
-    fill: #a0c2a9;
-    cursor: pointer;
-    fill-opacity: 0.4;
-}
-
-.edit_point:hover {
-    stroke: #888888;
-    display: block;
-    fill-opacity: 1;
-}
-
-.edit_point_delete {
-    fill: #ea694f;
-}
-
-.edit_point_prop {
-    fill: #a0c2a9;
-
-}
-
-.edit_point_link {
-    fill: #c2bca0;
-}
-
-.edit_point_type {
-    fill: #6be1ff;
-}
-
-@mixin help_text($anchor: middle, $baseline: 0.5em) {
-    font-size: 10px;
-    text-anchor: $anchor;
-    dominant-baseline: central;
-}
-
-.help_text_right {
-    @include help_text(start);
-}
-
-.help_text_top {
-    @include help_text(middle, 1.5em);
-}
-
-.help_text_bottom {
-    @include help_text(middle, -0.5em);
-}
-
-.help_text_left {
-    @include help_text(end);
-}
-</style>

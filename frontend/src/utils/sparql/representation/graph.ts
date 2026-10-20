@@ -251,6 +251,9 @@ export class Link<N extends Subject = Subject> implements SubjectLink, Diffable,
     from_internal_id: string;
     to_internal_id: string;
 
+    // id of the link in the agent's query graph if the agent created it (see utils/agent/graph_sync.ts)
+    agent_id?: string;
+
     from_subject: N | SubjectNode;
     to_subject: N | UnknownNode;
 
@@ -348,12 +351,18 @@ export class InstanceQueryProp extends QueryProp {
         return false
     }
     get height(): number {
+        if (this._fit_height != null) {
+            return this._fit_height
+        }
         if (this.is_image_prop) {
             return CONSTRAINT_HEIGHT
         }
         return CONSTRAINT_HEIGHT / 2
     }
     get width(): number {
+        if (this._fit_width != null) {
+            return this._fit_width
+        }
         if (this.is_image_prop) {
             return CONSTRAINT_HEIGHT + 15
         }

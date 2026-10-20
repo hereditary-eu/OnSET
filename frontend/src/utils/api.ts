@@ -30,6 +30,13 @@ export function configBaseUrl(configId: string): string {
     return `${BACKEND_URL}/${encodeURIComponent(configId)}`
 }
 
+/** WebSocket URL of a configuration-scoped endpoint, e.g. `/agent/ws` (http(s) -> ws(s)). */
+export function configWebSocketUrl(configId: string, path: string): URL {
+    const url = new URL(`${configBaseUrl(configId)}${path}`, window.location.href)
+    url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:'
+    return url
+}
+
 /**
  * The single client for all configuration-scoped backend operations.
  * Every request is routed to `${BACKEND_URL}/${activeConfigId}` at the time it is sent.

@@ -1,4 +1,6 @@
 @import './base.css';
+@import './onset.css';
+@import './graph.css';
 
 #app {
   /* max-width: 1280px; */
@@ -23,5 +25,5 @@ a,
 
 /* pages below the app header */
 .page {
-  padding: 1rem 2rem;
+  padding: var(--space-2) var(--space-3);
 }

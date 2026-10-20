@@ -3,10 +3,10 @@
         <rect :x="`${extent.x}px`" :y="`${extent.y}px`" :width="`${extent.width}px`" :height="`${extent.height}px`"
             fill="transparent">
         </rect>
-        <LinkComp :link="propDragData.dragged_link" :store="propDragData.drag_store" :display_mode="DisplayMode.SELECT"
+        <LinkComp :link="propDragData.dragged_link" :store="propDragData.drag_store" :mode="DisplayMode.SELECT"
             :circular="propDragData.circular" />
         <NodeComp v-if="!propDragData.attaching_to" :subject="propDragData.dragged_node"
-            :store="propDragData.drag_store" :display_mode="DisplayMode.SELECT" />
+            :store="propDragData.drag_store" :mode="DisplayMode.SELECT" />
     </g>
 </template>
 <script setup lang="ts">

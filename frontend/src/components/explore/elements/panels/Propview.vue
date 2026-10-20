@@ -3,7 +3,7 @@
         @mouseenter.capture="edit_point_hover($event, true)" @mouseover="edit_point_hover($event, true)">
         <g :transform="`translate(${attachment_pt.x},${attachment_pt.y})`" v-if="display">
             <foreignObject :height="dimensions.height" :width="dimensions.width">
-                <div class="prop_div_container" :style="{ 'height': `100%` }">
+                <div class="prop_div_container">
                     <Loading v-if="editor_data.loading"></Loading>
                     <div v-else class="prop_element_container">
                         <div class="prop_element" v-for="(prop, key) of props" :key="key">
@@ -19,7 +19,7 @@
             </foreignObject>
 
             <g v-show="editor_data.show_editpoints">
-                <circle :cx="dimensions.width" :cy="0" :r="editor_data.editpoint_r"
+                <circle :cx="dimensions.width" :cy="0" :r="EDITPOINT_R"
                     class="edit_point edit_point_delete" @click="display = false"></circle>
             </g>
         </g>
@@ -29,7 +29,7 @@
 import { ref, watch, reactive, computed, onMounted } from 'vue'
 import { SubQuery } from '@/utils/sparql/representation';
 import { RELATION_TYPE, RETURN_TYPE, type Property } from '@/api/client.ts/Api';
-import { LINK_WIDTH, NODE_HEIGHT, NODE_WIDTH, OpenEventType, SelectorOpenEvent } from '@/utils/sparql/helpers';
+import { EDITPOINT_R } from '@/utils/sparql/helpers';
 import Loading from '@/components/ui/Loading.vue';
 import { readableName, type PropertiesOpenEvent } from '@/utils/sparql/querymapper';
 import type { MixedResponse } from '@/utils/sparql/store';
@@ -50,7 +50,6 @@ const { selection_event } = defineProps({
 
 const editor_data = reactive({
     show_editpoints: false,
-    editpoint_r: 7,
     loading: false,
 })
 type PropResponse = Record<string, Property>
@@ -103,50 +102,42 @@ const edit_point_hover = (event: MouseEvent, state: boolean) => {
 }
 </script>
 
-<style lang="scss">
+<style>
 .prop_div_container {
     display: flex;
     flex-direction: column;
-    // justify-content: ;
-    align-items: center;
-    background-color: white;
+    height: 100%;
+    padding: var(--space-1);
+    background-color: var(--c-surface);
     border: 1px solid rgb(197, 196, 168);
-    // border-radius: 5px;
-    padding: 5px;
+    font-size: var(--fs-sm);
 }
 
 .prop_element_container {
     display: flex;
     flex-direction: column;
-    justify-content: flex-start;
-    align-items: center;
     overflow-y: auto;
 }
 
 .prop_element {
-    padding: 2px;
-    display: flex;
-    justify-items: center;
-    align-items: center;
-}
-.prop_element{
     display: flex;
     flex-direction: row;
     justify-content: space-between;
     align-items: center;
     width: 100%;
-    padding: 5px;
+    padding: 2px var(--space-1);
     border-bottom: 1px solid rgb(197, 196, 168);
 }
-.prop_key{
-    font-weight: bold;
+
+.prop_key {
+    font-weight: 600;
     width: 50%;
 }
-.prop_values{
-    width: 50%;
+
+.prop_values {
     display: flex;
     flex-direction: column;
-    justify-content: flex-start;
     align-items: flex-start;
+    width: 50%;
 }
 </style>

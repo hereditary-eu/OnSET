@@ -29,26 +29,22 @@
             <use xlink:href="#instance_selector"></use>
             <use xlink:href="#type_selector"></use>
         </svg>
-        <!-- <OverviewBox :store="store" :query_string="ui_state.query_string" :hoveredLink="ui_state.hoveredLink">
-        </OverviewBox> -->
     </div>
 </template>
 <script setup lang="ts">
-import { ref, watch, reactive, onMounted } from 'vue'
+import { ref, watch, reactive, onMounted, onBeforeUnmount } from 'vue'
 import { Link } from '@/utils/sparql/representation';
 import OutLinkSelector from './elements/panels/LinkSelector.vue';
 import { DisplayMode, InstanceSelectorOpenEvent, LinkEditEvent, OpenEventType, type SelectorOpenEvent } from '@/utils/sparql/helpers';
 import InstanceSelector from './elements/panels/InstanceSelector.vue';
 import { RepositoryState, type NodeLinkRepository } from '@/utils/sparql/store';
 import GraphView from './elements/GraphView.vue';
-// import type { SubjectInCircle } from '@/utils/d3-man/CircleMan';
 
 import type { NodeLinkRepositoryDiff } from '@/utils/sparql/diff';
 import TypeSelector from './elements/panels/TypeSelector.vue';
 import LinkComposer from './elements/LinkComposer.vue';
 import { ViewPortState } from '@/utils/editing';
 import { MOUSE } from 'three';
-import { api } from '@/utils/api'
 
 const svg_wrapper = ref<HTMLElement | null>(null)
 
@@ -218,7 +214,7 @@ watch(() => store, () => {
     }
 }, { deep: false, flush: 'post' })
 
-onMounted(() => {
+const updateRect = () => {
     let svg_g_rect = svg_wrapper.value?.getBoundingClientRect()
     if (svg_g_rect) {
         ui_state.rect.x = svg_g_rect.x
@@ -226,7 +222,16 @@ onMounted(() => {
         ui_state.rect.width = svg_g_rect.width
         ui_state.rect.height = svg_g_rect.height
     }
-    // .style('background-color', 'red')
+}
+// keep the pan/zoom capture area in sync with the panel size (e.g. when the side panel collapses)
+let resize_observer: ResizeObserver | null = null
+onBeforeUnmount(() => resize_observer?.disconnect())
+onMounted(() => {
+    updateRect()
+    if (typeof ResizeObserver !== 'undefined' && svg_wrapper.value) {
+        resize_observer = new ResizeObserver(updateRect)
+        resize_observer.observe(svg_wrapper.value)
+    }
 
 })
 
@@ -240,6 +245,7 @@ onMounted(() => {
 }
 
 .query_build_wrapper {
+    display: block;
     width: 100%;
     height: 100%;
     cursor: move;
@@ -249,19 +255,6 @@ onMounted(() => {
     fill: transparent;
     color: transparent;
     pointer-events: all;
-}
-
-.node {
-    cursor: pointer;
-    fill: #ccc;
-    stroke: #000;
-    stroke-width: 1.5px;
-
-}
-
-.node_text {
-    font-size: 10px;
-    text-anchor: middle;
 }
 
 </style>

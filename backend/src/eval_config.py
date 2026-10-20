@@ -45,6 +45,32 @@ class MultimodalConfig(BaseModel):
     image_types: list[str] = ["<http://dbpedia.org/ontology/Image>"]
 
 
+class AgentConfig(BaseModel):
+    """LLM backing the agent chat (agent/).
+
+    The agent needs native tool calling, so it talks to an OpenAI-compatible
+    server (e.g. a local ``llama-server --jinja``) instead of the in-process
+    llama.cpp model used for grammar-constrained generation.
+    """
+
+    base_url: str = "http://localhost:8998/v1"
+    api_key: str = "none"
+    # served model id, the first model listed by the server if empty
+    model: str | None = None
+    # stream text/reasoning deltas to the client (Responses API events)
+    stream: bool = True
+    # LLM calls per user message before the turn is aborted
+    max_steps: int = 12
+    # results returned by the search tools
+    retrieve_k: int = 5
+    temperature: float | None = None
+
+    @field_validator("model", mode="before")
+    @classmethod
+    def _empty_is_none(cls, value: Any) -> Any:
+        return value or None
+
+
 class EvalConfig(BaseModel):
     model_id: str = Field(
         "NousResearch/Hermes-3-Llama-3.1-8B-GGUF"
@@ -58,6 +84,7 @@ class EvalConfig(BaseModel):
     redis_cache_url: str = "redis://localhost:6379/1"
     ontology_extension: str = ""
     multimodal_config: MultimodalConfig | None = None
+    agent: AgentConfig = Field(default_factory=AgentConfig)
 
     @field_validator("ontology_extension", mode="before")
     @classmethod

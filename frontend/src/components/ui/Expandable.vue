@@ -1,14 +1,12 @@
 <template>
     <div class="expandable_container">
-        <div class="expandable_frame" v-show="expanded" @click.capture="expanded = false">
-            <div class="expandable_window" @click="expanded = true">
+        <div class="expandable_frame" v-if="expanded" @click.self="expanded = false">
+            <div class="expandable_window">
                 <div class="expandable_header">
-                    <slot name="header">
-                    </slot>
+                    <slot name="header"></slot>
                 </div>
                 <div class="expandable_content">
-                    <slot name="content">
-                    </slot>
+                    <slot name="content"></slot>
                 </div>
             </div>
         </div>
@@ -19,64 +17,57 @@
 </template>
 
 <script setup lang="ts">
-import { ref, defineModel } from 'vue'
 const expanded = defineModel<boolean>({ default: false })
-
 </script>
-<style lang="css">
-.expandable_frame {
-    cursor: pointer;
-    background-color: rgba(187, 187, 187, 0.5);
-    height: 100%;
-    width: 100vw;
-    position: absolute;
-    top: -2rem;
-    left: -2rem;
-    z-index: 100;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
+<style>
 .expandable_container {
     width: 100%;
     height: 100%;
 }
 
-.expandable_trigger {
-    cursor: pointer;
+/* full-viewport modal, independent of the positioned ancestors */
+.expandable_frame {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
     display: flex;
-    justify-content: center;
     align-items: center;
-    width: 100%;
-    height: 100%;
+    justify-content: center;
+    cursor: pointer;
+    background-color: rgba(187, 187, 187, 0.5);
 }
 
 .expandable_window {
-    cursor: default;
-    background-color: white;
-    border-radius: 5px;
-    padding: 10px;
-    width: 80%;
-    height: 80%;
     display: flex;
     flex-direction: column;
-    justify-content: start;
-    align-items: center;
+    width: 80%;
+    height: 80%;
+    padding: var(--space-2);
+    border-radius: var(--radius);
+    background-color: var(--c-surface);
+    cursor: default;
 }
 
 .expandable_header {
-    width: 100%;
-    height: 10%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    border-bottom: 1px solid rgb(192, 213, 191);
+    flex: 0 0 auto;
+    padding-bottom: var(--space-1);
+    border-bottom: 1px solid var(--c-border);
+    font-size: var(--fs-lg);
+    font-weight: 600;
+    text-align: center;
 }
 
 .expandable_content {
+    flex: 1 1 auto;
+    min-height: 0;
+}
+
+.expandable_trigger {
+    display: flex;
+    justify-content: center;
+    align-items: center;
     width: 100%;
     height: 100%;
-    margin: 10px;
+    cursor: pointer;
 }
 </style>

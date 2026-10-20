@@ -9,7 +9,7 @@ from fastapi import (
 )
 
 from api.config import ManManDep
-from backend.src.explorative.data_tensor import DataTensorResp
+from explorative.data_tensor import DataTensorResp
 from PIL import Image
 from base64 import b64decode
 import re
@@ -31,7 +31,6 @@ def encode_text(
 
 @multimodal_router.post("/encode/image")
 def encode_image(manman: ManManDep, image: str = Body(...)) -> DataTensorResp:
-    # validate_image_file(image)
     # url encoded base 64 data
     image_data = re.match(r"^data:image/([^;]+);base64,(.*)$", image)
     if not image_data:

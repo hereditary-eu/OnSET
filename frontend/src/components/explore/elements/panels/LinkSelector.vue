@@ -2,55 +2,48 @@
     <g id="outlink_selector" @mouseout.capture="editPointHover($event, false)"
         @mouseenter.capture="editPointHover($event, true)" @mouseover="editPointHover($event, true)">
         <g :transform="`translate(${attachment_pt.x},${attachment_pt.y})`" v-if="display">
-            <foreignObject :height="(NODE_HEIGHT) * NODE_LINK_COUNT + 10" :width="NODE_WIDTH + LINK_WIDTH + 35">
-                <div class="selection_div_container" :style="{ 'height': `${NODE_HEIGHT * NODE_LINK_COUNT + 10}px` }">
+            <foreignObject :height="PANEL_HEIGHT" :width="panel_width">
+                <div class="selection_div_container">
                     <div class="selection_defaults" v-if="selection_event.side == OpenEventType.PROP">
-                        <OnsetBtn @click="addLabelConstraint()" btn_width="100%">Filter Label</OnsetBtn>
-                        <OnsetBtn @click="addLabelProp()" btn_width="100%"><v-icon icon="mdi-tag"></v-icon> Label
+                        <OnsetBtn size="small" :toggleable="false" @click="addLabelConstraint()">Filter Label</OnsetBtn>
+                        <OnsetBtn size="small" :toggleable="false" icon="mdi-tag" @click="addLabelProp()">Label</OnsetBtn>
+                        <OnsetBtn size="small" :toggleable="false" @click="addInstanceConstraint()">Select Instance
                         </OnsetBtn>
-                        <OnsetBtn @click="addInstanceConstraint()" btn_width="100%">Select Instance</OnsetBtn>
                     </div>
                     <div class="selection_defaults" v-if="selection_event.side == OpenEventType.LINK">
-                        <OnsetBtn @click="toggleGeneric()" btn_width="100%">{{
+                        <OnsetBtn size="small" :toggleable="false" @click="toggleGeneric()">{{
                             selection_event.link.allow_arbitrary ? "Disable" : "Allow" }} Any</OnsetBtn>
                     </div>
-                    <div class="selection_search">
-                        <input type="text" placeholder="Search..." v-model="editor_data.q" />
-                    </div>
+                    <input type="text" class="text_input selection_search" placeholder="Search..."
+                        v-model="editor_data.q" />
                     <div class="selection_element_container">
-                        <div class="selection_element_wrapper" v-for="subq of selected_options_filtered">
+                        <div class="selection_element_wrapper" v-for="subq of selected_options_filtered"
+                            :key="subq.option.link?.property_id || subq.option.subject?.subject_id">
                             <div :class="sel_clses(subq)" @click="select_option(subq, $event)"
-                                @mouseenter.capture="editor_data.hover_add =
-                                    subq.option" @mousemove.capture="editor_data.hover_add = subq.option"
-                                @mouseleave.capture="editor_data.hover_add = null"
-                                :key="subq.option.link?.property_id || subq.option.subject?.subject_id">
-                                <svg :width="editor_data.select_width" :height="NODE_HEIGHT + 15">
-                                    <g>
+                                @mouseenter.capture="editor_data.hover_add = subq.option"
+                                @mousemove.capture="editor_data.hover_add = subq.option"
+                                @mouseleave.capture="editor_data.hover_add = null">
+                                <svg :width="option_width(subq.option)" :height="NODE_HEIGHT + 12">
+                                    <g transform="translate(0, 10)">
                                         <GraphView :store="subq.option.store" :display-mode="DisplayMode.SELECT">
                                         </GraphView>
                                     </g>
                                 </svg>
-
                             </div>
-                            <div v-if="selection_event.side == OpenEventType.PROP">
-                                <OnsetBtn :btn_width="'1.5rem'" :toggleable="false"
-                                    @click="selectProp(subq.option, $event)" :active="subq.validProp">
-                                    <v-icon icon="mdi-tag"></v-icon>
-                                </OnsetBtn>
-                            </div>
+                            <OnsetBtn v-if="selection_event.side == OpenEventType.PROP" size="small"
+                                :toggleable="false" icon="mdi-tag" title="Show as property"
+                                @click="selectProp(subq.option, $event)" :active="subq.validProp" />
                         </div>
                         <Loading v-if="editor_data.loading"></Loading>
-                        <OnsetBtn @click="loadMore" btn_width="100%"
+                        <OnsetBtn size="small" @click="loadMore"
                             v-if="selection_options.length > 0 && !editor_data.reached_end" :toggleable="false">More
                         </OnsetBtn>
                     </div>
                 </div>
             </foreignObject>
 
-            <g v-show="editor_data.show_editpoints">
-                <circle :cx="NODE_WIDTH + LINK_WIDTH + 35" :cy="0" :r="editor_data.editpoint_r"
-                    class="edit_point edit_point_delete" @click="closePanel()"></circle>
-            </g>
+            <circle v-show="editor_data.show_editpoints" :cx="panel_width" :cy="0" :r="EDITPOINT_R"
+                class="edit_point edit_point_delete" @click="closePanel()" />
         </g>
     </g>
 </template>
@@ -58,7 +51,7 @@
 import { ref, watch, reactive, computed } from 'vue'
 import { SubQuery, Link, SubjectNode, SubjectConstraint, QueryProp } from '@/utils/sparql/representation';
 import { RELATION_TYPE, RETURN_TYPE } from '@/api/client.ts/Api';
-import { DisplayMode, LINK_WIDTH, LinkEditEvent, NODE_HEIGHT, NODE_WIDTH, OpenEventType, SelectorOpenEvent } from '@/utils/sparql/helpers';
+import { DisplayMode, EDITPOINT_R, fitNode, LINK_WIDTH, LinkEditEvent, linkWidth, NODE_HEIGHT, OpenEventType, PANEL_WIDTH, SelectorOpenEvent } from '@/utils/sparql/helpers';
 import Loading from '@/components/ui/Loading.vue';
 import OnsetBtn from '@/components/ui/OnsetBtn.vue';
 import { MixedResponse, type NodeLinkRepository } from '@/utils/sparql/store';
@@ -71,7 +64,8 @@ class MappedSelection {
     constructor(public option: MixedResponse<SubjectNode>, public validProp: boolean = true, public validFilter: boolean = true) { }
 }
 
-const NODE_LINK_COUNT = 16
+// panel height: room for about 12 options
+const PANEL_HEIGHT = (NODE_HEIGHT + 14) * 12
 const emit = defineEmits<{
     // select: [value: MixedResponse],
     hover_option: [value: Link | null]
@@ -90,15 +84,12 @@ const { selection_event, store } = defineProps({
 
 const editor_data = reactive({
     show_editpoints: false,
-    editpoint_r: 7,
     loading: false,
     q: '',
     query_id: 0,
     offset: 0,
     reached_end: false,
     hover_add: null as MixedResponse<SubjectNode> | null,
-    select_width: LINK_WIDTH + NODE_WIDTH
-
 })
 const display = defineModel<boolean>()
 const selection_options = ref([] as MixedResponse<SubjectNode>[])
@@ -111,14 +102,6 @@ const debounced_search = debounce(() => {
         if (!selection_event) {
             console.warn('No selection event provided, cannot fetch options')
             return;
-        }
-        switch (selection_event.side) {
-            case OpenEventType.PROP:
-                editor_data.select_width = NODE_WIDTH
-                break
-            default:
-                editor_data.select_width = LINK_WIDTH + NODE_WIDTH
-                break
         }
         await loadMore()
     })().catch((e) => {
@@ -174,16 +157,19 @@ const loadMore = async () => {
     let mapped_responses = response.data.results.map((result) => {
         const resp = new MixedResponse<SubjectNode>(result)
         const other_subject = selection_event.side == OpenEventType.FROM || selection_event.side == OpenEventType.PROP ? resp.store.to(resp.link) : resp.store.from(resp.link)
-        let from = resp.store.from(resp.link)
-        let to = resp.store.to(resp.link)
+        let from = fitNode(resp.store.from(resp.link))
+        let to = fitNode(resp.store.to(resp.link))
+        // only the link and the new end are visible: the known end is shifted out of view
+        const link_w = linkWidth(resp.link.label)
         if (selection_event.side == OpenEventType.TO) {
-            to.x = LINK_WIDTH
-            from.x = -NODE_WIDTH
-        } else if (selection_event.side == OpenEventType.PROP) {
-            to.x = NODE_WIDTH
             from.x = -from.width
+            to.x = link_w
+        } else if (selection_event.side == OpenEventType.PROP) {
+            from.x = -from.width
+            to.x = link_w
         } else {
-            to.x = LINK_WIDTH + NODE_WIDTH
+            from.x = 0
+            to.x = from.width + link_w
         }
         return resp
     })
@@ -193,6 +179,23 @@ const loadMore = async () => {
     selection_options.value = selection_options.value.concat(mapped_responses)
     editor_data.loading = false
 }
+// visible width of an option preview (see the placement in loadMore)
+const option_width = (option: MixedResponse<SubjectNode>) => {
+    const link_w = linkWidth(option.link?.label)
+    switch (selection_event.side) {
+        case OpenEventType.TO:
+            return link_w + (option.store.to(option.link)?.width ?? 0)
+        case OpenEventType.PROP:
+            return link_w
+        default:
+            return (option.store.from(option.link)?.width ?? 0) + link_w
+    }
+}
+const panel_width = computed(() => {
+    const widest = selection_options.value.reduce((acc, option) => Math.max(acc, option_width(option)), 0)
+    const extra = selection_event.side == OpenEventType.PROP ? 32 : 12
+    return Math.min(2 * PANEL_WIDTH, Math.max(PANEL_WIDTH, widest + extra))
+})
 const attachment_pt = computed(() => {
     if (!selection_event) {
         return { x: 0, y: 0 }
@@ -405,79 +408,3 @@ watch(display, (new_val) => {
     }
 })
 </script>
-<style lang="scss" scoped>
-.selection_search {
-    padding: 5px;
-
-    input {
-        padding: 0 5px 0 5px;
-        border: 1px solid rgb(197, 196, 168);
-    }
-}
-
-.selection_div_container {
-    display: flex;
-    flex-direction: column;
-    // justify-content: ;
-    align-items: center;
-    background-color: white;
-    border: 1px solid rgb(197, 196, 168);
-    // border-radius: 5px;
-    padding: 5px;
-}
-
-.selection_element_container {
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-start;
-    align-items: center;
-    overflow-y: auto;
-}
-
-.selection_element_wrapper {
-    padding: 2px;
-    display: flex;
-    flex-direction: row;
-    justify-items: center;
-    align-items: center;
-
-    // width: v-bind("editor_data.select_width")px;
-}
-
-.selection_element {
-    cursor: pointer;
-    margin: 5px;
-
-}
-.selection_element_invalid {
-    background-color: #888888;
-}
-.selection_element_valid:hover {
-    background-color: #f0f0f0;
-}
-
-.selection_defaults {
-    display: flex;
-    justify-content: center;
-    flex-direction: row;
-    flex-wrap: wrap;
-    width: 100%;
-    padding: 3px;
-}
-
-.edit_point {
-    fill: #a0c2a9;
-    cursor: pointer;
-    fill-opacity: 0.4;
-}
-
-.edit_point:hover {
-    stroke: #888888;
-    display: block;
-    fill-opacity: 1;
-}
-
-.edit_point_delete {
-    fill: #ea694f;
-}
-</style>

@@ -1,118 +1,32 @@
-import numpy as np
+"""Random sampling of prototype query graphs from the embedded ontology.
 
-# %%
-import sys
-import os
+Used by LLMQuery.initiate to generate example queries and by the paper's
+query-generation evaluation (exploration/querying/querygen.py).
+"""
 
-from model import SubjectLink
-
-sys.path.insert(0, os.path.abspath("../.."))
-sys.path.append(os.path.abspath("../../backend"))
-sys.path.append(os.path.abspath(""))
-
-import networkx as nx
-
-from langchain_core.prompts import ChatPromptTemplate
-from typing import TypeVar
-from sqlalchemy.orm import aliased, Session
-from sqlalchemy.sql import text
-from rdflib.plugins.stores.sparqlstore import SPARQLStore
-from model import Subject
-from pydantic import BaseModel, Field, create_model
-
-from ontology import OntologyManager, OntologyConfig, Graph
-from explorative.explorative_support import GuidanceManager, select
-from explorative.exp_model import (
-    SubjectInDB,
-    SubjectLinkDB,
-)
-from tqdm import tqdm
-import pandas as pd
 import re
+from typing import TypeVar
+
+import numpy as np
+from sqlalchemy import select
+from sqlalchemy.orm import aliased
+
+from assistant.assistant_model import (
+    EnrichedEntitiesRelations,
+    EnrichedEntity,
+    EnrichedRelation,
+    EntitiesRelations,
+    Entity,
+    Relation,
+)
+from explorative.exp_model import SubjectInDB, SubjectLinkDB
+from explorative.explorative_support import GuidanceManager, read_only_session
+from model import Subject, SubjectLink
 
 SL = TypeVar("SL")
 
 top_k = 100
 seed = 42
-
-
-class Constraint(BaseModel):
-    property: str
-    value: str | None
-    modifier: str | None
-
-
-class Entity(BaseModel):
-    identifier: str
-    type: str
-    constraints: list[Constraint] = Field([])
-
-
-class Relation(BaseModel):
-    entity: str
-    relation: str
-    target: str
-
-
-class EntitiesRelations(BaseModel):
-    relations: list[Relation] = Field([])
-    entities: list[Entity] = Field([])
-    message: str = Field("Found Relations and Entities")
-
-
-class CandidateRelation(Relation):
-    score: float
-    link: SubjectLink | None = Field(None)
-
-
-class CandidateConstraint(Constraint):
-    score: float
-    type: str
-    property: str
-    entity: str
-    link: SubjectLink | None = Field(None)
-
-
-class CandidateEntity(Entity):
-    score: float
-    type: str
-    subject: Subject | None = Field(None)
-
-
-class Candidates(EntitiesRelations):
-    relations: list[CandidateRelation] = Field([])
-    entities: list[CandidateEntity] = Field([])
-    # constraints: list[CandidateConstraint] = Field([])
-
-
-class EnrichedConstraint(Constraint):
-    constraint: SubjectLink | None
-
-
-class EnrichedEntity(Entity):
-    subject: Subject
-    # constraints: list[EnrichedConstraint] = Field([])
-
-
-class EnrichedRelation(Relation):
-    link: SubjectLink | None
-
-
-class EnrichedEntitiesRelations(EntitiesRelations):
-    relations: list[EnrichedRelation] = Field([])
-    entities: list[EnrichedEntity] = Field([])
-
-
-class QueryProgress(BaseModel):
-    id: str
-    start_time: str
-    progress: int = Field(0)
-    max_steps: int
-    message: str = Field("")
-    relations_steps: list[
-        EntitiesRelations | Candidates | EnrichedEntitiesRelations
-    ] = Field([])
-    enriched_relations: EnrichedEntitiesRelations | None = None
 
 
 class EnrichedDBEntity(Entity, arbitrary_types_allowed=True):
@@ -164,10 +78,7 @@ def choose_graph(
     guidance_man: GuidanceManager = None,
 ):
     rs = np.random.RandomState(seed)
-    with Session(guidance_man.engine) as session:
-        session.execute(text("SET TRANSACTION READ ONLY"))
-        session.autoflush = False
-
+    with read_only_session(guidance_man.engine) as session:
         def downgrade_link_subjects(link: SubjectLinkDB):
             from_downgrade = random_downgrade(link.from_subject, rs)
             to_downgrade = random_downgrade(link.to_subject, rs)
@@ -379,6 +290,3 @@ def erl_to_templated_query(erl: EnrichedEntitiesRelations):
 def reduce_erl(erl: EnrichedEntitiesRelations):
     reduced_erl = EntitiesRelations(entities=erl.entities, relations=erl.relations)
     return reduced_erl
-
-
-# %%

@@ -1,4 +1,4 @@
-import type { FuzzyQueryResult, QueryGraph, Subject } from "@/api/client.ts/Api";
+import type { FuzzyQueryResult, Subject } from "@/api/client.ts/Api";
 import { jsonClone, registerClass } from "../parsing";
 import { OpenEventType } from "./helpers";
 import { Link, LinkTriplet, LinkType, QueryProp, QuerySet, SubjectConstraint, SubjectNode, SubQuery, type QuerySetGenerator } from "./representation";
@@ -324,32 +324,6 @@ export class NodeLinkRepository<N extends SubjectNode = SubjectNode, L extends L
         }
         return set
     }
-    toQueryGraph(): QueryGraph {
-        let query_graph = {} as QueryGraph
-        query_graph.subjects = this.nodes.map(node => {
-            return {
-                internal_id: node.internal_id,
-                subject_id: node.subject_id,
-                label: node.label,
-                type: "subject",
-                x: node.x,
-                y: node.y,
-                subqueries: []
-            }
-        })
-        query_graph.links = this.links.map(link => {
-            return {
-                from_id: link.from_id,
-                to_id: link.to_id,
-                link_id: link.property_id,
-                from_internal_id: link.from_internal_id,
-                to_internal_id: link.to_internal_id,
-                type: "link",
-            }
-        })
-        return query_graph
-    }
-
     postConstruct(): void {
         
     }

@@ -1,17 +1,17 @@
-from llama_cpp.llama import Llama, LlamaGrammar
+from llama_cpp.llama import Llama
 
-from sqlalchemy import select, text, func, and_
+from sqlalchemy import select, func, and_
 from sqlalchemy.orm import Session
-from pydantic import BaseModel, Field, create_model
+from pydantic import BaseModel, create_model
 from enum import Enum
 import datetime
 from fastapi import BackgroundTasks
 import numpy as np
 import tqdm
 
-from utils import escape_sparql_var, fix_json
+from utils import chat_content, escape_sparql_var, few_shot_messages, fix_json, grammar_for
 
-from explorative.explorative_support import GuidanceManager
+from explorative.explorative_support import GuidanceManager, read_only_session
 from explorative.exp_model import (
     FuzzyQuery,
     RETURN_TYPE,
@@ -23,17 +23,12 @@ from explorative.exp_model import (
     GraphEntityDB,
     BasePostgres,
 )
-from explorative.exp_model import Subject, SubjectLink
-
-# has to be installed from fork until merged!
-from llama_cpp_agent.gbnf_grammar_generator.gbnf_grammar_from_pydantic_models import (
-    generate_gbnf_grammar_from_pydantic_models,
-)
+from model import Subject, SubjectLink
 from redis_cache import RedisCache
-from explorative.llm_query_gen import (
-    choose_graph,
-    erl_to_templated_query,
-    reduce_erl,
+from explorative.llm_query_gen import choose_graph, reduce_erl
+
+# The ERL models are re-exported here, the evaluation scripts import them from this module
+from assistant.assistant_model import (
     Entity,
     EntitiesRelations,
     Constraint,
@@ -156,15 +151,8 @@ class LLMQuery(Initationatable):
         self.zero_shot = zero_shot
         self.temperature = temperature
         self.guidance_man = topic
-        self.gbnf_erl = generate_gbnf_grammar_from_pydantic_models(
-            [EntitiesRelations], "EntitiesRelations", add_inner_thoughts=False
-        )
-        self.grammar_erl = LlamaGrammar.from_string(self.gbnf_erl)
-
-        self.gbnf_candidates = generate_gbnf_grammar_from_pydantic_models(
-            [Candidates], "Candidates", add_inner_thoughts=False
-        )
-        self.grammar_candidates = LlamaGrammar.from_string(self.gbnf_candidates)
+        self.grammar_erl = grammar_for(EntitiesRelations, "EntitiesRelations")
+        self.grammar_candidates = grammar_for(Candidates, "Candidates")
         self.query_id_counter = 0
         self.cache = RedisCache[QueryProgress](model=QueryProgress, redis_url=redis_url)
 
@@ -178,43 +166,35 @@ class LLMQuery(Initationatable):
                 start_time=datetime.datetime.now().isoformat(),
                 relations_steps=[],
             )
-        progress.progress = 1
-        progress.message = "Querying entities and relations"
-        if enable_cache:
-            self.cache[progress.id] = progress
+
+        def advance(step: int, message: str):
+            progress.progress = step
+            progress.message = message
+            if enable_cache:
+                self.cache[progress.id] = progress
+
+        advance(1, "Querying entities and relations")
 
         erl = self.query_erl(query)
-        progress.progress = 2
-        progress.message = "Fetching possible candidates"
         erl.message = "Found entities and relations"
         progress.relations_steps.append(erl)
-        if enable_cache:
-            self.cache[progress.id] = progress
+        advance(2, "Fetching possible candidates")
 
         candidates = self.candidates_for_erl(erl)
-        progress.progress = 3
-        progress.message = "Querying candidates"
         candidates.message = "Found similar candidates"
         progress.relations_steps.append(candidates)
-        if enable_cache:
-            self.cache[progress.id] = progress
+        advance(3, "Querying candidates")
 
         constrained_erl = self.query_constrained(query, candidates)
-        progress.progress = 4
-        progress.message = "Enriching results"
         constrained_erl.message = "Constraints applied"
         progress.relations_steps.append(constrained_erl)
-        if enable_cache:
-            self.cache[progress.id] = progress
+        advance(4, "Enriching results")
 
         enriched_erl = self.enrich_entities_relations(constrained_erl, candidates)
-        progress.progress = 5
-        progress.message = "Query completed"
         enriched_erl.message = "Aligned results"
         progress.enriched_relations = enriched_erl
         progress.relations_steps.append(enriched_erl)
-        if enable_cache:
-            self.cache[progress.id] = progress
+        advance(5, "Query completed")
         return progress
 
     def start_query(self, query: str, background_tasks: BackgroundTasks):
@@ -239,24 +219,18 @@ class LLMQuery(Initationatable):
         return self.guidance_man.llama_model
 
     def query_erl(self, query: str) -> EntitiesRelations:
-        messages = [
-            {"role": "system", "content": ERL_PROMPT_SYSTEM},
-        ]
-        if not self.zero_shot:
-            messages.extend(
-                [
-                    {"role": "user", "content": ERL_PROMPT_EXAMPLE[0]},
-                    {"role": "assistant", "content": ERL_PROMPT_EXAMPLE[1]},
-                ]
-            )
-        messages.append({"role": "user", "content": query})
-        response = self.model.create_chat_completion(
+        messages = few_shot_messages(
+            ERL_PROMPT_SYSTEM,
+            query,
+            example=None if self.zero_shot else ERL_PROMPT_EXAMPLE,
+        )
+        response_msg = chat_content(
+            self.model,
+            messages,
             grammar=self.grammar_erl,
-            messages=messages,
             max_tokens=self.max_tokens,
             temperature=self.temperature,
         )
-        response_msg = response["choices"][0]["message"]["content"]
         fixed_response = fix_json(response_msg, item_keys=["entities", "relations"])
         return EntitiesRelations.model_validate(fixed_response)
 
@@ -264,31 +238,25 @@ class LLMQuery(Initationatable):
         self, query: str, candidates: Candidates
     ) -> EntitiesRelations:
         ConstrainedEntitiesRelations = self.build_constrained_classes(candidates)
-        grammar_constrained = LlamaGrammar.from_string(
-            generate_gbnf_grammar_from_pydantic_models(
-                [ConstrainedEntitiesRelations],
-                "ConstrainedEntitiesRelations",
-                add_inner_thoughts=False,
-            )
+        grammar_constrained = grammar_for(
+            ConstrainedEntitiesRelations, "ConstrainedEntitiesRelations"
         )
-        messages = [
-            {"role": "system", "content": RAG_PROMPT_SYSTEM},
-        ]
-        if not self.zero_shot:
-            messages.extend(
-                [
-                    {"role": "user", "content": RAG_PROMPT_EXAMPLE[0]},
-                    {"role": "assistant", "content": RAG_PROMPT_EXAMPLE[2]},
-                ]
-            )
-        messages.append({"role": "user", "content": query})
-        response = self.model.create_chat_completion(
+        messages = few_shot_messages(
+            RAG_PROMPT_SYSTEM,
+            query,
+            example=(
+                None
+                if self.zero_shot
+                else (RAG_PROMPT_EXAMPLE[0], RAG_PROMPT_EXAMPLE[2])
+            ),
+        )
+        response_msg = chat_content(
+            self.model,
+            messages,
             grammar=grammar_constrained,
-            messages=messages,
             max_tokens=self.max_tokens,
             temperature=self.temperature,
         )
-        response_msg = response["choices"][0]["message"]["content"]
         fixed_response = fix_json(response_msg, item_keys=["entities", "relations"])
 
         return ConstrainedEntitiesRelations.model_validate(fixed_response)
@@ -440,9 +408,7 @@ class LLMQuery(Initationatable):
     def enrich_entities_relations(
         self, erl: EntitiesRelations, candidates: Candidates
     ) -> EnrichedEntitiesRelations:
-        with Session(self.guidance_man.engine) as session:
-            session.execute(text("SET TRANSACTION READ ONLY"))
-            session.autoflush = False
+        with read_only_session(self.guidance_man.engine) as session:
 
             def enrich_relation(relation: Relation) -> EnrichedRelation:
                 value = (
@@ -607,7 +573,8 @@ class LLMQuery(Initationatable):
                 k, guidance_man=self.guidance_man, seed=seed + i, top_k=10
             )
             query_graph_reduced = reduce_erl(query_graph)
-            query_response = self.guidance_man.llama_model.create_chat_completion(
+            query_str = chat_content(
+                self.guidance_man.llama_model,
                 # grammar=self.grammar_erl,
                 messages=[
                     {
@@ -630,7 +597,6 @@ class LLMQuery(Initationatable):
                 max_tokens=4096,
                 temperature=0.3,  # get wild :)
             )
-            query_str = query_response["choices"][0]["message"]["content"]
             queries.append((query_str, query_graph))
 
         BasePostgres.metadata.create_all(self.guidance_man.engine, checkfirst=True)

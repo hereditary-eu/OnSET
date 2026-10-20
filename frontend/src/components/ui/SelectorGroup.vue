@@ -1,7 +1,8 @@
 <template>
-    <div class="selection_group">
-        <OnsetBtn v-for="option in options_selections" :key="option.value" :toggleable="true" :value="option.value"
-            :label="option.label" v-model="option.selected" @click="selection = option.value" :btn_width="width" :btn_height="height">
+    <div class="selection_group toolbar">
+        <OnsetBtn v-for="option in options_selections" :key="option.value" :toggleable="true"
+            v-model="option.selected" @click="selection = option.value" :btn_width="width" :btn_height="height"
+            :size="size">
             {{ option.label }}
         </OnsetBtn>
     </div>
@@ -18,40 +19,38 @@ const { options } = defineProps({
         type: Array as () => Option[],
         required: true
     },
-    defaultOption: {
+    width: {
         type: String,
         required: false,
         default: ''
     },
-    width: {
-        type: String,
-        required: false,
-        default: '20rem'
-    },
     height: {
         type: String,
         required: false,
-        default: '2rem'
+        default: ''
+    },
+    size: {
+        type: String as () => 'small' | 'default',
+        default: 'small'
     }
+})
+const selection = defineModel({
+    type: String,
+    default: ''
 })
 const options_selections = computed(() => options.map(option => {
     return {
         selected: option.value === selection.value,
         ...option
     }
-
 }))
-const selection = defineModel({
-    type: String,
-    default: ''
-})
-
 </script>
-<style lang="css" scoped>
+<style>
 .selection_group {
-    display: flex;
-    flex-direction: row;
-    justify-items: center;
-    align-items: center;
+    gap: var(--space-1);
+}
+
+.selection_group .onset_btn:not(:first-child) {
+    margin-left: -1px;
 }
 </style>

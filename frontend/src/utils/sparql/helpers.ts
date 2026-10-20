@@ -4,6 +4,7 @@ import { NodeLinkRepository } from "./store";
 import { reactive } from "vue";
 import type { Vector2Like } from "three";
 import type { HistoryEntry } from "./history";
+import { measureText } from "./measure";
 
 export enum OpenEventType {
     TO = 'to_link',
@@ -32,12 +33,45 @@ export class InstanceSelectorOpenEvent {
     node: SubjectNode;
     constraint: SubjectConstraint
 }
-export const NODE_WIDTH = 150
-export const NODE_HEIGHT = 32
-export const LINK_WIDTH = 75
-export const CONSTRAINT_WIDTH = 250
-export const CONSTRAINT_HEIGHT = 75
-export const CONSTRAINT_PADDING = 5
+// default node size (before a node is fitted to its label)
+export const NODE_WIDTH = 120
+export const NODE_HEIGHT = 22
+// nodes are auto-sized to their label: text width + 2 * NODE_PADDING_X, at least NODE_MIN_WIDTH
+export const NODE_MIN_WIDTH = 36
+export const NODE_PADDING_X = 8
+export const LINK_WIDTH = 60
+// default subquery size (before its content has been measured)
+export const CONSTRAINT_WIDTH = 160
+export const CONSTRAINT_HEIGHT = 48
+export const CONSTRAINT_PADDING = 4
+// horizontal offset of a subquery box from its connector line
+export const SUBQUERY_INDENT = 10
+// radius of the hover edit handles on nodes, links and subqueries
+export const EDITPOINT_R = 5
+// width of the in-graph selection panels (link/type/instance pickers)
+export const PANEL_WIDTH = 240
+
+export function labelWidth(label: string | null | undefined): number {
+    return Math.max(NODE_MIN_WIDTH, Math.ceil(measureText(label) + 2 * NODE_PADDING_X))
+}
+// Fit a node's box to its label (no-op if already fitted, to avoid needless reactive writes)
+export function fitNode<T extends { label?: string, width?: number, height?: number }>(node: T | null | undefined): T | null | undefined {
+    if (!node) {
+        return node
+    }
+    const width = labelWidth(node.label)
+    if (node.width != width) {
+        node.width = width
+    }
+    if (node.height != NODE_HEIGHT) {
+        node.height = NODE_HEIGHT
+    }
+    return node
+}
+// width reserved for a link so its label fits
+export function linkWidth(label: string | null | undefined): number {
+    return Math.max(LINK_WIDTH, Math.ceil(measureText(label) + 2 * NODE_PADDING_X))
+}
 
 
 export enum DisplayMode {
@@ -63,7 +97,7 @@ export function nodeFromEntity(entity: Entity): SubjectNode {
         ...subject_data,
         internal_id: identifier,
     })
-    mapped_node.height = NODE_HEIGHT
+    fitNode(mapped_node)
     return mapped_node
 }
 export function linkFromRelation(relation: Relation, from: SubjectNode, to: SubjectNode, i = 0): Link {

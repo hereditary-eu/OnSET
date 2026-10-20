@@ -2,60 +2,48 @@
     <g id="type_selector" @mouseout.capture="edit_point_hover($event, false)"
         @mouseenter.capture="edit_point_hover($event, true)" @mouseover="edit_point_hover($event, true)">
         <g :transform="`translate(${attachment_pt.x},${attachment_pt.y})`" v-if="display">
-            <foreignObject :height="(NODE_HEIGHT) * 8 + 10" :width="NODE_WIDTH + LINK_WIDTH + 35">
-                <div class="selection_div_container" :style="{ 'height': `${NODE_HEIGHT * 8 + 10}px` }">
-
+            <foreignObject :height="PANEL_HEIGHT" :width="panel_width">
+                <div class="selection_div_container">
                     <div class="selection_defaults">
-                        <OnsetBtn @click="resetToHighest()" :btn_width="`${NODE_WIDTH + 35}px`" :toggleable="false">
-                            Generalize
-                        </OnsetBtn>
+                        <OnsetBtn size="small" @click="resetToHighest()" :toggleable="false">Generalize</OnsetBtn>
                     </div>
-                    <div class="selection_search">
-                        <input type="text" placeholder="Search..." v-model="editor_data.q" />
-                    </div>
+                    <input type="text" class="text_input selection_search" placeholder="Search..."
+                        v-model="editor_data.q" />
                     <div class="selection_element_container">
-                        <div class="selection_element_wrapper" v-for="option of selection_options">
-                            <div class="selection_element" @click="select_option(option, $event)" @mouseenter.capture="editor_data.hover_add =
-                                option" @mousemove.capture="editor_data.hover_add = option"
-                                @mouseleave.capture="editor_data.hover_add = null"
-                                :key="option.link?.property_id || option.subject?.subject_id">
-                                <svg :width="editor_data.select_width" :height="NODE_HEIGHT + 15">
-                                    <g @click="">
-                                        <GraphView :store="option.store" :display-mode="DisplayMode.SELECT"></GraphView>
-                                    </g>
-                                </svg>
-
-                            </div>
+                        <div class="selection_element" v-for="option of selection_options"
+                            @click="select_option(option, $event)" @mouseenter.capture="editor_data.hover_add = option"
+                            @mousemove.capture="editor_data.hover_add = option"
+                            @mouseleave.capture="editor_data.hover_add = null"
+                            :key="option.link?.property_id || option.subject?.subject_id">
+                            <svg :width="option.store.nodes[0].width + 2" :height="NODE_HEIGHT + 2">
+                                <g transform="translate(1, 1)">
+                                    <GraphView :store="option.store" :display-mode="DisplayMode.SELECT"></GraphView>
+                                </g>
+                            </svg>
                         </div>
                         <Loading v-if="editor_data.loading"></Loading>
-                        <OnsetBtn @click="loadMore" btn_width="100%"
+                        <OnsetBtn size="small" @click="loadMore"
                             v-if="selection_options.length > 0 && !editor_data.reached_end" :toggleable="false">More
                         </OnsetBtn>
                     </div>
                 </div>
             </foreignObject>
 
-            <g v-show="editor_data.show_editpoints">
-                <circle :cx="NODE_WIDTH + LINK_WIDTH + 35" :cy="0" :r="editor_data.editpoint_r"
-                    class="edit_point edit_point_delete" @click="display = false"></circle>
-            </g>
+            <circle v-show="editor_data.show_editpoints" :cx="panel_width" :cy="0" :r="EDITPOINT_R"
+                class="edit_point edit_point_delete" @click="display = false" />
         </g>
     </g>
 </template>
 <script setup lang="ts">
 import { ref, watch, reactive, computed, onMounted } from 'vue'
 import { SubQuery, Link, SubjectNode, StringConstraint, SubjectConstraint, QueryProp } from '@/utils/sparql/representation';
-import LinkComp from '../Link.vue';
-import NodeComp from '../Node.vue';
 import { RELATION_TYPE, RETURN_TYPE } from '@/api/client.ts/Api';
-import { DisplayMode, LINK_WIDTH, NODE_HEIGHT, NODE_WIDTH, OpenEventType, SelectorOpenEvent } from '@/utils/sparql/helpers';
+import { DisplayMode, EDITPOINT_R, fitNode, LINK_WIDTH, NODE_HEIGHT, OpenEventType, PANEL_WIDTH, SelectorOpenEvent } from '@/utils/sparql/helpers';
 import Loading from '@/components/ui/Loading.vue';
 import OnsetBtn from '@/components/ui/OnsetBtn.vue';
 import { MixedResponse, type NodeLinkRepository } from '@/utils/sparql/store';
 import GraphView from '../GraphView.vue';
-import { jsonClone } from '@/utils/parsing';
 import { debounce } from '@/utils/helpers';
-import { de } from 'vuetify/locale';
 import { api } from '@/utils/api'
 
 const emit = defineEmits<{
@@ -74,16 +62,15 @@ const { selection_event, store } = defineProps({
 
 const editor_data = reactive({
     show_editpoints: false,
-    editpoint_r: 7,
     loading: false,
     q: '',
     query_id: 0,
     offset: 0,
     reached_end: false,
     hover_add: null as MixedResponse<SubjectNode> | null,
-    select_width: LINK_WIDTH + NODE_WIDTH
-
 })
+// panel height: room for about 8 options
+const PANEL_HEIGHT = (NODE_HEIGHT + 4) * 8 + 60
 const display = defineModel<boolean>()
 const selection_options = ref([] as MixedResponse<SubjectNode>[])
 const debounced_search = debounce(() => {
@@ -92,7 +79,6 @@ const debounced_search = debounce(() => {
         editor_data.offset = 0
         editor_data.reached_end = false
         console.log('fetching selection options', selection_event, 'offset', editor_data.offset)
-        editor_data.select_width = NODE_WIDTH
         await loadMore()
     })().catch((e) => {
         console.error('Error fetching selection options', e)
@@ -134,6 +120,7 @@ const loadMore = async () => {
     //TODO: topic ids - user context!
     let mapped_responses = response.data.results.map((result) => {
         const resp = new MixedResponse<SubjectNode>(result)
+        fitNode(resp.store.nodes[0])
         resp.store.nodes[0].x = 0
         resp.store.nodes[0].y = 0
 
@@ -145,6 +132,10 @@ const loadMore = async () => {
     selection_options.value = selection_options.value.concat(mapped_responses)
     editor_data.loading = false
 }
+const panel_width = computed(() => {
+    const widest = selection_options.value.reduce((acc, option) => Math.max(acc, option.store.nodes[0]?.width ?? 0), 0)
+    return Math.min(2 * PANEL_WIDTH, Math.max(PANEL_WIDTH * 0.75, widest + 24))
+})
 const attachment_pt = computed(() => {
     return {
         x: selection_event.node.x + selection_event.node.width / 2, y: selection_event.node.y
@@ -206,77 +197,3 @@ watch(display, (new_val) => {
     editor_data.reached_end = false
 })
 </script>
-<style lang="scss" scoped>
-.selection_search {
-    padding: 5px;
-
-    input {
-        padding: 0 5px 0 5px;
-        border: 1px solid rgb(197, 196, 168);
-    }
-}
-
-.selection_div_container {
-    display: flex;
-    flex-direction: column;
-    // justify-content: ;
-    align-items: center;
-    background-color: white;
-    border: 1px solid rgb(197, 196, 168);
-    // border-radius: 5px;
-    padding: 5px;
-}
-
-.selection_element_container {
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-start;
-    align-items: center;
-    overflow-y: auto;
-}
-
-.selection_element_wrapper {
-    padding: 2px;
-    display: flex;
-    flex-direction: row;
-    justify-items: center;
-    align-items: center;
-
-    // width: v-bind("editor_data.select_width")px;
-}
-
-.selection_element {
-    cursor: pointer;
-    margin: 5px;
-
-}
-
-.selection_element:hover {
-    background-color: #f0f0f0;
-}
-
-.selection_defaults {
-    display: flex;
-    justify-content: center;
-    flex-direction: row;
-    flex-wrap: wrap;
-    width: 100%;
-    padding: 3px;
-}
-
-.edit_point {
-    fill: #a0c2a9;
-    cursor: pointer;
-    fill-opacity: 0.4;
-}
-
-.edit_point:hover {
-    stroke: #888888;
-    display: block;
-    fill-opacity: 1;
-}
-
-.edit_point_delete {
-    fill: #ea694f;
-}
-</style>

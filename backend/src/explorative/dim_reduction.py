@@ -7,8 +7,7 @@ except ImportError:
     from sklearn.manifold import TSNE
     from umap import UMAP
 
-from api.router.multimodal import DataTensorResp
-from explorative.explorative_support import DataTensor
+from explorative.data_tensor import DataTensor
 from ontology import OntologyManager
 import numpy as np
 
