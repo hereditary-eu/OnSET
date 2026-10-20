@@ -1,19 +1,17 @@
+from dataclasses import dataclass
 from explorative.explorative_support import GuidanceManager
-from assistant.model import (
+from assistant.assistant_model import (
     QueryGraph,
     Operation,
     Operations,
     AssistantLink,
     AssistantSubject,
-    AssistantSubQuery,
     OperationType,
-    AssistantSubQueryType,
-    StringConstraintType,
     StringSubQuery,
-    NumberConstraintType,
     NumberSubQuery,
     BooleanSubQuery,
     DateSubQuery,
+    VectorSortSubQuery,
 )
 from pydantic import create_model, Field, BaseModel
 from llama_cpp.llama import Llama, LlamaGrammar, ChatCompletionMessage
@@ -25,14 +23,33 @@ from explorative.exp_model import (
     FuzzyQuery,
     RETURN_TYPE,
     RELATION_TYPE,
-    FuzzyQueryResult,
     SubjectLinkDB,
-    SubjectInDB
+    SubjectInDB,
 )
 from typing import Literal
-from enum import Enum 
+from enum import Enum
 from sqlalchemy.orm import Session
 
+
+@dataclass
+class LinkCandidate:
+    uri: str
+    label: str
+    from_label: str
+    to_label: str
+
+    @property
+    def key(self):
+        # readable value the LLM picks from in the grammar
+        return f"{self.label}|{self.from_label}|{self.to_label}"
+
+
+@dataclass
+class Candidates:
+    # label -> uri
+    subjects: dict[str, str]
+    # LinkCandidate.key -> LinkCandidate
+    links: dict[str, LinkCandidate]
 
 
 class IterativeAssistant:
@@ -44,25 +61,22 @@ class IterativeAssistant:
         self.example_graph = QueryGraph(
             subjects=[
                 AssistantSubject(
-                    subject_id="place",
-                    internal_id="node_1",
-                    x=0.0,
-                    y=0.0,
+                    uri="place",
+                    label="Place",
+                    id="node_1",
                 ),
                 AssistantSubject(
-                    subject_id="person",
-                    internal_id="node_2",
-                    x=0.0,
-                    y=0.0,
+                    uri="person",
+                    label="Person",
+                    id="node_2",
                 ),
             ],
             links=[
                 AssistantLink(
-                    from_id="person",
-                    to_id="place",
-                    link_id="birthplace",
-                    from_internal_id="node_1",
-                    to_internal_id="node_2",
+                    uri="birthplace",
+                    label="birth place",
+                    from_subject="node_2",
+                    to_subject="node_1",
                 )
             ],
         )
@@ -81,11 +95,10 @@ class IterativeAssistant:
                         Operation(
                             operation="add",
                             data=AssistantLink(
-                                from_id="place",
-                                to_id="country",
-                                from_internal_id="node_1",
-                                to_internal_id="node_3",
-                                link_id="country|place|country",
+                                uri="country",
+                                label="country",
+                                from_subject="node_1",
+                                to_subject="node_3",
                             ),
                         )
                     ]
@@ -109,8 +122,7 @@ class IterativeAssistant:
                 add_inner_thoughts=False,
             )
         )
-        messages = self.few_shot_messages
-        messages.append({"role": "user", "content": full_query})
+        messages = [*self.few_shot_messages, {"role": "user", "content": full_query}]
         response = self.guidance.llama_model.create_chat_completion(
             grammar=grammar_constrained,
             messages=messages,
@@ -120,97 +132,8 @@ class IterativeAssistant:
         response_msg = response["choices"][0]["message"]["content"]
         return Operations.model_validate_json(response_msg)
 
-    def __result_to_ops_links(
-        self, results: list[FuzzyQueryResult], query_op: Operation
-    ):
-        return [
-            Operation(
-                operation=query_op.operation,
-                data=AssistantLink(
-                    from_id=result.link.from_subject.label,
-                    to_id=result.link.to_subject.label,
-                    from_internal_id=query_op.data.from_internal_id,
-                    to_internal_id=query_op.data.to_internal_id,
-                    link_id=result.link.label,
-                ),
-            )
-            for result in results
-        ]
-
-    def __result_to_ops_subjects(
-        self, results: list[FuzzyQueryResult], query_op: Operation
-    ):
-        return [
-            Operation(
-                operation=query_op.operation,
-                data=AssistantSubject(
-                    subject_id=result.subject.label,
-                    internal_id=query_op.data.internal_id,
-                    x=query_op.data.x,
-                    y=query_op.data.y,
-                ),
-            )
-            for result in results
-        ]
-
-    def __result_to_ops_subqueries(
-        self, results: list[FuzzyQueryResult], query_op: Operation
-    ):
-        resulting_datas = []
-        match query_op.data.constraint_type:
-            case AssistantSubQueryType.STRING:
-                resulting_datas = [
-                    StringSubQuery(
-                        subject_id=result.link.from_subject.label,
-                        field=result.link.label,
-                        from_internal_id=query_op.data.from_internal_id,
-                        value=query_op.data.value,
-                        op_type=query_op.data.operation,
-                    )
-                    for result in results
-                ]
-            case AssistantSubQueryType.NUMBER:
-                resulting_datas = [
-                    NumberSubQuery(
-                        subject_id=result.link.from_subject.label,
-                        field=result.link.label,
-                        from_internal_id=query_op.data.from_internal_id,
-                        value=query_op.data.value,
-                        op_type=query_op.data.operation,
-                    )
-                    for result in results
-                ]
-            case AssistantSubQueryType.BOOLEAN:
-                resulting_datas = [
-                    BooleanSubQuery(
-                        subject_id=result.link.from_subject.label,
-                        field=result.link.label,
-                        from_internal_id=query_op.data.from_internal_id,
-                        value=query_op.data.value,
-                    )
-                    for result in results
-                ]
-            case AssistantSubQueryType.DATE:
-                resulting_datas = [
-                    DateSubQuery(
-                        subject_id=result.link.from_subject.label,
-                        field=result.link.label,
-                        from_internal_id=query_op.data.from_internal_id,
-                        value=query_op.data.value,
-                        op_type=query_op.data.operation,
-                    )
-                    for result in results
-                ]
-        return [
-            Operation(
-                operation=query_op.operation,
-                data=data,
-            )
-            for data in resulting_datas
-        ]
-
-    def __candidates_ops(self, query: str):
-        candidate_ops: Operations = Operations()
+    def __candidates(self, query: str) -> Candidates:
+        candidates = Candidates(subjects={}, links={})
 
         fuzzy_results = self.guidance.search_fuzzy(
             query=FuzzyQuery(
@@ -222,157 +145,77 @@ class IterativeAssistant:
         )
         for res in fuzzy_results.results:
             if res.link is not None:
-                candidate_ops.operations.append(
-                    Operation(
-                        operation=OperationType.ADD,
-                        data=AssistantLink(
-                            from_id=res.link.from_subject.label,
-                            to_id=res.link.to_subject.label,
-                            from_internal_id="",
-                            to_internal_id="",
-                            link_id=res.link.label,
-                        ),
-                    )
+                link = LinkCandidate(
+                    uri=res.link.property_id,
+                    label=res.link.label,
+                    from_label=res.link.from_subject.label,
+                    to_label=res.link.to_subject.label,
                 )
+                candidates.links[link.key] = link
             elif res.subject is not None:
-                candidate_ops.operations.append(
-                    Operation(
-                        operation=OperationType.ADD,
-                        data=AssistantSubject(
-                            subject_id=res.subject.label,
-                            internal_id="",
-                            x=0.0,
-                            y=0.0,
-                        ),
-                    )
-                )
-        return candidate_ops
+                candidates.subjects[res.subject.label] = res.subject.subject_id
+        return candidates
 
-    def __build_constrained_model_from_allowed_ids(
+    def __graph_candidates(self, graph: QueryGraph) -> Candidates:
+        subject_labels = {subject.id: subject.label for subject in graph.subjects}
+        links = [
+            LinkCandidate(
+                uri=link.uri,
+                label=link.label,
+                from_label=subject_labels.get(link.from_subject, ""),
+                to_label=subject_labels.get(link.to_subject, ""),
+            )
+            for link in graph.links
+        ]
+        return Candidates(
+            subjects={subject.label: subject.uri for subject in graph.subjects},
+            links={link.key: link for link in links},
+        )
+
+    def __build_constrained_model_from_candidates(
         self,
-        allowed_subject_ids: set[str],
-        allowed_link_ids: set[tuple[str, str, str]],
-        allowed_subquery_ids: set[tuple[str, str]],
+        candidates: Candidates,
         allowed_internal_ids: set[str] = None,
     ):
         internal_ids_type = str
-        if allowed_internal_ids is not None:
+        if allowed_internal_ids:
             internal_ids_type = Enum(
                 "InternalID",
                 {internal_id: internal_id for internal_id in allowed_internal_ids},
             )
         data_model = None
-        if len(allowed_link_ids) > 0:
-            link_id_enum = Enum(
-                "LinkID",
-                {
-                    f"{from_id}_{link_id}_{to_id}": f"{link_id}|{from_id}|{to_id}"
-                    for from_id, link_id, to_id in allowed_link_ids
-                },
+        if len(candidates.links) > 0:
+            link_enum = Enum(
+                "LinkLabel",
+                {f"link_{i}": key for i, key in enumerate(candidates.links)},
             )
             link_model = create_model(
                 "ConstrainedAssistantLink",
                 **{
-                    "type": (Literal["link"], "link"),
-                    "from_internal_id": (internal_ids_type, ...),
-                    "to_internal_id": (internal_ids_type, ...),
-                    "link_id": (link_id_enum, ...),
+                    "kind": (Literal["link"], "link"),
+                    "link": (link_enum, ...),
+                    "from_subject": (internal_ids_type, ...),
+                    "to_subject": (internal_ids_type, ...),
                 },
             )
+            data_model = link_model
 
-            if data_model is None:
-                data_model = link_model
-            else:
-                data_model = data_model | link_model
-        subquery_model = None
-        if len(allowed_subquery_ids) > 0:
-            subquery_id_enum = Enum(
-                "SubQueryID",
-                {
-                    f"{from_id}_{field}": f"{from_id}|{field}"
-                    for from_id, field in allowed_subquery_ids
-                },
+        if len(candidates.subjects) > 0:
+            subject_enum = Enum(
+                "SubjectLabel",
+                {f"subject_{i}": label for i, label in enumerate(candidates.subjects)},
             )
-            constrained_base_props = {
-                "type": (Literal["subquery"], "subquery"),
-                "field_id": (subquery_id_enum, ...),
-                "from_internal_id": (internal_ids_type, ...),
-            }
-            string_subquery_model = create_model(
-                "ConstrainedStringSubQuery",
-                **{
-                    **constrained_base_props,
-                    "constraint_type": (
-                        Literal[AssistantSubQueryType.STRING],
-                        AssistantSubQueryType.STRING,
-                    ),
-                    "value": (str, ...),
-                    "op_type": (StringConstraintType, ...),
-                },
-            )
-            number_subquery_model = create_model(
-                "ConstrainedNumberSubQuery",
-                **{
-                    **constrained_base_props,
-                    "constraint_type": (
-                        Literal[AssistantSubQueryType.NUMBER],
-                        AssistantSubQueryType.NUMBER,
-                    ),
-                    "value": (float, ...),
-                    "op_type": (NumberConstraintType, ...),
-                },
-            )
-            boolean_subquery_model = create_model(
-                "ConstrainedBooleanSubQuery",
-                **{
-                    **constrained_base_props,
-                    "constraint_type": (
-                        Literal[AssistantSubQueryType.BOOLEAN],
-                        AssistantSubQueryType.BOOLEAN,
-                    ),
-                    "value": (bool, ...),
-                },
-            )
-            date_subquery_model = create_model(
-                "ConstrainedDateSubQuery",
-                **{
-                    **constrained_base_props,
-                    "constraint_type": (
-                        Literal[AssistantSubQueryType.DATE],
-                        AssistantSubQueryType.DATE,
-                    ),
-                    "value": (str, ...),
-                    "op_type": (NumberConstraintType, ...),
-                },
-            )
+            # property_id holds the property label, it is resolved in __correct_ops
             subquery_model = (
-                string_subquery_model
-                | number_subquery_model
-                | boolean_subquery_model
-                | date_subquery_model
-            )
-            if data_model is None:
-                data_model = subquery_model
-            else:
-                data_model = data_model | subquery_model
-
-        if len(allowed_subject_ids) > 0:
-            subject_id_enum = Enum(
-                "SubjectID",
-                {subject_id: subject_id for subject_id in allowed_subject_ids},
-            )
-            subquery_model = (
-                subquery_model if subquery_model is not None else AssistantSubQuery
+                StringSubQuery | NumberSubQuery | BooleanSubQuery | DateSubQuery
             )
             subject_model = create_model(
                 "ConstrainedAssistantSubject",
                 **{
-                    "type": (Literal["subject"], "subject"),
-                    "subject_id": (subject_id_enum, ...),
-                    "internal_id": (internal_ids_type, ...),
+                    "kind": (Literal["subject"], "subject"),
+                    "subject": (subject_enum, ...),
+                    "id": (internal_ids_type, ...),
                     "subqueries": (list[subquery_model], Field([])),
-                    "x": (float, 0.0),
-                    "y": (float, 0.0),
                 },
             )
             if data_model is None:
@@ -381,67 +224,19 @@ class IterativeAssistant:
                 data_model = data_model | subject_model
         return data_model
 
-    def __build_constrained_model_from_graph(self, graph: QueryGraph):
-        # Build the model based on the candidate operations
-        allowed_subject_ids: set[str] = set()
-        allowed_link_ids: set[tuple[str, str, str]] = set()
-        allowed_subquery_ids: set[tuple[str, str]] = set()
-        allowed_internal_ids: set[str] = set()
-        for subject in graph.subjects:
-            allowed_subject_ids.add(subject.subject_id)
-            allowed_internal_ids.add(subject.internal_id)
-        for link in graph.links:
-            allowed_link_ids.add(
-                (
-                    link.from_id,
-                    link.link_id,
-                    link.to_id,
-                )
-            )
-
-        return self.__build_constrained_model_from_allowed_ids(
-            allowed_subject_ids=allowed_subject_ids,
-            allowed_link_ids=allowed_link_ids,
-            allowed_subquery_ids=allowed_subquery_ids,
-            allowed_internal_ids=allowed_internal_ids,
-        )
-
-    def __build_constrained_model(self, candidate_ops: Operations, graph: QueryGraph):
-        print(candidate_ops)
-        # Build the model based on the candidate operations
-        allowed_subject_ids: set[str] = set()
-        allowed_link_ids: set[tuple[str, str, str]] = set()
-        allowed_subquery_ids: set[tuple[str, str]] = set()
-        for candidate_op in candidate_ops.operations:
-            if candidate_op.operation == OperationType.REMOVE:
-                continue
-            if candidate_op.data.type == "link":
-                allowed_link_ids.add(
-                    (
-                        candidate_op.data.from_id,
-                        candidate_op.data.link_id,
-                        candidate_op.data.to_id,
-                    )
-                )
-            elif candidate_op.data.type == "subject":
-                allowed_subject_ids.add(candidate_op.data.subject_id)
-            elif candidate_op.data.type == "subquery":
-                allowed_subquery_ids.add(
-                    (
-                        candidate_op.data.from_id,
-                        candidate_op.data.field,
-                    )
-                )
+    def __build_constrained_model(self, candidates: Candidates, graph: QueryGraph):
+        print(candidates)
         # Generate the grammar based on the allowed operations
-        data_model = self.__build_constrained_model_from_allowed_ids(
-            allowed_subject_ids=allowed_subject_ids,
-            allowed_link_ids=allowed_link_ids,
-            allowed_subquery_ids=allowed_subquery_ids,
-        )
+        data_model = self.__build_constrained_model_from_candidates(candidates)
         if data_model is None:
             # if the data model is None, we constrain on the existing graph
             print("Constraining on the existing graph...")
-            data_model = self.__build_constrained_model_from_graph(graph)
+            data_model = self.__build_constrained_model_from_candidates(
+                self.__graph_candidates(graph),
+                allowed_internal_ids={subject.id for subject in graph.subjects},
+            )
+        if data_model is None:
+            return None
         constrained_operation_model = create_model(
             "ConstrainedOperation",
             **{
@@ -460,65 +255,38 @@ class IterativeAssistant:
         )
         return constrained_operations_model
 
-    def __constrained_link_op_finalze(self, constrained_op: BaseModel):
-        print(constrained_op)
-        link_id, from_id, to_id = constrained_op.link_id.value.split("|")
-        return AssistantLink(
-            from_id=from_id,
-            to_id=to_id,
-            link_id=link_id,
-            from_internal_id=constrained_op.from_internal_id,
-            to_internal_id=constrained_op.to_internal_id,
-        )
-
-    def __constrained_subject_op_finalize(self, constrained_op: BaseModel):
-        return AssistantSubject(
-            subject_id=constrained_op.subject_id,
-            internal_id=constrained_op.internal_id,
-            x=constrained_op.x,
-            y=constrained_op.y,
-        )
-
-    def __constrained_subquery_op_finalize(self, constrained_op: BaseModel):
-        from_id, field = constrained_op.field_id.value.split("|")
-        match constrained_op.constraint_type:
-            case AssistantSubQueryType.STRING:
-                return StringSubQuery(
-                    subject_id=from_id,
-                    field=field,
-                    value=constrained_op.value,
-                    operation=constrained_op.operation,
-                    from_internal_id=constrained_op.from_internal_id,
-                )
-            case AssistantSubQueryType.NUMBER:
-                return NumberSubQuery(
-                    subject_id=from_id,
-                    field=field,
-                    value=constrained_op.value,
-                    operation=constrained_op.operation,
-                    from_internal_id=constrained_op.from_internal_id,
-                )
-            case AssistantSubQueryType.BOOLEAN:
-                return BooleanSubQuery(
-                    subject_id=from_id,
-                    field=field,
-                    value=constrained_op.value,
-                    operation=constrained_op.operation,
-                    from_internal_id=constrained_op.from_internal_id,
-                )
-            case AssistantSubQueryType.DATE:
-                return DateSubQuery(
-                    subject_id=from_id,
-                    field=field,
-                    value=constrained_op.value,
-                    operation=constrained_op.operation,
-                    from_internal_id=constrained_op.from_internal_id,
-                )
-
-    def __constrained_ops(
-        self, query: str, graph: QueryGraph, candidate_ops: Operations
+    def __constrained_link_op_finalize(
+        self, constrained_op: BaseModel, candidates: Candidates
     ):
-        ConstrainedOperations = self.__build_constrained_model(candidate_ops, graph)
+        print(constrained_op)
+        link = candidates.links[constrained_op.link.value]
+        return AssistantLink(
+            uri=link.uri,
+            label=link.label,
+            from_subject=self.__enum_value(constrained_op.from_subject),
+            to_subject=self.__enum_value(constrained_op.to_subject),
+        )
+
+    def __constrained_subject_op_finalize(
+        self, constrained_op: BaseModel, candidates: Candidates
+    ):
+        label = constrained_op.subject.value
+        return AssistantSubject(
+            uri=candidates.subjects[label],
+            label=label,
+            id=self.__enum_value(constrained_op.id),
+            subqueries=constrained_op.subqueries,
+        )
+
+    @staticmethod
+    def __enum_value(value):
+        return value.value if isinstance(value, Enum) else value
+
+    def __constrained_ops(self, query: str, graph: QueryGraph, candidates: Candidates):
+        ConstrainedOperations = self.__build_constrained_model(candidates, graph)
+        if ConstrainedOperations is None:
+            print("Nothing to constrain on, skipping...")
+            return Operations()
         grammar_gbnf = generate_gbnf_grammar_from_pydantic_models(
             [ConstrainedOperations],
             "ConstrainedOperations",
@@ -531,8 +299,7 @@ class IterativeAssistant:
         {query}
         """
 
-        messages = self.few_shot_messages
-        messages.append({"role": "user", "content": full_query})
+        messages = [*self.few_shot_messages, {"role": "user", "content": full_query}]
 
         response = self.guidance.llama_model.create_chat_completion(
             grammar=grammar_constrained,
@@ -542,83 +309,75 @@ class IterativeAssistant:
         )
         response_msg = response["choices"][0]["message"]["content"]
         constrained_ops = ConstrainedOperations.model_validate_json(response_msg)
+        # the graph's own subjects/links may be referenced as well
+        graph_candidates = self.__graph_candidates(graph)
+        lookup = Candidates(
+            subjects={**graph_candidates.subjects, **candidates.subjects},
+            links={**graph_candidates.links, **candidates.links},
+        )
         finalized_ops = Operations()
         print("Constrained Ops", constrained_ops)
         for constrained_op in constrained_ops.operations:
             data = constrained_op.data
-            match data.type:
+            match data.kind:
                 case "link":
                     finalized_ops.operations.append(
                         Operation(
                             operation=constrained_op.operation,
-                            data=self.__constrained_link_op_finalze(data),
+                            data=self.__constrained_link_op_finalize(data, lookup),
                         )
                     )
                 case "subject":
                     finalized_ops.operations.append(
                         Operation(
                             operation=constrained_op.operation,
-                            data=self.__constrained_subject_op_finalize(data),
-                        )
-                    )
-                case "subquery":
-                    finalized_ops.operations.append(
-                        Operation(
-                            operation=constrained_op.operation,
-                            data=self.__constrained_subquery_op_finalize(data),
+                            data=self.__constrained_subject_op_finalize(data, lookup),
                         )
                     )
 
         return finalized_ops
 
+    def __find_subject(
+        self, internal_id: str, graph: QueryGraph, ops: Operations
+    ) -> AssistantSubject | None:
+        return next(
+            (
+                subj
+                for subj in [
+                    *graph.subjects,
+                    *[op.data for op in ops.operations],
+                ]
+                if isinstance(subj, AssistantSubject) and subj.id == internal_id
+            ),
+            None,
+        )
+
     def __correct_ops(self, ops: Operations, graph: QueryGraph):
         with Session(self.guidance.engine) as session:
-            # move to the correct IDs if present
+            # resolve the subquery property labels to property ids
             for op in ops.operations:
                 if op.operation == OperationType.REMOVE:
                     continue
-                if op.data.type == "link":
-                    link: AssistantLink = op.data
-                    db_link = (
-                        session.query(SubjectLinkDB)
-                        .where(SubjectLinkDB.label == link.link_id)
-                        .where(SubjectLinkDB.to_id != None)
-                        .first()
-                    )
-                    if db_link is not None:
-                        link.from_id = db_link.from_id
-                        link.to_id = db_link.to_id
-                        link.link_id = db_link.property_id
-                if op.data.type == "subject":
-                    subject: AssistantSubject = op.data
-                    db_subject = (
-                        session.query(SubjectInDB)
-                        .filter(SubjectInDB.label == subject.subject_id)
-                        .first()
-                    )
-                    if db_subject is not None:
-                        subject.subject_id = db_subject.subject_id
-                if op.data.type == "subquery":
-                    subquery: AssistantSubQuery = op.data
-                    db_link = (
-                        session.query(SubjectLinkDB)
-                        .filter(SubjectLinkDB.label == subquery.field)
-                        .first()
-                    )
-                    if db_link is not None:
-                        subquery.from_id = db_link.from_id
-                        subquery.field = db_link.link_id
+                if isinstance(op.data, AssistantSubject):
+                    for subquery in op.data.subqueries:
+                        if subquery.property_id is None:
+                            continue
+                        db_link = (
+                            session.query(SubjectLinkDB)
+                            .filter(SubjectLinkDB.label == subquery.property_id)
+                            .order_by((SubjectLinkDB.from_id == op.data.uri).desc())
+                            .first()
+                        )
+                        if db_link is not None:
+                            subquery.property_id = db_link.property_id
             # find link targets - if not present, add them
             # and remove related links if only subjects are removed
-            for op in ops.operations:
+            for op in list(ops.operations):
                 if op.operation == OperationType.REMOVE:
-                    if op.data.type == "subject":
+                    if isinstance(op.data, AssistantSubject):
                         # remove the link if the subject is removed
                         for link in graph.links:
-                            if (
-                                link.from_internal_id == op.data.internal_id
-                                or link.to_internal_id == op.data.internal_id
-                            ):
+                            if op.data.id in (link.from_subject, link.to_subject):
                                 print("Removing link", link)
                                 ops.operations.append(
                                     Operation(
@@ -626,46 +385,33 @@ class IterativeAssistant:
                                         data=link,
                                     )
                                 )
-                elif op.data.type == "link":
+                elif isinstance(op.data, AssistantLink):
                     link_db = (
                         session.query(SubjectLinkDB)
-                        .filter(SubjectLinkDB.property_id == op.data.link_id)
+                        .filter(SubjectLinkDB.property_id == op.data.uri)
+                        .order_by((SubjectLinkDB.to_id != None).desc())
                         .first()
                     )
+                    if link_db is None:
+                        continue
                     subjects_to_add = [
-                        (
-                            link_db.from_id
-                            if op.data.from_id is None
-                            else op.data.from_id,
-                            op.data.from_internal_id,
-                        ),
-                        (
-                            link_db.to_id if op.data.to_id is None else op.data.to_id,
-                            op.data.to_internal_id,
-                        ),
+                        (link_db.from_id, op.data.from_subject),
+                        (link_db.to_id, op.data.to_subject),
                     ]
 
                     for subject_id, internal_id in subjects_to_add:
-                        subj: AssistantSubject | None = next(
-                            filter(
-                                lambda subj: subj.internal_id == internal_id,
-                                graph.subjects,
-                            ),
-                            None,
-                        )
-                        if subj is None:
-                            subj = next(
-                                filter(
-                                    lambda subj: subj.type == "subject"
-                                    and subj.internal_id == internal_id,
-                                    [op.data for op in ops.operations],
-                                ),
-                                None,
-                            )
-                        if subj is None:
+                        if subject_id is None:
+                            continue
+                        if self.__find_subject(internal_id, graph, ops) is None:
+                            db_subject = session.get(SubjectInDB, subject_id)
                             subj = AssistantSubject(
-                                subject_id=subject_id,
-                                internal_id=internal_id,
+                                uri=subject_id,
+                                label=(
+                                    db_subject.label
+                                    if db_subject is not None and db_subject.label
+                                    else subject_id
+                                ),
+                                id=internal_id,
                             )
                             ops.operations.append(
                                 Operation(
@@ -674,66 +420,16 @@ class IterativeAssistant:
                                 )
                             )
                             print("Adding subject to complete link", subj)
-            for op in ops.operations:
-                if op.operation == OperationType.REMOVE:
-                    continue
-                if op.data.type == "link":
-                    # switch internal ids if the from_id and to_id do not match
-                    link: AssistantLink = op.data
-                    internal_ids = [
-                        link.from_internal_id,
-                        link.to_internal_id,
-                    ]
-                    subjects: list[AssistantSubject] = []
-                    for internal_id in internal_ids:
-                        subj: AssistantSubject | None = next(
-                            filter(
-                                lambda subj: subj.internal_id == internal_id,
-                                graph.subjects,
-                            ),
-                            None,
-                        )
-                        if subj is None:
-                            subj = next(
-                                filter(
-                                    lambda subj: subj.type == "subject"
-                                    and subj.internal_id == internal_id,
-                                    [op.data for op in ops.operations],
-                                ),
-                                None,
-                            )
-                        if subj is not None:
-                            subjects.append(subj)
-                    if len(subjects) == 2:
-                        if (
-                            subjects[0].subject_id != link.from_id
-                            or subjects[1].subject_id != link.to_id
-                        ):
-                            print("Switching link internal ids", link, subjects)
-                            # link.from_internal_id, link.to_internal_id = (
-                            #     link.to_internal_id,
-                            #     link.from_internal_id,
-                            # )
         return ops
 
     def __simplify_graph(self, graph: QueryGraph):
         simple_graph = QueryGraph.model_validate_json(graph.model_dump_json())
+        # drop the (large) vector payloads, they are of no use to the LLM
         for subject in simple_graph.subjects:
-            full_subject = self.guidance.oman.enrich_subject(subject.subject_id)
-            subject.subject_id = full_subject.label
-        with Session(self.guidance.engine) as session:
-            for link in simple_graph.links:
-                full_link = (
-                    session.query(SubjectLinkDB)
-                    .filter(SubjectLinkDB.label == link.link_id)
-                    .first()
-                )
-                if full_link is None:
-                    continue
-                full_link = full_link.from_db(self.guidance.oman)
-                link.from_id = full_link.from_subject.label
-                link.to_id = full_link.to_subject.label
-                link.link_id = full_link.label
+            for subquery in subject.subqueries:
+                if isinstance(subquery, VectorSortSubQuery):
+                    subquery.vector = None
+                    subquery.input_state.image = None
         return simple_graph
 
     def run_query(self, query: str, graph: QueryGraph):
@@ -741,17 +437,14 @@ class IterativeAssistant:
         # # Step 1: Initial Operations -> skip, extract candidates directly from the query!
         # initial_ops = self.__initial_ops(query, simple_graph)
         # print("Initial Ops", initial_ops)
-        # Step 2: Candidate Operations
-        candidate_ops = self.__candidates_ops(query)
-        print("Candidate Ops", candidate_ops)
+        # Step 2: Candidates
+        candidates = self.__candidates(query)
+        print("Candidates", candidates)
         # Step 3: Constrained Operations
-        finalized_ops = self.__constrained_ops(query, simple_graph, candidate_ops)
-        print("Constrained Ops", candidate_ops)
+        finalized_ops = self.__constrained_ops(query, simple_graph, candidates)
+        print("Constrained Ops", finalized_ops)
         # Step 4: Correct Operations
         print(" -- Correcting Ops -- ")
         corrected_ops = self.__correct_ops(finalized_ops, graph=graph)
         print("Corrected Ops", corrected_ops)
-        # TODO: correct ops if they are missing links, subjects, ...
-        # correct labels to ids
-        # --> should be done!
         return corrected_ops

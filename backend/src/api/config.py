@@ -6,7 +6,7 @@ from typing import Annotated
 from fastapi import Depends, HTTPException, Request
 
 from assistant.iterative_assistant import IterativeAssistant
-from assistant.model import Operations
+from assistant.assistant_model import Operations
 from datasetmatcher import DatasetManager
 from eval_config import CONFIG_FILE, EvalConfig, MultimodalConfig
 from explorative.explorative_support import GuidanceManager
@@ -25,10 +25,10 @@ CONFIG_PATH_PARAM = "config_id"
 
 
 class ManMan:
-    def __init__(self, config_id: str, db_config: EvalConfig):
+    def __init__(self, config_id: str, eval_cfg: EvalConfig):
         self.config_id = config_id
-        self.db_config = db_config
-        print(f"Using DB config '{config_id}':", db_config)
+        self.db_config = eval_cfg
+        print(f"Using DB config '{config_id}':", eval_cfg)
 
         self.base_path = base_path
         self.onto_path = onto_path

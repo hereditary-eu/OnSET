@@ -16,3 +16,4 @@ node_modules
 demo-video
 Qleverfile-ui.yml
 *.ui-db.sqlite3
+.env

@@ -11,7 +11,7 @@ from fastapi import (
 import urllib3.util
 
 from api.config import ManManDep
-from assistant.model import QueryGraph, Operations
+from assistant.assistant_model import QueryGraph, Operations
 from api.validator import validate_image_file
 from backend.src.explorative.data_tensor import DataTensor, DataTensorResp
 from explorative.exp_model import FuzzyQuery, FuzzyQueryResults
