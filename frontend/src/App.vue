@@ -20,7 +20,20 @@ body {
   font-family: 'Roboto Mono', monospace;
   margin: 0px;
 }
-text{
+
+text {
   font-family: 'Roboto Mono', monospace;
+}
+
+
+header {
+  line-height: 1.5;
+  max-height: 100vh;
+}
+
+.heading {
+  display: flex;
+  justify-items: center;
+  justify-content: center;
 }
 </style>

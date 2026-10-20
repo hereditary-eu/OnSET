@@ -39,6 +39,8 @@ const switchConfig = (event: Event) => {
                 <RouterLink :to="{ name: 'circles', params: { configId } }">Class tree</RouterLink>
             </nav>
         </template>
+        <a class="disclaimer" href="https://github.com/hereditary-eu/OnSET/blob/main/DISCLAIMER.md" target="_blank"
+            rel="noopener">Research use only. Not a medical device.</a>
     </header>
 </template>
 
@@ -95,6 +97,17 @@ const switchConfig = (event: Event) => {
     padding: 0.2rem 0.6rem;
     border-radius: 4px;
     color: var(--color-text);
+}
+
+.disclaimer {
+    margin-left: auto;
+    font-size: 0.75rem;
+    color: var(--color-text);
+    opacity: 0.7;
+}
+
+.views ~ .disclaimer {
+    margin-left: 1rem;
 }
 
 .views a.router-link-active {

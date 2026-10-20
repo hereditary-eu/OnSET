@@ -9,6 +9,9 @@ import regex as re
 import json_repair
 
 
+# Adapted from Llama.from_pretrained in llama-cpp-python
+# (https://github.com/abetlen/llama-cpp-python), MIT License,
+# Copyright (c) 2023 Andrei Betlen.
 def llama_cpp_langchain_from_pretrained(
     repo_id: str,
     filename: Optional[str],
