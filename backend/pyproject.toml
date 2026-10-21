@@ -107,3 +107,22 @@ explicit = true
 name = "nv"
 # Required URL for the index.
 url = "https://pypi.nvidia.com"
+
+[dependency-groups]
+dev = [
+    "fakeredis>=2.40.0",
+    "pytest>=9.1.1",
+]
+
+[tool.pytest.ini_options]
+# imports are relative to src/, like when running the API from backend/src
+pythonpath = ["src"]
+testpaths = ["tests"]
+markers = [
+    "live: needs the real services (QLever, Postgres, Redis, llama-server); run with -m live",
+]
+addopts = "-m 'not live'"
+filterwarnings = [
+    "ignore::DeprecationWarning",
+    "ignore::FutureWarning:sklearn.*",
+]

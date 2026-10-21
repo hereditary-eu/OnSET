@@ -40,10 +40,14 @@ from agent.protocol import (
 
 SYSTEM_PROMPT = """You are an agentic editor of a visual SPARQL query graph over a knowledge graph.
 The query graph consists of subjects (nodes, each an ontology class) and links (ontology properties) between them.
+Some facts to consider:
+- The class hierarchy is always considered in the search results, so if a link is valid for a superclass, it is also valid for its subclasses, e.g. a link valid for "Person" is also valid for "Scientist", and a link for owl:Thing is valid for all classes - this holds for both sides of the link.
+- When searching for new links always start from one of the existing subjects in the graph, i.e. you can use their URIs to find links that connect them to other classes.
+- You should never add a subject or link that is not in the ontology, and it should never invent a URI. Always search for the most relevant classes and links before adding anything; only use URIs returned by a search.
 For each user request:
 1. Inspect the current query graph (it is given with the request when it changed, or call get_query_graph).
 2. Always search for the most relevant classes (search_classes) and links (search_links) before adding anything; only use URIs returned by a search.
-3. Edit the graph with add_subject, add_link, remove_subject and remove_link. Subjects and links are referenced by their graph "id", never by their URI.
+3. Edit the graph with add_subject, add_link, remove_subject and remove_link. Subjects and links are referenced by their graph "id", but searched by their ontology URI. If a subject or link is removed, all its connected links or subjects are also removed.
 4. Finish with a short answer summarising what you changed.
 If no class or link fits the request, ask the user for clarification instead of guessing."""
 
@@ -93,7 +97,14 @@ class GraphAgent:
         self.reset()
 
     def reset(self):
-        self.history: list[dict] = [{"role": "system", "content": self.system_prompt}]
+        self.history: list[dict] = [
+            {
+                "role": "system",
+                "content": self.system_prompt
+                + "\n\n"
+                + json.dumps(self.tools.definitions(), indent=2),
+            }
+        ]
         # the graph as the model last saw it, to only repeat it when it changed
         self._seen_graph: str | None = None
 
@@ -124,7 +135,9 @@ class GraphAgent:
                 for call in calls:
                     if cancelled():
                         # every call needs an output, or the history is invalid
-                        self._add_output(call, json.dumps({"error": "Cancelled by the user."}))
+                        self._add_output(
+                            call, json.dumps({"error": "Cancelled by the user."})
+                        )
                         continue
                     graph_changed |= yield from self._run_tool(call)
                 if graph_changed:
@@ -150,10 +163,14 @@ class GraphAgent:
         def text_chunks(item_id: str | None, chunks) -> Iterator[ServerMessage]:
             for is_thinking, text in chunks:
                 if is_thinking:
-                    block = ids.for_delta("thinking", f"{item_id}:think" if item_id else None)
+                    block = ids.for_delta(
+                        "thinking", f"{item_id}:think" if item_id else None
+                    )
                     yield Thinking(id=block, delta=text)
                 else:
-                    yield AssistantMessage(id=ids.for_delta("message", item_id), delta=text)
+                    yield AssistantMessage(
+                        id=ids.for_delta("message", item_id), delta=text
+                    )
 
         last_text_item = None
         for event in self.llm.respond(self.history, self.tools.definitions()):
@@ -161,7 +178,9 @@ class GraphAgent:
                 last_text_item = event.item_id
                 yield from text_chunks(event.item_id, splitter.feed(event.delta))
             elif isinstance(event, ReasoningDelta):
-                yield Thinking(id=ids.for_delta("thinking", event.item_id), delta=event.delta)
+                yield Thinking(
+                    id=ids.for_delta("thinking", event.item_id), delta=event.delta
+                )
             elif isinstance(event, ResponseDone):
                 output = event.output
         yield from text_chunks(last_text_item, splitter.flush())
@@ -186,7 +205,11 @@ class GraphAgent:
 
     def _add_output(self, call: dict, output: str):
         self.history.append(
-            {"type": "function_call_output", "call_id": call["call_id"], "output": output}
+            {
+                "type": "function_call_output",
+                "call_id": call["call_id"],
+                "output": output,
+            }
         )
 
     def _run_tool(self, call: dict) -> Iterator[ServerMessage]:

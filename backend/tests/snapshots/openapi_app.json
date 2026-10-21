@@ -1,0 +1,84 @@
+{
+ "components": {
+  "schemas": {
+   "ConfigSummary": {
+    "properties": {
+     "default": {
+      "title": "Default",
+      "type": "boolean"
+     },
+     "description": {
+      "title": "Description",
+      "type": "string"
+     },
+     "id": {
+      "title": "Id",
+      "type": "string"
+     },
+     "multimodal": {
+      "title": "Multimodal",
+      "type": "boolean"
+     },
+     "name": {
+      "title": "Name",
+      "type": "string"
+     }
+    },
+    "required": [
+     "id",
+     "name",
+     "description",
+     "multimodal",
+     "default"
+    ],
+    "title": "ConfigSummary",
+    "type": "object"
+   }
+  }
+ },
+ "info": {
+  "title": "Ontology Provenance API",
+  "version": "0.1.0"
+ },
+ "openapi": "3.1.0",
+ "paths": {
+  "/": {
+   "get": {
+    "operationId": "read_root__get",
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      },
+      "description": "Successful Response"
+     }
+    },
+    "summary": "Read Root"
+   }
+  },
+  "/configs": {
+   "get": {
+    "operationId": "list_configs_configs_get",
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/ConfigSummary"
+         },
+         "title": "Response List Configs Configs Get",
+         "type": "array"
+        }
+       }
+      },
+      "description": "Successful Response"
+     }
+    },
+    "summary": "List Configs"
+   }
+  }
+ }
+}

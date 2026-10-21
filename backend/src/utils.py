@@ -100,7 +100,7 @@ def escape_sparql_var(
 
 
 def wrap_iri(s: str) -> str:
-    if s.startswith("http://") or s.startswith("https://"):
+    if s.startswith("http://") or s.startswith("https://") or ":" not in s:
         return f"<{s}>"
     return s
 

@@ -167,12 +167,14 @@ class OntologyManager:
         return onto_classes
 
     def get_subclasses(self, cls: str, load_properties=False) -> list[Subject]:
+        cls = wrap_iri(cls)
         return self.__subjects_for(
             self.config.sub_class_query.replace("?cls", cls),
             load_properties=load_properties,
         )
 
     def get_all_subclasses(self, cls: str) -> list[Subject]:
+        cls = wrap_iri(cls)
         query = f"""SELECT ?scls
                     WHERE {{
                          ?scls rdf:type owl:Class.
@@ -182,6 +184,7 @@ class OntologyManager:
         return self.__subjects_for(query, subject_type="class")
 
     def get_named_individuals(self, cls: str, limit=128) -> list[Subject]:
+        cls = wrap_iri(cls)
         query = f"""SELECT ?ind
                     WHERE {{
                          ?ind rdf:type owl:NamedIndividual.
@@ -278,9 +281,7 @@ class OntologyManager:
             print("Skipping", cls)
             return {}
         try:
-            edge_filter = (
-                f"FILTER (?edge in ({', '.join(edges)})) " if edges else ""
-            )
+            edge_filter = f"FILTER (?edge in ({', '.join(edges)})) " if edges else ""
             # NOTE: ?edge_label (not ?edge_lbl) is bound, so edge labels stay empty
             outgoing_edges = self.__query(
                 f"""

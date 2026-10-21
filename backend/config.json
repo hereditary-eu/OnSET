@@ -8,8 +8,8 @@
     "redis_cache_url": "${REDIS_CACHE_URL:-redis://localhost:6379/1}",
     "selection_distribution": "instances",
     "agent": {
-      "base_url": "${AGENT_LLM_BASE_URL:-http://localhost:8998/v1}",
-      "api_key": "${AGENT_LLM_API_KEY:-none}",
+      "base_url": "${AGENT_LLM_BASE_URL:-https://hereditary.cgv.tugraz.at/lm-large/api/v1}",
+      "api_key": "${AGENT_LLM_API_KEY:-ONSET-TOKEN2908a}",
       "model": "${AGENT_LLM_MODEL:-}"
     }
   },

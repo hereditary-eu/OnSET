@@ -1,0 +1,3307 @@
+{
+ "components": {
+  "schemas": {
+   "AssistantLink": {
+    "properties": {
+     "from_subject_id": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "From Subject Id"
+     },
+     "from_subject_label": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "From Subject Label"
+     },
+     "from_subject_uri": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "From Subject Uri"
+     },
+     "id": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Id"
+     },
+     "label": {
+      "title": "Label",
+      "type": "string"
+     },
+     "to_subject_id": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "To Subject Id"
+     },
+     "to_subject_label": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "To Subject Label"
+     },
+     "to_subject_uri": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "To Subject Uri"
+     },
+     "uri": {
+      "title": "Uri",
+      "type": "string"
+     }
+    },
+    "required": [
+     "uri",
+     "label"
+    ],
+    "title": "AssistantLink",
+    "type": "object"
+   },
+   "AssistantNumberConstraintType": {
+    "enum": [
+     "equals",
+     "less",
+     "greater"
+    ],
+    "title": "AssistantNumberConstraintType",
+    "type": "string"
+   },
+   "AssistantStringConstraintType": {
+    "enum": [
+     "equals",
+     "!=",
+     "contains",
+     "startswith",
+     "endswith",
+     "regex"
+    ],
+    "title": "AssistantStringConstraintType",
+    "type": "string"
+   },
+   "AssistantSubject": {
+    "properties": {
+     "id": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Id"
+     },
+     "label": {
+      "title": "Label",
+      "type": "string"
+     },
+     "subqueries": {
+      "default": [],
+      "items": {
+       "discriminator": {
+        "mapping": {
+         "boolean": "#/components/schemas/BooleanSubQuery",
+         "date": "#/components/schemas/DateSubQuery",
+         "number": "#/components/schemas/NumberSubQuery",
+         "query_prop": "#/components/schemas/QueryPropSubQuery",
+         "string": "#/components/schemas/StringSubQuery",
+         "subject": "#/components/schemas/SubjectSubQuery",
+         "vector_sort": "#/components/schemas/VectorSortSubQuery"
+        },
+        "propertyName": "type"
+       },
+       "oneOf": [
+        {
+         "$ref": "#/components/schemas/QueryPropSubQuery"
+        },
+        {
+         "$ref": "#/components/schemas/SubjectSubQuery"
+        },
+        {
+         "$ref": "#/components/schemas/StringSubQuery"
+        },
+        {
+         "$ref": "#/components/schemas/NumberSubQuery"
+        },
+        {
+         "$ref": "#/components/schemas/BooleanSubQuery"
+        },
+        {
+         "$ref": "#/components/schemas/DateSubQuery"
+        },
+        {
+         "$ref": "#/components/schemas/VectorSortSubQuery"
+        }
+       ]
+      },
+      "title": "Subqueries",
+      "type": "array"
+     },
+     "uri": {
+      "title": "Uri",
+      "type": "string"
+     }
+    },
+    "required": [
+     "uri",
+     "label"
+    ],
+    "title": "AssistantSubject",
+    "type": "object"
+   },
+   "Body_dim_reduce_search_dim_reduce_post": {
+    "properties": {
+     "algorithm": {
+      "default": "umap",
+      "title": "Algorithm",
+      "type": "string"
+     },
+     "query": {
+      "title": "Query",
+      "type": "string"
+     },
+     "remove_vectors": {
+      "default": true,
+      "title": "Remove Vectors",
+      "type": "boolean"
+     },
+     "target_properties": {
+      "items": {
+       "type": "string"
+      },
+      "title": "Target Properties",
+      "type": "array"
+     }
+    },
+    "required": [
+     "query",
+     "target_properties"
+    ],
+    "title": "Body_dim_reduce_search_dim_reduce_post",
+    "type": "object"
+   },
+   "Body_load_ontology_management_ontology_post": {
+    "properties": {
+     "ontology": {
+      "contentMediaType": "application/octet-stream",
+      "title": "Ontology",
+      "type": "string"
+     }
+    },
+    "required": [
+     "ontology"
+    ],
+    "title": "Body_load_ontology_management_ontology_post",
+    "type": "object"
+   },
+   "BooleanSubQuery": {
+    "properties": {
+     "id": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Id"
+     },
+     "property_id": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Property Id"
+     },
+     "type": {
+      "const": "boolean",
+      "default": "boolean",
+      "title": "Type",
+      "type": "string"
+     },
+     "value": {
+      "default": false,
+      "title": "Value",
+      "type": "boolean"
+     }
+    },
+    "title": "BooleanSubQuery",
+    "type": "object"
+   },
+   "CandidateEntity": {
+    "properties": {
+     "constraints": {
+      "default": [],
+      "items": {
+       "$ref": "#/components/schemas/Constraint"
+      },
+      "title": "Constraints",
+      "type": "array"
+     },
+     "identifier": {
+      "title": "Identifier",
+      "type": "string"
+     },
+     "score": {
+      "title": "Score",
+      "type": "number"
+     },
+     "subject": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/Subject"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "type": {
+      "title": "Type",
+      "type": "string"
+     }
+    },
+    "required": [
+     "identifier",
+     "type",
+     "score"
+    ],
+    "title": "CandidateEntity",
+    "type": "object"
+   },
+   "CandidateRelation": {
+    "properties": {
+     "entity": {
+      "title": "Entity",
+      "type": "string"
+     },
+     "link": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/SubjectLink"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "relation": {
+      "title": "Relation",
+      "type": "string"
+     },
+     "score": {
+      "title": "Score",
+      "type": "number"
+     },
+     "target": {
+      "title": "Target",
+      "type": "string"
+     }
+    },
+    "required": [
+     "entity",
+     "relation",
+     "target",
+     "score"
+    ],
+    "title": "CandidateRelation",
+    "type": "object"
+   },
+   "Candidates": {
+    "properties": {
+     "entities": {
+      "default": [],
+      "items": {
+       "$ref": "#/components/schemas/CandidateEntity"
+      },
+      "title": "Entities",
+      "type": "array"
+     },
+     "message": {
+      "default": "Found Relations and Entities",
+      "title": "Message",
+      "type": "string"
+     },
+     "relations": {
+      "default": [],
+      "items": {
+       "$ref": "#/components/schemas/CandidateRelation"
+      },
+      "title": "Relations",
+      "type": "array"
+     }
+    },
+    "title": "Candidates",
+    "type": "object"
+   },
+   "ClosestRequest": {
+    "properties": {
+     "all_embeddings": {
+      "items": {
+       "items": {
+        "type": "number"
+       },
+       "type": "array"
+      },
+      "title": "All Embeddings",
+      "type": "array"
+     },
+     "embedding": {
+      "anyOf": [
+       {
+        "items": {
+         "type": "number"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Embedding"
+     },
+     "n_closest": {
+      "default": 5,
+      "title": "N Closest",
+      "type": "integer"
+     },
+     "query": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Query"
+     }
+    },
+    "required": [
+     "embedding",
+     "query",
+     "all_embeddings"
+    ],
+    "title": "ClosestRequest",
+    "type": "object"
+   },
+   "ClosestResponse": {
+    "properties": {
+     "distance": {
+      "title": "Distance",
+      "type": "number"
+     },
+     "index": {
+      "title": "Index",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "index",
+     "distance"
+    ],
+    "title": "ClosestResponse",
+    "type": "object"
+   },
+   "ConfigCollection": {
+    "properties": {
+     "description": {
+      "title": "Description",
+      "type": "string"
+     },
+     "id": {
+      "title": "Id",
+      "type": "string"
+     },
+     "multimodal": {
+      "$ref": "#/components/schemas/MultimodalConfig"
+     },
+     "name": {
+      "title": "Name",
+      "type": "string"
+     }
+    },
+    "required": [
+     "id",
+     "name",
+     "description",
+     "multimodal"
+    ],
+    "title": "ConfigCollection",
+    "type": "object"
+   },
+   "Constraint": {
+    "properties": {
+     "modifier": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Modifier"
+     },
+     "property": {
+      "title": "Property",
+      "type": "string"
+     },
+     "value": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Value"
+     }
+    },
+    "required": [
+     "property",
+     "value",
+     "modifier"
+    ],
+    "title": "Constraint",
+    "type": "object"
+   },
+   "DataTensorResp": {
+    "properties": {
+     "data": {
+      "items": {
+       "type": "number"
+      },
+      "title": "Data",
+      "type": "array"
+     },
+     "shape": {
+      "items": {
+       "type": "integer"
+      },
+      "title": "Shape",
+      "type": "array"
+     },
+     "type": {
+      "enum": [
+       "float32",
+       "float64",
+       "int32",
+       "int64"
+      ],
+      "title": "Type",
+      "type": "string"
+     }
+    },
+    "required": [
+     "data",
+     "type",
+     "shape"
+    ],
+    "title": "DataTensorResp",
+    "type": "object"
+   },
+   "DateSubQuery": {
+    "properties": {
+     "id": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Id"
+     },
+     "operator": {
+      "$ref": "#/components/schemas/AssistantNumberConstraintType",
+      "default": "greater"
+     },
+     "property_id": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Property Id"
+     },
+     "type": {
+      "const": "date",
+      "default": "date",
+      "title": "Type",
+      "type": "string"
+     },
+     "value": {
+      "title": "Value",
+      "type": "string"
+     }
+    },
+    "required": [
+     "value"
+    ],
+    "title": "DateSubQuery",
+    "type": "object"
+   },
+   "EnrichedEntitiesRelations": {
+    "properties": {
+     "entities": {
+      "default": [],
+      "items": {
+       "$ref": "#/components/schemas/EnrichedEntity"
+      },
+      "title": "Entities",
+      "type": "array"
+     },
+     "message": {
+      "default": "Found Relations and Entities",
+      "title": "Message",
+      "type": "string"
+     },
+     "relations": {
+      "default": [],
+      "items": {
+       "$ref": "#/components/schemas/EnrichedRelation"
+      },
+      "title": "Relations",
+      "type": "array"
+     }
+    },
+    "title": "EnrichedEntitiesRelations",
+    "type": "object"
+   },
+   "EnrichedEntity": {
+    "properties": {
+     "constraints": {
+      "default": [],
+      "items": {
+       "$ref": "#/components/schemas/Constraint"
+      },
+      "title": "Constraints",
+      "type": "array"
+     },
+     "identifier": {
+      "title": "Identifier",
+      "type": "string"
+     },
+     "subject": {
+      "$ref": "#/components/schemas/Subject"
+     },
+     "type": {
+      "title": "Type",
+      "type": "string"
+     }
+    },
+    "required": [
+     "identifier",
+     "type",
+     "subject"
+    ],
+    "title": "EnrichedEntity",
+    "type": "object"
+   },
+   "EnrichedRelation": {
+    "properties": {
+     "entity": {
+      "title": "Entity",
+      "type": "string"
+     },
+     "link": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/SubjectLink"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "relation": {
+      "title": "Relation",
+      "type": "string"
+     },
+     "target": {
+      "title": "Target",
+      "type": "string"
+     }
+    },
+    "required": [
+     "entity",
+     "relation",
+     "target",
+     "link"
+    ],
+    "title": "EnrichedRelation",
+    "type": "object"
+   },
+   "EntitiesRelations": {
+    "properties": {
+     "entities": {
+      "default": [],
+      "items": {
+       "$ref": "#/components/schemas/Entity"
+      },
+      "title": "Entities",
+      "type": "array"
+     },
+     "message": {
+      "default": "Found Relations and Entities",
+      "title": "Message",
+      "type": "string"
+     },
+     "relations": {
+      "default": [],
+      "items": {
+       "$ref": "#/components/schemas/Relation"
+      },
+      "title": "Relations",
+      "type": "array"
+     }
+    },
+    "title": "EntitiesRelations",
+    "type": "object"
+   },
+   "Entity": {
+    "properties": {
+     "constraints": {
+      "default": [],
+      "items": {
+       "$ref": "#/components/schemas/Constraint"
+      },
+      "title": "Constraints",
+      "type": "array"
+     },
+     "identifier": {
+      "title": "Identifier",
+      "type": "string"
+     },
+     "type": {
+      "title": "Type",
+      "type": "string"
+     }
+    },
+    "required": [
+     "identifier",
+     "type"
+    ],
+    "title": "Entity",
+    "type": "object"
+   },
+   "FUZZY_QUERY_ORDER": {
+    "enum": [
+     "score",
+     "instances"
+    ],
+    "title": "FUZZY_QUERY_ORDER",
+    "type": "string"
+   },
+   "FuzzyQuery": {
+    "properties": {
+     "entity_type": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": "class",
+      "title": "Entity Type"
+     },
+     "from_id": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "items": {
+         "type": "string"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "From Id"
+     },
+     "include_thing": {
+      "default": true,
+      "title": "Include Thing",
+      "type": "boolean"
+     },
+     "limit": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": 25,
+      "title": "Limit"
+     },
+     "mix_topic_factor": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": 0.5,
+      "title": "Mix Topic Factor"
+     },
+     "order": {
+      "$ref": "#/components/schemas/FUZZY_QUERY_ORDER",
+      "default": "score"
+     },
+     "q": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Q"
+     },
+     "relation_type": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/RELATION_TYPE"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": "instance"
+     },
+     "skip": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": 0,
+      "title": "Skip"
+     },
+     "to_id": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "To Id"
+     },
+     "topic_ids": {
+      "anyOf": [
+       {
+        "items": {
+         "type": "integer"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Topic Ids"
+     },
+     "type": {
+      "$ref": "#/components/schemas/RETURN_TYPE",
+      "default": "both"
+     }
+    },
+    "title": "FuzzyQuery",
+    "type": "object"
+   },
+   "FuzzyQueryResult": {
+    "properties": {
+     "attributions": {
+      "default": [],
+      "items": {
+       "$ref": "#/components/schemas/ResultAttribution"
+      },
+      "title": "Attributions",
+      "type": "array"
+     },
+     "link": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/SubjectLink"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "score": {
+      "default": 0.0,
+      "title": "Score",
+      "type": "number"
+     },
+     "subject": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/Subject"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     }
+    },
+    "title": "FuzzyQueryResult",
+    "type": "object"
+   },
+   "FuzzyQueryResults": {
+    "properties": {
+     "results": {
+      "items": {
+       "$ref": "#/components/schemas/FuzzyQueryResult"
+      },
+      "title": "Results",
+      "type": "array"
+     }
+    },
+    "required": [
+     "results"
+    ],
+    "title": "FuzzyQueryResults",
+    "type": "object"
+   },
+   "GeneralizationQuery": {
+    "properties": {
+     "cls": {
+      "default": "",
+      "title": "Cls",
+      "type": "string"
+     },
+     "in_link_ids": {
+      "default": [],
+      "items": {
+       "type": "string"
+      },
+      "title": "In Link Ids",
+      "type": "array"
+     },
+     "out_link_ids": {
+      "default": [],
+      "items": {
+       "type": "string"
+      },
+      "title": "Out Link Ids",
+      "type": "array"
+     }
+    },
+    "title": "GeneralizationQuery",
+    "type": "object"
+   },
+   "HTTPValidationError": {
+    "properties": {
+     "detail": {
+      "items": {
+       "$ref": "#/components/schemas/ValidationError"
+      },
+      "title": "Detail",
+      "type": "array"
+     }
+    },
+    "title": "HTTPValidationError",
+    "type": "object"
+   },
+   "Instance": {
+    "properties": {
+     "id": {
+      "default": "",
+      "title": "Id",
+      "type": "string"
+     },
+     "label": {
+      "default": "",
+      "title": "Label",
+      "type": "string"
+     }
+    },
+    "title": "Instance",
+    "type": "object"
+   },
+   "ManifoldAlg": {
+    "enum": [
+     "TSNE",
+     "MDS",
+     "smacof"
+    ],
+    "title": "ManifoldAlg",
+    "type": "string"
+   },
+   "ManifoldRequest": {
+    "properties": {
+     "alg": {
+      "$ref": "#/components/schemas/ManifoldAlg",
+      "default": "TSNE"
+     },
+     "embeddings": {
+      "items": {
+       "items": {
+        "type": "number"
+       },
+       "type": "array"
+      },
+      "title": "Embeddings",
+      "type": "array"
+     },
+     "metric": {
+      "default": "cosine",
+      "title": "Metric",
+      "type": "string"
+     },
+     "n_out": {
+      "default": 2,
+      "title": "N Out",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "embeddings"
+    ],
+    "title": "ManifoldRequest",
+    "type": "object"
+   },
+   "Match": {
+    "properties": {
+     "colname": {
+      "default": "",
+      "title": "Colname",
+      "type": "string"
+     },
+     "idx": {
+      "default": "",
+      "title": "Idx",
+      "type": "string"
+     },
+     "rank": {
+      "default": -1,
+      "title": "Rank",
+      "type": "integer"
+     },
+     "score": {
+      "default": -1,
+      "title": "Score",
+      "type": "number"
+     }
+    },
+    "title": "Match",
+    "type": "object"
+   },
+   "MultimodalConfig": {
+    "properties": {
+     "encoding_model": {
+      "default": "clip-ViT-B-32",
+      "title": "Encoding Model",
+      "type": "string"
+     },
+     "image_properties": {
+      "default": [
+       "dbo:thumbnail"
+      ],
+      "items": {
+       "type": "string"
+      },
+      "title": "Image Properties",
+      "type": "array"
+     },
+     "image_types": {
+      "default": [
+       "<http://dbpedia.org/ontology/Image>"
+      ],
+      "items": {
+       "type": "string"
+      },
+      "title": "Image Types",
+      "type": "array"
+     },
+     "image_vector_properties": {
+      "default": [
+       "dbo:thumbnail_embedding"
+      ],
+      "items": {
+       "type": "string"
+      },
+      "title": "Image Vector Properties",
+      "type": "array"
+     }
+    },
+    "title": "MultimodalConfig",
+    "type": "object"
+   },
+   "NumberSubQuery": {
+    "properties": {
+     "id": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Id"
+     },
+     "operator": {
+      "$ref": "#/components/schemas/AssistantNumberConstraintType",
+      "default": "greater"
+     },
+     "property_id": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Property Id"
+     },
+     "type": {
+      "const": "number",
+      "default": "number",
+      "title": "Type",
+      "type": "string"
+     },
+     "value": {
+      "default": 0,
+      "title": "Value",
+      "type": "number"
+     }
+    },
+    "title": "NumberSubQuery",
+    "type": "object"
+   },
+   "Operation": {
+    "properties": {
+     "data": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/AssistantLink"
+       },
+       {
+        "$ref": "#/components/schemas/AssistantSubject"
+       },
+       {
+        "discriminator": {
+         "mapping": {
+          "boolean": "#/components/schemas/BooleanSubQuery",
+          "date": "#/components/schemas/DateSubQuery",
+          "number": "#/components/schemas/NumberSubQuery",
+          "query_prop": "#/components/schemas/QueryPropSubQuery",
+          "string": "#/components/schemas/StringSubQuery",
+          "subject": "#/components/schemas/SubjectSubQuery",
+          "vector_sort": "#/components/schemas/VectorSortSubQuery"
+         },
+         "propertyName": "type"
+        },
+        "oneOf": [
+         {
+          "$ref": "#/components/schemas/QueryPropSubQuery"
+         },
+         {
+          "$ref": "#/components/schemas/SubjectSubQuery"
+         },
+         {
+          "$ref": "#/components/schemas/StringSubQuery"
+         },
+         {
+          "$ref": "#/components/schemas/NumberSubQuery"
+         },
+         {
+          "$ref": "#/components/schemas/BooleanSubQuery"
+         },
+         {
+          "$ref": "#/components/schemas/DateSubQuery"
+         },
+         {
+          "$ref": "#/components/schemas/VectorSortSubQuery"
+         }
+        ]
+       }
+      ],
+      "title": "Data"
+     },
+     "operation": {
+      "$ref": "#/components/schemas/OperationType"
+     }
+    },
+    "required": [
+     "operation",
+     "data"
+    ],
+    "title": "Operation",
+    "type": "object"
+   },
+   "OperationType": {
+    "enum": [
+     "add",
+     "remove"
+    ],
+    "title": "OperationType",
+    "type": "string"
+   },
+   "Operations": {
+    "properties": {
+     "operations": {
+      "default": [],
+      "items": {
+       "$ref": "#/components/schemas/Operation"
+      },
+      "title": "Operations",
+      "type": "array"
+     }
+    },
+    "title": "Operations",
+    "type": "object"
+   },
+   "OutLink": {
+    "properties": {
+     "count": {
+      "default": 0,
+      "title": "Count",
+      "type": "integer"
+     },
+     "instances": {
+      "items": {
+       "type": "string"
+      },
+      "title": "Instances",
+      "type": "array"
+     },
+     "target": {
+      "$ref": "#/components/schemas/RelationsFound"
+     }
+    },
+    "title": "OutLink",
+    "type": "object"
+   },
+   "Property": {
+    "properties": {
+     "label": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": "",
+      "title": "Label"
+     },
+     "property": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": "",
+      "title": "Property"
+     },
+     "values": {
+      "default": [],
+      "items": {
+       "$ref": "#/components/schemas/PropertyValue"
+      },
+      "title": "Values",
+      "type": "array"
+     }
+    },
+    "title": "Property",
+    "type": "object"
+   },
+   "PropertyValue": {
+    "properties": {
+     "label": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Label"
+     },
+     "value": {
+      "anyOf": [
+       {},
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Value"
+     }
+    },
+    "required": [
+     "value",
+     "label"
+    ],
+    "title": "PropertyValue",
+    "type": "object"
+   },
+   "QueryGraph": {
+    "properties": {
+     "links": {
+      "default": [],
+      "items": {
+       "$ref": "#/components/schemas/AssistantLink"
+      },
+      "title": "Links",
+      "type": "array"
+     },
+     "subjects": {
+      "default": [],
+      "items": {
+       "$ref": "#/components/schemas/AssistantSubject"
+      },
+      "title": "Subjects",
+      "type": "array"
+     }
+    },
+    "title": "QueryGraph",
+    "type": "object"
+   },
+   "QueryProgress": {
+    "properties": {
+     "enriched_relations": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/EnrichedEntitiesRelations"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "id": {
+      "title": "Id",
+      "type": "string"
+     },
+     "max_steps": {
+      "title": "Max Steps",
+      "type": "integer"
+     },
+     "message": {
+      "default": "",
+      "title": "Message",
+      "type": "string"
+     },
+     "progress": {
+      "default": 0,
+      "title": "Progress",
+      "type": "integer"
+     },
+     "relations_steps": {
+      "default": [],
+      "items": {
+       "anyOf": [
+        {
+         "$ref": "#/components/schemas/EntitiesRelations"
+        },
+        {
+         "$ref": "#/components/schemas/Candidates"
+        },
+        {
+         "$ref": "#/components/schemas/EnrichedEntitiesRelations"
+        }
+       ]
+      },
+      "title": "Relations Steps",
+      "type": "array"
+     },
+     "start_time": {
+      "title": "Start Time",
+      "type": "string"
+     }
+    },
+    "required": [
+     "id",
+     "start_time",
+     "max_steps"
+    ],
+    "title": "QueryProgress",
+    "type": "object"
+   },
+   "QueryPropSubQuery": {
+    "properties": {
+     "id": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Id"
+     },
+     "property_id": {
+      "title": "Property Id",
+      "type": "string"
+     },
+     "type": {
+      "const": "query_prop",
+      "default": "query_prop",
+      "title": "Type",
+      "type": "string"
+     }
+    },
+    "required": [
+     "property_id"
+    ],
+    "title": "QueryPropSubQuery",
+    "type": "object"
+   },
+   "RELATION_TYPE": {
+    "enum": [
+     "property",
+     "instance"
+    ],
+    "title": "RELATION_TYPE",
+    "type": "string"
+   },
+   "RETURN_TYPE": {
+    "enum": [
+     "subject",
+     "link",
+     "both"
+    ],
+    "title": "RETURN_TYPE",
+    "type": "string"
+   },
+   "Relation": {
+    "properties": {
+     "entity": {
+      "title": "Entity",
+      "type": "string"
+     },
+     "relation": {
+      "title": "Relation",
+      "type": "string"
+     },
+     "target": {
+      "title": "Target",
+      "type": "string"
+     }
+    },
+    "required": [
+     "entity",
+     "relation",
+     "target"
+    ],
+    "title": "Relation",
+    "type": "object"
+   },
+   "RelationsFound": {
+    "properties": {
+     "id": {
+      "default": 0,
+      "title": "Id",
+      "type": "integer"
+     },
+     "matches": {
+      "items": {
+       "$ref": "#/components/schemas/Match"
+      },
+      "title": "Matches",
+      "type": "array"
+     },
+     "path": {
+      "items": {
+       "type": "string"
+      },
+      "title": "Path",
+      "type": "array"
+     },
+     "subject_id": {
+      "default": "",
+      "title": "Subject Id",
+      "type": "string"
+     },
+     "text": {
+      "default": "",
+      "title": "Text",
+      "type": "string"
+     }
+    },
+    "title": "RelationsFound",
+    "type": "object"
+   },
+   "ResultAttribution": {
+    "properties": {
+     "score": {
+      "default": 0.0,
+      "title": "Score",
+      "type": "number"
+     },
+     "topic_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Topic Id"
+     },
+     "type": {
+      "$ref": "#/components/schemas/ResultAttributionType",
+      "default": "topic"
+     }
+    },
+    "title": "ResultAttribution",
+    "type": "object"
+   },
+   "ResultAttributionType": {
+    "enum": [
+     "topic",
+     "query"
+    ],
+    "title": "ResultAttributionType",
+    "type": "string"
+   },
+   "SparqlQuery": {
+    "properties": {
+     "limit": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": 25,
+      "title": "Limit"
+     },
+     "query": {
+      "title": "Query",
+      "type": "string"
+     },
+     "skip": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": 0,
+      "title": "Skip"
+     }
+    },
+    "required": [
+     "query"
+    ],
+    "title": "SparqlQuery",
+    "type": "object"
+   },
+   "SparseOutLinks": {
+    "properties": {
+     "source": {
+      "$ref": "#/components/schemas/RelationsFound"
+     },
+     "targets": {
+      "items": {
+       "$ref": "#/components/schemas/OutLink"
+      },
+      "title": "Targets",
+      "type": "array"
+     }
+    },
+    "title": "SparseOutLinks",
+    "type": "object"
+   },
+   "StringSubQuery": {
+    "properties": {
+     "id": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Id"
+     },
+     "operator": {
+      "$ref": "#/components/schemas/AssistantStringConstraintType",
+      "default": "contains"
+     },
+     "property_id": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Property Id"
+     },
+     "type": {
+      "const": "string",
+      "default": "string",
+      "title": "Type",
+      "type": "string"
+     },
+     "value": {
+      "default": "",
+      "title": "Value",
+      "type": "string"
+     }
+    },
+    "title": "StringSubQuery",
+    "type": "object"
+   },
+   "Subject": {
+    "properties": {
+     "descendants": {
+      "additionalProperties": {
+       "items": {
+        "$ref": "#/components/schemas/Subject"
+       },
+       "type": "array"
+      },
+      "default": {},
+      "title": "Descendants",
+      "type": "object"
+     },
+     "instance_count": {
+      "default": 0,
+      "title": "Instance Count",
+      "type": "integer"
+     },
+     "label": {
+      "title": "Label",
+      "type": "string"
+     },
+     "properties": {
+      "additionalProperties": {
+       "items": {
+        "$ref": "#/components/schemas/Subject"
+       },
+       "type": "array"
+      },
+      "default": {},
+      "title": "Properties",
+      "type": "object"
+     },
+     "refcount": {
+      "default": 0,
+      "title": "Refcount",
+      "type": "integer"
+     },
+     "spos": {
+      "additionalProperties": {
+       "$ref": "#/components/schemas/Property"
+      },
+      "default": {},
+      "title": "Spos",
+      "type": "object"
+     },
+     "subject_id": {
+      "title": "Subject Id",
+      "type": "string"
+     },
+     "subject_type": {
+      "default": "class",
+      "title": "Subject Type",
+      "type": "string"
+     },
+     "total_descendants": {
+      "default": 0,
+      "title": "Total Descendants",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "subject_id",
+     "label"
+    ],
+    "title": "Subject",
+    "type": "object"
+   },
+   "SubjectLink": {
+    "properties": {
+     "from_id": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "From Id"
+     },
+     "from_subject": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/Subject"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "instance_count": {
+      "default": 0,
+      "title": "Instance Count",
+      "type": "integer"
+     },
+     "label": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Label"
+     },
+     "link_id": {
+      "title": "Link Id",
+      "type": "integer"
+     },
+     "link_type": {
+      "title": "Link Type",
+      "type": "string"
+     },
+     "property_id": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Property Id"
+     },
+     "to_id": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "To Id"
+     },
+     "to_proptype": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "To Proptype"
+     },
+     "to_subject": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/Subject"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     }
+    },
+    "required": [
+     "link_id",
+     "label",
+     "from_id",
+     "link_type",
+     "to_id",
+     "to_proptype",
+     "property_id",
+     "from_subject",
+     "to_subject"
+    ],
+    "title": "SubjectLink",
+    "type": "object"
+   },
+   "SubjectSubQuery": {
+    "properties": {
+     "id": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Id"
+     },
+     "instance_id": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Instance Id"
+     },
+     "instance_label": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Instance Label"
+     },
+     "property_id": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Property Id"
+     },
+     "type": {
+      "const": "subject",
+      "default": "subject",
+      "title": "Type",
+      "type": "string"
+     }
+    },
+    "title": "SubjectSubQuery",
+    "type": "object"
+   },
+   "Topic": {
+    "properties": {
+     "count": {
+      "title": "Count",
+      "type": "integer"
+     },
+     "parent_topic_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Parent Topic Id"
+     },
+     "property_ids": {
+      "items": {
+       "type": "string"
+      },
+      "title": "Property Ids",
+      "type": "array"
+     },
+     "sub_topics": {
+      "items": {
+       "$ref": "#/components/schemas/Topic"
+      },
+      "title": "Sub Topics",
+      "type": "array"
+     },
+     "subjects_ids": {
+      "items": {
+       "type": "string"
+      },
+      "title": "Subjects Ids",
+      "type": "array"
+     },
+     "topic": {
+      "title": "Topic",
+      "type": "string"
+     },
+     "topic_id": {
+      "title": "Topic Id",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "topic_id",
+     "sub_topics",
+     "parent_topic_id",
+     "topic",
+     "count",
+     "subjects_ids",
+     "property_ids"
+    ],
+    "title": "Topic",
+    "type": "object"
+   },
+   "ValidationError": {
+    "properties": {
+     "ctx": {
+      "title": "Context",
+      "type": "object"
+     },
+     "input": {
+      "title": "Input"
+     },
+     "loc": {
+      "items": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "integer"
+        }
+       ]
+      },
+      "title": "Location",
+      "type": "array"
+     },
+     "msg": {
+      "title": "Message",
+      "type": "string"
+     },
+     "type": {
+      "title": "Error Type",
+      "type": "string"
+     }
+    },
+    "required": [
+     "loc",
+     "msg",
+     "type"
+    ],
+    "title": "ValidationError",
+    "type": "object"
+   },
+   "VectorSortDirection": {
+    "enum": [
+     "ascending",
+     "descending"
+    ],
+    "title": "VectorSortDirection",
+    "type": "string"
+   },
+   "VectorSortDistance": {
+    "enum": [
+     "cosine",
+     "euclidean",
+     "manhattan"
+    ],
+    "title": "VectorSortDistance",
+    "type": "string"
+   },
+   "VectorSortInputState": {
+    "properties": {
+     "image": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Image"
+     },
+     "text": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Text"
+     }
+    },
+    "title": "VectorSortInputState",
+    "type": "object"
+   },
+   "VectorSortModality": {
+    "enum": [
+     "image",
+     "text"
+    ],
+    "title": "VectorSortModality",
+    "type": "string"
+   },
+   "VectorSortSubQuery": {
+    "properties": {
+     "direction": {
+      "$ref": "#/components/schemas/VectorSortDirection",
+      "default": "descending"
+     },
+     "distance": {
+      "$ref": "#/components/schemas/VectorSortDistance",
+      "default": "cosine"
+     },
+     "id": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Id"
+     },
+     "input_state": {
+      "$ref": "#/components/schemas/VectorSortInputState"
+     },
+     "modality": {
+      "$ref": "#/components/schemas/VectorSortModality",
+      "default": "image"
+     },
+     "property_id": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Property Id"
+     },
+     "type": {
+      "const": "vector_sort",
+      "default": "vector_sort",
+      "title": "Type",
+      "type": "string"
+     },
+     "vector": {
+      "anyOf": [
+       {
+        "items": {
+         "type": "number"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Vector"
+     }
+    },
+    "title": "VectorSortSubQuery",
+    "type": "object"
+   }
+  }
+ },
+ "info": {
+  "title": "Ontology Provenance API (configuration scoped)",
+  "version": "0.1.0"
+ },
+ "openapi": "3.1.0",
+ "paths": {
+  "/classes/full": {
+   "get": {
+    "operationId": "get_full_classes_classes_full_get",
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/Subject"
+         },
+         "title": "Response Get Full Classes Classes Full Get",
+         "type": "array"
+        }
+       }
+      },
+      "description": "Successful Response"
+     }
+    },
+    "summary": "Get Full Classes"
+   }
+  },
+  "/classes/instances": {
+   "get": {
+    "operationId": "get_named_instance_classes_instances_get",
+    "parameters": [
+     {
+      "in": "query",
+      "name": "cls",
+      "required": true,
+      "schema": {
+       "title": "Cls",
+       "type": "string"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/Subject"
+         },
+         "title": "Response Get Named Instance Classes Instances Get",
+         "type": "array"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Get Named Instance"
+   }
+  },
+  "/classes/instances/properties": {
+   "get": {
+    "operationId": "get_named_instance_properties_classes_instances_properties_get",
+    "parameters": [
+     {
+      "in": "query",
+      "name": "instance_id",
+      "required": true,
+      "schema": {
+       "title": "Instance Id",
+       "type": "string"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "additionalProperties": {
+          "$ref": "#/components/schemas/Property"
+         },
+         "title": "Response Get Named Instance Properties Classes Instances Properties Get",
+         "type": "object"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Get Named Instance Properties"
+   }
+  },
+  "/classes/instances/search": {
+   "get": {
+    "operationId": "get_named_instance_search_classes_instances_search_get",
+    "parameters": [
+     {
+      "in": "query",
+      "name": "cls",
+      "required": true,
+      "schema": {
+       "title": "Cls",
+       "type": "string"
+      }
+     },
+     {
+      "in": "query",
+      "name": "q",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Q"
+      }
+     },
+     {
+      "in": "query",
+      "name": "limit",
+      "required": false,
+      "schema": {
+       "default": 10,
+       "title": "Limit",
+       "type": "integer"
+      }
+     },
+     {
+      "in": "query",
+      "name": "skip",
+      "required": false,
+      "schema": {
+       "default": 0,
+       "title": "Skip",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/Instance"
+         },
+         "title": "Response Get Named Instance Search Classes Instances Search Get",
+         "type": "array"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Get Named Instance Search"
+   }
+  },
+  "/classes/links": {
+   "get": {
+    "operationId": "get_link_classes_links_get",
+    "parameters": [
+     {
+      "in": "query",
+      "name": "link_id",
+      "required": true,
+      "schema": {
+       "title": "Link Id",
+       "type": "string"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "anyOf": [
+          {
+           "$ref": "#/components/schemas/SubjectLink"
+          },
+          {
+           "type": "null"
+          }
+         ],
+         "title": "Response Get Link Classes Links Get"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Get Link"
+   }
+  },
+  "/classes/outlinks": {
+   "get": {
+    "operationId": "get_outlinks_classes_outlinks_get",
+    "parameters": [
+     {
+      "in": "query",
+      "name": "subject_id",
+      "required": true,
+      "schema": {
+       "title": "Subject Id",
+       "type": "string"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/SparseOutLinks"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Get Outlinks"
+   }
+  },
+  "/classes/parents/most_generic": {
+   "post": {
+    "operationId": "get_most_generics_classes_parents_most_generic_post",
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/GeneralizationQuery",
+        "default": {
+         "cls": "",
+         "in_link_ids": [],
+         "out_link_ids": []
+        }
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Subject"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Get Most Generics"
+   }
+  },
+  "/classes/relations": {
+   "get": {
+    "operationId": "get_relations_classes_relations_get",
+    "parameters": [
+     {
+      "in": "query",
+      "name": "q",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Q"
+      }
+     },
+     {
+      "in": "query",
+      "name": "from_id",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "From Id"
+      }
+     },
+     {
+      "in": "query",
+      "name": "to_id",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "To Id"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/SubjectLink"
+         },
+         "title": "Response Get Relations Classes Relations Get",
+         "type": "array"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Get Relations"
+   }
+  },
+  "/classes/roots": {
+   "get": {
+    "operationId": "get_root_classes_classes_roots_get",
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/Subject"
+         },
+         "title": "Response Get Root Classes Classes Roots Get",
+         "type": "array"
+        }
+       }
+      },
+      "description": "Successful Response"
+     }
+    },
+    "summary": "Get Root Classes"
+   }
+  },
+  "/classes/search": {
+   "post": {
+    "operationId": "search_classes_classes_search_post",
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/FuzzyQuery",
+        "default": {
+         "entity_type": "class",
+         "include_thing": true,
+         "limit": 25,
+         "mix_topic_factor": 0.5,
+         "order": "score",
+         "relation_type": "instance",
+         "skip": 0,
+         "type": "both"
+        }
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/FuzzyQueryResults"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Search Classes"
+   }
+  },
+  "/classes/search/assistant": {
+   "post": {
+    "operationId": "get_assistant_results_classes_search_assistant_post",
+    "parameters": [
+     {
+      "in": "query",
+      "name": "q",
+      "required": false,
+      "schema": {
+       "default": "working field of person",
+       "title": "Q",
+       "type": "string"
+      }
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/QueryGraph"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Operations"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Get Assistant Results"
+   }
+  },
+  "/classes/search/llm": {
+   "get": {
+    "operationId": "get_llm_results_classes_search_llm_get",
+    "parameters": [
+     {
+      "in": "query",
+      "name": "q",
+      "required": false,
+      "schema": {
+       "default": "working field of person",
+       "title": "Q",
+       "type": "string"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/QueryProgress"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Get Llm Results"
+   }
+  },
+  "/classes/search/llm/examples": {
+   "get": {
+    "operationId": "get_llm_examples_classes_search_llm_examples_get",
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/EnrichedEntitiesRelations"
+         },
+         "title": "Response Get Llm Examples Classes Search Llm Examples Get",
+         "type": "array"
+        }
+       }
+      },
+      "description": "Successful Response"
+     }
+    },
+    "summary": "Get Llm Examples"
+   }
+  },
+  "/classes/search/llm/running": {
+   "get": {
+    "operationId": "get_llm_results_running_classes_search_llm_running_get",
+    "parameters": [
+     {
+      "in": "query",
+      "name": "query_id",
+      "required": true,
+      "schema": {
+       "title": "Query Id",
+       "type": "string"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "anyOf": [
+          {
+           "$ref": "#/components/schemas/QueryProgress"
+          },
+          {
+           "type": "null"
+          }
+         ],
+         "title": "Response Get Llm Results Running Classes Search Llm Running Get"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Get Llm Results Running"
+   }
+  },
+  "/classes/subclasses": {
+   "get": {
+    "operationId": "get_class_classes_subclasses_get",
+    "parameters": [
+     {
+      "in": "query",
+      "name": "cls",
+      "required": true,
+      "schema": {
+       "title": "Cls",
+       "type": "string"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/Subject"
+         },
+         "title": "Response Get Class Classes Subclasses Get",
+         "type": "array"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Get Class"
+   }
+  },
+  "/classes/subclasses/search": {
+   "post": {
+    "operationId": "get_class_search_classes_subclasses_search_post",
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/FuzzyQuery",
+        "default": {
+         "entity_type": "class",
+         "include_thing": true,
+         "limit": 25,
+         "mix_topic_factor": 0.5,
+         "order": "score",
+         "relation_type": "instance",
+         "skip": 0,
+         "type": "both"
+        }
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/FuzzyQueryResults"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Get Class Search"
+   }
+  },
+  "/classes/subjects": {
+   "get": {
+    "operationId": "get_subject_classes_subjects_get",
+    "parameters": [
+     {
+      "in": "query",
+      "name": "subject_id",
+      "required": true,
+      "schema": {
+       "title": "Subject Id",
+       "type": "string"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "anyOf": [
+          {
+           "$ref": "#/components/schemas/Subject"
+          },
+          {
+           "type": "null"
+          }
+         ],
+         "title": "Response Get Subject Classes Subjects Get"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Get Subject"
+   }
+  },
+  "/management/ontology": {
+   "post": {
+    "operationId": "load_ontology_management_ontology_post",
+    "requestBody": {
+     "content": {
+      "multipart/form-data": {
+       "schema": {
+        "$ref": "#/components/schemas/Body_load_ontology_management_ontology_post"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Load Ontology"
+   }
+  },
+  "/nlp/embeddings": {
+   "get": {
+    "operationId": "nlp_embeddings_nlp_embeddings_get",
+    "parameters": [
+     {
+      "in": "query",
+      "name": "query",
+      "required": true,
+      "schema": {
+       "title": "Query",
+       "type": "string"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "additionalProperties": true,
+         "title": "Response Nlp Embeddings Nlp Embeddings Get",
+         "type": "object"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Nlp Embeddings"
+   }
+  },
+  "/nlp/embeddings/closest": {
+   "post": {
+    "operationId": "nlp_embeddings_closest_nlp_embeddings_closest_post",
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/ClosestRequest"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/ClosestResponse"
+         },
+         "title": "Response Nlp Embeddings Closest Nlp Embeddings Closest Post",
+         "type": "array"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Nlp Embeddings Closest"
+   }
+  },
+  "/nlp/embeddings/manifold": {
+   "post": {
+    "operationId": "nlp_embeddings_manifold_nlp_embeddings_manifold_post",
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/ManifoldRequest"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "items": {
+           "type": "number"
+          },
+          "type": "array"
+         },
+         "title": "Response Nlp Embeddings Manifold Nlp Embeddings Manifold Post",
+         "type": "array"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Nlp Embeddings Manifold"
+   }
+  },
+  "/ontology/config": {
+   "get": {
+    "operationId": "get_ontology_config_ontology_config_get",
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/ConfigCollection"
+        }
+       }
+      },
+      "description": "Successful Response"
+     }
+    },
+    "summary": "Get Ontology Config"
+   }
+  },
+  "/search/dim-reduce": {
+   "post": {
+    "operationId": "dim_reduce_search_dim_reduce_post",
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/Body_dim_reduce_search_dim_reduce_post"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "additionalProperties": true,
+          "type": "object"
+         },
+         "title": "Response Dim Reduce Search Dim Reduce Post",
+         "type": "array"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Dim Reduce"
+   }
+  },
+  "/search/encode/image": {
+   "post": {
+    "operationId": "encode_image_search_encode_image_post",
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "title": "Image",
+        "type": "string"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/DataTensorResp"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Encode Image"
+   }
+  },
+  "/search/encode/text": {
+   "post": {
+    "operationId": "encode_text_search_encode_text_post",
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "title": "Text",
+        "type": "string"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/DataTensorResp"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Encode Text"
+   }
+  },
+  "/search/wikimedia/proxy": {
+   "get": {
+    "operationId": "wikimedia_proxy_search_wikimedia_proxy_get",
+    "parameters": [
+     {
+      "in": "query",
+      "name": "url",
+      "required": true,
+      "schema": {
+       "title": "Url",
+       "type": "string"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Wikimedia Proxy"
+   }
+  },
+  "/sparql": {
+   "get": {
+    "operationId": "sparql_query_get_sparql_get",
+    "parameters": [
+     {
+      "in": "query",
+      "name": "query",
+      "required": true,
+      "schema": {
+       "title": "Query",
+       "type": "string"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "additionalProperties": true,
+         "title": "Response Sparql Query Get Sparql Get",
+         "type": "object"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Sparql Query Get"
+   },
+   "post": {
+    "operationId": "sparql_query_sparql_post",
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/SparqlQuery"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "additionalProperties": true,
+          "type": "object"
+         },
+         "title": "Response Sparql Query Sparql Post",
+         "type": "array"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Sparql Query"
+   }
+  },
+  "/topics/root": {
+   "get": {
+    "operationId": "get_topics_root_topics_root_get",
+    "parameters": [
+     {
+      "in": "query",
+      "name": "force_initialize",
+      "required": false,
+      "schema": {
+       "default": false,
+       "title": "Force Initialize",
+       "type": "boolean"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Topic"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Get Topics Root"
+   }
+  }
+ }
+}

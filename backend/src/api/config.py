@@ -147,7 +147,9 @@ def get_manman(connection: HTTPConnection) -> ManMan:
     if config_id is None or config_id not in REGISTRY:
         reason = f"Unknown configuration '{config_id}'"
         if connection.scope["type"] == "websocket":
-            raise WebSocketException(code=status.WS_1008_POLICY_VIOLATION, reason=reason)
+            raise WebSocketException(
+                code=status.WS_1008_POLICY_VIOLATION, reason=reason
+            )
         raise HTTPException(status_code=404, detail=reason)
     return REGISTRY.get(config_id)
 
