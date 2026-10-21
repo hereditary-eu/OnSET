@@ -1,3 +1,5 @@
+from functools import lru_cache
+
 from pydantic import BaseModel, Field
 from rdflib import Graph, URIRef, Literal
 from model import (
@@ -15,7 +17,7 @@ import traceback
 from rdflib.plugins.parsers.notation3 import BadSyntax
 from eval_config import MultimodalConfig
 
-from utils import wrap_iri
+from utils import to_prefix, wrap_iri
 
 
 class Prefix(BaseModel):
@@ -65,6 +67,11 @@ class OntologyConfig(BaseModel):
         """
         """
     )
+    save_named_individuals: bool = Field(
+        True,
+        title="Save Named Individuals",
+        description="Whether to save named individuals in the ontology",
+    )
     multimodal_config: MultimodalConfig = Field(
         MultimodalConfig(),
         title="Multimodal Config",
@@ -74,6 +81,8 @@ class OntologyConfig(BaseModel):
         {
             "rdfs": "http://www.w3.org/2000/01/rdf-schema#",
             "owl": "http://www.w3.org/2002/07/owl#",
+            "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
+            "xsd": "http://www.w3.org/2001/XMLSchema#",
         },
         title="Additional Namespaces",
         description="Additional namespaces to be used in the ontology",
@@ -111,6 +120,15 @@ class OntologyManager:
                 print(f"Error parsing ontology additions: {bse}")
                 raise bse
         self.__label_cache: dict[str, str] = {}
+
+    @lru_cache
+    def namespaces(self) -> dict[str, str]:
+        ns_man = dict(self.onto.namespace_manager.namespaces())
+        if self.config.additional_namespaces is not None:
+            ns_man.update(self.config.additional_namespaces)
+        if self.addtional_graph is not None:
+            ns_man.update(dict(self.addtional_graph.namespace_manager.namespaces()))
+        return ns_man
 
     def __query(self, q: str):
         res = list(self.onto.query(q))
@@ -408,7 +426,7 @@ OPTIONAL {{?obj rdfs:label ?obj_lbl.}}
             Property(values=[PropertyValue(value=col_ref, label=None)]),
         )
         subject = Subject(
-            subject_id=col_ref,
+            subject_id=to_prefix(col_ref, self.namespaces()),
             label=label_prop.first_value(),
             spos=outgoing_edges,
             subject_type=subject_type,
@@ -422,6 +440,9 @@ OPTIONAL {{?obj rdfs:label ?obj_lbl.}}
                 )
                 for prop_type in self.config.property_types
             }
+            for prop_type, props in subject.properties.items():
+                for prop in props:
+                    prop.subject_id = to_prefix(prop.subject_id, self.namespaces())
         return subject
         # refs = self.refcount(col_ref)
 

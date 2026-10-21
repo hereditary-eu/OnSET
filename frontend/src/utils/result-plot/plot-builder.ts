@@ -17,7 +17,32 @@ function cartesianProduct<T>(arr: T[][]): T[][] {
         }).reduce(function (a, b) { return a.concat(b) }, [])
     }, [[]])
 }
-export function bucketizeData(props: AnalyzedProp[], n_buckets = 20) {
+const MAX_DISCRETE_BUCKETS = 20
+const MAX_CONTINUOUS_BUCKETS = 50
+/**
+ * Number of bins by Scott's rule: bin width h = 3.49 * sd * n^(-1/3), so the bins get
+ * narrower the more data points there are. Clamped to [1, max_buckets].
+ */
+export function scottBucketCount(data: number[], max_buckets = MAX_CONTINUOUS_BUCKETS) {
+    const n = data.length
+    if (n < 2) {
+        return 1
+    }
+    const mean = data.reduce((acc, val) => acc + val, 0) / n
+    const sd = Math.sqrt(data.reduce((acc, val) => acc + (val - mean) ** 2, 0) / (n - 1))
+    const range = getMax(data) - getMin(data)
+    if (!(sd > 0) || !(range > 0)) {
+        return 1
+    }
+    const width = 3.49 * sd * Math.pow(n, -1 / 3)
+    return Math.max(1, Math.min(max_buckets, Math.ceil(range / width)))
+}
+/**
+ * Buckets of each prop: the most common values of discrete props, equal-width bins of
+ * continuous props. `n_buckets` fixes the number of continuous bins, null picks it by
+ * Scott's rule.
+ */
+export function bucketizeData(props: AnalyzedProp[], n_buckets: number | null = 20) {
     let buckets: Record<string, BucketSpecifier[]> = {}
 
     for (let i = 0; i < props.length; i++) {
@@ -35,12 +60,16 @@ export function bucketizeData(props: AnalyzedProp[], n_buckets = 20) {
                 }
                 let min = getMin(continous_data)
                 let max = getMax(continous_data)
-                let step = (max - min) / n_buckets
-                for (let i = 0; i < n_buckets; i++) {
+                let n_continuous = max > min ? (n_buckets ?? scottBucketCount(continous_data)) : 1
+                let step = (max - min) / n_continuous
+                for (let i = 0; i < n_continuous; i++) {
                     let lower = min + i * step
-                    let upper = min + (i + 1) * step
-
-                    bucket_prop.push(new ContinuousBucketSpecifier(lower, upper, continous_data.filter((val) => val >= lower && val < upper).length, prop))
+                    // the last bin is closed so that it contains the maximum
+                    let last = i == n_continuous - 1
+                    let upper = last ? max : min + (i + 1) * step
+                    let bucket = new ContinuousBucketSpecifier(lower, upper, 0, prop, last, step)
+                    bucket.count = continous_data.filter((val) => bucket.inside(val)).length
+                    bucket_prop.push(bucket)
                 }
                 break
             default:
@@ -54,7 +83,7 @@ export function bucketizeData(props: AnalyzedProp[], n_buckets = 20) {
                     return acc
                 }, {} as Record<string, number>) as Record<string, number>
                 let sorted_keys = Object.keys(value_counts).sort((a, b) => value_counts[b] - value_counts[a])
-                bucket_prop.push(...sorted_keys.splice(0, n_buckets).map((key) => {
+                bucket_prop.push(...sorted_keys.splice(0, n_buckets ?? MAX_DISCRETE_BUCKETS).map((key) => {
                     return new DiscreteBucketSpecifier(key, value_counts[key], prop)
                 }))
                 break
@@ -167,7 +196,7 @@ export function buildChartTraces(analyzed_props: AnalyzedProp[], result_set: Rec
                     }
                 }
             } as Plotly.Layout
-            let buckets = bucketizeData(analyzed_props)
+            let buckets = bucketizeData(analyzed_props, null)
             bar_trace.x = buckets[prop.query_id].map((bucket) => bucket.display())
             bar_trace.y = buckets[prop.query_id].map((bucket) => bucket.count)
             bar_trace.marker = {
@@ -293,7 +322,8 @@ export function combineTraces(caches: PlotCacheEntry[]) {
     let chart_options = caches[0].chart_options
     switch (guiding_cache.chart_mode) {
         case ChartMode.BAR:
-            let combined_buckets = bucketizeData(combined_props)
+            // bins over the data of all caches, so the previous and current counts line up
+            let combined_buckets = bucketizeData(combined_props, null)
             for (let i = 0; i < caches.length; i++) {
                 let cache = caches[i]
                 let prop = combined_props[0]

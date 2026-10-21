@@ -362,44 +362,54 @@ class TopicInitator:
                 )
 
                 session.commit()
-                named_individuals = self.guidance_man.oman.get_named_individuals(
-                    cls.subject_id
-                )
-                # cls_it.set_description(
-                #     f"{cls.label} with {len(named_individuals)} named individuals"
-                # )
-
-                # for ne in named_individuals:
-                #     existing_individual = session.execute(
-                #         select(SubjectInDB)
-                #         .where(
-                #             SubjectInDB.subject_id == ne.subject_id,
-                #             SubjectInDB.onto_hash == self.guidance_man.identifier,
-                #         )
-                #         .limit(1)
-                #     ).first()
-                #     if (
-                #         ne.subject_id in self.all_classes.keys()
-                #         or existing_individual is not None
-                #     ):
-                #         # print(f"Named individual {ne.subject_id} is a class, skipping")
-                #         continue
-                #     if ne.subject_id in named_individuals_ids:
-                #         named_individuals_ids[ne.subject_id].parent_id = cls.subject_id
-                #         continue
-                #     ne_desc = f"{ne.label} is a {cls.label}."
-                #     ne_embedding = self.guidance_man.embedding_model.encode(ne_desc)
-                #     named_individuals_ids[ne.subject_id] = SubjectInDB(
-                #         subject_id=ne.subject_id,
-                #         embedding=ne_embedding,
-                #         label=ne.label if ne.label is not None else ne.subject_id,
-                #         onto_hash=self.guidance_man.identifier,
-                #         parent_id=cls.subject_id if len(cls.subject_id) > 0 else None,
-                #         subject_type=ne.subject_type,
-                #         instance_count=ne.instance_count,
-                #     )
-                #     session.add(named_individuals_ids[ne.subject_id])
-                #     session.commit()
+                named_individuals = []
+                try:
+                    named_individuals = self.guidance_man.oman.get_named_individuals(
+                        cls.subject_id
+                    )
+                except Exception as e:
+                    print(
+                        f"Error occurred while fetching named individuals: {e}, for class {cls.subject_id}"
+                    )
+                if self.guidance_man.oman.config.save_named_individuals:
+                    cls_it.set_description(
+                        f"{cls.label} with {len(named_individuals)} named individuals"
+                    )
+                    for ne in named_individuals:
+                        existing_individual = session.execute(
+                            select(SubjectInDB)
+                            .where(
+                                SubjectInDB.subject_id == ne.subject_id,
+                                SubjectInDB.onto_hash == self.guidance_man.identifier,
+                            )
+                            .limit(1)
+                        ).first()
+                        if (
+                            ne.subject_id in self.all_classes.keys()
+                            or existing_individual is not None
+                        ):
+                            # print(f"Named individual {ne.subject_id} is a class, skipping")
+                            continue
+                        if ne.subject_id in named_individuals_ids:
+                            named_individuals_ids[
+                                ne.subject_id
+                            ].parent_id = cls.subject_id
+                            continue
+                        ne_desc = f"{ne.label} is a {cls.label}."
+                        ne_embedding = self.guidance_man.embedding_model.encode(ne_desc)
+                        named_individuals_ids[ne.subject_id] = SubjectInDB(
+                            subject_id=ne.subject_id,
+                            embedding=ne_embedding,
+                            label=ne.label if ne.label is not None else ne.subject_id,
+                            onto_hash=self.guidance_man.identifier,
+                            parent_id=cls.subject_id
+                            if len(cls.subject_id) > 0
+                            else None,
+                            subject_type=ne.subject_type,
+                            instance_count=ne.instance_count,
+                        )
+                        session.add(named_individuals_ids[ne.subject_id])
+                        session.commit()
             for cls in tqdm(all_classes, desc="Saving relations"):
                 for prop in cls.properties.keys():
                     for p in cls.properties[prop]:

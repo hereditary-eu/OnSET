@@ -137,16 +137,16 @@ const linkSelectDone = (evt: LinkEditEvent) => {
     ui_state.sublink_event = null
     ui_state.attaching_display = false
     ui_state.attaching_event = null
-    if (evt.success) {
-        ui_state.editor_mode = EditorMode.EDIT
-        store.state = RepositoryState.STABLE
-        regenerateQuery()
-    } else {
+    if (!evt.success) {
         store.removeLink(evt.link)
         if (evt.side != OpenEventType.LINK) {
             store.removeNode(evt.node)
         }
     }
+    // also when cancelled: an EDITING store is ignored by the query, history and change tracking
+    ui_state.editor_mode = EditorMode.EDIT
+    store.state = RepositoryState.STABLE
+    regenerateQuery()
 }
 const scroll_box = (evt: WheelEvent) => {
     console.log('scroll_box', evt)

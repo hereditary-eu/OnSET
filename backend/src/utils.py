@@ -99,8 +99,18 @@ def escape_sparql_var(
     return var
 
 
+def to_prefix(iri: str, prefix_map: dict[str, str]) -> str:
+    unwrapped_iri = iri[1:-1] if iri.startswith("<") and iri.endswith(">") else iri
+    for prefix, ns in prefix_map.items():
+        if unwrapped_iri.startswith(ns):
+            return f"{prefix}:{unwrapped_iri[len(ns) :]}"
+    return iri
+
+
 def wrap_iri(s: str) -> str:
-    if s.startswith("http://") or s.startswith("https://") or ":" not in s:
+    if (
+        s.startswith("http://") or s.startswith("https://") or ":" not in s
+    ) and not s.startswith("<"):
         return f"<{s}>"
     return s
 

@@ -226,6 +226,10 @@ class GuidanceManager:
     def search_fuzzy(self, query: FuzzyQuery):
         with Session(self.engine) as session:
             query_embedding = self.__embed_query(query, session)
+            if query_embedding is not None and isinstance(
+                query_embedding, torch.Tensor
+            ):
+                query_embedding = query_embedding.cpu().numpy()
 
             results: list[FuzzyQueryResult] = []
             if query.type == RETURN_TYPE.SUBJECT or query.type == RETURN_TYPE.BOTH:
