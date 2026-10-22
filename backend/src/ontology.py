@@ -131,6 +131,12 @@ class OntologyManager:
         return ns_man
 
     def __query(self, q: str):
+        # add prefixes to the query
+        prefixes = "\n".join(
+            [f"PREFIX {prefix}: <{ns}>" for prefix, ns in self.namespaces().items()]
+        )
+        q = prefixes + "\n" + q
+        # print("Querying:", q)
         res = list(self.onto.query(q))
         if self.addtional_graph is not None:
             add_res = list(self.addtional_graph.query(q))
@@ -295,6 +301,7 @@ class OntologyManager:
         return label_candidates
 
     def outgoing_edges_for(self, cls: str, edges: list[str] = [], limit=128):
+        cls = wrap_iri(cls)
         if cls.startswith("_"):
             print("Skipping", cls)
             return {}
@@ -354,6 +361,7 @@ OPTIONAL {{?obj rdfs:label ?obj_lbl.}}
     def properties_for(
         self, cls: str, property_type: str = "ObjectProperty", n_props=None
     ) -> list[Subject]:
+        cls = wrap_iri(cls)
         if cls.startswith("_"):
             print("Skipping", cls)
             return []
@@ -402,11 +410,10 @@ OPTIONAL {{?obj rdfs:label ?obj_lbl.}}
         return [prop[0].n3(self.onto.namespace_manager) for prop in open_properties]
 
     def enrich_subject(
-        self, cls: str | None, subject_type="class", load_properties=False
+        self, cls: str | URIRef | None, subject_type="class", load_properties=False
     ):
         if cls is None:
             return None
-        cls = wrap_iri(cls)
         col_ref = cls.n3(self.onto.namespace_manager) if hasattr(cls, "n3") else cls
 
         # print("Enriching", col_ref)

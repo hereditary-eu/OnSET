@@ -54,6 +54,8 @@ class ManMan:
         )
         self.config.ontology_extension = db_config.ontology_extension
         self.config.save_named_individuals = db_config.save_named_individuals
+        if db_config.additional_namespaces:
+            self.config.additional_namespaces.update(db_config.additional_namespaces)
         self.ontology_manager = OntologyManager(self.config, self.graph)
         # initialised lazily by GET /classes/outlinks
         self.dataset_manager = DatasetManager(self.ontology_manager)
