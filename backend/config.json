@@ -29,6 +29,9 @@
         "    \trdfs:domain\towl:Thing ;",
         "        rdfs:range\t<https://w3id.org/rdf-tensor/datatypes#NumericDataTensor> ."
       ],
+      "additional_namespaces": {
+        "dbo": "http://dbpedia.org/ontology/"
+      },
       "multimodal_config": {
         "encoding_model": "clip-ViT-B-32",
         "image_vector_properties": [

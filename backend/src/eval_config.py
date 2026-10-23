@@ -86,6 +86,7 @@ class EvalConfig(BaseModel):
     multimodal_config: MultimodalConfig | None = None
     agent: AgentConfig = Field(default_factory=AgentConfig)
     save_named_individuals: bool = True
+    additional_namespaces: dict[str, str] = Field(default_factory=dict)
 
     @field_validator("ontology_extension", mode="before")
     @classmethod
