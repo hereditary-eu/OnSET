@@ -37,7 +37,7 @@ ENV PATH="/root/.local/bin/:$PATH"
 WORKDIR /app
 ADD pyproject.toml /app
 ADD uv.lock /app
-RUN --mount=type=cache,target=/root/.cache CMAKE_ARGS="-DGGML_CUDA=on  -DLLAVA_BUILD=off" uv sync  --optional cuda
+RUN --mount=type=cache,target=/root/.cache CMAKE_ARGS="-DGGML_CUDA=on  -DLLAVA_BUILD=off" uv sync  --extra cuda
 
 WORKDIR /app
 
