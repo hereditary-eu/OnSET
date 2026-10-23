@@ -109,7 +109,17 @@ export function analyzeProps(prop: QueryProp, result_set: Record<string, any>[])
         prop_type = PropType.VECTOR
         prop_specific_type = PropSpecificType.VECTOR
     } else if (prop_data.length > 0) {
-        if (typeof prop_data[0] == 'number') {
+        let is_number = typeof prop_data[0] == 'number'
+        try {
+            // try to convert to number
+            parseFloat(prop_data[0])
+            result_set.forEach((row) => {
+                row[query_id] = parseFloat(row[query_id])
+            })
+            is_number = true
+        } catch (error) {
+        }
+        if (is_number) {
             prop_type = PropType.CONTINOUS
             prop_specific_type = PropSpecificType.NUMBER
         } else {
@@ -133,7 +143,7 @@ export function analyzeProps(prop: QueryProp, result_set: Record<string, any>[])
         query_id
     } as AnalyzedProp
 }
-export type TraceData = Plotly.ScatterData | Plotly.BarData | Plotly.HeatmapData 
+export type TraceData = Plotly.ScatterData | Plotly.BarData | Plotly.HeatmapData
 export interface BuildTrace {
     trace: TraceData
     chart_mode: ChartMode
