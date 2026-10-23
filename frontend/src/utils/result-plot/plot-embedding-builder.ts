@@ -28,11 +28,13 @@ export function buildEmbeddingPlotData(analyzed_props: AnalyzedProp[], result_se
             let scale = d3.scalePoint<string>(unique_values, [0, 1])
             colors = color_values.map(v => cmap(scale(v)))
         } else if (color_prop.prop_type == PropType.CONTINOUS) {
+            color_values = color_values.map(v => parseFloat(v))
             let min = Math.min(...color_values)
             let max = Math.max(...color_values)
             let scale = d3.scaleLinear([min, max], [0, 1])
             colors = color_values.map(v => cmap(scale(v)))
         }
+        console.log("Color values", color_values, "color prop", color_prop, "colors", colors)
     }
 
     let chart_options = {

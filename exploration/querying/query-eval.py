@@ -6,16 +6,15 @@ import numpy as np
 import sys
 import os
 
-sys.path.insert(0, os.path.abspath("../.."))
+sys.path.insert(0, os.path.abspath("../../"))
 sys.path.append(os.path.abspath("../../backend/src"))
-sys.path.append(os.path.abspath(""))
 
 import networkx as nx
 from rdflib.plugins.stores.sparqlstore import SPARQLStore
 
-from ontology import OntologyManager, OntologyConfig, Graph
-from explorative.explorative_support import GuidanceManager
-from explorative.llm_query import (
+from backend.src.ontology import OntologyManager, OntologyConfig, Graph
+from backend.src.explorative.explorative_support import GuidanceManager
+from backend.src.explorative.llm_query import (
     EnrichedEntitiesRelations,
     EntitiesRelations,
     LLMQuery,
@@ -29,7 +28,7 @@ import networkx as nx
 
 import argparse
 import glob
-from eval_config import ALL_CONFIG_MAP, EvalConfig
+from backend.src.eval_config import ALL_CONFIG_MAP, EvalConfig
 # %%
 
 parser = argparse.ArgumentParser()
@@ -214,5 +213,5 @@ if __name__ == "__main__":
         generated_queries.iloc[:n_samples], llm_query=query_man, outfile=output_file
     )
     results.to_csv(output_file)
-    
+
     print(f"Done, esults saved to {output_file}")
