@@ -15,7 +15,8 @@ RUN conda tos accept
 RUN conda install \
     nvidia/label/cuda-${CUDA_VERSION}::cuda-nvcc \
     nvidia/label/cuda-${CUDA_VERSION}::libcublas-dev \
-    nvidia/label/cuda-${CUDA_VERSION}::cuda-cudart-dev
+    nvidia/label/cuda-${CUDA_VERSION}::cuda-cudart-dev \
+    nvidia/label/cuda-${CUDA_VERSION}::cuda-cudart
 
 # Force gcc/ld to use the system toolchain, not conda's (conda's binutils'
 # ld is incompatible with the Ubuntu glibc and causes
