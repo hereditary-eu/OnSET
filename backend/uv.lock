@@ -1,5 +1,5 @@
 version = 1
-revision = 5
+revision = 3
 requires-python = "==3.13.*"
 resolution-markers = [
     "sys_platform == 'win32'",
@@ -3193,8 +3193,6 @@ dependencies = [
     { name = "baycomp" },
     { name = "bertopic" },
     { name = "cachetools" },
-    { name = "cudf-cu13" },
-    { name = "cuml-cu13" },
     { name = "fastapi", extra = ["standard"] },
     { name = "ipywidgets" },
     { name = "json-repair" },
@@ -3238,6 +3236,10 @@ dependencies = [
 ]
 
 [package.optional-dependencies]
+cuda = [
+    { name = "cudf-cu13" },
+    { name = "cuml-cu13" },
+]
 dev = [
     { name = "tuna" },
 ]
@@ -3253,8 +3255,8 @@ requires-dist = [
     { name = "baycomp", specifier = ">=1.0.3" },
     { name = "bertopic" },
     { name = "cachetools" },
-    { name = "cudf-cu13", specifier = ">=26.10.0", index = "https://pypi.nvidia.com/" },
-    { name = "cuml-cu13", specifier = ">=26.10.0", index = "https://pypi.nvidia.com/" },
+    { name = "cudf-cu13", marker = "extra == 'cuda'", specifier = ">=26.10.0", index = "https://pypi.nvidia.com/" },
+    { name = "cuml-cu13", marker = "extra == 'cuda'", specifier = ">=26.10.0", index = "https://pypi.nvidia.com/" },
     { name = "fastapi" },
     { name = "fastapi", extras = ["standard"] },
     { name = "ipywidgets" },
@@ -3297,7 +3299,7 @@ requires-dist = [
     { name = "transformers" },
     { name = "tuna", marker = "extra == 'dev'", specifier = ">=0.5.11" },
 ]
-provides-extras = ["dev"]
+provides-extras = ["dev", "cuda"]
 
 [package.metadata.requires-dev]
 dev = [

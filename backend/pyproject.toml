@@ -50,12 +50,11 @@ dependencies = [
     "pingouin>=0.5.5",
     "pillow>=12.3.0",
     "simplejson>=4.2.0",
-    "cuml-cu13>=26.10.0",
-    "cudf-cu13>=26.10.0",
 ]
 
 [project.optional-dependencies]
 dev = ["tuna>=0.5.11"]
+cuda = ["cuml-cu13>=26.10.0", "cudf-cu13>=26.10.0"]
 
 [tool.uv.sources]
 torch = [

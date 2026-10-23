@@ -18,6 +18,7 @@
         "flatted": "^3.4.4",
         "pinia": "^4.1.0",
         "plotly.js": "^4.1.2",
+        "plotly.js-dist": "^4.1.2",
         "plotly.js-dist-min": "^4.1.2",
         "prismjs": "^1.30.0",
         "three": "^0.186.1",
@@ -906,7 +907,7 @@
 
     "plotly.js": ["plotly.js@4.1.2", "", { "dependencies": { "@plotly/d3": "3.8.2", "@plotly/d3-sankey": "0.12.3", "@plotly/d3-sankey-circular": "0.33.1", "@plotly/point-cluster": "^3.1.9", "@plotly/regl": "^2.1.2", "@turf/area": "^7.4.0", "@turf/centroid": "^7.4.0", "@turf/meta": "^7.4.0", "@types/d3": "^3.5.53", "base64-arraybuffer": "^1.0.2", "country-iso-search": "^0.1.2", "culori": "^4.0.2", "d3-force": "^1.2.1", "d3-format": "^1.4.5", "d3-geo": "^1.12.1", "d3-geo-projection": "^2.9.0", "d3-hierarchy": "^1.1.9", "d3-interpolate": "^3.0.1", "d3-time": "^1.1.0", "d3-time-format": "^2.3.0", "fast-isnumeric": "^1.1.4", "gl-mat4": "^1.2.0", "gl-text": "^1.4.0", "has-hover": "^1.0.1", "has-passive-events": "^1.0.0", "is-mobile": "^5.0.0", "maplibre-gl": "6.11.2", "mouse-event-offset": "^3.0.2", "native-promise-only": "^0.8.1", "parse-svg-path": "^0.2.0", "point-in-polygon": "^1.1.0", "polybooljs": "^1.2.2", "probe-image-size": "^7.4.0", "regl-error2d": "^2.0.12", "regl-line2d": "^3.1.4", "regl-scatter2d": "^3.4.0", "regl-splom": "^1.0.14", "strongly-connected-components": "^1.0.1", "svg-path-sdf": "^2.0.0", "topojson-client": "^3.1.0", "webgl-context": "^2.2.0", "world-calendars": "^1.0.4" } }, "sha512-+0CpavZ4QofYgr1OBigX1Ut+CyMkx74gQWiWRBNoAHwBnyrOjKaLq7UWWa0YFArYF3TMx50HvnUh2RjVatedzg=="],
 
-    "plotly.js-dist": ["plotly.js-dist@2.35.3", "", {}, "sha512-dqB9+FUyBFZN04xWnZoYwaeeF4Jj9T/m0CHYmoozmPC3R4Dy0TRJsHgbRVLPxgYQqodzniVUj17+2wmJuGaZAg=="],
+    "plotly.js-dist": ["plotly.js-dist@4.1.2", "", {}, "sha512-QLtJFLtEB6QT8uhpkEBjY1LEiyaPFE9Wi+jQPpmqbMs+sGKIfB9OPXv51EQAyk8Z/NH9RxDMpA/ueLJnXR7NEg=="],
 
     "plotly.js-dist-min": ["plotly.js-dist-min@4.1.2", "", {}, "sha512-VSmS9KVNun16S8qFYYp9LlL/XBby4ueeGqB+K9AqRCVsup8dSpGULap4UyR1f2mz4pV3qjWp1sR5chwLgIKPoQ=="],
 
@@ -1187,6 +1188,8 @@
     "yummies": ["yummies@7.20.1", "", { "dependencies": { "class-variance-authority": "^0.7.1", "clsx": "^2.1.1", "dayjs": "^1.11.21", "dompurify": "^3.4.11", "nanoid": "^5.1.15", "tailwind-merge": "^3.6.0" }, "peerDependencies": { "mobx": "^6.12.4", "react": "^18 || ^19" }, "optionalPeers": ["mobx", "react"] }, "sha512-H/AxRy+SjVlfpeI0TkiVkU/M2n+XpR1XGt5yS5r7GsP9Iz3mr17dbq9DLW18PmMlyKO78+yvH/9Z9VAnVuV3og=="],
 
     "@choojs/findup/commander": ["commander@2.20.3", "", {}, "sha512-GpVkmM8vF2vQUkj2LvZmD35JxeJOLCwJ9cUkugyk2nuhbv3+mJvpLYYt+0+USMxE+oj+ey/lJEnhZw75x/OMcQ=="],
+
+    "@clalarco/vue3-plotly/plotly.js-dist": ["plotly.js-dist@2.35.3", "", {}, "sha512-dqB9+FUyBFZN04xWnZoYwaeeF4Jj9T/m0CHYmoozmPC3R4Dy0TRJsHgbRVLPxgYQqodzniVUj17+2wmJuGaZAg=="],
 
     "@jridgewell/gen-mapping/@jridgewell/sourcemap-codec": ["@jridgewell/sourcemap-codec@1.5.5", "", {}, "sha512-cYQ9310grqxueWbl+WuIUIaiUaDcj7WOq5fVhEljNVgRfOUhY9fy2zTvfoqWsnebh8Sl70VScFbICvJnLKB0Og=="],
 

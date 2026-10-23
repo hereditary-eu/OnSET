@@ -124,6 +124,7 @@ class GraphEditorTools(ToolCollection):
         class_uri: str | None = None,
         subject_id: str | None = None,
         side: Literal["source", "target"] | None = None,
+        include_thing: bool = False,
     ) -> list[LinkCandidate]:
         """Search the ontology for properties (links) connecting a class to other classes. The side determines whether the class is the domain (source) or range (target) of the property.
 
@@ -161,7 +162,7 @@ class GraphEditorTools(ToolCollection):
                         from_id=class_uri if side == "source" else None,
                         to_id=class_uri if side == "target" else None,
                         limit=self.retrieve_k,
-                        include_thing=True,
+                        include_thing=include_thing,
                     )
                 ).results
                 for side in ["source", "target"]
@@ -175,7 +176,7 @@ class GraphEditorTools(ToolCollection):
                     from_id=class_uri if side == "source" else None,
                     to_id=class_uri if side == "target" else None,
                     limit=self.retrieve_k,
-                    include_thing=True,
+                    include_thing=include_thing,
                 )
             ).results
         candidates: dict[str, LinkCandidate] = {}
