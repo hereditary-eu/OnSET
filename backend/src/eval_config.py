@@ -160,7 +160,10 @@ def load_config_file(path: str | os.PathLike | None = None) -> OnsetConfigFile:
     path = Path(path or os.getenv(CONFIG_PATH_ENV) or DEFAULT_CONFIG_PATH)
     with open(path) as f:
         raw = json.load(f)
-    return OnsetConfigFile(**_interpolate_env(raw))
+    print(f"Loading config file {path}:")
+    cfg = OnsetConfigFile(**_interpolate_env(raw))
+    print(f"Interpolated config: {json.dumps(cfg.model_dump(), indent=2)}")
+    return cfg
 
 
 def get_configs(key: str) -> list[EvalConfig]:

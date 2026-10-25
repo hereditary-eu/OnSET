@@ -70,7 +70,7 @@
       "name": "OMA",
       "description": "Orthologous MAtrix (OMA) browser data.",
       "conn_str": "postgresql+psycopg://postgres:postgres@${ONSET_DB_HOST:-localhost}:5434/onset-uniprot",
-      "sparql_endpoint": "http://${ONSET_SPARQL_HOST:-localhost}:7013",
+      "sparql_endpoint": "http://${OMA_SPARQL_HOST:-localhost}:7013",
       "selection_distribution": "uniform",
       "variants": [
         {
@@ -98,7 +98,7 @@
       "name": "UniProt",
       "description": "UniProt protein knowledge base.",
       "conn_str": "postgresql+psycopg://postgres:postgres@${ONSET_DB_HOST:-localhost}:5434/onset-uniprot",
-      "sparql_endpoint": "http://${ONSET_SPARQL_HOST:-localhost}:7014",
+      "sparql_endpoint": "http://${UNIPROT_SPARQL_HOST:-localhost}:7014",
       "selection_distribution": "uniform",
       "variants": [
         {
@@ -126,7 +126,7 @@
       "name": "BTO",
       "description": "BRENDA Tissue Ontology (BTO).",
       "conn_str": "postgresql+psycopg://postgres:postgres@${ONSET_DB_HOST:-localhost}:5434/onset-bto",
-      "sparql_endpoint": "http://${ONSET_SPARQL_HOST:-localhost}:7015",
+      "sparql_endpoint": "http://${BTO_SPARQL_HOST:-localhost}:7015",
       "selection_distribution": "uniform",
       "variants": [
         {
@@ -154,7 +154,7 @@
       "name": "DNB",
       "description": "Deutsche Nationalbibliothek (DNB) catalogue data.",
       "conn_str": "postgresql+psycopg://postgres:postgres@${ONSET_DB_HOST:-localhost}:5434/onset-dnb",
-      "sparql_endpoint": "http://${ONSET_SPARQL_HOST:-localhost}:7035",
+      "sparql_endpoint": "http://${DNB_SPARQL_HOST:-localhost}:7035",
       "selection_distribution": "uniform",
       "variants": [
         {
@@ -182,7 +182,7 @@
       "name": "Yago",
       "description": "YAGO knowledge base.",
       "conn_str": "postgresql+psycopg://postgres:postgres@${ONSET_DB_HOST:-localhost}:5434/onset-yago",
-      "sparql_endpoint": "http://${ONSET_SPARQL_HOST:-localhost}:9024",
+      "sparql_endpoint": "http://${YAGO_SPARQL_HOST:-localhost}:9024",
       "variants": [
         {
           "name": "Yago Mistral",
@@ -209,7 +209,7 @@
       "name": "GutBrainIE",
       "description": "GutBrainIE biomedical relation-extraction corpus.",
       "conn_str": "postgresql+psycopg://postgres:postgres@${ONSET_DB_HOST:-localhost}:5434/onset-gutbrainie-test",
-      "sparql_endpoint": "http://${ONSET_SPARQL_HOST:-localhost}:9101",
+      "sparql_endpoint": "http://${GUTBRAINIE_SPARQL_HOST:-localhost}:9101",
       "selection_distribution": "uniform",
       "variants": [
         {
@@ -227,7 +227,7 @@
       "name": "DBLP Dump",
       "description": "DBLP computer science bibliography dump.",
       "conn_str": "postgresql+psycopg://postgres:postgres@${ONSET_DB_HOST:-localhost}:5434/onset-dblp",
-      "sparql_endpoint": "http://${ONSET_SPARQL_HOST:-localhost}:9601",
+      "sparql_endpoint": "http://${DBLP_SPARQL_HOST:-localhost}:9601",
       "selection_distribution": "uniform"
     }
   }
