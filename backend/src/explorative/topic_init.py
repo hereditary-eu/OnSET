@@ -291,6 +291,52 @@ class TopicInitator:
             )
         return subject_links
 
+    def save_named_individuals(self, session: Session, cls: Subject):
+        if not self.guidance_man.oman.config.save_named_individuals:
+            return
+
+        named_individuals_subj = {}
+        named_individuals = []
+        try:
+            named_individuals = self.guidance_man.oman.get_named_individuals(
+                cls.subject_id
+            )
+        except Exception as e:
+            print(
+                f"Error occurred while fetching named individuals: {e}, for class {cls.subject_id}"
+            )
+
+        for ne in named_individuals:
+            existing_individual = session.execute(
+                select(SubjectInDB)
+                .where(
+                    SubjectInDB.subject_id == ne.subject_id,
+                    SubjectInDB.onto_hash == self.guidance_man.identifier,
+                )
+                .limit(1)
+            ).first()
+            if (
+                ne.subject_id in self.all_classes.keys()
+                or existing_individual is not None
+            ):
+                # print(f"Named individual {ne.subject_id} is a class, skipping")
+                continue
+            if ne.subject_id in named_individuals_subj:
+                named_individuals_subj[ne.subject_id].parent_id = cls.subject_id
+                continue
+            ne_desc = f"{ne.label} is a {cls.label}."
+            ne_embedding = self.guidance_man.embedding_model.encode(ne_desc)
+            named_individuals_subj[ne.subject_id] = SubjectInDB(
+                subject_id=ne.subject_id,
+                embedding=ne_embedding,
+                label=ne.label if ne.label is not None else ne.subject_id,
+                onto_hash=self.guidance_man.identifier,
+                parent_id=cls.subject_id if len(cls.subject_id) > 0 else None,
+                subject_type=ne.subject_type,
+                instance_count=ne.instance_count,
+            )
+            session.add(named_individuals_subj[ne.subject_id])
+
     def embed_relations(self):
         with Session(self.guidance_man.engine) as session:
             session.execute(text("SET CONSTRAINTS ALL DEFERRED"))
@@ -309,10 +355,10 @@ class TopicInitator:
                 session.add_all(subject_links)
                 if i % 100 == 0:
                     session.commit()
+            session.commit()
             all_classes = list(self.all_classes.values()) + [thing]
 
             cls_descs: dict[str, str] = {}
-            named_individuals_ids = {}
 
             cls_it = tqdm(all_classes, desc="Saving classes")
             for cls in cls_it:
@@ -340,14 +386,6 @@ class TopicInitator:
                     """
                 cls_descs[cls.subject_id] = desc_short
                 embedding = self.guidance_man.embedding_model.encode(desc_short)
-                if cls.subject_id in named_individuals_ids.keys():
-                    session.execute(
-                        delete(SubjectInDB).where(
-                            SubjectInDB.subject_id == cls.subject_id,
-                            SubjectInDB.onto_hash == self.guidance_man.identifier,
-                        )
-                    )
-                    session.commit()
                 session.add(
                     SubjectInDB(
                         subject_id=cls.subject_id,
@@ -360,60 +398,30 @@ class TopicInitator:
                         instance_count=cls.instance_count,
                     )
                 )
-
+                self.save_named_individuals(session, cls)
                 session.commit()
-                named_individuals = []
-                try:
-                    named_individuals = self.guidance_man.oman.get_named_individuals(
-                        cls.subject_id
-                    )
-                except Exception as e:
-                    print(
-                        f"Error occurred while fetching named individuals: {e}, for class {cls.subject_id}"
-                    )
-                if self.guidance_man.oman.config.save_named_individuals:
-                    cls_it.set_description(
-                        f"{cls.label} with {len(named_individuals)} named individuals"
-                    )
-                    for ne in named_individuals:
-                        existing_individual = session.execute(
-                            select(SubjectInDB)
-                            .where(
-                                SubjectInDB.subject_id == ne.subject_id,
-                                SubjectInDB.onto_hash == self.guidance_man.identifier,
-                            )
-                            .limit(1)
-                        ).first()
-                        if (
-                            ne.subject_id in self.all_classes.keys()
-                            or existing_individual is not None
-                        ):
-                            # print(f"Named individual {ne.subject_id} is a class, skipping")
-                            continue
-                        if ne.subject_id in named_individuals_ids:
-                            named_individuals_ids[
-                                ne.subject_id
-                            ].parent_id = cls.subject_id
-                            continue
-                        ne_desc = f"{ne.label} is a {cls.label}."
-                        ne_embedding = self.guidance_man.embedding_model.encode(ne_desc)
-                        named_individuals_ids[ne.subject_id] = SubjectInDB(
-                            subject_id=ne.subject_id,
-                            embedding=ne_embedding,
-                            label=ne.label if ne.label is not None else ne.subject_id,
-                            onto_hash=self.guidance_man.identifier,
-                            parent_id=cls.subject_id
-                            if len(cls.subject_id) > 0
-                            else None,
-                            subject_type=ne.subject_type,
-                            instance_count=ne.instance_count,
-                        )
-                        session.add(named_individuals_ids[ne.subject_id])
-                        session.commit()
+
+            session.commit()
             for cls in tqdm(all_classes, desc="Saving relations"):
                 for prop in cls.properties.keys():
                     for p in cls.properties[prop]:
                         subject_links = self.embed_property(p, cls)
+                        for link in subject_links:
+                            existing_link = session.execute(
+                                select(SubjectLinkDB)
+                                .where(
+                                    SubjectLinkDB.property_id == link.property_id,
+                                    SubjectLinkDB.onto_hash
+                                    == self.guidance_man.identifier,
+                                )
+                                .limit(1)
+                            ).first()
+                            if existing_link is not None:
+                                print(
+                                    f"Link for property {link.property_id} already exists, deleting and re-adding"
+                                )
+                                session.delete(existing_link[0])
+                                session.commit()
                         session.add_all(subject_links)
                         # print(f"Class {to_id} does not exist, skipping")
             all_links = session.query(SubjectLinkDB).yield_per(100).all()

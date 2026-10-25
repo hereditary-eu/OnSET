@@ -34,6 +34,13 @@ class ManMan:
         print(f"Using DB config '{config_id}':", eval_cfg)
 
         self.base_path = base_path
+
+        self.ontology_manager: OntologyManager
+        self.dataset_manager: DatasetManager
+        self.guidance_man: GuidanceManager
+        self.llm_query: LLMQuery
+        self.initatior: InitatorManager
+
         self.start_systems()
 
     def start_systems(self):
@@ -64,6 +71,7 @@ class ManMan:
             self.ontology_manager,
             conn_str=db_config.conn_str,
             llm_model_id=db_config.model_id,
+            llm_quant_model=db_config.model_quant,
         )
 
         self.llm_query = LLMQuery(

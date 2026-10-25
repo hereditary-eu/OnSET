@@ -2,9 +2,9 @@
   "default": "${ONSET_DEFAULT_CONFIG:-dbpedia}",
   "defaults": {
     "model_id": "${LLM_MODEL_ID:-NousResearch/Hermes-3-Llama-3.2-3B-GGUF}",
-    "model_quant": "${LLM_MODEL_QUANT:-*.Q8_0.gguf}",
-    "conn_str": "postgresql+psycopg://postgres:postgres@${ONSET_DB_HOST:-localhost}:5434/onset",
-    "sparql_endpoint": "http://${ONSET_SPARQL_HOST:-localhost}:7012",
+    "model_quant": "${LLM_MODEL_QUANT:-*Q8_0.gguf}",
+    "conn_str": "postgresql+psycopg://postgres:postgres@${ONSET_DB_ENDPOINT:-localhost:5434}/onset",
+    "sparql_endpoint": "${ONSET_SPARQL_ENDPOINT:-http://localhost:7012}",
     "redis_cache_url": "${REDIS_CACHE_URL:-redis://localhost:6379/1}",
     "selection_distribution": "instances",
     "agent": {
@@ -17,6 +17,8 @@
     "dbpedia": {
       "name": "DBpedia",
       "description": "DBpedia knowledge graph with multimodal (CLIP) thumbnail embeddings.",
+      "save_named_individuals": false,
+      "sparql_endpoint": "${DBPEDIA_SPARQL_ENDPOINT:-http://localhost:7012}",
       "ontology_extension": [
         "@prefix owl: <http://www.w3.org/2002/07/owl#> .",
         "@prefix dbo: <http://dbpedia.org/ontology/> .",
@@ -69,8 +71,8 @@
     "oma": {
       "name": "OMA",
       "description": "Orthologous MAtrix (OMA) browser data.",
-      "conn_str": "postgresql+psycopg://postgres:postgres@${ONSET_DB_HOST:-localhost}:5434/onset-uniprot",
-      "sparql_endpoint": "http://${OMA_SPARQL_HOST:-localhost}:7013",
+      "conn_str": "postgresql+psycopg://postgres:postgres@${ONSET_DB_ENDPOINT:-localhost:5434}/onset-uniprot",
+      "sparql_endpoint": "${OMA_SPARQL_ENDPOINT:-http://localhost:7013}",
       "selection_distribution": "uniform",
       "variants": [
         {
@@ -97,8 +99,8 @@
     "uniprot": {
       "name": "UniProt",
       "description": "UniProt protein knowledge base.",
-      "conn_str": "postgresql+psycopg://postgres:postgres@${ONSET_DB_HOST:-localhost}:5434/onset-uniprot",
-      "sparql_endpoint": "http://${UNIPROT_SPARQL_HOST:-localhost}:7014",
+      "conn_str": "postgresql+psycopg://postgres:postgres@${ONSET_DB_ENDPOINT:-localhost:5434}/onset-uniprot",
+      "sparql_endpoint": "${UNIPROT_SPARQL_ENDPOINT:-http://localhost:7014}",
       "selection_distribution": "uniform",
       "variants": [
         {
@@ -122,39 +124,11 @@
         }
       ]
     },
-    "bto": {
-      "name": "BTO",
-      "description": "BRENDA Tissue Ontology (BTO).",
-      "conn_str": "postgresql+psycopg://postgres:postgres@${ONSET_DB_HOST:-localhost}:5434/onset-bto",
-      "sparql_endpoint": "http://${BTO_SPARQL_HOST:-localhost}:7015",
-      "selection_distribution": "uniform",
-      "variants": [
-        {
-          "name": "BTO  Mistral",
-          "model_id": "bartowski/Mistral-Small-Instruct-2409-GGUF",
-          "model_quant": "*-Q6_K.gguf"
-        },
-        {
-          "name": "BTO  Mistral",
-          "model_id": "bartowski/Qwen2.5-Coder-32B-Instruct-GGUF",
-          "model_quant": "*-Q4_K_L.gguf"
-        },
-        {
-          "name": "BTO  Mistral",
-          "model_id": "bartowski/Qwen2.5-32B-Instruct-GGUF",
-          "model_quant": "*-Q4_K_L.gguf"
-        },
-        {
-          "name": "BTO large",
-          "model_id": "NousResearch/Hermes-3-Llama-3.1-8B-GGUF"
-        }
-      ]
-    },
     "dnb": {
       "name": "DNB",
       "description": "Deutsche Nationalbibliothek (DNB) catalogue data.",
-      "conn_str": "postgresql+psycopg://postgres:postgres@${ONSET_DB_HOST:-localhost}:5434/onset-dnb",
-      "sparql_endpoint": "http://${DNB_SPARQL_HOST:-localhost}:7035",
+      "conn_str": "postgresql+psycopg://postgres:postgres@${ONSET_DB_ENDPOINT:-localhost:5434}/onset-dnb",
+      "sparql_endpoint": "${DNB_SPARQL_ENDPOINT:-http://localhost:7035}",
       "selection_distribution": "uniform",
       "variants": [
         {
@@ -181,8 +155,8 @@
     "yago": {
       "name": "Yago",
       "description": "YAGO knowledge base.",
-      "conn_str": "postgresql+psycopg://postgres:postgres@${ONSET_DB_HOST:-localhost}:5434/onset-yago",
-      "sparql_endpoint": "http://${YAGO_SPARQL_HOST:-localhost}:9024",
+      "conn_str": "postgresql+psycopg://postgres:postgres@${ONSET_DB_ENDPOINT:-localhost:5434}/onset-yago",
+      "sparql_endpoint": "${YAGO_SPARQL_ENDPOINT:-http://localhost:9024}",
       "variants": [
         {
           "name": "Yago Mistral",
@@ -205,11 +179,39 @@
         }
       ]
     },
+    "bto": {
+      "name": "BTO",
+      "description": "BRENDA Tissue Ontology (BTO).",
+      "conn_str": "postgresql+psycopg://postgres:postgres@${ONSET_DB_HOST:-localhost:5434}/onset-bto",
+      "sparql_endpoint": "${BTO_SPARQL_HOST:-http://localhost:7015}",
+      "selection_distribution": "uniform",
+      "variants": [
+        {
+          "name": "BTO  Mistral",
+          "model_id": "bartowski/Mistral-Small-Instruct-2409-GGUF",
+          "model_quant": "*-Q6_K.gguf"
+        },
+        {
+          "name": "BTO  Mistral",
+          "model_id": "bartowski/Qwen2.5-Coder-32B-Instruct-GGUF",
+          "model_quant": "*-Q4_K_L.gguf"
+        },
+        {
+          "name": "BTO  Mistral",
+          "model_id": "bartowski/Qwen2.5-32B-Instruct-GGUF",
+          "model_quant": "*-Q4_K_L.gguf"
+        },
+        {
+          "name": "BTO large",
+          "model_id": "NousResearch/Hermes-3-Llama-3.1-8B-GGUF"
+        }
+      ]
+    },
     "gutbrainie": {
       "name": "GutBrainIE",
       "description": "GutBrainIE biomedical relation-extraction corpus.",
-      "conn_str": "postgresql+psycopg://postgres:postgres@${ONSET_DB_HOST:-localhost}:5434/onset-gutbrainie-test",
-      "sparql_endpoint": "http://${GUTBRAINIE_SPARQL_HOST:-localhost}:9101",
+      "conn_str": "postgresql+psycopg://postgres:postgres@${ONSET_DB_ENDPOINT:-localhost:5434}/onset-gutbrainie-test",
+      "sparql_endpoint": "http://${GUTBRAINIE_SPARQL_ENDPOINT:-localhost}:9101",
       "selection_distribution": "uniform",
       "variants": [
         {
@@ -226,8 +228,8 @@
     "dblp": {
       "name": "DBLP Dump",
       "description": "DBLP computer science bibliography dump.",
-      "conn_str": "postgresql+psycopg://postgres:postgres@${ONSET_DB_HOST:-localhost}:5434/onset-dblp",
-      "sparql_endpoint": "http://${DBLP_SPARQL_HOST:-localhost}:9601",
+      "conn_str": "postgresql+psycopg://postgres:postgres@${ONSET_DB_ENDPOINT:-localhost:5434}/onset-dblp",
+      "sparql_endpoint": "http://${DBLP_SPARQL_ENDPOINT:-localhost}:9601",
       "selection_distribution": "uniform"
     }
   }
