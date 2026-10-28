@@ -19,6 +19,7 @@ if TYPE_CHECKING:
 class ClassCandidate(BaseModel):
     uri: str
     label: str
+    parents: list[str] | None = None  # URIs of the parent classes, if known
 
 
 class LinkCandidate(BaseModel):
@@ -114,6 +115,12 @@ class GraphEditorTools(ToolCollection):
                 candidates[result.subject.subject_id] = ClassCandidate(
                     uri=result.subject.subject_id,
                     label=result.subject.label or result.subject.subject_id,
+                    parents=[
+                        p
+                        for p in self.ontology_manager.get_parents(
+                            result.subject.subject_id
+                        )
+                    ],
                 )
         return list(candidates.values())
 
@@ -132,6 +139,7 @@ class GraphEditorTools(ToolCollection):
             query: how the user wants to connect the subjects, e.g. "homeport" or "commander".
             class_uri: URI of the class the link attaches to, e.g. "<http://dbpedia.org/ontology/Ship>".
             subject_id: ID of the subject to filter links by, if specified.
+            include_thing: whether to include links to/from owl:Thing, which is the superclass of all classes. Useful for finding links to classes that are not shown as direct subclasses.
             side: "source" for links going out of the class, "target" for links pointing to it. If None, both sides are searched and the results are merged.
 
         Returns:
@@ -198,6 +206,28 @@ class GraphEditorTools(ToolCollection):
                 to_label=link.to_subject.label if link.to_subject else None,
             )
         return list(candidates.values())
+
+    @tool(strict=False)
+    def search_links_generic(
+        self,
+        query: str,
+        side: Literal["source", "target"] | None = None,
+    ) -> list[LinkCandidate]:
+        """Search the ontology for properties (links) connecting any class (owl:Thing) to other classes. The side determines whether the class is the domain (source) or range (target) of the property.
+
+        Args:
+            query (str): what the user wants to connect the subjects, e.g. "homeport" or "commander".
+            side (Literal["source", "target"] | None): The side of the property to search for. If None, both sides are searched. Defaults to None.
+
+        Returns:
+            list[LinkCandidate]: Matching links with their domain (from_*) and range (to_*) matching to general classes (owl:Thing)
+        """
+        return self.search_links_generic(
+            query=query,
+            class_uri="owl:Thing",
+            side=side,
+            include_thing=True,
+        )
 
     @tool()
     def add_subject(self, uri: str) -> AssistantSubject:

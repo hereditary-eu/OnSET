@@ -145,6 +145,9 @@ class OntologyManager:
                 return f"<{self.namespaces()[prefix]}{local_name}>"
         return s
 
+    def to_prefix(self, s: str) -> str:
+        return to_prefix(s, self.namespaces())
+
     def __prefix_query(self, q: str):
         # add prefixes to the query
         prefixes = "\n".join(
@@ -532,7 +535,7 @@ OPTIONAL {{?obj rdfs:label ?obj_lbl.}}
         )
         if "p" not in parents.columns:
             return []
-        return parents["p"].to_list()
+        return [to_prefix(p, self.namespaces()) for p in parents["p"].to_list()]
 
     def get_most_generic_classes(self, q: GeneralizationQuery):
         """

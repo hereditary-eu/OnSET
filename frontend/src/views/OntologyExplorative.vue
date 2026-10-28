@@ -221,8 +221,10 @@ const compareToCurrent = (entry: HistoryEntry) => {
     if (!entry.query || !store.value) {
         return
     }
+    // track changes from the entry, so the diff_active watcher keeps this baseline
+    old_store.value = jsonClone(entry.query)
     ui_state.diff_active = true
-    ui_state.diff = new NodeLinkRepositoryDiff(entry.query, store.value)
+    updateDiff()
 }
 const revertToEntry = (entry: HistoryEntry) => {
     if (!entry.query || !store.value) {
@@ -252,6 +254,8 @@ const applyAgentChange = (change: GraphChange, _graph: unknown, details: GraphDe
         startDiff()
     }
     applyGraphChange(store.value, change, details)
+    // the store watcher only refreshes the diff when the query string changes
+    updateDiff()
 }
 const agent = useAgentSession(activeConfigId, {
     read: () => toAgentGraph(store.value),

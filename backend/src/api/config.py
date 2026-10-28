@@ -95,16 +95,19 @@ class ManMan:
     def agent_llm(self) -> AgentLLM:
         return AgentLLM(self.db_config.agent)
 
+    def build_agent_session(self, session_id: str) -> AgentSession:
+        return AgentSession(
+            session_id,
+            llm=self.agent_llm,
+            ontology_manager=self.ontology_manager,
+            guidance=self.guidance_man,
+            config=self.db_config.agent,
+        )
+
     @cached_property
     def agent_sessions(self) -> AgentSessionStore:
         return AgentSessionStore(
-            lambda session_id: AgentSession(
-                session_id,
-                llm=self.agent_llm,
-                ontology_manager=self.ontology_manager,
-                guidance=self.guidance_man,
-                config=self.db_config.agent,
-            )
+            lambda session_id: self.build_agent_session(session_id),
         )
 
 

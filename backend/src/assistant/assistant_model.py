@@ -148,8 +148,10 @@ class AssistantSubject(BaseModel):
             id=id,
         )
 
-    def get_full(self, manman: "ManMan"):
-        return manman.ontology_manager.enrich_subject(self.uri, load_properties=True)
+    def get_full(self, manman: "ManMan", load_properties: bool = True) -> Subject:
+        return manman.ontology_manager.enrich_subject(
+            self.uri, load_properties=load_properties
+        )
 
 
 class AssistantLink(BaseModel):
