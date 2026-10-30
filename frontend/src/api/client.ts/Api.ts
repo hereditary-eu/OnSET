@@ -802,6 +802,15 @@ export interface ProgressiveModification {
   description?: string | null;
   details?: GraphDetails | null;
   constraint?: ProgressiveConstraint | null;
+  /** Parent Id */
+  parent_id?: string | null;
+  /**
+   * Depth
+   * @default 1
+   */
+  depth?: number;
+  /** Step Operations */
+  step_operations?: Operation[] | null;
 }
 
 /** ProgressiveRequest */
@@ -825,6 +834,18 @@ export interface ProgressiveRequest {
   numeric_percentiles?: number[] | null;
   /** Categorical Samples */
   categorical_samples?: number | null;
+  /**
+   * Depth
+   * @min 1
+   * @default 1
+   */
+  depth?: number;
+  /** Branching */
+  branching?: number | null;
+  /** Child Sample Size */
+  child_sample_size?: number | null;
+  /** Child Constraint Sample Size */
+  child_constraint_sample_size?: number | null;
 }
 
 /** ProgressiveResult */
@@ -851,6 +872,30 @@ export interface ProgressiveResult {
    * @default []
    */
   failed_constraints?: string[];
+  /**
+   * Depth
+   * @default 1
+   */
+  depth?: number;
+  /**
+   * Expanded Ids
+   * @default []
+   */
+  expanded_ids?: string[];
+  /**
+   * Duplicate Count
+   * @default 0
+   */
+  duplicate_count?: number;
+  /** Query Count */
+  query_count?: number | null;
+  /** Query Budget */
+  query_budget?: number | null;
+  /**
+   * Budget Exhausted
+   * @default false
+   */
+  budget_exhausted?: boolean;
 }
 
 /**
@@ -874,6 +919,16 @@ export interface ProgressiveSettings {
   numeric_percentiles: number[];
   /** Categorical Samples */
   categorical_samples: number;
+  /** Max Depth */
+  max_depth: number;
+  /** Default Branching */
+  default_branching: number;
+  /** Max Branching */
+  max_branching: number;
+  /** Child Sample Size */
+  child_sample_size: number;
+  /** Max Total Queries */
+  max_total_queries: number;
 }
 
 /** Property */

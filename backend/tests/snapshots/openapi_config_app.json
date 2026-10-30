@@ -1679,6 +1679,11 @@
       ],
       "title": "Count"
      },
+     "depth": {
+      "default": 1,
+      "title": "Depth",
+      "type": "integer"
+     },
      "description": {
       "anyOf": [
        {
@@ -1719,6 +1724,31 @@
       },
       "title": "Operations",
       "type": "array"
+     },
+     "parent_id": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Parent Id"
+     },
+     "step_operations": {
+      "anyOf": [
+       {
+        "items": {
+         "$ref": "#/components/schemas/Operation"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Step Operations"
      }
     },
     "required": [
@@ -1730,6 +1760,18 @@
    },
    "ProgressiveRequest": {
     "properties": {
+     "branching": {
+      "anyOf": [
+       {
+        "minimum": 1.0,
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Branching"
+     },
      "categorical_samples": {
       "anyOf": [
        {
@@ -1741,6 +1783,30 @@
        }
       ],
       "title": "Categorical Samples"
+     },
+     "child_constraint_sample_size": {
+      "anyOf": [
+       {
+        "minimum": 0.0,
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Child Constraint Sample Size"
+     },
+     "child_sample_size": {
+      "anyOf": [
+       {
+        "minimum": 1.0,
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Child Sample Size"
      },
      "constraint_sample_size": {
       "anyOf": [
@@ -1776,6 +1842,12 @@
        }
       ],
       "title": "Count Subject"
+     },
+     "depth": {
+      "default": 1,
+      "minimum": 1.0,
+      "title": "Depth",
+      "type": "integer"
      },
      "graph": {
       "$ref": "#/components/schemas/QueryGraph"
@@ -1864,6 +1936,11 @@
       ],
       "title": "Base Count"
      },
+     "budget_exhausted": {
+      "default": false,
+      "title": "Budget Exhausted",
+      "type": "boolean"
+     },
      "candidate_count": {
       "anyOf": [
        {
@@ -1908,6 +1985,24 @@
       ],
       "title": "Count Subject"
      },
+     "depth": {
+      "default": 1,
+      "title": "Depth",
+      "type": "integer"
+     },
+     "duplicate_count": {
+      "default": 0,
+      "title": "Duplicate Count",
+      "type": "integer"
+     },
+     "expanded_ids": {
+      "default": [],
+      "items": {
+       "type": "string"
+      },
+      "title": "Expanded Ids",
+      "type": "array"
+     },
      "failed_constraints": {
       "default": [],
       "items": {
@@ -1923,6 +2018,28 @@
       },
       "title": "Modifications",
       "type": "array"
+     },
+     "query_budget": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Query Budget"
+     },
+     "query_count": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Query Count"
      },
      "seed": {
       "anyOf": [
@@ -1946,6 +2063,10 @@
       "title": "Categorical Samples",
       "type": "integer"
      },
+     "child_sample_size": {
+      "title": "Child Sample Size",
+      "type": "integer"
+     },
      "constraint_sample_size": {
       "title": "Constraint Sample Size",
       "type": "integer"
@@ -1954,16 +2075,32 @@
       "title": "Count Limit",
       "type": "integer"
      },
+     "default_branching": {
+      "title": "Default Branching",
+      "type": "integer"
+     },
      "default_sample_size": {
       "title": "Default Sample Size",
+      "type": "integer"
+     },
+     "max_branching": {
+      "title": "Max Branching",
       "type": "integer"
      },
      "max_constraint_sample_size": {
       "title": "Max Constraint Sample Size",
       "type": "integer"
      },
+     "max_depth": {
+      "title": "Max Depth",
+      "type": "integer"
+     },
      "max_sample_size": {
       "title": "Max Sample Size",
+      "type": "integer"
+     },
+     "max_total_queries": {
+      "title": "Max Total Queries",
       "type": "integer"
      },
      "numeric_percentiles": {
@@ -1986,7 +2123,12 @@
      "constraint_sample_size",
      "max_constraint_sample_size",
      "numeric_percentiles",
-     "categorical_samples"
+     "categorical_samples",
+     "max_depth",
+     "default_branching",
+     "max_branching",
+     "child_sample_size",
+     "max_total_queries"
     ],
     "title": "ProgressiveSettings",
     "type": "object"

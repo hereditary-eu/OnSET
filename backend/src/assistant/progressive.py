@@ -63,14 +63,41 @@ fail (invalid graph, endpoint error) or exceed the per-query timeout are None.
 All counts (and the ontology details of the sampled candidates) run
 concurrently on a bounded thread pool, see run_bounded.
 
+Tree expansion (``depth`` > 1): the modifications of the request graph are the
+first level, as with depth 1 (same sample, ids and counts). Each further level
+continues from ``branching`` modifications of the previous one: the modified
+graph (request graph + its operations) is sampled like the request graph, with
+child_sample_size links and, with constraints, child_constraint_sample_size
+constrained properties (values in the context of the modified graph), from a
+seed derived from the request's seed and the parent's id. A child's
+``operations`` are cumulative (the parent's, then its own ``step_operations``),
+so it applies to the request graph like a first-level modification; its id is
+``<parent id> > <own key>``, unique across the tree.
+- which modifications are expanded (select_expansions): only counted, non-empty
+  ones below the count limit (a count of 0 stays 0 below, a capped count is a
+  lower bound, so its children's ratios mean little); among them, the nearest
+  to ``branching`` positions evenly spread over their log-count range (the
+  histogram's axis), so narrow and broad modifications are both continued; ties
+  in a seeded order.
+- duplicates: the same graph reached by the same steps in another order (A then
+  B, B then A) is counted once, the first in tree order (graph_key: the graph
+  with the sampler's ids replaced by the paths of links that added them).
+- budget: endpoint queries (counts and value distributions, not the cached
+  ontology lookups of labels/details) of the whole request are capped by
+  max_total_queries. The first level is always sampled in full; deeper levels
+  stop expanding, or drop the children that do not fit, once it is spent
+  (``budget_exhausted``). Counts of a whole level run on one bounded pool.
+
 Timeouts, parallelism and the sample/count caps are per configuration, the
 ``progressive`` object of backend/config.json (eval_config.ProgressiveConfig).
 """
 
 from __future__ import annotations
 
+import copy
 import enum
 import hashlib
+import json
 import math
 import random
 import re
@@ -170,6 +197,16 @@ class ProgressiveRequest(BaseModel):
     numeric_percentiles: list[Percentile] | None = None
     # values sampled per categorical property
     categorical_samples: int | None = Field(None, ge=1)
+    # tree expansion: levels of modifications (1: of the request graph only), at most
+    # the configured max_depth; each level below the first expands `branching`
+    # modifications of the previous one (capped by max_branching), sampling
+    # child_sample_size links (capped by max_sample_size) and, with constraints,
+    # child_constraint_sample_size constrained properties of each; None for the
+    # configured defaults
+    depth: int = Field(1, ge=1)
+    branching: int | None = Field(None, ge=1)
+    child_sample_size: int | None = Field(None, ge=1)
+    child_constraint_sample_size: int | None = Field(None, ge=0)
 
 
 class ModificationKind(str, enum.Enum):
@@ -218,6 +255,13 @@ class ProgressiveModification(BaseModel):
     details: GraphDetails | None = None
     # constraint modifications: what they restrict
     constraint: ProgressiveConstraint | None = None
+    # tree expansion: the modification this one continues (None on the first level),
+    # its level (1: a modification of the request graph), and its own operations after
+    # the parent's (None on the first level, where they are `operations`); `operations`
+    # are cumulative, label/description/constraint describe the own step
+    parent_id: str | None = None
+    depth: int = 1
+    step_operations: list[Operation] | None = None
 
 
 class ProgressiveResult(BaseModel):
@@ -236,6 +280,17 @@ class ProgressiveResult(BaseModel):
     # keys (subject|property) of sampled constraint candidates whose value
     # distribution failed or timed out, so they have no modifications
     failed_constraints: list[str] = Field([])
+    # tree expansion: levels sampled (fewer than requested if none could be expanded),
+    # ids of the modifications whose children were sampled, children left out as their
+    # graph is another modification's (same steps in another order), endpoint queries
+    # (counts, value distributions) of the request, their cap (max_total_queries) and
+    # whether deeper levels were cut short by it
+    depth: int = 1
+    expanded_ids: list[str] = Field([])
+    duplicate_count: int = 0
+    query_count: int | None = None
+    query_budget: int | None = None
+    budget_exhausted: bool = False
 
 
 # --- bounded concurrent execution ---
@@ -293,6 +348,35 @@ def run_bounded(
     finally:
         executor.shutdown(wait=False, cancel_futures=True)
     return results
+
+
+class QueryMeter:
+    """Counts the calls of the wrapped query runners (thread-safe)."""
+
+    def __init__(self):
+        self.count = 0
+        self._lock = threading.Lock()
+
+    def wrap(self, run: Callable[[str, float], T]) -> Callable[[str, float], T]:
+        def metered(query: str, timeout: float) -> T:
+            with self._lock:
+                self.count += 1
+            return run(query, timeout)
+
+        return metered
+
+
+@dataclass
+class QueryBudget:
+    """Endpoint queries left of a request: the cap minus the queries run and the
+    counts reserved for modifications that are not counted yet."""
+
+    limit: int
+    meter: QueryMeter
+    reserved: int = 0
+
+    def remaining(self) -> int:
+        return self.limit - self.meter.count - self.reserved
 
 
 # --- counting and value queries ---
@@ -518,10 +602,78 @@ def slug(label: str) -> str:
     return re.sub(r"[^a-z0-9]+", "_", label.lower()).strip("_") or "subject"
 
 
+def stable_seed(key: str) -> int:
+    return int.from_bytes(hashlib.sha256(key.encode()).digest()[:4], "big")
+
+
 def default_seed(request: ProgressiveRequest) -> int:
     """Seed derived from the graph and sampling parameters, stable across processes."""
-    key = request.model_dump_json(include={"graph", "subject_ids", "sample_size"})
-    return int.from_bytes(hashlib.sha256(key.encode()).digest()[:4], "big")
+    return stable_seed(request.model_dump_json(include={"graph", "subject_ids", "sample_size"}))
+
+
+def graph_ids(graph: QueryGraph) -> set[str]:
+    """Ids of the subjects, links and subqueries of a graph (taken for new elements)."""
+    taken = {s.id for s in graph.subjects} | {l.id for l in graph.links}
+    return taken | {sq.id for s in graph.subjects for sq in s.subqueries if sq.id}
+
+
+def graph_key(graph: QueryGraph, base_ids: set[str]) -> str:
+    """Key of a modified graph that does not depend on the ids the sampler assigned.
+
+    Subjects of the request graph (``base_ids``) keep their ids, an added subject is
+    named by the path of links that added it (``from>property>class``), a starting
+    point by its class; subqueries and links are compared without their ids.
+    """
+    names = {s.id: s.id for s in graph.subjects if s.id in base_ids}
+    changed = True
+    while changed:
+        changed = False
+        for link in graph.links:
+            if link.from_subject_id in names and link.to_subject_id not in names:
+                target = graph.get_subject_by_id(link.to_subject_id)
+                names[target.id] = f"{names[link.from_subject_id]}>{link.uri}>{target.uri}"
+                changed = True
+    for subject in graph.subjects:
+        names.setdefault(subject.id, f"+{subject.uri}")
+
+    def dump(model, exclude: set[str]) -> str:
+        return json.dumps(model.model_dump(mode="json", exclude=exclude), sort_keys=True)
+
+    subjects = sorted(
+        (names[s.id], s.uri, sorted(dump(sq, {"id"}) for sq in s.subqueries)) for s in graph.subjects
+    )
+    link_fields = {"id", "from_subject_id", "to_subject_id", "label", "from_subject_label", "to_subject_label"}
+    links = sorted(
+        (names.get(l.from_subject_id, ""), names.get(l.to_subject_id, ""), dump(l, link_fields)) for l in graph.links
+    )
+    return json.dumps([subjects, links])
+
+
+def select_expansions(
+    modifications: list[ProgressiveModification], branching: int, limit: int, seed: str
+) -> list[ProgressiveModification]:
+    """The modifications of a level to expand, in their order (see the module docstring).
+
+    Eligible: counted, non-empty and below the count ``limit``. Of more than
+    ``branching`` eligible ones, the nearest to ``branching`` targets evenly spread over
+    their log-count range (the middle of the range for one), each chosen once; ties are
+    broken by a seeded shuffle.
+    """
+    eligible = [m for m in modifications if m.count is not None and 0 < m.count < limit]
+    if len(eligible) <= branching:
+        return eligible
+    order = {m.id: i for i, m in enumerate(modifications)}
+    # the seeded shuffle orders ties of equal distance (min is stable)
+    pool = random.Random(seed).sample(eligible, k=len(eligible))
+    position = {m.id: math.log10(m.count + 1) for m in pool}
+    lo, hi = min(position.values()), max(position.values())
+    targets = [(lo + hi) / 2] if branching == 1 else [lo + i * (hi - lo) / (branching - 1) for i in range(branching)]
+    chosen: list[ProgressiveModification] = []
+    for target in targets:
+        best = min(pool, key=lambda m: abs(position[m.id] - target))
+        pool.remove(best)
+        chosen.append(best)
+    return sorted(chosen, key=lambda m: order[m.id])
 
 
 class ProgressiveSampler:
@@ -539,6 +691,9 @@ class ProgressiveSampler:
         # rdflib's SPARQL parser is not thread-safe, so queries of a local graph
         # (anything but a SPARQLStore, which passes them through) run one at a time
         self._local_lock = nullcontext() if self.native_paths else threading.Lock()
+        # ontology lookups (labels, details) go through rdflib's parser with a SPARQLStore
+        # as well, so the concurrent ones (the details jobs) always run one at a time
+        self._ontology_lock = threading.Lock() if self.native_paths else self._local_lock
         if run_count is None:
             run_count = (
                 endpoint_counter(store.query_endpoint, server_timeout=self.config.server_timeout)
@@ -894,7 +1049,7 @@ class ProgressiveSampler:
         )
 
     def guarded(self, fn: Callable[..., T], *args) -> T:
-        with self._local_lock:
+        with self._ontology_lock:
             return fn(*args)
 
     def details(self, modification: ProgressiveModification) -> GraphDetails:
@@ -928,7 +1083,21 @@ class ProgressiveSampler:
 
     # --- sampling ---
 
+    def metered(self) -> "ProgressiveSampler":
+        """A copy for one request (sharing the caches) whose endpoint queries are
+        counted by its ``queries`` meter."""
+        sampler = copy.copy(self)
+        sampler.queries = QueryMeter()
+        sampler.run_count = sampler.queries.wrap(self.run_count)
+        sampler.run_select = sampler.queries.wrap(self.run_select)
+        return sampler
+
     def sample(self, request: ProgressiveRequest) -> ProgressiveResult:
+        if request.depth > self.config.max_depth:
+            raise ValueError(f"depth {request.depth} exceeds the configured max_depth {self.config.max_depth}")
+        return self.metered()._sample(request)
+
+    def _sample(self, request: ProgressiveRequest) -> ProgressiveResult:
         graph = request.graph
         seed = request.seed if request.seed is not None else default_seed(request)
         limit = request.count_limit or self.config.count_limit
@@ -947,9 +1116,10 @@ class ProgressiveSampler:
         sampled.sort(key=lambda c: order[c.key])
 
         self.load_labels([c.target_uri for c in sampled] + [c.prop for c in sampled if c.prop])
-        taken = {s.id for s in graph.subjects} | {l.id for l in graph.links}
-        taken |= {sq.id for s in graph.subjects for sq in s.subqueries if sq.id}
+        taken = graph_ids(graph)
         modifications: list[ProgressiveModification] = []
+        # per modification: its graph and counted subject, for the tree expansion
+        nodes: dict[str, tuple[QueryGraph, str]] = {}
         jobs: list[Callable] = []
         if graph.subjects:
             jobs.append(self.count_job(graph, count_subject, limit))
@@ -958,6 +1128,7 @@ class ProgressiveSampler:
             modifications.append(modification)
             # a starting point counts its own subject
             counted = count_subject if count_subject is not None else modification.operations[0].data.id
+            nodes[modification.id] = (modified, counted)
             jobs.append(self.count_job(modified, counted, limit))
         link_modifications = list(modifications)
 
@@ -970,6 +1141,7 @@ class ProgressiveSampler:
             )
             for modification, modified in constrained:
                 modifications.append(modification)
+                nodes[modification.id] = (modified, count_subject)
                 jobs.append(self.count_job(modified, count_subject, limit))
         for modification in link_modifications:
             jobs.append(lambda m=modification: self.guarded(self.details, m))
@@ -980,7 +1152,7 @@ class ProgressiveSampler:
             modification.count = results[i]
         for i, modification in enumerate(link_modifications):
             modification.details = results[len(modifications) + i]
-        return ProgressiveResult(
+        result = ProgressiveResult(
             base_count=base_count,
             modifications=modifications,
             candidate_count=len(candidates),
@@ -990,12 +1162,130 @@ class ProgressiveSampler:
             constraint_candidate_count=constraint_candidate_count,
             failed_constraints=failed,
         )
+        if request.depth > 1:
+            self.expand_tree(request, result, nodes, constraints)
+        result.query_count = self.queries.count
+        return result
+
+    # --- tree expansion ---
+
+    def expand_tree(
+        self,
+        request: ProgressiveRequest,
+        result: ProgressiveResult,
+        nodes: dict[str, tuple[QueryGraph, str]],
+        constraints: bool,
+    ):
+        """Adds the levels 2..request.depth to ``result`` (see the module docstring);
+        ``nodes``: graph and counted subject of the first level's modifications."""
+        config = self.config
+        branching = min(request.branching or config.default_branching, config.max_branching)
+        size = min(request.child_sample_size or config.child_sample_size, config.max_sample_size)
+        constraint_size = request.child_constraint_sample_size
+        constraint_size = config.child_constraint_sample_size if constraint_size is None else constraint_size
+        child_request = request.model_copy(update={"constraint_sample_size": constraint_size})
+        limit = result.count_limit
+        budget = QueryBudget(config.max_total_queries, self.queries)
+        result.query_budget = budget.limit
+
+        base_ids = graph_ids(request.graph)
+        seen = {graph_key(graph, base_ids) for graph, _ in nodes.values()}
+        level = result.modifications
+        for depth in range(2, request.depth + 1):
+            parents = select_expansions(level, branching, limit, f"{result.seed}:expand:{depth}")
+            children: list[ProgressiveModification] = []
+            jobs: list[Callable] = []
+            for parent in parents:
+                if budget.remaining() <= 0:
+                    result.budget_exhausted = True
+                    break
+                graph, counted = nodes[parent.id]
+                own: list[tuple[ProgressiveModification, QueryGraph]] = []
+                for child, modified in self.children(child_request, parent, graph, counted, size, constraints, budget):
+                    key = graph_key(modified, base_ids)
+                    if key in seen:
+                        result.duplicate_count += 1
+                        continue
+                    if budget.remaining() <= 0:
+                        result.budget_exhausted = True
+                        break
+                    seen.add(key)
+                    budget.reserved += 1
+                    own.append((child, modified))
+                result.expanded_ids.append(parent.id)
+                for child, modified in own:
+                    child.step_operations = child.operations
+                    child.operations = parent.operations + child.operations
+                    child.id = f"{parent.id} > {child.id}"
+                    child.parent_id = parent.id
+                    child.depth = depth
+                    nodes[child.id] = (modified, counted)
+                    children.append(child)
+                    jobs.append(self.count_job(modified, counted, limit))
+            # the children's details cover all their (cumulative) operations
+            jobs += [lambda m=child: self.guarded(self.details, m) for child in children]
+            results = run_bounded(jobs, config.parallelism, config.timeout)
+            budget.reserved = 0
+            for i, child in enumerate(children):
+                child.count = results[i]
+                child.details = results[len(children) + i]
+            if not children:
+                break
+            result.modifications += children
+            result.depth = depth
+            level = children
+
+    def children(
+        self,
+        request: ProgressiveRequest,
+        parent: ProgressiveModification,
+        graph: QueryGraph,
+        count_subject: str,
+        size: int,
+        constraints: bool,
+        budget: QueryBudget,
+    ) -> list[tuple[ProgressiveModification, QueryGraph]]:
+        """The (uncounted) modifications of a parent's graph: a sample of ``size`` links and,
+        with ``constraints``, of request.constraint_sample_size constrained properties
+        (value distributions within the budget), from a seed of the parent."""
+        seed = stable_seed(f"{request.seed}:{parent.id}") if request.seed is not None else stable_seed(parent.id)
+        subject_ids = request.subject_ids
+        if subject_ids is not None:
+            # the subjects the path added are continued from as well
+            subject_ids = subject_ids + [op.data.id for op in parent.operations if isinstance(op.data, AssistantSubject)]
+        candidates = self.candidates(graph, subject_ids)
+        sampled = random.Random(seed).sample(candidates, k=min(size, len(candidates)))
+        order = {c.key: i for i, c in enumerate(candidates)}
+        sampled.sort(key=lambda c: order[c.key])
+        self.load_labels([c.target_uri for c in sampled] + [c.prop for c in sampled if c.prop])
+        taken = graph_ids(graph)
+        results = [self.modification(graph, candidate, taken) for candidate in sampled]
+        if constraints and request.constraint_sample_size:
+            request = request.model_copy(update={"subject_ids": subject_ids})
+            # the links' counts are reserved before the distributions
+            budget.reserved += len(results)
+            try:
+                constrained, _, _ = self.sample_constraints(request, graph, count_subject, seed, taken, budget)
+            finally:
+                budget.reserved -= len(results)
+            results += constrained
+        return results
 
     def sample_constraints(
-        self, request: ProgressiveRequest, graph: QueryGraph, count_subject: str, seed: int, taken: set[str]
+        self,
+        request: ProgressiveRequest,
+        graph: QueryGraph,
+        count_subject: str,
+        seed: int,
+        taken: set[str],
+        budget: QueryBudget | None = None,
     ) -> tuple[list[tuple[ProgressiveModification, QueryGraph]], list[str], int]:
         """Constraint modifications (uncounted) of a sample of the constrained properties,
-        the keys of the candidates whose distribution failed, and the number of candidates."""
+        the keys of the candidates whose distribution failed, and the number of candidates.
+
+        With a ``budget``, a round tries only as many candidates as their distributions can
+        cost at most (3 queries of a numeric/date property, see value_distribution).
+        """
         config = self.config
         size = request.constraint_sample_size
         size = min(config.constraint_sample_size if size is None else size, config.max_constraint_sample_size)
@@ -1016,6 +1306,14 @@ class ProgressiveSampler:
         tried = 0
         for _ in range(CONSTRAINT_ROUNDS):
             batch = shuffled[tried : tried + size - len(sampled) - len(failed)]
+            if budget is not None:
+                allowance, affordable = budget.remaining(), 0
+                for candidate in batch:
+                    allowance -= 3 if candidate.value_kind in ORDERED_KINDS else 1
+                    if allowance < 0:
+                        break
+                    affordable += 1
+                batch = batch[:affordable]
             if not batch:
                 break
             tried += len(batch)

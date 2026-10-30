@@ -27,7 +27,13 @@
       "categorical_samples": "${ONSET_PROGRESSIVE_CATEGORICAL_SAMPLES:-3}",
       "max_categorical_values": "${ONSET_PROGRESSIVE_MAX_CATEGORICAL_VALUES:-50}",
       "min_category_count": "${ONSET_PROGRESSIVE_MIN_CATEGORY_COUNT:-2}",
-      "max_numeric_values": "${ONSET_PROGRESSIVE_MAX_NUMERIC_VALUES:-10000}"
+      "max_numeric_values": "${ONSET_PROGRESSIVE_MAX_NUMERIC_VALUES:-10000}",
+      "max_depth": "${ONSET_PROGRESSIVE_MAX_DEPTH:-3}",
+      "default_branching": "${ONSET_PROGRESSIVE_DEFAULT_BRANCHING:-4}",
+      "max_branching": "${ONSET_PROGRESSIVE_MAX_BRANCHING:-16}",
+      "child_sample_size": "${ONSET_PROGRESSIVE_CHILD_SAMPLE_SIZE:-12}",
+      "child_constraint_sample_size": "${ONSET_PROGRESSIVE_CHILD_CONSTRAINT_SAMPLE_SIZE:-2}",
+      "max_total_queries": "${ONSET_PROGRESSIVE_MAX_TOTAL_QUERIES:-400}"
     }
   },
   "configs": {

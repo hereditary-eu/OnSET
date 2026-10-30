@@ -1,5 +1,6 @@
 // State of the progressive panel: re-runs the source (debounced) when the editor graph
-// changes, and derives the histogram and the modifications nearest to the scrubbed count.
+// changes, and derives the histogram, the modifications nearest to the scrubbed count and
+// the tree of modifications (tree expansion, depth > 1).
 //
 // Graph changes are detected like the agent's sync (agentSession.ts): a deep watch of the
 // editor store, compared by graphKey() so layout-only changes (dragging nodes) do not re-run.
@@ -12,9 +13,12 @@ import {
     countExtent, histogramBins, medianCount, nearestModifications, operationsToChange,
 } from './histogram'
 import { progressiveSource, type ProgressiveSource } from './source'
-import type { ConstraintSettings, ProgressiveRequest, ProgressiveResult } from './types'
+import { ancestorIds, buildTree, modificationPath, modificationsById } from './tree'
+import type { ConstraintSettings, DepthSettings, ProgressiveModification, ProgressiveRequest, ProgressiveResult } from './types'
 
 export type ProgressiveStatus = 'idle' | 'loading' | 'ready' | 'error'
+/** what the panel lists: the modifications nearest to the scrubbed count, or the tree */
+export type ProgressiveView = 'nearest' | 'tree'
 
 export interface ProgressiveOptions {
     source?: ProgressiveSource
@@ -48,14 +52,23 @@ export function useProgressive(graphSource: () => NodeLinkRepository | null | un
             categorical_samples: 3,
         } as ConstraintSettings,
         max_constraint_sample_size: null as number | null,
+        /** tree expansion, defaults and caps from the configuration */
+        tree: { depth: 1, branching: 4, child_sample_size: 12 } as DepthSettings,
+        max_depth: null as number | null,
+        max_branching: null as number | null,
+        view: 'nearest' as ProgressiveView,
+        /** modification selected in the tree (scrubbed to, highlighted in the histogram) */
+        selected_id: null as string | null,
     })
 
-    /** the request of the graph; the constraint settings only when they are sampled */
+    /** the request of the graph; the constraint settings only when they are sampled, the tree
+     * settings only beyond depth 1 */
     const request = (graph: ProgressiveRequest['graph']): ProgressiveRequest => {
         const constraints = state.constraints
-        return constraints.sample_constraints
+        const body: ProgressiveRequest = constraints.sample_constraints
             ? { graph, sample_size: state.sample_size, ...constraints, numeric_percentiles: [...constraints.numeric_percentiles] }
             : { graph, sample_size: state.sample_size, sample_constraints: false }
+        return state.tree.depth > 1 ? { ...body, ...state.tree } : body
     }
 
     // key of the graph (and sample size) the result/the running request is for
@@ -88,6 +101,7 @@ export function useProgressive(graphSource: () => NodeLinkRepository | null | un
             state.result = result
             state.status = 'ready'
             state.scrub_count = null
+            state.selected_id = null
         } catch (e) {
             if (own.signal.aborted) {
                 return
@@ -126,6 +140,15 @@ export function useProgressive(graphSource: () => NodeLinkRepository | null | un
             .filter((p) => Number.isFinite(p) && p >= 0 && p <= 100))].sort((a, b) => a - b)
         state.constraints = next
     }
+    /** updates the tree settings; depth within 1..max_depth, sizes at least 1 (and capped) */
+    const setTree = (settings: Partial<DepthSettings>) => {
+        const next = { ...state.tree, ...settings }
+        const clamp = (value: number, max: number | null) => Math.max(1, Math.min(Math.round(value) || 1, max ?? Infinity))
+        next.depth = clamp(next.depth, state.max_depth)
+        next.branching = clamp(next.branching, state.max_branching)
+        next.child_sample_size = clamp(next.child_sample_size, state.max_sample_size)
+        state.tree = next
+    }
     // the backend caps larger sizes anyway, clamping shows the cap
     OntoConfig.ensureConfig().then(({ config }) => {
         const progressive = config.progressive
@@ -140,11 +163,17 @@ export function useProgressive(graphSource: () => NodeLinkRepository | null | un
                 categorical_samples: progressive.categorical_samples,
             })
         }
+        if (progressive.max_depth) {
+            state.max_depth = progressive.max_depth
+            state.max_branching = progressive.max_branching
+            setTree({ branching: progressive.default_branching, child_sample_size: progressive.child_sample_size })
+        }
     }).catch((e) => console.warn('Progressive discovery: no configuration limits', e))
 
     watch(graphSource, schedule, { deep: true, immediate: true })
     watch(() => state.sample_size, schedule)
     watch(() => state.constraints, schedule)
+    watch(() => state.tree, schedule)
     onBeforeUnmount(() => {
         if (timer) {
             clearTimeout(timer)
@@ -160,20 +189,45 @@ export function useProgressive(graphSource: () => NodeLinkRepository | null | un
     const scrub_count = computed(() => state.scrub_count ?? base_count.value ?? medianCount(modifications.value) ?? 0)
     const nearest = computed(() => nearestModifications(modifications.value, scrub_count.value, state.nearest))
     const nearest_ids = computed(() => new Set(nearest.value.map((m) => m.id)))
+    const by_id = computed(() => modificationsById(modifications.value))
+    const tree = computed(() => buildTree(modifications.value))
+    const selected = computed(() => state.selected_id != null ? by_id.value.get(state.selected_id) ?? null : null)
 
-    /** the nearest modifications with their GraphChange against the editor graph (preview and apply) */
+    /** the change of a modification (its cumulative operations) against the editor graph */
+    const changeOf = (modification: ProgressiveModification) =>
+        operationsToChange(modification.operations, toQueryGraph(graphSource(), { payloads: false }))
+    /** the steps leading to a modification, without itself (empty on the first level) */
+    const pathOf = (modification: ProgressiveModification) => modificationPath(modification, by_id.value).slice(0, -1)
+
+    /** the nearest modifications with their GraphChange against the editor graph (preview and
+     * apply) and the steps before them */
     const nearest_changes = computed(() => {
         const graph = toQueryGraph(graphSource(), { payloads: false })
-        return nearest.value.map((modification) => ({ modification, ...operationsToChange(modification.operations, graph) }))
+        return nearest.value.map((modification) => ({
+            modification, path: pathOf(modification), ...operationsToChange(modification.operations, graph),
+        }))
     })
+
+    /** selects a modification (null to clear): scrubs to its count, so it is among the nearest */
+    const select = (id: string | null) => {
+        state.selected_id = id
+        const count = id != null ? by_id.value.get(id)?.count : null
+        if (count != null) {
+            state.scrub_count = count
+        }
+    }
 
     return {
         state, source, modifications, base_count, extent, bins, scrub_count, nearest, nearest_ids,
-        nearest_changes,
+        nearest_changes, by_id, tree, selected,
+        changeOf, pathOf,
+        ancestorsOf: (id: string) => ancestorIds(id, by_id.value),
         refresh: () => run(true),
         setScrub: (count: number | null) => { state.scrub_count = count },
+        select,
         setSampleSize,
         setConstraints,
+        setTree,
     }
 }
 

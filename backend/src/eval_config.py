@@ -105,6 +105,18 @@ class ProgressiveConfig(BaseModel):
     # distinct numeric/date values fetched at once (one GROUP BY), else percentiles by ORDER BY/OFFSET
     max_numeric_values: int = Field(10_000, ge=1)
 
+    # tree expansion (request depth > 1): levels below the first expand `branching`
+    # modifications of the previous level each, sampling child_sample_size links (and
+    # child_constraint_sample_size constrained properties) of each expanded graph
+    max_depth: int = Field(3, ge=1)
+    default_branching: int = Field(4, ge=1)
+    max_branching: int = Field(16, ge=1)
+    child_sample_size: int = Field(12, ge=1)
+    child_constraint_sample_size: int = Field(2, ge=0)
+    # endpoint queries (counts and value distributions) of a whole request; the first
+    # level is always sampled in full, deeper levels stop when the budget is spent
+    max_total_queries: int = Field(400, ge=1)
+
     @field_validator("numeric_percentiles", mode="before")
     @classmethod
     def _split_percentiles(cls, value: Any) -> Any:

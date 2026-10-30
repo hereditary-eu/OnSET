@@ -94,6 +94,12 @@ class ProgressiveSettings(BaseModel):
     max_constraint_sample_size: int
     numeric_percentiles: list[float]
     categorical_samples: int
+    # tree expansion: the depth selector's range and the defaults of the branching settings
+    max_depth: int
+    default_branching: int
+    max_branching: int
+    child_sample_size: int
+    max_total_queries: int
 
     @classmethod
     def from_config(cls, config: ProgressiveConfig):

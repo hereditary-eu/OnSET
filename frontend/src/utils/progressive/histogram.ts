@@ -35,6 +35,15 @@ export function countExtent(modifications: ProgressiveModification[], base_count
     return [0, Math.ceil(max)]
 }
 
+/** A stacked part of a bin: the modifications of one level and kind. */
+export interface BinSegment {
+    depth: number
+    constraint: boolean
+    /** modifications in the segment, and the ones stacked below it */
+    n: number
+    y0: number
+}
+
 export interface HistogramBin {
     index: number
     /** bin range in axis positions, [x0, x1) (the last bin includes x1) */
@@ -44,6 +53,8 @@ export interface HistogramBin {
     ids: string[]
     /** how many of them are constraint modifications (drawn stacked on the others) */
     constraints: number
+    /** the stack of the bin: by depth (level 1 at the bottom), links before constraints */
+    segments: BinSegment[]
 }
 
 export function isConstraint(modification: ProgressiveModification): boolean {
@@ -58,15 +69,34 @@ export function histogramBins(
     const n = Math.max(1, Math.floor(bin_count))
     const width = (hi - lo) / n || 1
     const bins: HistogramBin[] = Array.from({ length: n }, (_, index) => ({
-        index, x0: lo + index * width, x1: lo + (index + 1) * width, ids: [], constraints: 0,
+        index, x0: lo + index * width, x1: lo + (index + 1) * width, ids: [], constraints: 0, segments: [],
     }))
+    // per bin: count by "depth:constraint"
+    const parts: Map<string, number>[] = bins.map(() => new Map())
     for (const m of countedModifications(modifications)) {
-        const index = Math.floor((countPosition(m.count) - lo) / width)
-        const bin = bins[Math.min(n - 1, Math.max(0, index))]
+        const index = Math.min(n - 1, Math.max(0, Math.floor((countPosition(m.count) - lo) / width)))
+        const bin = bins[index]
         bin.ids.push(m.id)
         bin.constraints += isConstraint(m) ? 1 : 0
+        const key = `${m.depth ?? 1}:${isConstraint(m) ? 1 : 0}`
+        parts[index].set(key, (parts[index].get(key) ?? 0) + 1)
     }
+    bins.forEach((bin, i) => {
+        let y0 = 0
+        const keys = [...parts[i].keys()].map((k) => k.split(':').map(Number))
+            .sort((a, b) => a[0] - b[0] || a[1] - b[1])
+        for (const [depth, constraint] of keys) {
+            const count = parts[i].get(`${depth}:${constraint}`)!
+            bin.segments.push({ depth, constraint: constraint == 1, n: count, y0 })
+            y0 += count
+        }
+    })
     return bins
+}
+
+/** Fill opacity of a level in the histogram/legend: level 1 full, deeper ones lighter. */
+export function depthOpacity(depth: number): number {
+    return Math.max(0.3, 1 - 0.3 * (Math.max(1, depth) - 1))
 }
 
 /**
@@ -105,6 +135,16 @@ export function formatCount(count: number | null | undefined, limit: number | nu
         }
     }
     return String(Math.round(count))
+}
+
+/** A count relative to a reference count (×3.2, 45%), null without both. */
+export function formatRatio(count: number | null | undefined, reference: number | null | undefined) {
+    if (count == null || !reference) {
+        return null
+    }
+    const r = count / reference
+    const text = r >= 10 ? `×${r.toFixed(0)}` : r >= 1 ? `×${r.toFixed(1)}` : `${(r * 100).toFixed(r < 0.01 ? 2 : 0)}%`
+    return { text, more: r > 1 }
 }
 
 // --- operations -> GraphChange ---

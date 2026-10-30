@@ -1,19 +1,23 @@
 <template>
     <!-- Histogram of the modifications' row counts on a log axis, with a scrubber: dragging
-         over the chart (or the slider below it) selects a row count. -->
+         over the chart (or the slider below it) selects a row count. Bars stack the levels of
+         the tree expansion (depth 1 at the bottom, deeper levels lighter), links below
+         constraints within a level; the bin of the selected modification is outlined. -->
     <div ref="container" class="prog_hist">
         <svg :width="width" :height="HEIGHT" class="prog_hist_svg" @pointerdown="startScrub" @pointermove="moveScrub"
             @pointerup="endScrub" @pointercancel="endScrub">
-            <!-- links (and starting points) at the bottom, constraints stacked on them -->
+            <!-- per level (bottom up): links (and starting points), then constraints -->
             <g v-for="bin in bins" :key="bin.index"
                 :class="{ prog_hist_bin_near: bin.ids.some((id) => nearest_ids.has(id)) }">
                 <title>{{ bin_title(bin) }}</title>
-                <rect v-if="bin.ids.length > bin.constraints" class="prog_hist_bar"
-                    :x="x(bin.x0) + 0.5" :y="y(bin.ids.length - bin.constraints)"
-                    :width="Math.max(1, x(bin.x1) - x(bin.x0) - 1)" :height="y(0) - y(bin.ids.length - bin.constraints)" />
-                <rect v-if="bin.constraints" class="prog_hist_bar prog_hist_bar_constraint"
-                    :x="x(bin.x0) + 0.5" :y="y(bin.ids.length)" :width="Math.max(1, x(bin.x1) - x(bin.x0) - 1)"
-                    :height="y(bin.ids.length - bin.constraints) - y(bin.ids.length)" />
+                <rect v-for="segment in bin.segments" :key="`${segment.depth}:${segment.constraint}`"
+                    class="prog_hist_bar" :class="{ prog_hist_bar_constraint: segment.constraint }"
+                    :fill-opacity="depthOpacity(segment.depth)"
+                    :x="x(bin.x0) + 0.5" :y="y(segment.y0 + segment.n)" :width="Math.max(1, x(bin.x1) - x(bin.x0) - 1)"
+                    :height="y(segment.y0) - y(segment.y0 + segment.n)" />
+                <rect v-if="selected_id != null && bin.ids.includes(selected_id)" class="prog_hist_selected"
+                    :x="x(bin.x0) - 0.5" :y="y(bin.ids.length) - 1.5" :width="Math.max(1, x(bin.x1) - x(bin.x0)) + 1"
+                    :height="y(0) - y(bin.ids.length) + 1.5" />
             </g>
 
             <line class="prog_hist_axis" :x1="x(extent[0])" :x2="x(extent[1])" :y1="y(0)" :y2="y(0)" />
@@ -35,9 +39,14 @@
             :value="countPosition(scrub_count)" :title="`${formatCount(scrub_count)} rows`"
             :style="{ marginLeft: `${MARGIN.left}px`, marginRight: `${MARGIN.right}px` }"
             @input="scrub = countAtPosition(Number(($event.target as HTMLInputElement).value))" />
-        <div v-if="has_constraints" class="prog_hist_legend">
+        <div v-if="has_constraints || depth > 1" class="prog_hist_legend">
             <span><i class="prog_hist_swatch"></i>links</span>
-            <span><i class="prog_hist_swatch prog_hist_swatch_constraint"></i>constraints</span>
+            <span v-if="has_constraints"><i class="prog_hist_swatch prog_hist_swatch_constraint"></i>constraints</span>
+            <template v-if="depth > 1">
+                <span class="prog_hist_legend_sep">depth</span>
+                <span v-for="d in depth" :key="d" :title="`Modifications with ${d} step${d > 1 ? 's' : ''}`">
+                    <i class="prog_hist_swatch prog_hist_swatch_depth" :style="{ opacity: depthOpacity(d) }"></i>{{ d }}</span>
+            </template>
         </div>
     </div>
 </template>
@@ -45,15 +54,17 @@
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import * as d3 from 'd3'
 import {
-    countAtPosition, countPosition, formatCount, type HistogramBin,
+    countAtPosition, countPosition, depthOpacity, formatCount, type HistogramBin,
 } from '@/utils/progressive/histogram'
 
-const { bins, extent, base_count = null, scrub_count, nearest_ids } = defineProps<{
+const { bins, extent, base_count = null, scrub_count, nearest_ids, selected_id = null } = defineProps<{
     bins: HistogramBin[]
     extent: [number, number]
     base_count?: number | null
     scrub_count: number
     nearest_ids: Set<string>
+    /** the modification selected in the tree, its bin is outlined */
+    selected_id?: string | null
 }>()
 // the selected row count
 const scrub = defineModel<number | null>('scrub')
@@ -86,10 +97,18 @@ const ticks = computed(() => {
         .map((k) => k == 0 ? { position: 0, label: '0' } : { position: countPosition(10 ** k), label: formatCount(10 ** k) })
 })
 const has_constraints = computed(() => bins.some((b) => b.constraints > 0))
-const bin_title = (bin: HistogramBin) =>
-    `${bin.ids.length} modification${bin.ids.length > 1 ? 's' : ''}`
-    + (bin.constraints ? ` (${bin.constraints} constraint${bin.constraints > 1 ? 's' : ''})` : '')
-    + `, ${formatCount(countAtPosition(bin.x0))}–${formatCount(countAtPosition(bin.x1))} rows`
+// deepest level among the bins
+const depth = computed(() => Math.max(1, ...bins.flatMap((b) => b.segments.map((s) => s.depth))))
+const bin_title = (bin: HistogramBin) => {
+    const levels = depth.value > 1
+        ? '; ' + d3.range(1, depth.value + 1)
+            .map((d) => [d, d3.sum(bin.segments.filter((s) => s.depth == d), (s) => s.n)])
+            .filter(([, n]) => n > 0).map(([d, n]) => `${n} at depth ${d}`).join(', ')
+        : ''
+    return `${bin.ids.length} modification${bin.ids.length > 1 ? 's' : ''}`
+        + (bin.constraints ? ` (${bin.constraints} constraint${bin.constraints > 1 ? 's' : ''})` : '')
+        + `, ${formatCount(countAtPosition(bin.x0))}–${formatCount(countAtPosition(bin.x1))} rows` + levels
+}
 
 // --- scrubbing on the chart ---
 let scrubbing = false
@@ -135,6 +154,12 @@ const endScrub = () => {
     fill: var(--c-accent);
 }
 
+.prog_hist_bar {
+    /* separates the stacked levels */
+    stroke: var(--c-surface);
+    stroke-width: 0.5;
+}
+
 .prog_hist_bar_constraint {
     fill: var(--c-constraint);
     opacity: 0.55;
@@ -143,6 +168,13 @@ const endScrub = () => {
 .prog_hist_bin_near .prog_hist_bar_constraint {
     fill: var(--c-constraint);
     opacity: 1;
+}
+
+.prog_hist_selected {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.5;
+    pointer-events: none;
 }
 
 .prog_hist_legend {
@@ -163,6 +195,14 @@ const endScrub = () => {
 
 .prog_hist_swatch_constraint {
     background: var(--c-constraint);
+}
+
+.prog_hist_swatch_depth {
+    background: var(--c-link-normal);
+}
+
+.prog_hist_legend_sep {
+    margin-left: var(--space-1);
 }
 
 .prog_hist_axis {

@@ -8,8 +8,9 @@ from assistant.assistant_model import Operations, QueryGraph
 
 from fakes import DBO, RES, dbo
 
-# the constraint defaults of the panel (eval_config.ProgressiveConfig)
-CONSTRAINTS = {"sample_constraints": False, "constraint_sample_size": 8, "max_constraint_sample_size": 64, "numeric_percentiles": [10, 25, 50, 75, 90], "categorical_samples": 3}
+# the constraint and depth defaults of the panel (eval_config.ProgressiveConfig)
+CONSTRAINTS = {"sample_constraints": False, "constraint_sample_size": 8, "max_constraint_sample_size": 64, "numeric_percentiles": [10, 25, 50, 75, 90], "categorical_samples": 3,
+               "max_depth": 3, "default_branching": 4, "max_branching": 16, "child_sample_size": 12, "max_total_queries": 400}
 
 
 def test_root(raw_client):

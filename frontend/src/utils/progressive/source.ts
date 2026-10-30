@@ -23,11 +23,16 @@ export interface ProgressiveSource {
 export function normalizeResult(result: ApiProgressiveResult): ProgressiveResult {
     return {
         ...result,
+        depth: result.depth ?? 1,
+        expanded_ids: result.expanded_ids ?? [],
         modifications: (result.modifications ?? []).map((m) => ({
             ...m,
             kind: m.kind ?? 'link',
             operations: m.operations ?? [],
             details: m.details ? { subjects: m.details.subjects ?? {}, links: m.details.links ?? {} } : null,
+            depth: m.depth ?? 1,
+            parent_id: m.parent_id ?? null,
+            step_operations: m.step_operations ?? null,
         })),
     }
 }
@@ -98,6 +103,8 @@ function hash(text: string): number {
 
 const n3 = (name: string) => `<${DBO}${name}>`
 const emptyDetails = (): GraphDetails => ({ subjects: {}, links: {} })
+// the mock samples the first level only (no tree expansion)
+const FIRST_LEVEL = { depth: 1, parent_id: null, step_operations: null }
 
 function mockModifications(request: ProgressiveRequest): ProgressiveResult {
     const { graph } = request
@@ -117,9 +124,10 @@ function mockModifications(request: ProgressiveRequest): ProgressiveResult {
                 label: name,
                 description: `Start from ${name}`,
                 details: emptyDetails(),
+                ...FIRST_LEVEL,
             })
         }
-        return { base_count: null, modifications, candidate_count: MOCK_ROOTS.length }
+        return { base_count: null, modifications, candidate_count: MOCK_ROOTS.length, depth: 1, expanded_ids: [] }
     }
 
     const base_count = logCount(3, 6) || 1000
@@ -153,9 +161,13 @@ function mockModifications(request: ProgressiveRequest): ProgressiveResult {
             count: rand() < 0.04 ? null : rand() < 0.08 ? 0 : Math.round(base_count * factor),
             label: `${from.label} → ${property_label} → ${range_label}`,
             details: emptyDetails(),
+            ...FIRST_LEVEL,
         })
     }
-    return { base_count, modifications, candidate_count: candidates.length, count_subject: graph.subjects[0].id }
+    return {
+        base_count, modifications, candidate_count: candidates.length, count_subject: graph.subjects[0].id,
+        depth: 1, expanded_ids: [],
+    }
 }
 
 /** MOCK: invents candidate links/counts locally, with a small delay like a count query. */
