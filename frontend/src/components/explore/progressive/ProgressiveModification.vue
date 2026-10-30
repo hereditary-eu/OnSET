@@ -1,10 +1,13 @@
 <template>
     <!-- One candidate modification: its label, row count relative to the current graph, and
          the difference view of what it adds/removes; clicking applies it to the editor. -->
-    <div class="prog_mod" :class="{ prog_mod_empty: modification.count === 0 }">
+    <div class="prog_mod" :class="{ prog_mod_empty: modification.count === 0, prog_mod_constraint: tag }">
         <button type="button" class="prog_mod_header" :title="modification.description || 'Apply to the query'"
             @click="emit('apply')">
+            <OnsetIcon :icon="tag ? 'mdi-filter-outline' : 'mdi-vector-polyline-plus'" class="prog_mod_kind"
+                :title="tag ? 'Constraint' : 'Link'" />
             <span class="prog_mod_label">{{ modification.label }}</span>
+            <span v-if="tag" class="prog_mod_tag" :title="tag_title">{{ tag }}</span>
             <span class="prog_mod_count" :title="modification.count == null ? 'Count failed or timed out' : undefined">
                 {{ formatCount(modification.count, count_limit) }}</span>
             <span v-if="ratio" class="prog_mod_ratio" :class="ratio.cls">{{ ratio.text }}</span>
@@ -20,7 +23,7 @@ import OnsetIcon from '@/components/ui/OnsetIcon.vue'
 import ChatGraphPreview from '../chat/ChatGraphPreview.vue'
 import { isEmptyChange } from '@/utils/agent/graph_sync'
 import type { GraphChange } from '@/utils/agent/protocol'
-import { formatCount } from '@/utils/progressive/histogram'
+import { constraintTag, formatCount } from '@/utils/progressive/histogram'
 import type { ProgressiveModification } from '@/utils/progressive/types'
 
 const { modification, change, base_count = null, count_limit = null, skipped = 0 } = defineProps<{
@@ -37,6 +40,16 @@ const emit = defineEmits<{
 }>()
 
 const empty_change = computed(() => isEmptyChange(change))
+const tag = computed(() => constraintTag(modification))
+const tag_title = computed(() => {
+    const constraint = modification.constraint
+    if (!constraint) {
+        return undefined
+    }
+    return constraint.kind == 'percentile'
+        ? `Threshold at the ${constraint.percentile}th percentile of ${constraint.property_label} in the current results`
+        : `Sampled by frequency: ${formatCount(constraint.frequency)} of the current results`
+})
 // count relative to the current graph's rows
 const ratio = computed(() => {
     const count = modification.count
@@ -61,6 +74,27 @@ const ratio = computed(() => {
 
 .prog_mod_empty {
     opacity: 0.6;
+}
+
+.prog_mod_constraint {
+    border-left: 3px solid var(--c-constraint);
+}
+
+.prog_mod_kind {
+    opacity: 0.6;
+}
+
+.prog_mod_constraint .prog_mod_kind {
+    color: var(--c-constraint);
+    opacity: 1;
+}
+
+.prog_mod_tag {
+    padding: 0 var(--space-1);
+    border-radius: 999px;
+    background: var(--c-constraint-soft);
+    font-family: var(--font-mono);
+    white-space: nowrap;
 }
 
 .prog_mod_header {

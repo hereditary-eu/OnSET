@@ -1,5 +1,6 @@
 """assistant/progressive.py: candidates, sampling and counts on the in-memory ontology, and the endpoint."""
 
+import random
 import threading
 import time
 from types import SimpleNamespace
@@ -10,20 +11,30 @@ import pytest
 from assistant.assistant_model import (
     AssistantLink,
     AssistantSubject,
+    BooleanSubQuery,
     LinkQuantifier,
     LinkSemanticType,
+    NumberSubQuery,
     OperationType,
     QueryGraph,
+    QueryPropSubQuery,
+    StringSubQuery,
+    SubjectSubQuery,
     VectorSortSubQuery,
 )
 from assistant.progressive import (
+    ModificationKind,
     ProgressiveRequest,
     ProgressiveResult,
     ProgressiveSampler,
+    Term,
     complete,
     counted_graph,
     endpoint_counter,
+    endpoint_selector,
     run_bounded,
+    weighted_percentiles,
+    weighted_sample,
 )
 
 from eval_config import EvalConfig, ProgressiveConfig
@@ -347,3 +358,283 @@ def test_sample_endpoint_errors(client):
     )
     assert response.status_code == 422 and "count_subject" in response.json()["detail"]
     assert client.post("/dbpedia/progressive/sample", json={"graph": {}, "sample_size": 0}).status_code == 422
+
+
+# --- constraints ---
+
+# ships s0..s9 with homeports (England 6, France 3, Spain 1), lengths 10..100, launch
+# dates 1900..1909, a class and whether they are in service; two "Enterprise" without
+# homeport and far longer; no ship has a draft
+FLEET_TTL = (
+    """
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix dbo: <http://dbpedia.org/ontology/> .
+@prefix dbr: <http://dbpedia.org/resource/> .
+
+dbo:Ship a owl:Class ; rdfs:label "ship"@en .
+dbo:Country a owl:Class ; rdfs:label "country"@en .
+dbo:homeport a owl:ObjectProperty ; rdfs:label "homeport"@en ; rdfs:domain dbo:Ship ; rdfs:range dbo:Country .
+dbo:length a owl:DatatypeProperty ; rdfs:label "length"@en ; rdfs:domain dbo:Ship ; rdfs:range xsd:double .
+dbo:shipLaunch a owl:DatatypeProperty ; rdfs:label "ship launch"@en ; rdfs:domain dbo:Ship ; rdfs:range xsd:date .
+dbo:inService a owl:DatatypeProperty ; rdfs:label "in service"@en ; rdfs:domain dbo:Ship ; rdfs:range xsd:boolean .
+dbo:shipClass a rdf:Property ; rdfs:label "ship class"@en ; rdfs:domain dbo:Ship ; rdfs:range xsd:string .
+dbo:modelStartYear a owl:DatatypeProperty ; rdfs:domain dbo:Ship ; rdfs:range xsd:gYear .
+dbo:draft a owl:DatatypeProperty ; rdfs:label "draft"@en ; rdfs:domain dbo:Ship ; rdfs:range xsd:double .
+dbr:England a dbo:Country ; rdfs:label "England"@en .
+dbr:France a dbo:Country ; rdfs:label "France"@en .
+dbr:Spain a dbo:Country ; rdfs:label "Spain"@en .
+dbr:e1 a dbo:Ship ; rdfs:label "Enterprise"@en ; dbo:length "1000"^^xsd:double .
+dbr:e2 a dbo:Ship ; rdfs:label "Enterprise"@en ; dbo:length "2000"^^xsd:double .
+"""
+    + "\n".join(
+        f'dbr:s{i} a dbo:Ship ; rdfs:label "Ship {i}"@en ; dbo:length "{10 * (i + 1)}"^^xsd:double ; '
+        f'dbo:homeport dbr:{"England" if i < 6 else "France" if i < 9 else "Spain"} ; '
+        f'dbo:shipLaunch "{1900 + i}-01-01"^^xsd:date ; dbo:inService {"true" if i < 7 else "false"} ; '
+        f'dbo:shipClass "{"Frigate" if i < 5 else "Sloop" if i < 8 else f"Unique {i}"}" ; dbo:modelStartYear "1899"^^xsd:gYear .'
+        for i in range(10)
+    )
+)
+
+
+@pytest.fixture
+def fleet():
+    return ProgressiveSampler(make_ontology(FLEET_TTL))
+
+
+def homeport_graph() -> QueryGraph:
+    return ship_graph(("homeport", "Country"))
+
+
+def constraints(sampler, graph, **kwargs) -> ProgressiveResult:
+    kwargs = {"sample_size": 1, "seed": 1, "sample_constraints": True, "constraint_sample_size": 64, **kwargs}
+    return sampler.sample(ProgressiveRequest(graph=graph, **kwargs))
+
+
+def constrained(result: ProgressiveResult, prop: str | None = None) -> dict:
+    """label -> count of the constraint modifications (of a property, None: of instances)."""
+    return {
+        m.label: m.count
+        for m in result.modifications
+        if m.kind == ModificationKind.CONSTRAINT and m.constraint.property_id == (dbo(prop) if prop else None)
+    }
+
+
+def test_constraint_candidates(fleet):
+    kinds = {(c.subject_id, c.prop, c.value_kind) for c in fleet.constraint_candidates(homeport_graph(), "ship")}
+    # gYear is no number/date; the counted ship: its label, the other subject: its instance
+    assert kinds == {
+        ("ship", "rdfs:label", "label"),
+        ("ship", dbo("length"), "number"),
+        ("ship", dbo("shipLaunch"), "date"),
+        ("ship", dbo("inService"), "boolean"),
+        ("ship", dbo("shipClass"), "string"),
+        ("ship", dbo("draft"), "number"),
+        ("t0", None, "instance"),
+    }
+    # constrained properties/instances and the subject filter are left out
+    graph = homeport_graph()
+    graph.subjects[0].subqueries = [NumberSubQuery(id="n", property_id=dbo("length"), value=1)]
+    graph.subjects[1].subqueries = [SubjectSubQuery(id="i", instance_id="<http://dbpedia.org/resource/England>")]
+    kinds = {(c.subject_id, c.prop) for c in fleet.constraint_candidates(graph, "ship")}
+    assert ("ship", dbo("length")) not in kinds and ("t0", None) not in kinds
+    assert {c.subject_id for c in fleet.constraint_candidates(graph, "ship", subject_ids=["t0"])} == set()
+
+
+def test_percentiles_in_graph_context(fleet):
+    # the ships with a homeport have lengths 10..100 (the Enterprises are not in the context)
+    result = constraints(fleet, homeport_graph())
+    assert result.base_count == 10
+    assert constrained(result, "length") == {
+        "ship: length < 10 (p10)": 0,
+        "ship: length < 30 (p25)": 2,
+        "ship: length > 50 (p50)": 5,
+        "ship: length > 80 (p75)": 2,
+        "ship: length > 90 (p90)": 1,
+    }
+    # all ships: 12 values, the upper percentiles are the Enterprises'
+    result = constraints(fleet, ship_graph())
+    assert constrained(result, "length")["ship: length > 1000 (p90)"] == 1
+    modification = next(m for m in result.modifications if m.label == "ship: length > 1000 (p90)")
+    (operation,) = modification.operations
+    assert operation.subject_id == "ship" and isinstance(operation.data, NumberSubQuery)
+    assert (operation.data.operator, operation.data.value, operation.data.property_type) == ("greater", 1000, "xsd:double")
+    assert modification.constraint.kind == "percentile" and modification.constraint.percentile == 90
+    # dates the same way, custom percentiles
+    result = constraints(fleet, homeport_graph(), numeric_percentiles=[50, 0])
+    assert constrained(result, "shipLaunch") == {
+        "ship: ship launch < 1900-01-01 (p0)": 0,
+        "ship: ship launch > 1904-01-01 (p50)": 5,
+    }
+
+
+def test_percentiles_of_many_values_by_rank():
+    # more distinct values than max_numeric_values: OFFSET queries, same percentiles
+    sampler = ProgressiveSampler(make_ontology(FLEET_TTL), config=ProgressiveConfig(max_numeric_values=3))
+    queries = []
+    run_select = sampler.run_select
+    sampler.run_select = lambda query, timeout: queries.append(query) or run_select(query, timeout)
+    result = constraints(sampler, homeport_graph())
+    assert set(constrained(result, "length")) == {
+        "ship: length < 10 (p10)", "ship: length < 30 (p25)", "ship: length > 50 (p50)",
+        "ship: length > 80 (p75)", "ship: length > 90 (p90)",
+    }
+    assert any("OFFSET 7" in q and "UNION" in q for q in queries)
+
+
+def test_categories_respect_distribution(fleet):
+    # instances of the homeport: England 6, France 3; Spain (1) is below min_category_count
+    def picks(seed, k=1):
+        # the country only: its instance is the one candidate
+        result = constraints(fleet, homeport_graph(), categorical_samples=k, seed=seed, subject_ids=["t0"])
+        return list(constrained(result))
+
+    assert picks(3) == picks(3)
+    counts = {}
+    for seed in range(60):
+        (label,) = picks(seed)
+        counts[label] = counts.get(label, 0) + 1
+    assert set(counts) == {"country: = England", "country: = France"}
+    assert counts["country: = England"] > counts["country: = France"]
+    result = constraints(fleet, homeport_graph(), categorical_samples=3)
+    assert constrained(result) == {"country: = England": 6, "country: = France": 3}
+    england = next(m for m in result.modifications if m.label == "country: = England")
+    (operation,) = england.operations
+    assert operation.subject_id == "t0" and isinstance(operation.data, SubjectSubQuery)
+    assert operation.data.instance_id == "<http://dbpedia.org/resource/England>"
+    assert (england.constraint.kind, england.constraint.frequency) == ("category", 6)
+
+
+def test_string_boolean_and_label_categories(fleet):
+    result = constraints(fleet, homeport_graph())
+    # unique classes are no categories
+    assert constrained(result, "shipClass") == {'ship: ship class = "Frigate"': 5, 'ship: ship class = "Sloop"': 3}
+    assert constrained(result, "inService") == {"ship: in service = true": 7, "ship: in service = false": 3}
+    string = next(m for m in result.modifications if "Frigate" in m.label).operations[0].data
+    assert isinstance(string, StringSubQuery) and string.operator == "equals"
+    assert isinstance(next(m for m in result.modifications if "in service" in m.label).operations[0].data, BooleanSubQuery)
+    # ship names repeat only among all ships
+    assert not [m for m in result.modifications if m.constraint and m.constraint.property_id == "rdfs:label"]
+    result = constraints(fleet, ship_graph())
+    assert {m.label: m.count for m in result.modifications if m.constraint and m.constraint.property_id == "rdfs:label"} == {
+        'ship: label = "Enterprise"': 2
+    }
+
+
+def test_constraint_operations_apply(fleet):
+    graph = homeport_graph()
+    graph.subjects[0].subqueries = [QueryPropSubQuery(id="length_1", property_id=dbo("shipClass"))]
+    result = constraints(fleet, graph)
+    ids = [op.data.id for m in result.modifications for op in m.operations]
+    assert len(ids) == len(set(ids)) and "length_1" not in ids
+    assert result.constraint_candidate_count == 6 and complete(result)
+    for modification in result.modifications:
+        if modification.kind != ModificationKind.CONSTRAINT:
+            continue
+        modified = graph.model_copy(deep=True)
+        for operation in modification.operations:
+            modified.apply(operation)
+        subject = modified.get_subject_by_id(modification.constraint.subject_id)
+        assert subject.subqueries[-1].id == modification.operations[0].data.id
+        assert modification.details is not None
+
+
+def test_constraints_off_is_unchanged(fleet):
+    graph = homeport_graph()
+    plain = fleet.sample(ProgressiveRequest(graph=graph, sample_size=10, seed=2))
+    assert plain == fleet.sample(ProgressiveRequest(graph=graph, sample_size=10, seed=2, sample_constraints=False))
+    assert plain.constraint_candidate_count is None
+    assert all(m.kind == ModificationKind.LINK and m.constraint is None for m in plain.modifications)
+    # with constraints, the link sample stays the same
+    with_constraints = fleet.sample(ProgressiveRequest(graph=graph, sample_size=10, seed=2, sample_constraints=True))
+    links = [m for m in with_constraints.modifications if m.kind == ModificationKind.LINK]
+    assert links == plain.modifications
+    # sampled properties, by default the configured number of them
+    sampled = {m.constraint.property_id for m in with_constraints.modifications if m.constraint}
+    assert 0 < len(sampled) <= ProgressiveConfig().constraint_sample_size
+    fewer = constraints(fleet, graph, constraint_sample_size=1)
+    assert len({m.constraint.property_id for m in fewer.modifications if m.constraint}) <= 1
+    # empty graphs have no constraints
+    assert constraints(fleet, QueryGraph()).constraint_candidate_count is None
+
+
+def test_candidates_without_values_are_replaced(fleet):
+    # 5 of the 7 candidates have values (not: the unique ship labels, the draft), the
+    # sample has those 5 whatever the seed
+    for seed in range(4):
+        result = constraints(fleet, homeport_graph(), seed=seed, constraint_sample_size=5)
+        sampled = {(m.constraint.subject_id, m.constraint.property_id) for m in result.modifications if m.constraint}
+        assert sampled == {
+            ("ship", dbo("length")), ("ship", dbo("shipLaunch")), ("ship", dbo("inService")),
+            ("ship", dbo("shipClass")), ("t0", None),
+        }
+
+
+def test_failed_distributions(fleet):
+    def run_select(query, timeout):
+        raise RuntimeError("endpoint down")
+
+    fleet.run_select = run_select
+    result = constraints(fleet, homeport_graph())
+    assert len(result.failed_constraints) == 7 and "t0|instance" in result.failed_constraints
+    assert not [m for m in result.modifications if m.constraint] and not complete(result)
+    # failed candidates are not replaced by others
+    assert len(constraints(fleet, homeport_graph(), constraint_sample_size=2).failed_constraints) == 2
+
+
+def test_weighted_sample():
+    rng = random.Random(0)
+    assert weighted_sample(["a", "b", "c"], [1, 0, 1], 5, rng) == ["a", "c"]
+    picks = [weighted_sample(["a", "b"], [9, 1], 1, random.Random(s))[0] for s in range(200)]
+    assert picks.count("a") > 150
+
+
+def test_weighted_percentiles():
+    values = [(Term(str(v)), w) for v, w in [(3, 1), (1, 2), (2, 1), ("x", 5)]]
+    # sorted 1, 1, 2, 3 (x cannot be ordered)
+    assert [(p, t.value) for p, t in weighted_percentiles("number", values, [0, 50, 51, 100])] == [
+        (0, "1"), (50, "1"), (51, "2"), (100, "3"),
+    ]
+    dates = [(Term("2001-01-01"), 1), (Term("1999-12-31T10:00:00Z"), 1)]
+    assert weighted_percentiles("date", dates, [0])[0][1].value == "1999-12-31T10:00:00Z"
+
+
+def test_endpoint_selector(monkeypatch):
+    def post(url, data, headers, timeout):
+        return httpx.Response(
+            200,
+            json={
+                "head": {"vars": ["v", "count"]},
+                "results": {"bindings": [
+                    {"v": {"type": "uri", "value": "http://x"}, "count": {"type": "literal", "value": "2"}},
+                    {"v": {"type": "literal", "value": "a", "xml:lang": "en"}},
+                ]},
+            },
+            request=httpx.Request("POST", url),
+        )
+
+    monkeypatch.setattr(httpx, "post", post)
+    assert endpoint_selector("http://sparql.invalid")("SELECT ...", 1) == [
+        (Term("http://x", iri=True), Term("2")),
+        (Term("a", lang="en"), None),
+    ]
+
+
+def test_sample_endpoint_constraints(client, fake_manman):
+    body = {"graph": ship_graph(("homeport", "Country")).model_dump(), "sample_size": 1, "seed": 3,
+            "sample_constraints": True, "numeric_percentiles": [50]}
+    result = client.post("/dbpedia/progressive/sample", json=body).json()
+    instance = next(m for m in result["modifications"] if m["kind"] == "constraint" and m["constraint"]["property_id"] is None)
+    # both fake ships have England as homeport
+    assert instance["count"] == 2 and instance["label"] == "country: = England"
+    assert instance["operations"] == [{
+        "operation": "add", "subject_id": "t0",
+        "data": {
+            "type": "subject", "id": "instance_1", "property_id": None, "property_label": None,
+            "property_type": "owl:Thing", "instance_id": "<http://dbpedia.org/resource/England>",
+            "instance_label": "England",
+        },
+    }]
+    assert client.post("/dbpedia/progressive/sample", json={**body, "numeric_percentiles": [101]}).status_code == 422

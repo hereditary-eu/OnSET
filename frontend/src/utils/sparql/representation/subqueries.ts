@@ -206,11 +206,14 @@ export class StringConstraint extends SubQuery {
 
     }
     filterExpression(property: string): string {
+        // (in)equality on STR(), so language-tagged labels match (as the backend's generator);
+        // sampled values (progressive constraints) may contain quotes
+        const literal = `"${String(this.value ?? '').replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`
         switch (this.type) {
             case StringConstraintType.EQUALS:
-                return `${property} ="${this.value}"`;
+                return `STR(${property}) = ${literal}`;
             case StringConstraintType.NEQUALS:
-                return `${property} != "${this.value}"`;
+                return `STR(${property}) != ${literal}`;
             case StringConstraintType.CONTAINS:
                 return `CONTAINS(${property},"${this.value}")`;
             case StringConstraintType.STARTSWITH:

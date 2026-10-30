@@ -26,11 +26,20 @@ export interface GraphDetails {
     links: Record<string, SubjectLink>
 }
 
+/** A subquery added to/removed from a subject (by its id). */
+export interface SubQueryChange {
+    operation: 'add' | 'remove'
+    subject_id: string
+    subquery: AgentSubQuery
+}
+
 export interface GraphChange {
     added: AgentQueryGraph
     removed: AgentQueryGraph
-    /** unchanged subjects the changed links attach to */
+    /** unchanged subjects the changed links (and subqueries) attach to */
     context: AgentSubject[]
+    /** subquery changes of existing subjects (progressive constraints; the agent sends none) */
+    subqueries?: SubQueryChange[]
 }
 
 // --- client -> server ---

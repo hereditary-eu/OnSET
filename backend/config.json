@@ -19,7 +19,15 @@
       "default_sample_size": "${ONSET_PROGRESSIVE_DEFAULT_SAMPLE_SIZE:-48}",
       "max_sample_size": "${ONSET_PROGRESSIVE_MAX_SAMPLE_SIZE:-256}",
       "count_limit": "${ONSET_PROGRESSIVE_COUNT_LIMIT:-1000000}",
-      "server_timeout": "${ONSET_PROGRESSIVE_SERVER_TIMEOUT:-true}"
+      "server_timeout": "${ONSET_PROGRESSIVE_SERVER_TIMEOUT:-true}",
+      "sample_constraints": "${ONSET_PROGRESSIVE_SAMPLE_CONSTRAINTS:-false}",
+      "constraint_sample_size": "${ONSET_PROGRESSIVE_CONSTRAINT_SAMPLE_SIZE:-8}",
+      "max_constraint_sample_size": "${ONSET_PROGRESSIVE_MAX_CONSTRAINT_SAMPLE_SIZE:-64}",
+      "numeric_percentiles": "${ONSET_PROGRESSIVE_NUMERIC_PERCENTILES:-10,25,50,75,90}",
+      "categorical_samples": "${ONSET_PROGRESSIVE_CATEGORICAL_SAMPLES:-3}",
+      "max_categorical_values": "${ONSET_PROGRESSIVE_MAX_CATEGORICAL_VALUES:-50}",
+      "min_category_count": "${ONSET_PROGRESSIVE_MIN_CATEGORY_COUNT:-2}",
+      "max_numeric_values": "${ONSET_PROGRESSIVE_MAX_NUMERIC_VALUES:-10000}"
     }
   },
   "configs": {

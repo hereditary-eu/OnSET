@@ -37,6 +37,10 @@
   --c-link-normal: #999;
   --c-link-added: var(--vt-c-green-strong);
   --c-link-removed: #f26c6c;
+
+  /* constraint (subquery) modifications of the progressive panel */
+  --c-constraint: #8e5bc4;
+  --c-constraint-soft: #ece2f7;
 }
 
 h1 { font-size: var(--fs-lg); font-weight: 600; }

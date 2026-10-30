@@ -20,10 +20,18 @@ Deliberate differences to the editor (known bugs there):
   neighbour to the to subject (the editor's template has ``??node_2_emb`` and a
   hardcoded payload), vector sorts without a vector are left out (the editor
   emits an invalid BIND)
-- literals are escaped, string (in)equality compares STR() (so language-tagged
-  labels match), labels are filtered by language, numbers without a property
-  type are plain numeric literals (the editor emits ``^^null``)
+- literals are escaped, string filters compare STR() (so language-tagged
+  labels match; the editor only for (in)equality), labels are filtered by
+  language, numbers without a property type are plain numeric literals (the
+  editor emits ``^^null``)
 - several vector sorts form one ORDER BY (the editor emits one clause each)
+- dates of xsd:date properties (property_type) compare with xsd:date literals,
+  the editor compares every date with an xsd:dateTime
+
+Beyond the editor: count mode counts the solutions (or a subject's bindings), and
+with ``group_by`` the counts per value of a subject or query prop (the value
+distributions of progressive discovery, assistant/progressive.py); ``projection``
+and ``order_by`` select/sort by graph ids.
 """
 
 from __future__ import annotations
@@ -123,6 +131,18 @@ class SparqlOptions(BaseModel):
     # distinct solutions of all output variables
     count_subject: str | None = None
     count_var: str = "count"
+    # graph ids (subject ids, query prop subquery ids) of the projected (select) or
+    # counted (count, without count_subject) variables, None for all outputs
+    projection: list[str] | None = None
+    # select mode: ORDER BY these graph ids (ascending) instead of the default order
+    order_by: list[str] | None = None
+    # count mode: one count per value of this graph id (a subject or query prop),
+    # ``SELECT ?value (COUNT(...) AS ?count) ... GROUP BY ?value``; limit/offset then
+    # apply to the groups, which are ordered by value (ascending) or count (descending)
+    group_by: str | None = None
+    group_order: Literal["value", "count"] = "value"
+    # group_by a query prop: keep only values in this language (and untagged ones)
+    group_language: str | None = None
     # BETWEEN/EXACTLY quantifiers: "native" emits {n,m} (QLever, not SPARQL 1.1),
     # "expand" spells them out as sequences/alternatives of the property
     path_ranges: Literal["native", "expand"] = "native"
@@ -445,6 +465,9 @@ class SparqlGenerator:
             return f"{var} = {'true' if subquery.value else 'false'}"
         if isinstance(subquery, DateSubQuery):
             literal = f"{escape_literal(format_date(subquery.value))}^^{self.iri('xsd:dateTime')}"
+            if subquery.property_type and self.expand(subquery.property_type) == DEFAULT_NAMESPACES["xsd"] + "date":
+                # xsd:date values compare with dates only (SPARQL 1.1, rdflib)
+                literal = f"{escape_literal(format_date(subquery.value)[:10])}^^{self.iri('xsd:date')}"
             return f"{var} {self.comparison(subquery.operator)} {literal}"
         raise SparqlGenerationError(f"unsupported subquery type {subquery.type}")
 
@@ -543,8 +566,23 @@ class SparqlGenerator:
         ]
         return "\n".join(lines) + "\n" if lines else ""
 
+    @staticmethod
+    def element_var(outputs: list[SparqlOutput], element_id: str) -> str:
+        """Variable of a subject id or a query prop's subquery id."""
+        for output in outputs:
+            if output.kind == "subject" and output.subject_id == element_id:
+                return output.var
+        for output in outputs:
+            if output.kind in ("property", "image") and output.element_id == element_id:
+                return output.var
+        raise SparqlGenerationError(f"{element_id} is neither a subject nor a query prop of the graph")
+
     def assemble(self, patterns, values, outputs: list[SparqlOutput], order, labels) -> GeneratedSparql:
         options = self.options
+        if options.group_by is not None and options.group_language:
+            group_var = self.element_var(outputs, options.group_by)
+            language = escape_literal(options.group_language)
+            patterns = patterns + [f'FILTER(LANG(?{group_var}) = {language} || LANG(?{group_var}) = "")']
         body = "\n".join("    " + line for line in values + patterns)
         where = f"WHERE {{\n{body}\n}}"
         distinct = "DISTINCT " if options.distinct else ""
@@ -560,8 +598,12 @@ class SparqlGenerator:
                 counted = [o.var for o in outputs if o.kind == "subject" and o.subject_id == options.count_subject]
                 if not counted:
                     raise SparqlGenerationError(f"count_subject {options.count_subject} not in the graph")
+            elif options.projection is not None:
+                counted = [self.element_var(outputs, e) for e in options.projection]
             else:
                 counted = [o.var for o in outputs if o.kind not in ("similarity", "distance")]
+            if options.group_by is not None:
+                return self.grouped(where, counted, outputs, modifiers)
             if not modifiers and len(counted) == 1:
                 query = f"SELECT (COUNT({distinct}?{counted[0]}) AS ?{count_var}) {where}"
             elif not modifiers and not options.distinct:
@@ -574,8 +616,15 @@ class SparqlGenerator:
                 query = f"SELECT (COUNT(*) AS ?{count_var}) WHERE {{\n  {{\n{inner}\n  }}\n}}"
             return self.result(query, [SparqlOutput(var=count_var, kind="count")])
 
-        query = f"SELECT {distinct}{' '.join('?' + o.var for o in outputs)} {where}"
-        if options.order:
+        projected = (
+            [self.element_var(outputs, e) for e in options.projection]
+            if options.projection is not None
+            else [o.var for o in outputs]
+        )
+        query = f"SELECT {distinct}{' '.join('?' + v for v in projected)} {where}"
+        if options.order_by is not None:
+            query += "\nORDER BY " + " ".join("?" + self.element_var(outputs, e) for e in options.order_by)
+        elif options.order:
             if order:
                 query += "\nORDER BY " + " ".join(order)
             else:
@@ -585,6 +634,31 @@ class SparqlGenerator:
         if modifiers:
             query += "\n" + "\n".join(modifiers)
         return self.result(query, outputs)
+
+    def grouped(self, where: str, counted: list[str], outputs: list[SparqlOutput], modifiers: list[str]) -> GeneratedSparql:
+        """Count mode with group_by: the count of every value of the group variable."""
+        options = self.options
+        group = self.element_var(outputs, options.group_by)
+        count_var = options.count_var
+        if options.count_subject is not None:
+            # distinct bindings of the counted subject per value
+            query = f"SELECT ?{group} (COUNT(DISTINCT ?{counted[0]}) AS ?{count_var}) {where}"
+        else:
+            # distinct solutions of the counted variables (and the group) per value
+            inner_vars = list(dict.fromkeys([group, *counted]))
+            inner = f"SELECT {'DISTINCT ' if options.distinct else ''}{' '.join('?' + v for v in inner_vars)} {where}"
+            inner = "\n".join("    " + line for line in inner.split("\n"))
+            query = f"SELECT ?{group} (COUNT(*) AS ?{count_var}) WHERE {{\n  {{\n{inner}\n  }}\n}}"
+        query += f"\nGROUP BY ?{group}"
+        if options.group_order == "count":
+            query += f"\nORDER BY DESC(?{count_var}) ?{group}"
+        else:
+            query += f"\nORDER BY ?{group}"
+        if modifiers:
+            query += "\n" + "\n".join(modifiers)
+        return self.result(
+            query, [SparqlOutput(var=group, kind="property", element_id=options.group_by), SparqlOutput(var=count_var, kind="count")]
+        )
 
     def result(self, query: str, outputs: list[SparqlOutput]) -> GeneratedSparql:
         return GeneratedSparql(

@@ -25,6 +25,7 @@ export function normalizeResult(result: ApiProgressiveResult): ProgressiveResult
         ...result,
         modifications: (result.modifications ?? []).map((m) => ({
             ...m,
+            kind: m.kind ?? 'link',
             operations: m.operations ?? [],
             details: m.details ? { subjects: m.details.subjects ?? {}, links: m.details.links ?? {} } : null,
         })),
@@ -110,6 +111,7 @@ function mockModifications(request: ProgressiveRequest): ProgressiveResult {
             const subject: AgentSubject = { id: `prog_${name}`, uri: n3(name), label: name, subqueries: [] }
             modifications.push({
                 id: `root_${name}`,
+                kind: 'start',
                 operations: [{ operation: OperationType.Add, data: subject }],
                 count: logCount(3, 6),
                 label: name,
@@ -143,6 +145,7 @@ function mockModifications(request: ProgressiveRequest): ProgressiveResult {
         const factor = 10 ** (-3.5 + rand() * 4)
         modifications.push({
             id,
+            kind: 'link',
             operations: [
                 { operation: OperationType.Add, data: to },
                 { operation: OperationType.Add, data: link },

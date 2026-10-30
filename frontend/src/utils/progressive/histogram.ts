@@ -2,7 +2,7 @@
 // the modifications nearest to a scrubbed count, and the conversion of a modification's
 // operations into the agent's GraphChange (for diff previews and applying it).
 // No Vue imports, so these can be run and tested in plain node.
-import type { AgentLink, AgentQueryGraph, AgentSubject, GraphChange } from '@/utils/agent/protocol'
+import type { AgentLink, AgentQueryGraph, AgentSubject, AgentSubQuery, GraphChange } from '@/utils/agent/protocol'
 import type { ProgressiveModification, ProgressiveOperation } from './types'
 
 // --- count axis ---
@@ -42,6 +42,12 @@ export interface HistogramBin {
     x1: number
     /** modifications in the bin */
     ids: string[]
+    /** how many of them are constraint modifications (drawn stacked on the others) */
+    constraints: number
+}
+
+export function isConstraint(modification: ProgressiveModification): boolean {
+    return modification.kind == 'constraint'
 }
 
 /** Equal-width bins over the log axis; modifications without a count are left out. */
@@ -52,11 +58,13 @@ export function histogramBins(
     const n = Math.max(1, Math.floor(bin_count))
     const width = (hi - lo) / n || 1
     const bins: HistogramBin[] = Array.from({ length: n }, (_, index) => ({
-        index, x0: lo + index * width, x1: lo + (index + 1) * width, ids: [],
+        index, x0: lo + index * width, x1: lo + (index + 1) * width, ids: [], constraints: 0,
     }))
     for (const m of countedModifications(modifications)) {
         const index = Math.floor((countPosition(m.count) - lo) / width)
-        bins[Math.min(n - 1, Math.max(0, index))].ids.push(m.id)
+        const bin = bins[Math.min(n - 1, Math.max(0, index))]
+        bin.ids.push(m.id)
+        bin.constraints += isConstraint(m) ? 1 : 0
     }
     return bins
 }
@@ -117,8 +125,9 @@ export function operationKind(operation: ProgressiveOperation): OperationKind {
 
 /**
  * The subjects/links a modification adds/removes, with the unchanged subjects of `graph`
- * its links attach to as context. Subquery operations have no GraphChange form and are
- * left out (see `skipped`); operations without ids cannot be matched and are skipped too.
+ * its links attach to as context. Subquery operations go to `subqueries`, with their subject
+ * (operation.subject_id) as context; ones without a subject id, and operations without ids,
+ * cannot be matched and are left out (see `skipped`).
  */
 export function operationsToChange(
     operations: ProgressiveOperation[], graph: AgentQueryGraph,
@@ -127,6 +136,7 @@ export function operationsToChange(
         added: { subjects: [], links: [] },
         removed: { subjects: [], links: [] },
         context: [],
+        subqueries: [],
     }
     const skipped: ProgressiveOperation[] = []
     for (const operation of operations) {
@@ -142,6 +152,12 @@ export function operationsToChange(
                 continue
             }
             skipped.push(operation)
+        } else if (kind == 'subquery' && operation.subject_id) {
+            change.subqueries!.push({
+                operation: String(operation.operation) == 'remove' ? 'remove' : 'add',
+                subject_id: operation.subject_id,
+                subquery: operation.data as AgentSubQuery,
+            })
         } else {
             skipped.push(operation)
         }
@@ -149,6 +165,27 @@ export function operationsToChange(
     const changed = new Set([...change.added.subjects, ...change.removed.subjects].map((s) => s.id))
     const attached = new Set([...change.added.links, ...change.removed.links]
         .flatMap((l) => [l.from_subject_id, l.to_subject_id]))
+    for (const subquery of change.subqueries!) {
+        attached.add(subquery.subject_id)
+    }
     change.context = graph.subjects.filter((s) => attached.has(s.id) && !changed.has(s.id))
     return { change, skipped }
+}
+
+// --- constraint settings and display ---
+
+/** Percentiles typed as comma/space-separated numbers, null if one is no number in 0-100. */
+export function parsePercentiles(text: string): number[] | null {
+    const tokens = text.split(/[\s,;]+/).filter((t) => t.length > 0)
+    const values = tokens.map((t) => Number(t.replace(/^p/i, '')))
+    return values.every((v) => Number.isFinite(v) && v >= 0 && v <= 100) ? values : null
+}
+
+/** Short tag of a constraint modification (e.g. "p75", "category"), null for other modifications. */
+export function constraintTag(modification: ProgressiveModification): string | null {
+    const constraint = modification.constraint
+    if (!isConstraint(modification) || !constraint) {
+        return null
+    }
+    return constraint.kind == 'percentile' && constraint.percentile != null ? `p${constraint.percentile}` : 'category'
 }

@@ -320,6 +320,49 @@ def test_count_mode(data):
         sparql(graph, mode="count", count_subject="nope")
 
 
+def test_grouped_counts(data):
+    from assistant.assistant_model import QueryPropSubQuery
+
+    # distinct ships per homeport, most frequent first
+    graph = ship_graph()
+    query = sparql(graph, mode="count", count_subject="ship", group_by="place", group_order="count").query
+    parse(query)
+    assert "GROUP BY ?place" in query and "ORDER BY DESC(?count) ?place" in query
+    assert run(data, query) == [
+        {"place": DBR + "Portsmouth", "count": "3"},
+        {"place": DBR + "Plymouth", "count": "1"},
+    ]
+    # per value of a query prop, by value, limited groups
+    length = ship_graph([QueryPropSubQuery(id="len", property_id="dbo:length")], place=False)
+    query = sparql(length, mode="count", count_subject="ship", group_by="len", limit=1).query
+    assert "ORDER BY ?sq_len\nLIMIT 1" in query
+    assert run(data, query) == [{"sq_len": "27.7", "count": "1"}]
+    # without count subject: the distinct solutions per value
+    assert run(data, sparql(graph, mode="count", group_by="place", group_order="count").query)[0] == {
+        "place": DBR + "Portsmouth", "count": "3",
+    }
+    # values in the language (and untagged)
+    label = ship_graph([QueryPropSubQuery(id="lbl", property_id="rdfs:label")], place=False)
+    query = sparql(label, mode="count", count_subject="ship", group_by="lbl", group_language="en").query
+    assert {r["sq_lbl"] for r in run(data, query)} == {"Bounty", "HMS Victory"}
+    with pytest.raises(SparqlGenerationError, match="neither a subject nor a query prop"):
+        sparql(graph, mode="count", group_by="nope")
+
+
+def test_projection_and_order_by(data):
+    from assistant.assistant_model import QueryPropSubQuery
+
+    graph = ship_graph([QueryPropSubQuery(id="len", property_id="dbo:length")])
+    query = sparql(graph, projection=["len", "ship"], order_by=["len"], labels=False, limit=1, offset=1).query
+    parse(query)
+    assert "SELECT DISTINCT ?sq_len ?ship WHERE" in query
+    assert "ORDER BY ?sq_len\nLIMIT 1\nOFFSET 1" in query
+    assert run(data, query) == [{"sq_len": "69.3", "ship": DBR + "Victory"}]
+    # counted variables: the distinct (ship, length) pairs
+    query = sparql(graph, mode="count", projection=["ship", "len"]).query
+    assert run(data, query) == [{"count": "2"}]
+
+
 def test_count_of_full_graph_parses():
     parse(sparql(full_graph(), mode="count", limit=1000, path_ranges="expand").query)
 
@@ -370,6 +413,13 @@ def test_errors():
         sparql(graph)
     with pytest.raises(SparqlGenerationError, match="invalid date"):
         sparql(ship_graph([{"type": "date", "property_id": "dbo:x", "value": "yesterday"}], place=False))
+
+
+def test_dates_of_date_properties():
+    from assistant.assistant_model import DateSubQuery
+
+    date = DateSubQuery(id="d", property_id="dbo:launch", property_type="xsd:date", value="1900-01-01", operator="less")
+    assert 'FILTER(?sq_d < "1900-01-01"^^xsd:date)' in sparql(ship_graph([date], place=False)).query
 
 
 def test_format_date():

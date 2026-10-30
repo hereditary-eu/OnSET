@@ -6,14 +6,16 @@
 // Subqueries are sent to the agent as read-only context; the agent cannot create them, so
 // they are never converted back. The agent's graph changes are applied as a diff
 // (added/removed by id) to the editor store, so concurrent edits and everything the agent
-// does not change (positions, subqueries, link options) are kept.
+// does not change (positions, subqueries, link options) are kept. Changes may also carry
+// subquery additions/removals of single subjects (GraphChange.subqueries, the constraints of
+// the progressive panel), which are applied to those subjects' nodes the same way.
 import { NodeLinkRepository } from '@/utils/sparql/store'
 import { type Link, type SubjectNode } from '@/utils/sparql/representation'
 import {
-    linkFor, linkGraphId, placeNodes, subjectNodeFor, toGraphSubject, toQueryGraph,
+    fromGraphSubQuery, linkFor, linkGraphId, placeNodes, subjectNodeFor, toGraphSubject, toQueryGraph,
 } from '@/utils/sparql/querygraph'
 import type {
-    AgentLink, AgentQueryGraph, AgentSubject, AgentSubQuery, GraphChange, GraphDetails,
+    AgentLink, AgentQueryGraph, AgentSubject, AgentSubQuery, GraphChange, GraphDetails, SubQueryChange,
 } from './protocol'
 
 export { linkFor, linkGraphId, subjectNodeFor }
@@ -69,6 +71,19 @@ export function diffAgentGraphs(before: AgentQueryGraph, after: AgentQueryGraph)
 export function isEmptyChange(change: GraphChange): boolean {
     return change.added.subjects.length == 0 && change.added.links.length == 0
         && change.removed.subjects.length == 0 && change.removed.links.length == 0
+        && !change.subqueries?.length
+}
+
+/** Applies subquery changes to a node in place; already present (added) or gone (removed) ones are skipped. */
+function applySubQueryChanges(node: SubjectNode, changes: SubQueryChange[]) {
+    for (const { operation, subquery } of changes) {
+        const present = (node.subqueries || []).some((sq) => subquery.id != null && String(sq.id) == String(subquery.id))
+        if (operation == 'remove') {
+            node.subqueries = (node.subqueries || []).filter((sq) => String(sq.id) != String(subquery.id))
+        } else if (!present) {
+            node.subqueries = [...(node.subqueries || []), fromGraphSubQuery(subquery, node)]
+        }
+    }
 }
 
 /**
@@ -108,6 +123,15 @@ export function applyGraphChange(store: NodeLinkRepository, change: GraphChange,
         }
         store.links.push(linkFor(link, from, to, details.links[link.id]))
     }
+
+    for (const subquery of change.subqueries ?? []) {
+        const node = store.nodes.find((n) => n.internal_id == subquery.subject_id)
+        if (!node) {
+            console.warn('Subquery change without its subject in the editor', subquery)
+            continue
+        }
+        applySubQueryChanges(node, [subquery])
+    }
 }
 
 /**
@@ -143,20 +167,44 @@ export function changeRepositories(change: GraphChange, details?: GraphDetails |
         placeNodes([ordered[0]], ordered.slice(1), all_links.map((l) => ({ from: l.from_subject_id, to: l.to_subject_id })))
     }
 
-    const build = (subjects: AgentSubject[], links: AgentLink[]) => {
+    // subjects with subquery changes: a copy per side, before with the removed subqueries,
+    // after with the added ones (Node.vue highlights them by the diff of the two)
+    const subquery_changes = change.subqueries ?? []
+    const side = (operation: SubQueryChange['operation']) => {
+        const copies = new Map<string, SubjectNode>()
+        for (const id of new Set(subquery_changes.map((c) => c.subject_id))) {
+            const node = nodes.get(id)
+            if (!node) {
+                continue
+            }
+            const subject = all_subjects.find((s) => s.id == id)!
+            const copy = subjectNodeFor(subject, subject_details[id])
+            copy.x = node.x
+            copy.y = node.y
+            applySubQueryChanges(copy, subquery_changes
+                .filter((c) => c.subject_id == id && c.operation == operation)
+                .map((c) => ({ ...c, operation: 'add' })))
+            copies.set(id, copy)
+        }
+        return copies
+    }
+    const sides = { before: side('remove'), after: side('add') }
+
+    const build = (subjects: AgentSubject[], links: AgentLink[], copies: Map<string, SubjectNode>) => {
         const ids = new Set([...change.context, ...subjects].map((s) => s.id))
         for (const link of links) {
             ids.add(link.from_subject_id)
             ids.add(link.to_subject_id)
         }
-        const repo = new NodeLinkRepository<SubjectNode, Link>([...ids].map((id) => nodes.get(id)).filter((n): n is SubjectNode => !!n))
+        const node = (id: string) => copies.get(id) ?? nodes.get(id)
+        const repo = new NodeLinkRepository<SubjectNode, Link>([...ids].map(node).filter((n): n is SubjectNode => !!n))
         for (const link of links) {
-            repo.links.push(linkFor(link, nodes.get(link.from_subject_id), nodes.get(link.to_subject_id), link_details[link.id]))
+            repo.links.push(linkFor(link, node(link.from_subject_id)!, node(link.to_subject_id)!, link_details[link.id]))
         }
         return repo
     }
     return {
-        before: build(change.removed.subjects, change.removed.links),
-        after: build(change.added.subjects, change.added.links),
+        before: build(change.removed.subjects, change.removed.links, sides.before),
+        after: build(change.added.subjects, change.added.links, sides.after),
     }
 }

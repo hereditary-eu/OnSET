@@ -12,7 +12,7 @@ import {
     countExtent, histogramBins, medianCount, nearestModifications, operationsToChange,
 } from './histogram'
 import { progressiveSource, type ProgressiveSource } from './source'
-import type { ProgressiveResult } from './types'
+import type { ConstraintSettings, ProgressiveRequest, ProgressiveResult } from './types'
 
 export type ProgressiveStatus = 'idle' | 'loading' | 'ready' | 'error'
 
@@ -40,7 +40,23 @@ export function useProgressive(graphSource: () => NodeLinkRepository | null | un
         bin_count: options.bin_count ?? 24,
         /** row count selected by the scrubber, null to follow the base count */
         scrub_count: null as number | null,
+        /** constraint modifications (subqueries) besides the links, defaults from the configuration */
+        constraints: {
+            sample_constraints: false,
+            constraint_sample_size: 8,
+            numeric_percentiles: [10, 25, 50, 75, 90],
+            categorical_samples: 3,
+        } as ConstraintSettings,
+        max_constraint_sample_size: null as number | null,
     })
+
+    /** the request of the graph; the constraint settings only when they are sampled */
+    const request = (graph: ProgressiveRequest['graph']): ProgressiveRequest => {
+        const constraints = state.constraints
+        return constraints.sample_constraints
+            ? { graph, sample_size: state.sample_size, ...constraints, numeric_percentiles: [...constraints.numeric_percentiles] }
+            : { graph, sample_size: state.sample_size, sample_constraints: false }
+    }
 
     // key of the graph (and sample size) the result/the running request is for
     let request_key: string | null = null
@@ -54,7 +70,8 @@ export function useProgressive(graphSource: () => NodeLinkRepository | null | un
             return
         }
         const graph = toQueryGraph(store, { payloads: false })
-        const key = `${graphKey(graph)}#${state.sample_size}`
+        const body = request(graph)
+        const key = `${graphKey(graph)}#${JSON.stringify({ ...body, graph: null })}`
         if (!force && key == request_key) {
             return
         }
@@ -64,7 +81,7 @@ export function useProgressive(graphSource: () => NodeLinkRepository | null | un
         state.status = 'loading'
         state.error = null
         try {
-            const result = await source.fetch({ graph, sample_size: state.sample_size }, own.signal)
+            const result = await source.fetch(body, own.signal)
             if (own.signal.aborted) {
                 return
             }
@@ -99,14 +116,35 @@ export function useProgressive(graphSource: () => NodeLinkRepository | null | un
         const max = state.max_sample_size ?? Infinity
         state.sample_size = Math.max(1, Math.min(Math.round(size), max))
     }
+    /** updates constraint settings; sizes are clamped, percentiles kept within 0-100 and sorted */
+    const setConstraints = (settings: Partial<ConstraintSettings>) => {
+        const next = { ...state.constraints, ...settings }
+        const max = state.max_constraint_sample_size ?? Infinity
+        next.constraint_sample_size = Math.max(0, Math.min(Math.round(next.constraint_sample_size) || 0, max))
+        next.categorical_samples = Math.max(1, Math.round(next.categorical_samples) || 1)
+        next.numeric_percentiles = [...new Set(next.numeric_percentiles
+            .filter((p) => Number.isFinite(p) && p >= 0 && p <= 100))].sort((a, b) => a - b)
+        state.constraints = next
+    }
     // the backend caps larger sizes anyway, clamping shows the cap
     OntoConfig.ensureConfig().then(({ config }) => {
-        state.max_sample_size = config.progressive.max_sample_size
-        setSampleSize(options.sample_size ?? config.progressive.default_sample_size)
+        const progressive = config.progressive
+        state.max_sample_size = progressive.max_sample_size
+        setSampleSize(options.sample_size ?? progressive.default_sample_size)
+        if (progressive.numeric_percentiles) {
+            state.max_constraint_sample_size = progressive.max_constraint_sample_size
+            setConstraints({
+                sample_constraints: progressive.sample_constraints,
+                constraint_sample_size: progressive.constraint_sample_size,
+                numeric_percentiles: progressive.numeric_percentiles,
+                categorical_samples: progressive.categorical_samples,
+            })
+        }
     }).catch((e) => console.warn('Progressive discovery: no configuration limits', e))
 
     watch(graphSource, schedule, { deep: true, immediate: true })
     watch(() => state.sample_size, schedule)
+    watch(() => state.constraints, schedule)
     onBeforeUnmount(() => {
         if (timer) {
             clearTimeout(timer)
@@ -135,6 +173,7 @@ export function useProgressive(graphSource: () => NodeLinkRepository | null | un
         refresh: () => run(true),
         setScrub: (count: number | null) => { state.scrub_count = count },
         setSampleSize,
+        setConstraints,
     }
 }
 

@@ -54,6 +54,13 @@ export enum OperationType {
   Remove = "remove",
 }
 
+/** ModificationKind */
+export enum ModificationKind {
+  Start = "start",
+  Link = "link",
+  Constraint = "constraint",
+}
+
 /** ManifoldAlg */
 export enum ManifoldAlg {
   TSNE = "TSNE",
@@ -83,6 +90,12 @@ export enum LinkQuantifierType {
 export enum FUZZY_QUERY_ORDER {
   Score = "score",
   Instances = "instances",
+}
+
+/** ConstraintKind */
+export enum ConstraintKind {
+  Percentile = "percentile",
+  Category = "category",
 }
 
 /** AssistantStringConstraintType */
@@ -725,6 +738,8 @@ export interface Operation {
             type: "vector_sort";
           } & VectorSortSubQuery)
       );
+  /** Subject Id */
+  subject_id?: string | null;
 }
 
 /** Operations */
@@ -748,10 +763,32 @@ export interface OutLink {
   instances?: string[];
 }
 
+/**
+ * ProgressiveConstraint
+ * What a constraint modification restricts, for display.
+ */
+export interface ProgressiveConstraint {
+  kind: ConstraintKind;
+  /** Subject Id */
+  subject_id: string;
+  /** Property Id */
+  property_id?: string | null;
+  /** Property Label */
+  property_label?: string | null;
+  /** Value */
+  value: string;
+  /** Percentile */
+  percentile?: number | null;
+  /** Frequency */
+  frequency?: number | null;
+}
+
 /** ProgressiveModification */
 export interface ProgressiveModification {
   /** Id */
   id: string;
+  /** @default "link" */
+  kind?: ModificationKind;
   /**
    * Operations
    * @default []
@@ -764,6 +801,7 @@ export interface ProgressiveModification {
   /** Description */
   description?: string | null;
   details?: GraphDetails | null;
+  constraint?: ProgressiveConstraint | null;
 }
 
 /** ProgressiveRequest */
@@ -779,6 +817,14 @@ export interface ProgressiveRequest {
   count_subject?: string | null;
   /** Count Limit */
   count_limit?: number | null;
+  /** Sample Constraints */
+  sample_constraints?: boolean | null;
+  /** Constraint Sample Size */
+  constraint_sample_size?: number | null;
+  /** Numeric Percentiles */
+  numeric_percentiles?: number[] | null;
+  /** Categorical Samples */
+  categorical_samples?: number | null;
 }
 
 /** ProgressiveResult */
@@ -798,6 +844,13 @@ export interface ProgressiveResult {
   count_subject?: string | null;
   /** Seed */
   seed?: number | null;
+  /** Constraint Candidate Count */
+  constraint_candidate_count?: number | null;
+  /**
+   * Failed Constraints
+   * @default []
+   */
+  failed_constraints?: string[];
 }
 
 /**
@@ -811,6 +864,16 @@ export interface ProgressiveSettings {
   max_sample_size: number;
   /** Count Limit */
   count_limit: number;
+  /** Sample Constraints */
+  sample_constraints: boolean;
+  /** Constraint Sample Size */
+  constraint_sample_size: number;
+  /** Max Constraint Sample Size */
+  max_constraint_sample_size: number;
+  /** Numeric Percentiles */
+  numeric_percentiles: number[];
+  /** Categorical Samples */
+  categorical_samples: number;
 }
 
 /** Property */

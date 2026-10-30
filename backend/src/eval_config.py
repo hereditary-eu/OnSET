@@ -29,7 +29,7 @@ import re
 from enum import Enum
 from functools import lru_cache
 from pathlib import Path
-from typing import Any
+from typing import Annotated, Any
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -88,6 +88,30 @@ class ProgressiveConfig(BaseModel):
     # send the timeout to the endpoint as well (QLever's `timeout` parameter),
     # so it stops queries the sampler gave up on
     server_timeout: bool = True
+
+    # constraint modifications (subqueries), defaults of requests that do not send them
+    sample_constraints: bool = False
+    # constrained properties (subject, property) with values in the query's results to
+    # sample, each yields several modifications
+    constraint_sample_size: int = Field(8, ge=0)
+    max_constraint_sample_size: int = Field(64, ge=0)
+    # percentiles (0-100) of numeric/date values that become thresholds
+    numeric_percentiles: list[Annotated[float, Field(ge=0, le=100)]] = Field(default_factory=lambda: [10, 25, 50, 75, 90])
+    # values sampled per categorical property, among its max_categorical_values most frequent
+    categorical_samples: int = Field(3, ge=1)
+    max_categorical_values: int = Field(50, ge=1)
+    # a property is categorical if a value occurs for at least this many counted results
+    min_category_count: int = Field(2, ge=1)
+    # distinct numeric/date values fetched at once (one GROUP BY), else percentiles by ORDER BY/OFFSET
+    max_numeric_values: int = Field(10_000, ge=1)
+
+    @field_validator("numeric_percentiles", mode="before")
+    @classmethod
+    def _split_percentiles(cls, value: Any) -> Any:
+        # comma-separated in an environment variable
+        if isinstance(value, str):
+            return [v.strip() for v in value.split(",") if v.strip()]
+        return value
 
 
 class EvalConfig(BaseModel):

@@ -587,6 +587,14 @@
     "title": "Constraint",
     "type": "object"
    },
+   "ConstraintKind": {
+    "enum": [
+     "percentile",
+     "category"
+    ],
+    "title": "ConstraintKind",
+    "type": "string"
+   },
    "DataTensorResp": {
     "properties": {
      "data": {
@@ -1343,6 +1351,15 @@
     "title": "Match",
     "type": "object"
    },
+   "ModificationKind": {
+    "enum": [
+     "start",
+     "link",
+     "constraint"
+    ],
+    "title": "ModificationKind",
+    "type": "string"
+   },
    "MultimodalConfig": {
     "properties": {
      "encoding_model": {
@@ -1509,6 +1526,17 @@
      },
      "operation": {
       "$ref": "#/components/schemas/OperationType"
+     },
+     "subject_id": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Subject Id"
      }
     },
     "required": [
@@ -1561,8 +1589,85 @@
     "title": "OutLink",
     "type": "object"
    },
+   "ProgressiveConstraint": {
+    "description": "What a constraint modification restricts, for display.",
+    "properties": {
+     "frequency": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Frequency"
+     },
+     "kind": {
+      "$ref": "#/components/schemas/ConstraintKind"
+     },
+     "percentile": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Percentile"
+     },
+     "property_id": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Property Id"
+     },
+     "property_label": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Property Label"
+     },
+     "subject_id": {
+      "title": "Subject Id",
+      "type": "string"
+     },
+     "value": {
+      "title": "Value",
+      "type": "string"
+     }
+    },
+    "required": [
+     "kind",
+     "subject_id",
+     "value"
+    ],
+    "title": "ProgressiveConstraint",
+    "type": "object"
+   },
    "ProgressiveModification": {
     "properties": {
+     "constraint": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/ProgressiveConstraint"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
      "count": {
       "anyOf": [
        {
@@ -1599,6 +1704,10 @@
       "title": "Id",
       "type": "string"
      },
+     "kind": {
+      "$ref": "#/components/schemas/ModificationKind",
+      "default": "link"
+     },
      "label": {
       "title": "Label",
       "type": "string"
@@ -1621,6 +1730,30 @@
    },
    "ProgressiveRequest": {
     "properties": {
+     "categorical_samples": {
+      "anyOf": [
+       {
+        "minimum": 1.0,
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Categorical Samples"
+     },
+     "constraint_sample_size": {
+      "anyOf": [
+       {
+        "minimum": 0.0,
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Constraint Sample Size"
+     },
      "count_limit": {
       "anyOf": [
        {
@@ -1646,6 +1779,33 @@
      },
      "graph": {
       "$ref": "#/components/schemas/QueryGraph"
+     },
+     "numeric_percentiles": {
+      "anyOf": [
+       {
+        "items": {
+         "maximum": 100.0,
+         "minimum": 0.0,
+         "type": "number"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Numeric Percentiles"
+     },
+     "sample_constraints": {
+      "anyOf": [
+       {
+        "type": "boolean"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Sample Constraints"
      },
      "sample_size": {
       "anyOf": [
@@ -1715,6 +1875,17 @@
       ],
       "title": "Candidate Count"
      },
+     "constraint_candidate_count": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Constraint Candidate Count"
+     },
      "count_limit": {
       "anyOf": [
        {
@@ -1736,6 +1907,14 @@
        }
       ],
       "title": "Count Subject"
+     },
+     "failed_constraints": {
+      "default": [],
+      "items": {
+       "type": "string"
+      },
+      "title": "Failed Constraints",
+      "type": "array"
      },
      "modifications": {
       "default": [],
@@ -1763,6 +1942,14 @@
    "ProgressiveSettings": {
     "description": "The progressive discovery limits the frontend panel needs (eval_config.ProgressiveConfig).",
     "properties": {
+     "categorical_samples": {
+      "title": "Categorical Samples",
+      "type": "integer"
+     },
+     "constraint_sample_size": {
+      "title": "Constraint Sample Size",
+      "type": "integer"
+     },
      "count_limit": {
       "title": "Count Limit",
       "type": "integer"
@@ -1771,15 +1958,35 @@
       "title": "Default Sample Size",
       "type": "integer"
      },
+     "max_constraint_sample_size": {
+      "title": "Max Constraint Sample Size",
+      "type": "integer"
+     },
      "max_sample_size": {
       "title": "Max Sample Size",
       "type": "integer"
+     },
+     "numeric_percentiles": {
+      "items": {
+       "type": "number"
+      },
+      "title": "Numeric Percentiles",
+      "type": "array"
+     },
+     "sample_constraints": {
+      "title": "Sample Constraints",
+      "type": "boolean"
      }
     },
     "required": [
      "default_sample_size",
      "max_sample_size",
-     "count_limit"
+     "count_limit",
+     "sample_constraints",
+     "constraint_sample_size",
+     "max_constraint_sample_size",
+     "numeric_percentiles",
+     "categorical_samples"
     ],
     "title": "ProgressiveSettings",
     "type": "object"

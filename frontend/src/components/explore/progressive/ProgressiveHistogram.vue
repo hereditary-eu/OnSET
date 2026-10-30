@@ -4,14 +4,18 @@
     <div ref="container" class="prog_hist">
         <svg :width="width" :height="HEIGHT" class="prog_hist_svg" @pointerdown="startScrub" @pointermove="moveScrub"
             @pointerup="endScrub" @pointercancel="endScrub">
-            <g v-for="bin in bins" :key="bin.index">
-                <rect v-if="bin.ids.length" class="prog_hist_bar"
-                    :class="{ prog_hist_bar_near: bin.ids.some((id) => nearest_ids.has(id)) }"
+            <!-- links (and starting points) at the bottom, constraints stacked on them -->
+            <g v-for="bin in bins" :key="bin.index"
+                :class="{ prog_hist_bin_near: bin.ids.some((id) => nearest_ids.has(id)) }">
+                <title>{{ bin_title(bin) }}</title>
+                <rect v-if="bin.ids.length > bin.constraints" class="prog_hist_bar"
+                    :x="x(bin.x0) + 0.5" :y="y(bin.ids.length - bin.constraints)"
+                    :width="Math.max(1, x(bin.x1) - x(bin.x0) - 1)" :height="y(0) - y(bin.ids.length - bin.constraints)" />
+                <rect v-if="bin.constraints" class="prog_hist_bar prog_hist_bar_constraint"
                     :x="x(bin.x0) + 0.5" :y="y(bin.ids.length)" :width="Math.max(1, x(bin.x1) - x(bin.x0) - 1)"
-                    :height="y(0) - y(bin.ids.length)">
-                    <title>{{ bin_title(bin) }}</title>
-                </rect>
+                    :height="y(bin.ids.length - bin.constraints) - y(bin.ids.length)" />
             </g>
+
             <line class="prog_hist_axis" :x1="x(extent[0])" :x2="x(extent[1])" :y1="y(0)" :y2="y(0)" />
             <g v-for="tick in ticks" :key="tick.position">
                 <line class="prog_hist_axis" :x1="x(tick.position)" :x2="x(tick.position)" :y1="y(0)" :y2="y(0) + 3" />
@@ -31,6 +35,10 @@
             :value="countPosition(scrub_count)" :title="`${formatCount(scrub_count)} rows`"
             :style="{ marginLeft: `${MARGIN.left}px`, marginRight: `${MARGIN.right}px` }"
             @input="scrub = countAtPosition(Number(($event.target as HTMLInputElement).value))" />
+        <div v-if="has_constraints" class="prog_hist_legend">
+            <span><i class="prog_hist_swatch"></i>links</span>
+            <span><i class="prog_hist_swatch prog_hist_swatch_constraint"></i>constraints</span>
+        </div>
     </div>
 </template>
 <script setup lang="ts">
@@ -77,8 +85,11 @@ const ticks = computed(() => {
     return decades.filter((_, i) => i % every == 0)
         .map((k) => k == 0 ? { position: 0, label: '0' } : { position: countPosition(10 ** k), label: formatCount(10 ** k) })
 })
+const has_constraints = computed(() => bins.some((b) => b.constraints > 0))
 const bin_title = (bin: HistogramBin) =>
-    `${bin.ids.length} modification${bin.ids.length > 1 ? 's' : ''}, ${formatCount(countAtPosition(bin.x0))}–${formatCount(countAtPosition(bin.x1))} rows`
+    `${bin.ids.length} modification${bin.ids.length > 1 ? 's' : ''}`
+    + (bin.constraints ? ` (${bin.constraints} constraint${bin.constraints > 1 ? 's' : ''})` : '')
+    + `, ${formatCount(countAtPosition(bin.x0))}–${formatCount(countAtPosition(bin.x1))} rows`
 
 // --- scrubbing on the chart ---
 let scrubbing = false
@@ -120,8 +131,38 @@ const endScrub = () => {
     fill: var(--c-node-normal);
 }
 
-.prog_hist_bar_near {
+.prog_hist_bin_near .prog_hist_bar {
     fill: var(--c-accent);
+}
+
+.prog_hist_bar_constraint {
+    fill: var(--c-constraint);
+    opacity: 0.55;
+}
+
+.prog_hist_bin_near .prog_hist_bar_constraint {
+    fill: var(--c-constraint);
+    opacity: 1;
+}
+
+.prog_hist_legend {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--space-2);
+    font-size: 9px;
+    opacity: 0.8;
+}
+
+.prog_hist_swatch {
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    margin-right: 2px;
+    background: var(--c-node-normal);
+}
+
+.prog_hist_swatch_constraint {
+    background: var(--c-constraint);
 }
 
 .prog_hist_axis {

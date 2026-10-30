@@ -88,6 +88,12 @@ class ProgressiveSettings(BaseModel):
     default_sample_size: int
     max_sample_size: int
     count_limit: int
+    # defaults of the constraint sampling settings of the panel
+    sample_constraints: bool
+    constraint_sample_size: int
+    max_constraint_sample_size: int
+    numeric_percentiles: list[float]
+    categorical_samples: int
 
     @classmethod
     def from_config(cls, config: ProgressiveConfig):

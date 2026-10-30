@@ -17,6 +17,18 @@
                 {{ prog.source.label }}</span>
             <OnsetBtn size="small" :toggleable="false" icon="mdi-refresh" title="Count again" @click="prog.refresh()" />
         </div>
+        <div class="toolbar prog_panel_constraints">
+            <OnsetBtn size="small" icon="mdi-filter-outline" :model-value="prog.state.constraints.sample_constraints"
+                title="Also sample constraints of the subjects: thresholds at percentiles of numeric/date values, values of categorical properties"
+                @update:model-value="(on: boolean) => prog.setConstraints({ sample_constraints: on })">
+                Sample constraints</OnsetBtn>
+            <span class="toolbar_spacer"></span>
+            <OnsetBtn size="small" v-model="show_settings" :icon="show_settings ? 'mdi-chevron-up' : 'mdi-tune-variant'"
+                title="Constraint sampling settings">Settings</OnsetBtn>
+        </div>
+        <ProgressiveConstraintSettings v-if="show_settings" :settings="prog.state.constraints"
+            :max_properties="prog.state.max_constraint_sample_size" @update="prog.setConstraints">
+        </ProgressiveConstraintSettings>
         <div v-if="prog.state.error" class="message prog_panel_error">{{ prog.state.error }}</div>
         <template v-if="prog.modifications.value.length">
             <ProgressiveHistogram :bins="prog.bins.value" :extent="prog.extent.value" :base_count="prog.base_count.value"
@@ -42,9 +54,10 @@
     </div>
 </template>
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import OnsetBtn from '@/components/ui/OnsetBtn.vue'
 import OnsetIcon from '@/components/ui/OnsetIcon.vue'
+import ProgressiveConstraintSettings from './ProgressiveConstraintSettings.vue'
 import ProgressiveHistogram from './ProgressiveHistogram.vue'
 import ProgressiveModification from './ProgressiveModification.vue'
 import type { NodeLinkRepository } from '@/utils/sparql/store'
@@ -62,6 +75,7 @@ const emit = defineEmits<{
 }>()
 
 const prog = useProgressive(() => store)
+const show_settings = ref(false)
 
 const status_text = computed(() => {
     const result = prog.state.result
@@ -76,9 +90,15 @@ const status_text = computed(() => {
     if (!result) {
         return ''
     }
-    const sampled = result.candidate_count && result.candidate_count > result.modifications.length
-        ? ` (${result.modifications.length} of ${result.candidate_count} sampled)`
-        : ` (${result.modifications.length})`
+    const links = result.modifications.filter((m) => m.kind != 'constraint').length
+    const constraints = result.modifications.length - links
+    let sampled = result.candidate_count && result.candidate_count > links
+        ? ` (${links} of ${result.candidate_count} sampled`
+        : ` (${links}`
+    if (result.constraint_candidate_count != null) {
+        sampled += ` + ${constraints} constraints`
+    }
+    sampled += ')'
     if (result.base_count == null) {
         // a counted subject but no count: the current query's count failed
         return result.count_subject
@@ -112,6 +132,7 @@ const apply = (modification: Modification, change: GraphChange) => {
 }
 
 .prog_panel_status,
+.prog_panel_constraints,
 .prog_panel_scrub {
     flex: 0 0 auto;
     font-size: var(--fs-xs);

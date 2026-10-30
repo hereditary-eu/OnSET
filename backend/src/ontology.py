@@ -180,6 +180,10 @@ class OntologyManager:
     def q_to_df(self, q: str):
         return pd.DataFrame(self.__query(q))
 
+    def q_rows(self, q: str) -> list:
+        """Result rows of ``q`` as rdflib terms (a DataFrame turns them into strings)."""
+        return self.__query(q)
+
     def q_to_df_values(self, q: str) -> pd.DataFrame:
         result_sets = self.__queries_res_raw(q)
         assert len(result_sets) > 0, "Expected non-empty result set"

@@ -336,6 +336,22 @@ class QueryGraph(BaseModel):
         assert self.has_link(link_id), f"link_id {link_id} not found in graph."
         self.links = [l for l in self.links if l.id != link_id]
 
+    def apply(self, operation: "Operation"):
+        """Applies an operation in place (subqueries: to/from operation.subject_id)."""
+        data = operation.data
+        add = operation.operation == OperationType.ADD
+        if isinstance(data, AssistantSubject):
+            self.add_subject(data) if add else self.remove_subject(data.id)
+        elif isinstance(data, AssistantLink):
+            self.add_link(data) if add else self.remove_link(data.id)
+        else:
+            subject = self.get_subject_by_id(operation.subject_id) if operation.subject_id else None
+            assert subject is not None, f"subject_id {operation.subject_id} of the subquery not found in graph."
+            if add:
+                subject.subqueries.append(data)
+            else:
+                subject.subqueries = [sq for sq in subject.subqueries if sq.id != data.id]
+
     def to_sparql(self, options: "SparqlOptions | None" = None, **kwargs) -> str:
         """SPARQL query of the graph, see assistant.sparql_gen (kwargs: SparqlOptions fields)."""
         return self.sparql(options, **kwargs).query
@@ -355,6 +371,10 @@ class OperationType(str, enum.Enum):
 class Operation(BaseModel):
     operation: OperationType
     data: AssistantLink | AssistantSubject | AnyAssistantSubQuery
+    # subject a subquery (data) is added to/removed from (by its subquery id);
+    # None for subjects and links. Not part of the iterative assistant's grammar
+    # (it builds its own operation models) nor of its few-shot prompt.
+    subject_id: str | None = None
 
 
 class Operations(BaseModel):
