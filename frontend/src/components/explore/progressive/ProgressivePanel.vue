@@ -1,0 +1,158 @@
+<template>
+    <!-- Progressive discovery of the explore view's side panel: row counts of sampled
+         modifications of the query as a scrubbable histogram, and the modifications nearest
+         to the scrubbed count as difference views that can be applied to the editor. -->
+    <div class="prog_panel">
+        <div class="toolbar prog_panel_status">
+            <OnsetIcon v-if="prog.state.status == 'loading'" icon="mdi-loading mdi-spin" />
+            <OnsetIcon v-else-if="prog.state.status == 'error'" icon="mdi-alert-circle-outline" class="prog_panel_error" />
+            <span class="prog_panel_status_text">{{ status_text }}</span>
+            <span class="toolbar_spacer"></span>
+            <label class="prog_panel_size" title="Modifications to sample and count">
+                <OnsetIcon icon="mdi-dice-multiple-outline" />
+                <input type="number" min="1" :max="prog.state.max_sample_size ?? undefined"
+                    :value="prog.state.sample_size" @change="setSampleSize">
+            </label>
+            <span v-if="prog.source.label" class="prog_panel_source" :title="'Data source: ' + prog.source.label">
+                {{ prog.source.label }}</span>
+            <OnsetBtn size="small" :toggleable="false" icon="mdi-refresh" title="Count again" @click="prog.refresh()" />
+        </div>
+        <div v-if="prog.state.error" class="message prog_panel_error">{{ prog.state.error }}</div>
+        <template v-if="prog.modifications.value.length">
+            <ProgressiveHistogram :bins="prog.bins.value" :extent="prog.extent.value" :base_count="prog.base_count.value"
+                :scrub_count="prog.scrub_count.value" :nearest_ids="prog.nearest_ids.value"
+                v-model:scrub="prog.state.scrub_count"></ProgressiveHistogram>
+            <div class="toolbar prog_panel_scrub">
+                <span>{{ prog.nearest.value.length }} nearest to
+                    <b>{{ formatCount(prog.scrub_count.value) }}</b> rows</span>
+                <span class="toolbar_spacer"></span>
+                <OnsetBtn v-if="prog.state.scrub_count != null && prog.base_count.value != null" size="small"
+                    :toggleable="false" icon="mdi-target" title="Scrub back to the current row count"
+                    @click="prog.setScrub(null)">Current</OnsetBtn>
+            </div>
+            <div class="prog_panel_list">
+                <ProgressiveModification v-for="item in prog.nearest_changes.value" :key="item.modification.id"
+                    :modification="item.modification" :change="item.change" :base_count="prog.base_count.value"
+                    :count_limit="prog.state.result?.count_limit ?? null"
+                    :skipped="item.skipped.length" @apply="apply(item.modification, item.change)">
+                </ProgressiveModification>
+            </div>
+        </template>
+        <div v-else-if="prog.state.status == 'ready'" class="message">No modifications found for this query.</div>
+    </div>
+</template>
+<script setup lang="ts">
+import { computed } from 'vue'
+import OnsetBtn from '@/components/ui/OnsetBtn.vue'
+import OnsetIcon from '@/components/ui/OnsetIcon.vue'
+import ProgressiveHistogram from './ProgressiveHistogram.vue'
+import ProgressiveModification from './ProgressiveModification.vue'
+import type { NodeLinkRepository } from '@/utils/sparql/store'
+import type { GraphChange, GraphDetails } from '@/utils/agent/protocol'
+import { formatCount } from '@/utils/progressive/histogram'
+import { useProgressive } from '@/utils/progressive/useProgressive'
+import type { ProgressiveModification as Modification } from '@/utils/progressive/types'
+
+const { store } = defineProps<{
+    store: NodeLinkRepository | null
+}>()
+const emit = defineEmits<{
+    /** apply a modification's change to the editor graph (like an agent change) */
+    apply: [change: GraphChange, details: GraphDetails]
+}>()
+
+const prog = useProgressive(() => store)
+
+const status_text = computed(() => {
+    const result = prog.state.result
+    switch (prog.state.status) {
+        case 'loading':
+            return 'Counting…'
+        case 'error':
+            return 'Counting failed'
+        case 'idle':
+            return 'Waiting for the query'
+    }
+    if (!result) {
+        return ''
+    }
+    const sampled = result.candidate_count && result.candidate_count > result.modifications.length
+        ? ` (${result.modifications.length} of ${result.candidate_count} sampled)`
+        : ` (${result.modifications.length})`
+    if (result.base_count == null) {
+        // a counted subject but no count: the current query's count failed
+        return result.count_subject
+            ? `Count failed · modifications${sampled}`
+            : `Empty query · starting points${sampled}`
+    }
+    return `${formatCount(result.base_count, result.count_limit)} rows · modifications${sampled}`
+})
+
+const setSampleSize = (event: Event) => {
+    const input = event.target as HTMLInputElement
+    prog.setSampleSize(input.valueAsNumber)
+    // show the clamped size even if it did not change
+    input.value = String(prog.state.sample_size)
+}
+
+const apply = (modification: Modification, change: GraphChange) => {
+    emit('apply', change, {
+        subjects: modification.details?.subjects ?? {},
+        links: modification.details?.links ?? {},
+    })
+}
+</script>
+<style scoped>
+.prog_panel {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    height: 100%;
+    min-height: 0;
+}
+
+.prog_panel_status,
+.prog_panel_scrub {
+    flex: 0 0 auto;
+    font-size: var(--fs-xs);
+}
+
+.prog_panel_status_text {
+    opacity: 0.8;
+}
+
+.prog_panel_size {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+}
+
+.prog_panel_size input {
+    width: 3.5rem;
+    padding: 0 var(--space-1);
+    border: 1px solid var(--c-border-ctrl);
+    border-radius: var(--radius);
+    font-size: inherit;
+}
+
+.prog_panel_source {
+    padding: 0 var(--space-1);
+    border: 1px dashed var(--c-border-ctrl);
+    border-radius: var(--radius);
+    opacity: 0.8;
+}
+
+.prog_panel_error {
+    color: #b3261e;
+}
+
+.prog_panel_list {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    padding-right: 2px;
+}
+</style>

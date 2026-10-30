@@ -13,7 +13,8 @@ from api.router.agent import agent_router
 from api.router.classes import classes_router
 from api.router.multimodal import multimodal_router
 from api.router.nlp_helper import nlp_router
-from eval_config import CONFIG_FILE, MultimodalConfig
+from api.router.progressive import progressive_router
+from eval_config import CONFIG_FILE, MultimodalConfig, ProgressiveConfig
 
 logger = Logger(__name__)
 logger.info(f"Available configs: {CONFIG_FILE.keys()}, default: {CONFIG_FILE.default}")
@@ -81,11 +82,24 @@ def sparql_query_get(manman: ManManDep, query: str = Query(...)) -> dict[str, An
     return {"results": {"bindings": data}}
 
 
+class ProgressiveSettings(BaseModel):
+    """The progressive discovery limits the frontend panel needs (eval_config.ProgressiveConfig)."""
+
+    default_sample_size: int
+    max_sample_size: int
+    count_limit: int
+
+    @classmethod
+    def from_config(cls, config: ProgressiveConfig):
+        return cls(**config.model_dump(include=set(cls.model_fields)))
+
+
 class ConfigCollection(BaseModel):
     id: str
     name: str
     description: str
     multimodal: MultimodalConfig
+    progressive: ProgressiveSettings
 
     @classmethod
     def from_manman(cls, manman: ManMan):
@@ -94,6 +108,7 @@ class ConfigCollection(BaseModel):
             name=manman.db_config.name,
             description=manman.db_config.description,
             multimodal=manman.config.multimodal_config,
+            progressive=ProgressiveSettings.from_config(manman.db_config.progressive),
         )
 
 
@@ -129,5 +144,6 @@ config_app.include_router(classes_router)
 config_app.include_router(nlp_router)
 config_app.include_router(multimodal_router)
 config_app.include_router(agent_router)
+config_app.include_router(progressive_router)
 
 app.mount(f"/{{{CONFIG_PATH_PARAM}}}", config_app)

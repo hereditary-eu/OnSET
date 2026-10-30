@@ -19,7 +19,8 @@ from rdflib import Graph
 from agent.llm import AgentLLMBase, LLMEvent, ReasoningDelta, ResponseDone, TextDelta
 from agent.session import AgentSession, AgentSessionStore
 from assistant.assistant_model import EnrichedEntitiesRelations, Operations
-from eval_config import AgentConfig, MultimodalConfig
+from assistant.progressive import ProgressiveSampler
+from eval_config import AgentConfig, MultimodalConfig, ProgressiveConfig
 from explorative.exp_model import RETURN_TYPE, FuzzyQueryResult, FuzzyQueryResults, Topic
 from model import Subject, SubjectLink
 from ontology import OntologyConfig, OntologyManager
@@ -342,6 +343,12 @@ class DictCache:
     def __init__(self):
         self.data = {}
 
+    def get(self, key):
+        return self.data.get(key)
+
+    def set(self, key, value):
+        self.data[key] = value
+
     def get_or_set(self, key, compute):
         if key not in self.data:
             self.data[key] = compute()
@@ -372,6 +379,10 @@ class FakeManMan:
             )
         )
         self.assistant_cache = DictCache()
+        # counts run on the in-memory ontology
+        self.progressive_config = ProgressiveConfig()
+        self.progressive = ProgressiveSampler(self.ontology_manager, self.progressive_config)
+        self.progressive_cache = DictCache()
         self.assistant_runs = []
         self.iterative_assistant = SimpleNamespace(
             run_query=lambda q, graph: self.assistant_runs.append((q, graph)) or Operations()
@@ -379,5 +390,7 @@ class FakeManMan:
         self.llm_query = SimpleNamespace(
             get_examples=lambda: [EnrichedEntitiesRelations(message="the homeport of a ship")]
         )
-        self.db_config = SimpleNamespace(name="DBpedia", description="Test DBpedia")
+        self.db_config = SimpleNamespace(
+            name="DBpedia", description="Test DBpedia", progressive=self.progressive_config
+        )
         self.config = SimpleNamespace(multimodal_config=MultimodalConfig())

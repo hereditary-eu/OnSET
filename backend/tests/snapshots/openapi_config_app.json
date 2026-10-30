@@ -3,6 +3,17 @@
   "schemas": {
    "AssistantLink": {
     "properties": {
+     "allow_arbitrary": {
+      "anyOf": [
+       {
+        "type": "boolean"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Allow Arbitrary"
+     },
      "from_subject_id": {
       "anyOf": [
        {
@@ -50,6 +61,37 @@
      "label": {
       "title": "Label",
       "type": "string"
+     },
+     "property_type": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Property Type"
+     },
+     "quantifier": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/LinkQuantifier"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "semantic_link_type": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/LinkSemanticType"
+       },
+       {
+        "type": "null"
+       }
+      ]
      },
      "to_subject_id": {
       "anyOf": [
@@ -141,6 +183,8 @@
         "mapping": {
          "boolean": "#/components/schemas/BooleanSubQuery",
          "date": "#/components/schemas/DateSubQuery",
+         "image_prop": "#/components/schemas/ImagePropSubQuery",
+         "instance_prop": "#/components/schemas/InstancePropSubQuery",
          "number": "#/components/schemas/NumberSubQuery",
          "query_prop": "#/components/schemas/QueryPropSubQuery",
          "string": "#/components/schemas/StringSubQuery",
@@ -152,6 +196,12 @@
        "oneOf": [
         {
          "$ref": "#/components/schemas/QueryPropSubQuery"
+        },
+        {
+         "$ref": "#/components/schemas/ImagePropSubQuery"
+        },
+        {
+         "$ref": "#/components/schemas/InstancePropSubQuery"
         },
         {
          "$ref": "#/components/schemas/SubjectSubQuery"
@@ -256,6 +306,28 @@
        }
       ],
       "title": "Property Id"
+     },
+     "property_label": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Property Label"
+     },
+     "property_type": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Property Type"
      },
      "type": {
       "const": "boolean",
@@ -463,13 +535,17 @@
      "name": {
       "title": "Name",
       "type": "string"
+     },
+     "progressive": {
+      "$ref": "#/components/schemas/ProgressiveSettings"
      }
     },
     "required": [
      "id",
      "name",
      "description",
-     "multimodal"
+     "multimodal",
+     "progressive"
     ],
     "title": "ConfigCollection",
     "type": "object"
@@ -573,6 +649,28 @@
        }
       ],
       "title": "Property Id"
+     },
+     "property_label": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Property Label"
+     },
+     "property_type": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Property Type"
      },
      "type": {
       "const": "date",
@@ -956,6 +1054,29 @@
     "title": "GeneralizationQuery",
     "type": "object"
    },
+   "GraphDetails": {
+    "description": "Ontology data (keyed by graph id) the editor needs to render new elements.",
+    "properties": {
+     "links": {
+      "additionalProperties": {
+       "$ref": "#/components/schemas/SubjectLink"
+      },
+      "default": {},
+      "title": "Links",
+      "type": "object"
+     },
+     "subjects": {
+      "additionalProperties": {
+       "$ref": "#/components/schemas/Subject"
+      },
+      "default": {},
+      "title": "Subjects",
+      "type": "object"
+     }
+    },
+    "title": "GraphDetails",
+    "type": "object"
+   },
    "HTTPValidationError": {
     "properties": {
      "detail": {
@@ -967,6 +1088,59 @@
      }
     },
     "title": "HTTPValidationError",
+    "type": "object"
+   },
+   "ImagePropSubQuery": {
+    "description": "Query prop whose values are images (property_type in the config's image_types).\n\nThe editor has no own class for it (a QueryProp with an image range), so it\nalways sends query_prop; this is accepted and turned into a QueryProp.",
+    "properties": {
+     "id": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Id"
+     },
+     "property_id": {
+      "title": "Property Id",
+      "type": "string"
+     },
+     "property_label": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Property Label"
+     },
+     "property_type": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Property Type"
+     },
+     "type": {
+      "const": "image_prop",
+      "default": "image_prop",
+      "title": "Type",
+      "type": "string"
+     }
+    },
+    "required": [
+     "property_id"
+    ],
+    "title": "ImagePropSubQuery",
     "type": "object"
    },
    "Instance": {
@@ -984,6 +1158,122 @@
     },
     "title": "Instance",
     "type": "object"
+   },
+   "InstancePropSubQuery": {
+    "description": "Query prop of a result instance (InstanceQueryProp), with its value.",
+    "properties": {
+     "id": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Id"
+     },
+     "property_id": {
+      "title": "Property Id",
+      "type": "string"
+     },
+     "property_label": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Property Label"
+     },
+     "property_type": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Property Type"
+     },
+     "type": {
+      "const": "instance_prop",
+      "default": "instance_prop",
+      "title": "Type",
+      "type": "string"
+     },
+     "value": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Value"
+     }
+    },
+    "required": [
+     "property_id"
+    ],
+    "title": "InstancePropSubQuery",
+    "type": "object"
+   },
+   "LinkQuantifier": {
+    "properties": {
+     "max": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Max"
+     },
+     "min": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Min"
+     },
+     "type": {
+      "$ref": "#/components/schemas/LinkQuantifierType",
+      "default": "+"
+     }
+    },
+    "title": "LinkQuantifier",
+    "type": "object"
+   },
+   "LinkQuantifierType": {
+    "description": "SPARQL property path modifiers, values of the editor's LinkQuantifierType.",
+    "enum": [
+     "+",
+     "*",
+     "?",
+     "BETWEEN",
+     "EXACTLY"
+    ],
+    "title": "LinkQuantifierType",
+    "type": "string"
+   },
+   "LinkSemanticType": {
+    "enum": [
+     "structural",
+     "similarity"
+    ],
+    "title": "LinkSemanticType",
+    "type": "string"
    },
    "ManifoldAlg": {
     "enum": [
@@ -1122,6 +1412,28 @@
       ],
       "title": "Property Id"
      },
+     "property_label": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Property Label"
+     },
+     "property_type": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Property Type"
+     },
      "type": {
       "const": "number",
       "default": "number",
@@ -1152,6 +1464,8 @@
          "mapping": {
           "boolean": "#/components/schemas/BooleanSubQuery",
           "date": "#/components/schemas/DateSubQuery",
+          "image_prop": "#/components/schemas/ImagePropSubQuery",
+          "instance_prop": "#/components/schemas/InstancePropSubQuery",
           "number": "#/components/schemas/NumberSubQuery",
           "query_prop": "#/components/schemas/QueryPropSubQuery",
           "string": "#/components/schemas/StringSubQuery",
@@ -1163,6 +1477,12 @@
         "oneOf": [
          {
           "$ref": "#/components/schemas/QueryPropSubQuery"
+         },
+         {
+          "$ref": "#/components/schemas/ImagePropSubQuery"
+         },
+         {
+          "$ref": "#/components/schemas/InstancePropSubQuery"
          },
          {
           "$ref": "#/components/schemas/SubjectSubQuery"
@@ -1239,6 +1559,229 @@
      }
     },
     "title": "OutLink",
+    "type": "object"
+   },
+   "ProgressiveModification": {
+    "properties": {
+     "count": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Count"
+     },
+     "description": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Description"
+     },
+     "details": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/GraphDetails"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "id": {
+      "title": "Id",
+      "type": "string"
+     },
+     "label": {
+      "title": "Label",
+      "type": "string"
+     },
+     "operations": {
+      "default": [],
+      "items": {
+       "$ref": "#/components/schemas/Operation"
+      },
+      "title": "Operations",
+      "type": "array"
+     }
+    },
+    "required": [
+     "id",
+     "label"
+    ],
+    "title": "ProgressiveModification",
+    "type": "object"
+   },
+   "ProgressiveRequest": {
+    "properties": {
+     "count_limit": {
+      "anyOf": [
+       {
+        "minimum": 1.0,
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Count Limit"
+     },
+     "count_subject": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Count Subject"
+     },
+     "graph": {
+      "$ref": "#/components/schemas/QueryGraph"
+     },
+     "sample_size": {
+      "anyOf": [
+       {
+        "minimum": 1.0,
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Sample Size"
+     },
+     "seed": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Seed"
+     },
+     "subject_ids": {
+      "anyOf": [
+       {
+        "items": {
+         "type": "string"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Subject Ids"
+     }
+    },
+    "required": [
+     "graph"
+    ],
+    "title": "ProgressiveRequest",
+    "type": "object"
+   },
+   "ProgressiveResult": {
+    "properties": {
+     "base_count": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Base Count"
+     },
+     "candidate_count": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Candidate Count"
+     },
+     "count_limit": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Count Limit"
+     },
+     "count_subject": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Count Subject"
+     },
+     "modifications": {
+      "default": [],
+      "items": {
+       "$ref": "#/components/schemas/ProgressiveModification"
+      },
+      "title": "Modifications",
+      "type": "array"
+     },
+     "seed": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Seed"
+     }
+    },
+    "title": "ProgressiveResult",
+    "type": "object"
+   },
+   "ProgressiveSettings": {
+    "description": "The progressive discovery limits the frontend panel needs (eval_config.ProgressiveConfig).",
+    "properties": {
+     "count_limit": {
+      "title": "Count Limit",
+      "type": "integer"
+     },
+     "default_sample_size": {
+      "title": "Default Sample Size",
+      "type": "integer"
+     },
+     "max_sample_size": {
+      "title": "Max Sample Size",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "default_sample_size",
+     "max_sample_size",
+     "count_limit"
+    ],
+    "title": "ProgressiveSettings",
     "type": "object"
    },
    "Property": {
@@ -1393,6 +1936,7 @@
     "type": "object"
    },
    "QueryPropSubQuery": {
+    "description": "Property of the subject that is selected (an output variable), not filtered.",
     "properties": {
      "id": {
       "anyOf": [
@@ -1408,6 +1952,28 @@
      "property_id": {
       "title": "Property Id",
       "type": "string"
+     },
+     "property_label": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Property Label"
+     },
+     "property_type": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Property Type"
      },
      "type": {
       "const": "query_prop",
@@ -1611,6 +2177,28 @@
        }
       ],
       "title": "Property Id"
+     },
+     "property_label": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Property Label"
+     },
+     "property_type": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Property Type"
      },
      "type": {
       "const": "string",
@@ -1846,6 +2434,28 @@
       ],
       "title": "Property Id"
      },
+     "property_label": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Property Label"
+     },
+     "property_type": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Property Type"
+     },
      "type": {
       "const": "subject",
       "default": "subject",
@@ -2046,6 +2656,28 @@
        }
       ],
       "title": "Property Id"
+     },
+     "property_label": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Property Label"
+     },
+     "property_type": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Property Type"
      },
      "type": {
       "const": "vector_sort",
@@ -3021,6 +3653,44 @@
      }
     },
     "summary": "Get Ontology Config"
+   }
+  },
+  "/progressive/sample": {
+   "post": {
+    "operationId": "sample_modifications_progressive_sample_post",
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/ProgressiveRequest"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/ProgressiveResult"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Sample Modifications"
    }
   },
   "/search/dim-reduce": {

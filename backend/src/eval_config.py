@@ -16,7 +16,8 @@ default, overridable through the ``ONSET_CONFIG`` environment variable)::
     }
 
 Every configuration resolves to a list of ``EvalConfig`` objects: one per
-variant (defaults <- config <- variant) followed by the base configuration
+variant (defaults <- config <- variant, nested objects such as ``agent`` or
+``progressive`` merged field by field) followed by the base configuration
 itself, so ``ALL_CONFIG_MAP[key][-1]`` is always the base configuration that
 the API serves. String values may reference environment variables as
 ``${VAR}`` or ``${VAR:-fallback}``.
@@ -71,6 +72,24 @@ class AgentConfig(BaseModel):
         return value or None
 
 
+class ProgressiveConfig(BaseModel):
+    """Progressive discovery (assistant/progressive.py, POST /{config_id}/progressive/sample)."""
+
+    # seconds per count query
+    timeout: float = 10.0
+    # concurrent queries per request
+    parallelism: int = Field(4, ge=1)
+    # sample size of requests that do not send one
+    default_sample_size: int = Field(48, ge=1)
+    # cap of the requested sample size
+    max_sample_size: int = Field(256, ge=1)
+    # cap of the counts of requests that do not send one
+    count_limit: int = Field(1_000_000, ge=1)
+    # send the timeout to the endpoint as well (QLever's `timeout` parameter),
+    # so it stops queries the sampler gave up on
+    server_timeout: bool = True
+
+
 class EvalConfig(BaseModel):
     model_id: str = Field(
         "NousResearch/Hermes-3-Llama-3.1-8B-GGUF"
@@ -86,6 +105,7 @@ class EvalConfig(BaseModel):
     ontology_extension: str = ""
     multimodal_config: MultimodalConfig | None = None
     agent: AgentConfig = Field(default_factory=AgentConfig)
+    progressive: ProgressiveConfig = Field(default_factory=ProgressiveConfig)
     save_named_individuals: bool = True
     additional_namespaces: dict[str, str] = Field(default_factory=dict)
 
@@ -124,6 +144,16 @@ def _interpolate_env(value: Any) -> Any:
     return value
 
 
+def _merge(base: dict[str, Any], override: dict[str, Any]) -> dict[str, Any]:
+    """``base`` updated by ``override``, nested objects (e.g. ``agent``) field by field."""
+    merged = dict(base)
+    for key, value in override.items():
+        if isinstance(value, dict) and isinstance(merged.get(key), dict):
+            value = _merge(merged[key], value)
+        merged[key] = value
+    return merged
+
+
 class OnsetConfigFile(BaseModel):
     default: str
     defaults: dict[str, Any] = {}
@@ -148,8 +178,8 @@ class OnsetConfigFile(BaseModel):
     def resolve(self, key: str) -> list[EvalConfig]:
         """All configurations for ``key``: its variants followed by the base config."""
         raw = self.configs[key]
-        base = {**self.defaults, **{k: v for k, v in raw.items() if k != "variants"}}
-        variants = [EvalConfig(**{**base, **v}) for v in raw.get("variants", [])]
+        base = _merge(self.defaults, {k: v for k, v in raw.items() if k != "variants"})
+        variants = [EvalConfig(**_merge(base, v)) for v in raw.get("variants", [])]
         return variants + [EvalConfig(**base)]
 
     def base(self, key: str) -> EvalConfig:

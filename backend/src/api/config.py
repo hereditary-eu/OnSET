@@ -11,6 +11,7 @@ from agent.llm import AgentLLM
 from agent.session import AgentSession, AgentSessionStore
 from assistant.iterative_assistant import IterativeAssistant
 from assistant.assistant_model import Operations
+from assistant.progressive import ProgressiveResult, ProgressiveSampler
 from datasetmatcher import DatasetManager
 from eval_config import CONFIG_FILE, EvalConfig, MultimodalConfig
 from explorative.explorative_support import GuidanceManager
@@ -110,6 +111,17 @@ class ManMan:
         return AgentSessionStore(
             lambda session_id: self.build_agent_session(session_id),
         )
+
+
+    # --- progressive discovery (api/router/progressive.py), created on first use ---
+
+    @cached_property
+    def progressive(self) -> ProgressiveSampler:
+        return ProgressiveSampler(self.ontology_manager, self.db_config.progressive)
+
+    @cached_property
+    def progressive_cache(self) -> RedisCache[ProgressiveResult]:
+        return RedisCache(redis_url=self.db_config.redis_cache_url, model=ProgressiveResult)
 
 
 class ManManRegistry:

@@ -108,8 +108,12 @@ def test_get_manman_uses_registry(app, light, monkeypatch):
         "name": "DBpedia",
         "description": "Test DBpedia",
         "multimodal": MultimodalConfig(encoding_model="clip-test").model_dump(),
+        # tests/data/config.json: defaults <- dbpedia
+        "progressive": {"default_sample_size": 32, "max_sample_size": 64, "count_limit": 1000},
     }
-    assert client.get("/oma/ontology/config").json()["name"] == "OMA"
+    oma = client.get("/oma/ontology/config").json()
+    assert oma["name"] == "OMA"
+    assert oma["progressive"] == {"default_sample_size": 32, "max_sample_size": 128, "count_limit": 1000}
     client.get("/dbpedia/ontology/config")
     assert light.created == ["dbpedia", "oma"]
 

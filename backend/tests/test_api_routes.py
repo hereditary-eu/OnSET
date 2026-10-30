@@ -44,6 +44,7 @@ def test_ontology_config(client):
             "image_properties": ["dbo:thumbnail"],
             "image_types": ["<http://dbpedia.org/ontology/Image>"],
         },
+        "progressive": {"default_sample_size": 48, "max_sample_size": 256, "count_limit": 1_000_000},
     }
 
 

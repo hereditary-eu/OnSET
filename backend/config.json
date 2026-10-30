@@ -12,6 +12,14 @@
       "base_url": "${AGENT_LLM_BASE_URL:-https://hereditary.cgv.tugraz.at/lm-large/api/v1}",
       "api_key": "${AGENT_LLM_API_KEY}",
       "model": "${AGENT_LLM_MODEL:-}"
+    },
+    "progressive": {
+      "timeout": "${ONSET_PROGRESSIVE_TIMEOUT:-10}",
+      "parallelism": "${ONSET_PROGRESSIVE_PARALLELISM:-4}",
+      "default_sample_size": "${ONSET_PROGRESSIVE_DEFAULT_SAMPLE_SIZE:-48}",
+      "max_sample_size": "${ONSET_PROGRESSIVE_MAX_SAMPLE_SIZE:-256}",
+      "count_limit": "${ONSET_PROGRESSIVE_COUNT_LIMIT:-1000000}",
+      "server_timeout": "${ONSET_PROGRESSIVE_SERVER_TIMEOUT:-true}"
     }
   },
   "configs": {

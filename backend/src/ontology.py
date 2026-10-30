@@ -191,7 +191,8 @@ class OntologyManager:
         results_df = results_df.map(self.to_readable)
         return results_df
 
-    def get_root_classes(self, load_properties=False) -> list[Subject]:
+    def root_class_ids(self) -> list:
+        """Ids of the root classes, by parent_class_query or else the subclasses of owl:Thing."""
         classes = self.q_to_df(self.config.parent_class_query)
         if classes.empty:
             # if no parent classes, return all classes belonging to owl:Thing
@@ -207,7 +208,10 @@ class OntologyManager:
                 }}
                 """
             )
-        classes_list = classes[0].tolist()
+        return classes[0].tolist() if not classes.empty else []
+
+    def get_root_classes(self, load_properties=False) -> list[Subject]:
+        classes_list = self.root_class_ids()
         onto_classes: list[Subject] = [
             self.enrich_subject(cls, load_properties=load_properties)
             for cls in tqdm(classes_list, desc="Loading root classes")
@@ -419,6 +423,41 @@ OPTIONAL {{?obj rdfs:label ?obj_lbl.}}
             print(traceback.format_exc())
             print("Failed to load range of", prop, e)
             return []
+
+    def outgoing_properties(
+        self,
+        cls: str,
+        property_types: tuple[str, ...] = ("owl:ObjectProperty", "rdf:Property"),
+    ) -> list[tuple[str, str | None]]:
+        """(property, range) of the properties whose domain is ``cls`` or one of its parents.
+
+        Like properties_for, but in one query and including inherited properties;
+        a property without (or with a blank-node) range has range None.
+        """
+        classes = {self.wrap_iri(c) for c in self.get_parents(cls)} | {self.wrap_iri(cls)}
+        query = f"""
+            SELECT DISTINCT ?prop ?range WHERE {{
+                VALUES ?cls {{ {" ".join(sorted(classes))} }}
+                VALUES ?ptype {{ {" ".join(property_types)} }}
+                ?prop rdf:type ?ptype .
+                {{ ?prop rdfs:domain ?cls . }}
+                UNION
+                {{ ?prop rdfs:domain/(owl:unionOf/rdf:rest*/rdf:first)* ?cls . }}
+                OPTIONAL {{ ?prop rdfs:range ?range . }}
+            }}"""
+        try:
+            rows = self.__query(query)
+        except Exception as e:
+            print(traceback.format_exc())
+            print("Failed to load outgoing properties of", cls, e)
+            return []
+        properties = {}
+        for prop, range_ in rows:
+            if not isinstance(prop, URIRef):
+                continue
+            key = (self.to_readable(prop), self.to_readable(range_) if isinstance(range_, URIRef) else None)
+            properties[key] = None
+        return list(properties)
 
     def open_properties(self):
         open_properties = list(
