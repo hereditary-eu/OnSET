@@ -10,6 +10,25 @@
  * ---------------------------------------------------------------
  */
 
+/** VectorSortModality */
+export enum VectorSortModality {
+  Image = "image",
+  Text = "text",
+}
+
+/** VectorSortDistance */
+export enum VectorSortDistance {
+  Cosine = "cosine",
+  Euclidean = "euclidean",
+  Manhattan = "manhattan",
+}
+
+/** VectorSortDirection */
+export enum VectorSortDirection {
+  Ascending = "ascending",
+  Descending = "descending",
+}
+
 /** ResultAttributionType */
 export enum ResultAttributionType {
   Topic = "topic",
@@ -42,83 +61,116 @@ export enum ManifoldAlg {
   Smacof = "smacof",
 }
 
+/** LinkSemanticType */
+export enum LinkSemanticType {
+  Structural = "structural",
+  Similarity = "similarity",
+}
+
+/**
+ * LinkQuantifierType
+ * SPARQL property path modifiers, values of the editor's LinkQuantifierType.
+ */
+export enum LinkQuantifierType {
+  Value = "+",
+  Value1 = "*",
+  Value2 = "?",
+  BETWEEN = "BETWEEN",
+  EXACTLY = "EXACTLY",
+}
+
 /** FUZZY_QUERY_ORDER */
 export enum FUZZY_QUERY_ORDER {
   Score = "score",
   Instances = "instances",
 }
 
-/** AssistantSubQueryType */
-export enum AssistantSubQueryType {
-  String = "string",
-  Number = "number",
-  Boolean = "boolean",
-  Date = "date",
-  Subject = "subject",
-  QueryProp = "query_prop",
+/** AssistantStringConstraintType */
+export enum AssistantStringConstraintType {
+  Equals = "equals",
+  Value = "!=",
+  Contains = "contains",
+  Startswith = "startswith",
+  Endswith = "endswith",
+  Regex = "regex",
+}
+
+/** AssistantNumberConstraintType */
+export enum AssistantNumberConstraintType {
+  Equals = "equals",
+  Less = "less",
+  Greater = "greater",
 }
 
 /** AssistantLink */
 export interface AssistantLink {
-  /**
-   * Type
-   * @default "link"
-   */
-  type?: "link";
-  /** From Id */
-  from_id: string;
-  /** To Id */
-  to_id: string;
-  /** From Internal Id */
-  from_internal_id: string;
-  /** To Internal Id */
-  to_internal_id: string;
-  /** Link Id */
-  link_id: string;
-}
-
-/** AssistantSubQuery */
-export interface AssistantSubQuery {
-  /**
-   * Type
-   * @default "subquery"
-   */
-  type?: "subquery";
-  constraint_type: AssistantSubQueryType;
-  /** Field */
-  field: string;
-  /** From Internal Id */
-  from_internal_id: string;
-  /** From Id */
-  from_id: string;
+  /** Uri */
+  uri: string;
+  /** Label */
+  label: string;
+  /** Id */
+  id?: string | null;
+  /** From Subject Id */
+  from_subject_id?: string | null;
+  /** To Subject Id */
+  to_subject_id?: string | null;
+  /** From Subject Label */
+  from_subject_label?: string | null;
+  /** From Subject Uri */
+  from_subject_uri?: string | null;
+  /** To Subject Label */
+  to_subject_label?: string | null;
+  /** To Subject Uri */
+  to_subject_uri?: string | null;
+  /** Property Type */
+  property_type?: string | null;
+  /** Allow Arbitrary */
+  allow_arbitrary?: boolean | null;
+  quantifier?: LinkQuantifier | null;
+  semantic_link_type?: LinkSemanticType | null;
 }
 
 /** AssistantSubject */
 export interface AssistantSubject {
-  /**
-   * Type
-   * @default "subject"
-   */
-  type?: "subject";
-  /** Subject Id */
-  subject_id: string;
-  /** Internal Id */
-  internal_id: string;
+  /** Uri */
+  uri: string;
+  /** Label */
+  label: string;
+  /** Id */
+  id?: string | null;
   /**
    * Subqueries
    * @default []
    */
-  subqueries?: AssistantSubQuery[];
-  /**
-   * X
-   * @default 0
-   */
-  x?: number;
-  /**
-   * Y
-   * @default 0
-   */
-  y?: number;
+  subqueries?: (
+    | ({
+        type: "boolean";
+      } & BooleanSubQuery)
+    | ({
+        type: "date";
+      } & DateSubQuery)
+    | ({
+        type: "image_prop";
+      } & ImagePropSubQuery)
+    | ({
+        type: "instance_prop";
+      } & InstancePropSubQuery)
+    | ({
+        type: "number";
+      } & NumberSubQuery)
+    | ({
+        type: "query_prop";
+      } & QueryPropSubQuery)
+    | ({
+        type: "string";
+      } & StringSubQuery)
+    | ({
+        type: "subject";
+      } & SubjectSubQuery)
+    | ({
+        type: "vector_sort";
+      } & VectorSortSubQuery)
+  )[];
 }
 
 /** Body_dim_reduce_search_dim_reduce_post */
@@ -132,12 +184,39 @@ export interface BodyDimReduceSearchDimReducePost {
    * @default "umap"
    */
   algorithm?: string;
+  /**
+   * Remove Vectors
+   * @default true
+   */
+  remove_vectors?: boolean;
 }
 
 /** Body_load_ontology_management_ontology_post */
 export interface BodyLoadOntologyManagementOntologyPost {
   /** Ontology */
-  ontology: string;
+  ontology: File | Blob;
+}
+
+/** BooleanSubQuery */
+export interface BooleanSubQuery {
+  /**
+   * Type
+   * @default "boolean"
+   */
+  type?: "boolean";
+  /** Id */
+  id?: string | null;
+  /** Property Id */
+  property_id?: string | null;
+  /** Property Label */
+  property_label?: string | null;
+  /** Property Type */
+  property_type?: string | null;
+  /**
+   * Value
+   * @default false
+   */
+  value?: boolean;
 }
 
 /** CandidateEntity */
@@ -220,6 +299,8 @@ export interface ConfigCollection {
   /** Description */
   description: string;
   multimodal: MultimodalConfig;
+  /** The progressive discovery limits the frontend panel needs (eval_config.ProgressiveConfig). */
+  progressive: ProgressiveSettings;
 }
 
 /** Constraint */
@@ -240,6 +321,27 @@ export interface DataTensorResp {
   type: "float32" | "float64" | "int32" | "int64";
   /** Shape */
   shape: number[];
+}
+
+/** DateSubQuery */
+export interface DateSubQuery {
+  /**
+   * Type
+   * @default "date"
+   */
+  type?: "date";
+  /** Id */
+  id?: string | null;
+  /** Property Id */
+  property_id?: string | null;
+  /** Property Label */
+  property_label?: string | null;
+  /** Property Type */
+  property_type?: string | null;
+  /** Value */
+  value: string;
+  /** @default "greater" */
+  operator?: AssistantNumberConstraintType;
 }
 
 /** EnrichedEntitiesRelations */
@@ -351,7 +453,7 @@ export interface FuzzyQuery {
   order?: FUZZY_QUERY_ORDER;
   /**
    * Include Thing
-   * @default true
+   * @default false
    */
   include_thing?: boolean;
   /**
@@ -402,10 +504,50 @@ export interface GeneralizationQuery {
   in_link_ids?: string[];
 }
 
+/**
+ * GraphDetails
+ * Ontology data (keyed by graph id) the editor needs to render new elements.
+ */
+export interface GraphDetails {
+  /**
+   * Subjects
+   * @default {}
+   */
+  subjects?: Record<string, Subject>;
+  /**
+   * Links
+   * @default {}
+   */
+  links?: Record<string, SubjectLink>;
+}
+
 /** HTTPValidationError */
 export interface HTTPValidationError {
   /** Detail */
   detail?: ValidationError[];
+}
+
+/**
+ * ImagePropSubQuery
+ * Query prop whose values are images (property_type in the config's image_types).
+ *
+ * The editor has no own class for it (a QueryProp with an image range), so it
+ * always sends query_prop; this is accepted and turned into a QueryProp.
+ */
+export interface ImagePropSubQuery {
+  /**
+   * Type
+   * @default "image_prop"
+   */
+  type?: "image_prop";
+  /** Id */
+  id?: string | null;
+  /** Property Id */
+  property_id: string;
+  /** Property Label */
+  property_label?: string | null;
+  /** Property Type */
+  property_type?: string | null;
 }
 
 /** Instance */
@@ -420,6 +562,41 @@ export interface Instance {
    * @default ""
    */
   label?: string;
+}
+
+/**
+ * InstancePropSubQuery
+ * Query prop of a result instance (InstanceQueryProp), with its value.
+ */
+export interface InstancePropSubQuery {
+  /**
+   * Type
+   * @default "instance_prop"
+   */
+  type?: "instance_prop";
+  /** Id */
+  id?: string | null;
+  /** Property Id */
+  property_id: string;
+  /** Property Label */
+  property_label?: string | null;
+  /** Property Type */
+  property_type?: string | null;
+  /** Value */
+  value?: string | null;
+}
+
+/** LinkQuantifier */
+export interface LinkQuantifier {
+  /**
+   * SPARQL property path modifiers, values of the editor's LinkQuantifierType.
+   * @default "+"
+   */
+  type?: LinkQuantifierType;
+  /** Min */
+  min?: number | null;
+  /** Max */
+  max?: number | null;
 }
 
 /** ManifoldRequest */
@@ -488,11 +665,66 @@ export interface MultimodalConfig {
   image_types?: string[];
 }
 
+/** NumberSubQuery */
+export interface NumberSubQuery {
+  /**
+   * Type
+   * @default "number"
+   */
+  type?: "number";
+  /** Id */
+  id?: string | null;
+  /** Property Id */
+  property_id?: string | null;
+  /** Property Label */
+  property_label?: string | null;
+  /** Property Type */
+  property_type?: string | null;
+  /**
+   * Value
+   * @default 0
+   */
+  value?: number;
+  /** @default "greater" */
+  operator?: AssistantNumberConstraintType;
+}
+
 /** Operation */
 export interface Operation {
   operation: OperationType;
   /** Data */
-  data: AssistantLink | AssistantSubject | AssistantSubQuery;
+  data:
+    | AssistantLink
+    | AssistantSubject
+    | (
+        | ({
+            type: "boolean";
+          } & BooleanSubQuery)
+        | ({
+            type: "date";
+          } & DateSubQuery)
+        | ({
+            type: "image_prop";
+          } & ImagePropSubQuery)
+        | ({
+            type: "instance_prop";
+          } & InstancePropSubQuery)
+        | ({
+            type: "number";
+          } & NumberSubQuery)
+        | ({
+            type: "query_prop";
+          } & QueryPropSubQuery)
+        | ({
+            type: "string";
+          } & StringSubQuery)
+        | ({
+            type: "subject";
+          } & SubjectSubQuery)
+        | ({
+            type: "vector_sort";
+          } & VectorSortSubQuery)
+      );
 }
 
 /** Operations */
@@ -514,6 +746,71 @@ export interface OutLink {
   count?: number;
   /** Instances */
   instances?: string[];
+}
+
+/** ProgressiveModification */
+export interface ProgressiveModification {
+  /** Id */
+  id: string;
+  /**
+   * Operations
+   * @default []
+   */
+  operations?: Operation[];
+  /** Count */
+  count?: number | null;
+  /** Label */
+  label: string;
+  /** Description */
+  description?: string | null;
+  details?: GraphDetails | null;
+}
+
+/** ProgressiveRequest */
+export interface ProgressiveRequest {
+  graph: QueryGraph;
+  /** Sample Size */
+  sample_size?: number | null;
+  /** Subject Ids */
+  subject_ids?: string[] | null;
+  /** Seed */
+  seed?: number | null;
+  /** Count Subject */
+  count_subject?: string | null;
+  /** Count Limit */
+  count_limit?: number | null;
+}
+
+/** ProgressiveResult */
+export interface ProgressiveResult {
+  /** Base Count */
+  base_count?: number | null;
+  /**
+   * Modifications
+   * @default []
+   */
+  modifications?: ProgressiveModification[];
+  /** Candidate Count */
+  candidate_count?: number | null;
+  /** Count Limit */
+  count_limit?: number | null;
+  /** Count Subject */
+  count_subject?: string | null;
+  /** Seed */
+  seed?: number | null;
+}
+
+/**
+ * ProgressiveSettings
+ * The progressive discovery limits the frontend panel needs (eval_config.ProgressiveConfig).
+ */
+export interface ProgressiveSettings {
+  /** Default Sample Size */
+  default_sample_size: number;
+  /** Max Sample Size */
+  max_sample_size: number;
+  /** Count Limit */
+  count_limit: number;
 }
 
 /** Property */
@@ -587,6 +884,26 @@ export interface QueryProgress {
   enriched_relations?: EnrichedEntitiesRelations | null;
 }
 
+/**
+ * QueryPropSubQuery
+ * Property of the subject that is selected (an output variable), not filtered.
+ */
+export interface QueryPropSubQuery {
+  /**
+   * Type
+   * @default "query_prop"
+   */
+  type?: "query_prop";
+  /** Id */
+  id?: string | null;
+  /** Property Id */
+  property_id: string;
+  /** Property Label */
+  property_label?: string | null;
+  /** Property Type */
+  property_type?: string | null;
+}
+
 /** Relation */
 export interface Relation {
   /** Entity */
@@ -654,6 +971,30 @@ export interface SparseOutLinks {
   source?: RelationsFound;
   /** Targets */
   targets?: OutLink[];
+}
+
+/** StringSubQuery */
+export interface StringSubQuery {
+  /**
+   * Type
+   * @default "string"
+   */
+  type?: "string";
+  /** Id */
+  id?: string | null;
+  /** Property Id */
+  property_id?: string | null;
+  /** Property Label */
+  property_label?: string | null;
+  /** Property Type */
+  property_type?: string | null;
+  /**
+   * Value
+   * @default ""
+   */
+  value?: string;
+  /** @default "contains" */
+  operator?: AssistantStringConstraintType;
 }
 
 /** Subject */
@@ -724,6 +1065,27 @@ export interface SubjectLink {
   instance_count?: number;
 }
 
+/** SubjectSubQuery */
+export interface SubjectSubQuery {
+  /**
+   * Type
+   * @default "subject"
+   */
+  type?: "subject";
+  /** Id */
+  id?: string | null;
+  /** Property Id */
+  property_id?: string | null;
+  /** Property Label */
+  property_label?: string | null;
+  /** Property Type */
+  property_type?: string | null;
+  /** Instance Id */
+  instance_id?: string | null;
+  /** Instance Label */
+  instance_label?: string | null;
+}
+
 /** Topic */
 export interface Topic {
   /** Topic Id */
@@ -754,6 +1116,40 @@ export interface ValidationError {
   input?: any;
   /** Context */
   ctx?: object;
+}
+
+/** VectorSortInputState */
+export interface VectorSortInputState {
+  /** Image */
+  image?: string | null;
+  /** Text */
+  text?: string | null;
+}
+
+/** VectorSortSubQuery */
+export interface VectorSortSubQuery {
+  /**
+   * Type
+   * @default "vector_sort"
+   */
+  type?: "vector_sort";
+  /** Id */
+  id?: string | null;
+  /** Property Id */
+  property_id?: string | null;
+  /** Property Label */
+  property_label?: string | null;
+  /** Property Type */
+  property_type?: string | null;
+  /** @default "image" */
+  modality?: VectorSortModality;
+  /** @default "descending" */
+  direction?: VectorSortDirection;
+  /** @default "cosine" */
+  distance?: VectorSortDistance;
+  /** Vector */
+  vector?: number[] | null;
+  input_state?: VectorSortInputState;
 }
 
 import type {
@@ -932,27 +1328,12 @@ export class HttpClient<SecurityDataType = unknown> {
 }
 
 /**
- * @title Ontology Provenance API
+ * @title Ontology Provenance API (configuration scoped)
  * @version 0.1.0
  */
 export class Api<
   SecurityDataType extends unknown,
 > extends HttpClient<SecurityDataType> {
-  /**
-   * No description
-   *
-   * @name ReadRootGet
-   * @summary Read Root
-   * @request GET:/
-   */
-  readRootGet = (params: RequestParams = {}) =>
-    this.request<any, any>({
-      path: `/`,
-      method: "GET",
-      format: "json",
-      ...params,
-    });
-
   sparql = {
     /**
      * No description
@@ -1571,6 +1952,27 @@ export class Api<
         path: `/search/wikimedia/proxy`,
         method: "GET",
         query: query,
+        format: "json",
+        ...params,
+      }),
+  };
+  progressive = {
+    /**
+     * No description
+     *
+     * @name SampleModificationsProgressiveSamplePost
+     * @summary Sample Modifications
+     * @request POST:/progressive/sample
+     */
+    sampleModificationsProgressiveSamplePost: (
+      data: ProgressiveRequest,
+      params: RequestParams = {},
+    ) =>
+      this.request<ProgressiveResult, HTTPValidationError>({
+        path: `/progressive/sample`,
+        method: "POST",
+        body: data,
+        type: ContentType.Json,
         format: "json",
         ...params,
       }),

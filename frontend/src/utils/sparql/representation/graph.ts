@@ -75,6 +75,15 @@ export interface QuerySetGenerator {
     querySet(): QuerySet
 }
 let internal_id_counter: number = 0;
+/** Moves the id counter past restored `node_<n>` ids, so new nodes do not reuse them. */
+export function reserveInternalIds(internal_ids: string[]) {
+    for (const internal_id of internal_ids) {
+        const match = /^node_(\d+)$/.exec(internal_id)
+        if (match) {
+            internal_id_counter = Math.max(internal_id_counter, Number(match[1]))
+        }
+    }
+}
 @registerClass
 export class SubjectNode implements Subject, Diffable, ReconstructableClass {
     subject_id: string;

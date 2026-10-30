@@ -6,13 +6,20 @@ from model import Subject, SubjectLink
 
 if TYPE_CHECKING:
     from api.config import ManMan
+    from assistant.sparql_gen import GeneratedSparql, SparqlOptions
 
 
 # Canonical query-graph representations of the backend.
 #
 # 1. QueryGraph (AssistantSubject/AssistantLink/subqueries) and Operations:
-#    the state of the visual query editor, used for agentic graph editing.
-#    The subqueries mirror frontend/src/utils/sparql/representation/subqueries.ts
+#    the state of the visual query editor (everything its SPARQL generation in
+#    frontend/src/utils/sparql/store.ts reads, but not the layout), used for
+#    agentic graph editing and query generation. Subjects/links/subqueries
+#    mirror frontend/src/utils/sparql/representation/{graph,subqueries}.ts, the
+#    conversion is frontend/src/utils/sparql/querygraph.ts.
+#    Fields added for the editor state default to None (= the editor default),
+#    so the compact tool/prompt dumps (exclude_none) and the LLM grammars
+#    (optional fields are left out) stay unchanged.
 # 2. EntitiesRelations and its Candidate*/Enriched* variants: the prototype
 #    query graphs of the NL -> entities/relations pipeline (explorative.llm_query),
 #    which double as the grammar for constrained LLM output, so their field
@@ -39,11 +46,34 @@ class AssistantSubQuery(BaseModel):
     id: str | None = None
     # property (URI) of the subject this subquery applies to
     property_id: str | None = None
+    # label and range (e.g. xsd:integer, typed literals) of that property,
+    # Link.label/to_proptype of the subquery's link in the editor
+    property_label: str | None = None
+    property_type: str | None = None
 
 
 class QueryPropSubQuery(AssistantSubQuery):
+    """Property of the subject that is selected (an output variable), not filtered."""
+
     type: Literal[AssistantSubQueryType.QUERY_PROP] = AssistantSubQueryType.QUERY_PROP
     property_id: str
+
+
+class ImagePropSubQuery(QueryPropSubQuery):
+    """Query prop whose values are images (property_type in the config's image_types).
+
+    The editor has no own class for it (a QueryProp with an image range), so it
+    always sends query_prop; this is accepted and turned into a QueryProp.
+    """
+
+    type: Literal[AssistantSubQueryType.IMAGE_PROP] = AssistantSubQueryType.IMAGE_PROP
+
+
+class InstancePropSubQuery(QueryPropSubQuery):
+    """Query prop of a result instance (InstanceQueryProp), with its value."""
+
+    type: Literal[AssistantSubQueryType.INSTANCE_PROP] = AssistantSubQueryType.INSTANCE_PROP
+    value: str | None = None
 
 
 class SubjectSubQuery(AssistantSubQuery):
@@ -124,6 +154,8 @@ class VectorSortSubQuery(AssistantSubQuery):
 
 AnyAssistantSubQuery = Annotated[
     QueryPropSubQuery
+    | ImagePropSubQuery
+    | InstancePropSubQuery
     | SubjectSubQuery
     | StringSubQuery
     | NumberSubQuery
@@ -154,6 +186,29 @@ class AssistantSubject(BaseModel):
         )
 
 
+class LinkSemanticType(str, enum.Enum):
+    STRUCTURAL = "structural"
+    # nearest neighbour of the from subject's embedding (uri) among the to subject's
+    SIMILARITY = "similarity"
+
+
+class LinkQuantifierType(str, enum.Enum):
+    """SPARQL property path modifiers, values of the editor's LinkQuantifierType."""
+
+    ONE_OR_MORE = "+"
+    ZERO_OR_MORE = "*"
+    ZERO_OR_ONE = "?"
+    BETWEEN = "BETWEEN"
+    EXACTLY = "EXACTLY"
+
+
+class LinkQuantifier(BaseModel):
+    type: LinkQuantifierType = LinkQuantifierType.ONE_OR_MORE
+    # bounds of BETWEEN (min, max) and EXACTLY (min)
+    min: int | None = None
+    max: int | None = None
+
+
 class AssistantLink(BaseModel):
     uri: str
     label: str
@@ -166,6 +221,15 @@ class AssistantLink(BaseModel):
 
     to_subject_label: str | None = None
     to_subject_uri: str | None = None
+
+    # editor state, None is the default (fixed property, single step, structural)
+    # range of the property (Link.to_proptype)
+    property_type: str | None = None
+    # any property (an output variable) instead of uri, which may then be empty
+    allow_arbitrary: bool | None = None
+    # property path modifier of uri
+    quantifier: LinkQuantifier | None = None
+    semantic_link_type: LinkSemanticType | None = None
 
     @staticmethod
     def from_link(
@@ -271,6 +335,16 @@ class QueryGraph(BaseModel):
     def remove_link(self, link_id: str):
         assert self.has_link(link_id), f"link_id {link_id} not found in graph."
         self.links = [l for l in self.links if l.id != link_id]
+
+    def to_sparql(self, options: "SparqlOptions | None" = None, **kwargs) -> str:
+        """SPARQL query of the graph, see assistant.sparql_gen (kwargs: SparqlOptions fields)."""
+        return self.sparql(options, **kwargs).query
+
+    def sparql(self, options: "SparqlOptions | None" = None, **kwargs) -> "GeneratedSparql":
+        """SPARQL query of the graph with its output variables and warnings."""
+        from assistant.sparql_gen import generate_sparql
+
+        return generate_sparql(self, options, **kwargs)
 
 
 class OperationType(str, enum.Enum):

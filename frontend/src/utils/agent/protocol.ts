@@ -3,35 +3,16 @@
 // the OpenAPI schema, so src/api/client.ts/Api.ts does not contain these types);
 // the protocol is documented there.
 import type { Subject, SubjectLink } from '@/api/client.ts/Api'
+import type { GraphLink, GraphSubject, GraphSubQuery } from '@/utils/sparql/querygraph'
 
 // --- graph payloads (backend assistant/assistant_model.py) ---
+// QueryGraph is part of the OpenAPI schema, so these are the generated types with the
+// ids the editor always assigns (see utils/sparql/querygraph.ts).
 
-/** A subquery of a subject, see AnyAssistantSubQuery; only `type` and `property_id` are shared by all. */
-export interface AgentSubQuery {
-    type: string
-    id?: string | null
-    property_id?: string | null
-    [key: string]: unknown
-}
-
-export interface AgentSubject {
-    uri: string
-    label: string
-    id: string
-    subqueries?: AgentSubQuery[]
-}
-
-export interface AgentLink {
-    uri: string
-    label: string
-    id: string
-    from_subject_id: string
-    to_subject_id: string
-    from_subject_label?: string | null
-    from_subject_uri?: string | null
-    to_subject_label?: string | null
-    to_subject_uri?: string | null
-}
+/** A subquery of a subject, see AnyAssistantSubQuery. */
+export type AgentSubQuery = GraphSubQuery
+export type AgentSubject = Omit<GraphSubject, 'subqueries'> & { subqueries?: GraphSubQuery[] }
+export type AgentLink = GraphLink
 
 /** The canonical query graph of the backend (QueryGraph). */
 export interface AgentQueryGraph {
