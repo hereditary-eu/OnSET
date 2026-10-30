@@ -3,6 +3,7 @@
   "defaults": {
     "model_id": "${LLM_MODEL_ID:-NousResearch/Hermes-3-Llama-3.2-3B-GGUF}",
     "model_quant": "${LLM_MODEL_QUANT:-*Q8_0.gguf}",
+    "device": "${LLM_DEVICE:-cuda}",
     "conn_str": "postgresql+psycopg://postgres:postgres@${ONSET_DB_ENDPOINT:-localhost:5434}/onset",
     "sparql_endpoint": "${ONSET_SPARQL_ENDPOINT:-http://localhost:7012}",
     "redis_cache_url": "${REDIS_CACHE_URL:-redis://localhost:6379/1}",

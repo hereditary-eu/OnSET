@@ -72,6 +72,7 @@ class ManMan:
             conn_str=db_config.conn_str,
             llm_model_id=db_config.model_id,
             llm_quant_model=db_config.model_quant,
+            device=db_config.device,
         )
 
         self.llm_query = LLMQuery(

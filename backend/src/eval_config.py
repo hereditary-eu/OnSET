@@ -81,6 +81,7 @@ class EvalConfig(BaseModel):
     description: str = ""
     selection_distribution: SelectionDistribution = SelectionDistribution.INSTANCES
     model_quant: str = "*.Q8_0.gguf"
+    device: str = "cuda"  # "cuda", "cpu", "mps", etc.
     redis_cache_url: str = "redis://localhost:6379/1"
     ontology_extension: str = ""
     multimodal_config: MultimodalConfig | None = None
