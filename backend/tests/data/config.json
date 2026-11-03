@@ -1,0 +1,42 @@
+{
+  "default": "${ONSET_TEST_DEFAULT:-dbpedia}",
+  "defaults": {
+    "model_id": "test/Defaults-GGUF",
+    "sparql_endpoint": "http://${ONSET_TEST_SPARQL_HOST:-sparql.invalid}:7012",
+    "redis_cache_url": "redis://redis.invalid:6379/1",
+    "agent": {
+      "base_url": "http://llm.invalid/v1",
+      "model": "${ONSET_TEST_AGENT_MODEL:-}"
+    },
+    "progressive": {
+      "timeout": "${ONSET_TEST_PROGRESSIVE_TIMEOUT:-5}",
+      "default_sample_size": 32,
+      "max_sample_size": 128,
+      "count_limit": 1000
+    }
+  },
+  "configs": {
+    "dbpedia": {
+      "name": "DBpedia",
+      "description": "Test DBpedia",
+      "ontology_extension": [
+        "@prefix dbo: <http://dbpedia.org/ontology/> .",
+        "@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .",
+        "dbo:thumbnail_embedding rdfs:label \"thumbnail embedding\"@en ."
+      ],
+      "multimodal_config": {
+        "encoding_model": "clip-test"
+      },
+      "progressive": { "max_sample_size": 64 },
+      "variants": [
+        { "name": "DBpedia Variant", "model_id": "test/Variant-GGUF" }
+      ]
+    },
+    "oma": {
+      "name": "OMA",
+      "description": "Test OMA",
+      "sparql_endpoint": "http://sparql.invalid:7013",
+      "selection_distribution": "uniform"
+    }
+  }
+}

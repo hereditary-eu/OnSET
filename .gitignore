@@ -1,4 +1,5 @@
 data/
+!backend/tests/data/
 __pycache__
 .vscode
 *.db

@@ -3,7 +3,8 @@
 // returns (modification, count) records; the side panel shows them as a histogram of
 // counts and the modifications nearest to a scrubbed count as difference views.
 //
-// The generated types of POST /progressive/sample (backend/src/assistant/progressive.py),
+// The generated types of POST /progressive/sample (also the payloads of the streaming
+// WebSocket, protocol.ts) (backend/src/assistant/progressive.py),
 // with the editor's graph (ids always set) and the fields the backend always fills required;
 // source.ts normalises responses to these.
 import type {
@@ -52,6 +53,8 @@ export type ProgressiveModification = Omit<ApiProgressiveModification,
     depth: number
     parent_id: string | null
     step_operations: ProgressiveOperation[] | null
+    /** frontend only: announced by the stream, its count has not arrived yet */
+    pending?: boolean
 }
 
 /** Constraint sampling settings the panel sends with a request (defaults: GET /ontology/config). */
@@ -88,4 +91,6 @@ export type ProgressiveResult = Omit<ApiProgressiveResult, 'modifications' | 'de
     modifications: ProgressiveModification[]
     depth: number
     expanded_ids: string[]
+    /** frontend only: the base count has not arrived from the stream yet */
+    base_pending?: boolean
 }

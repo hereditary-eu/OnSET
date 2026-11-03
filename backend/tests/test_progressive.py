@@ -25,6 +25,9 @@ from assistant.assistant_model import (
     VectorSortSubQuery,
 )
 from assistant.progressive import (
+    CancelToken,
+    JobPool,
+    SamplingCancelled,
     ModificationKind,
     ProgressiveRequest,
     ProgressiveResult,
@@ -45,7 +48,7 @@ from assistant.progressive import (
 )
 
 from eval_config import EvalConfig, ProgressiveConfig
-from fakes import ONTOLOGY_TTL, dbo, make_ontology
+from fakes import ONTOLOGY_TTL, dbo, make_ontology, make_sampler, schema_of
 
 # many properties of a class, for sampling; dbo:anything has no range, dbo:owner owl:Thing
 WIDE_TTL = (
@@ -80,12 +83,12 @@ def ship_graph(*links: tuple[str, str]) -> QueryGraph:
 
 @pytest.fixture
 def sampler(ontology):
-    return ProgressiveSampler(ontology)
+    return make_sampler(ontology)
 
 
 @pytest.fixture
 def wide():
-    return ProgressiveSampler(make_ontology(WIDE_TTL))
+    return make_sampler(make_ontology(WIDE_TTL))
 
 
 def by_label(result: ProgressiveResult) -> dict:
@@ -105,13 +108,13 @@ def test_candidates_are_outgoing_object_properties(sampler):
 
 
 def test_candidates_inherited_filtered_and_untyped(wide):
-    # domain of a parent class (Vehicle) and properties without/with owl:Thing range: untyped targets
+    # domain of a parent class (Vehicle) and a property with owl:Thing range: untyped target;
+    # dbo:anything has no range, the stored schema has no row of it
     warship = QueryGraph(subjects=[ship(uri=dbo("Warship"))])
     targets = {c.prop: c.target_uri for c in wide.candidates(warship)}
     assert targets == {
         dbo("homeport"): dbo("Country"),
         dbo("commander"): dbo("Person"),
-        dbo("anything"): "",
         dbo("owner"): "",
     }
     # already linked properties are left out
@@ -140,7 +143,7 @@ def test_root_classes_fall_back_to_owl_thing_subclasses():
     roots = ("Vehicle", "Place", "Person")
     om = make_ontology(ONTOLOGY_TTL + "".join(f"\ndbo:{c} rdfs:subClassOf owl:Thing ." for c in roots))
     assert om.q_to_df(om.config.parent_class_query).empty
-    assert set(ProgressiveSampler(om).root_classes()) == {dbo(c) for c in roots}
+    assert set(make_sampler(om).root_classes()) == {dbo(c) for c in roots}
 
 
 # --- sampling ---
@@ -170,8 +173,10 @@ def test_modification_ids_unique(wide):
     for modification in result.modifications:
         subject, link = (op.data for op in modification.operations)
         assert (link.from_subject_id, link.to_subject_id) == ("place_1", subject.id)
-        assert modification.details.links[link.id].property_id == link.uri
-        assert modification.details.subjects[subject.id].subject_id == dbo("Place")
+        # the details carry the stored ids (prefixed), the graph the wrapped IRIs
+        key = wide.schema.key
+        assert key(modification.details.links[link.id].property_id) == key(link.uri)
+        assert key(modification.details.subjects[subject.id].subject_id) == key(dbo("Place"))
 
 
 # --- counts ---
@@ -194,7 +199,7 @@ def test_counts_untyped_and_capped(wide):
     result = wide.sample(ProgressiveRequest(graph=ship_graph(), sample_size=10, count_limit=1))
     assert result.count_limit == 1 and result.base_count == 1
     counts = by_label(result)
-    assert counts["ship → anything → thing"] == 1
+    assert counts["ship → owner → thing"] == 1
     assert counts["ship → commander → person"] == 0
     # uncapped
     result = wide.sample(ProgressiveRequest(graph=ship_graph(), sample_size=10))
@@ -231,7 +236,7 @@ def test_failed_counts_are_none(ontology):
             raise RuntimeError("endpoint down")
         return 7
 
-    sampler = ProgressiveSampler(ontology, run_count=run_count)
+    sampler = make_sampler(ontology, run_count=run_count)
     result = sampler.sample(ProgressiveRequest(graph=ship_graph(), sample_size=10))
     assert result.base_count == 7
     assert by_label(result) == {"ship → homeport → country": 7, "ship → commander → person": None}
@@ -254,7 +259,7 @@ def test_timed_out_counts_are_none(ontology):
         return 3
 
     config = ProgressiveConfig(timeout=1, parallelism=2)
-    sampler = ProgressiveSampler(ontology, config=config, run_count=run_count)
+    sampler = make_sampler(ontology, config=config, run_count=run_count)
     start = time.monotonic()
     try:
         result = sampler.sample(ProgressiveRequest(graph=ship_graph(), sample_size=10))
@@ -324,9 +329,13 @@ def test_sampler_uses_config(ontology):
     from api.config import ManMan
 
     config = EvalConfig(progressive={"default_sample_size": 3, "max_sample_size": 5, "count_limit": 7})
-    manman = SimpleNamespace(ontology_manager=make_ontology(WIDE_TTL), db_config=config)
+    ontology = make_ontology(WIDE_TTL)
+    guidance = SimpleNamespace(schema_index=lambda: schema_of(ontology))
+    manman = SimpleNamespace(ontology_manager=ontology, db_config=config, guidance_man=guidance)
     sampler = ManMan.progressive.func(manman)
     assert sampler.config is config.progressive
+    # schema lookups from the stored schema
+    assert sampler._schema_source == guidance.schema_index
     person = QueryGraph(subjects=[AssistantSubject(id="p", uri=dbo("Person"), label="person")])
     # without a sample size the configured default, a larger one is capped
     assert len(sampler.sample(ProgressiveRequest(graph=person)).modifications) == 3
@@ -408,7 +417,7 @@ dbr:e2 a dbo:Ship ; rdfs:label "Enterprise"@en ; dbo:length "2000"^^xsd:double .
 
 @pytest.fixture
 def fleet():
-    return ProgressiveSampler(make_ontology(FLEET_TTL))
+    return make_sampler(make_ontology(FLEET_TTL))
 
 
 def homeport_graph() -> QueryGraph:
@@ -479,7 +488,7 @@ def test_percentiles_in_graph_context(fleet):
 
 def test_percentiles_of_many_values_by_rank():
     # more distinct values than max_numeric_values: OFFSET queries, same percentiles
-    sampler = ProgressiveSampler(make_ontology(FLEET_TTL), config=ProgressiveConfig(max_numeric_values=3))
+    sampler = make_sampler(make_ontology(FLEET_TTL), config=ProgressiveConfig(max_numeric_values=3))
     queries = []
     run_select = sampler.run_select
     sampler.run_select = lambda query, timeout: queries.append(query) or run_select(query, timeout)
@@ -691,7 +700,7 @@ dbr:c1 a dbo:Company ; rdfs:label "Chantier"@en ; dbo:location dbr:Paris .
 
 @pytest.fixture
 def tree():
-    return ProgressiveSampler(make_ontology(TREE_TTL))
+    return make_sampler(make_ontology(TREE_TTL))
 
 
 def counting(sampler: ProgressiveSampler) -> list[str]:
@@ -746,7 +755,7 @@ def depth1_results() -> str:
     results = {}
     for name, case in json.loads(SNAPSHOT.read_text()).items():
         request = ProgressiveRequest(**case["request"])
-        result = ProgressiveSampler(make_ontology(ttls[case["ttl"]])).sample(request)
+        result = make_sampler(make_ontology(ttls[case["ttl"]])).sample(request)
         assert all(m.depth == 1 and m.parent_id is None and m.step_operations is None for m in result.modifications)
         assert (result.depth, result.expanded_ids, result.duplicate_count, result.query_budget) == (1, [], 0, None)
         dumped = result.model_dump(
@@ -759,7 +768,7 @@ def depth1_results() -> str:
 def test_depth1_unchanged(tmp_path):
     """Depth 1 gives the results of the sampler before the tree expansion byte for byte
     (without the new fields, which keep their defaults): the snapshot was dumped at commit
-    b03a2b7 with PYTHONHASHSEED=0, as the in-memory graph orders query results by hash,
+    b03a2b7, and again with the schema lookups (SchemaIndex), with PYTHONHASHSEED=0, as the in-memory graph orders query results by hash,
     so it is compared in a subprocess with that seed."""
     import os
     import subprocess
@@ -774,13 +783,13 @@ def test_depth1_unchanged(tmp_path):
     assert out.read_text() == SNAPSHOT.read_text()
     # an explicit depth 1 is the default
     request = ProgressiveRequest(graph=ship_graph(), sample_size=10, seed=2)
-    sampler = ProgressiveSampler(make_ontology(WIDE_TTL))
+    sampler = make_sampler(make_ontology(WIDE_TTL))
     assert sampler.sample(request) == sampler.sample(request.model_copy(update={"depth": 1}))
 
 
 def test_depth1_ignores_the_budget(tree):
     # the first level is always sampled in full
-    sampler = ProgressiveSampler(make_ontology(TREE_TTL), config=ProgressiveConfig(max_total_queries=1))
+    sampler = make_sampler(make_ontology(TREE_TTL), config=ProgressiveConfig(max_total_queries=1))
     request = ProgressiveRequest(graph=QueryGraph(subjects=[ship()]), sample_size=10, seed=1)
     assert sampler.sample(request) == tree.sample(request)
 
@@ -899,13 +908,13 @@ def test_graph_key_ignores_order_and_ids():
 def test_tree_budget():
     graph = QueryGraph(subjects=[ship()])
     request = ProgressiveRequest(graph=graph, sample_size=10, seed=1, depth=3, child_sample_size=10)
-    full = ProgressiveSampler(make_ontology(TREE_TTL))
+    full = make_sampler(make_ontology(TREE_TTL))
     queries = counting(full)
     unlimited = full.sample(request)
     assert unlimited.query_count == len(queries) and not unlimited.budget_exhausted
     first_level = 1 + sum(m.depth == 1 for m in unlimited.modifications)
     for budget in (first_level + 2, first_level + 5):
-        sampler = ProgressiveSampler(make_ontology(TREE_TTL), config=ProgressiveConfig(max_total_queries=budget))
+        sampler = make_sampler(make_ontology(TREE_TTL), config=ProgressiveConfig(max_total_queries=budget))
         queries = counting(sampler)
         result = sampler.sample(request)
         assert len(queries) == result.query_count <= budget and result.query_budget == budget
@@ -917,23 +926,133 @@ def test_tree_budget():
         graph=homeport_graph(), sample_size=1, seed=1, depth=3, sample_constraints=True, child_constraint_sample_size=4,
     )
     for budget in (30, 45, 60):
-        sampler = ProgressiveSampler(make_ontology(FLEET_TTL), config=ProgressiveConfig(max_total_queries=budget))
+        sampler = make_sampler(make_ontology(FLEET_TTL), config=ProgressiveConfig(max_total_queries=budget))
         queries = counting(sampler)
         result = sampler.sample(fleet_request)
         assert len(queries) == result.query_count <= budget
         check_tree(sampler, homeport_graph(), result)
 
 
-def test_tree_level_counts_in_one_pool(tree, monkeypatch):
-    import assistant.progressive as progressive
+def test_tree_streams_levels(tree):
+    events = []
+    request = ProgressiveRequest(graph=QueryGraph(subjects=[ship()]), sample_size=10, seed=1, depth=2)
+    result = tree.stream(request, emit=events.append)
+    assert result == tree.sample(request)
+    types = [e.type for e in events]
+    assert types[0] == "start" and types[-1] == "done" and types.count("level") == 1
+    level = types.index("level")
+    # the level starts once every first-level count is in
+    first = {m.id for m in events[0].modifications}
+    assert {e.id for e in events[:level] if e.type == "count"} == first | {None}
+    assert events[level].parent_ids == result.expanded_ids
+    # the children of each parent are emitted (then counted) on their own
+    batches = [e for e in events if e.type == "modifications"]
+    assert [b.parent_id for b in batches] == [p for p in result.expanded_ids if any(m.parent_id == p for m in result.modifications)]
+    children = [m.id for b in batches for m in b.modifications]
+    assert children == [m.id for m in result.modifications if m.depth == 2]
+    assert all(m.count is None for b in batches for m in b.modifications)
+    # every modification and the base are counted exactly once, with the result's count
+    counts = [(e.id, e.count) for e in events if e.type == "count"]
+    assert sorted(counts, key=str) == sorted([(None, result.base_count)] + [(m.id, m.count) for m in result.modifications], key=str)
+    done = events[-1]
+    assert done.complete and done.depth == 2 and done.query_count == result.query_count and done.base_count == 6
 
-    sizes = []
-    run = progressive.run_bounded
-    monkeypatch.setattr(progressive, "run_bounded", lambda jobs, *a: sizes.append(len(jobs)) or run(jobs, *a))
-    result = tree.sample(ProgressiveRequest(graph=QueryGraph(subjects=[ship()]), sample_size=10, seed=1, depth=2))
-    children = [m for m in result.modifications if m.depth == 2]
-    # first level: base count, counts and details; second: the counts and details of all children
-    assert sizes == [1 + 2 * 2, 2 * len(children)]
+
+def test_counts_stream_while_distributions_run():
+    """The value distributions run besides the counts: a distribution that waits for a
+    count finishes (if counts waited for the distributions, it would time out)."""
+    sampler = make_sampler(make_ontology(FLEET_TTL), config=ProgressiveConfig(parallelism=4, timeout=5))
+    counted = threading.Event()
+    run_count, run_select = sampler.run_count, sampler.run_select
+
+    def count(query, timeout):
+        try:
+            return run_count(query, timeout)
+        finally:
+            counted.set()
+
+    def select(query, timeout):
+        assert counted.wait(4), "no count finished before the distribution"
+        return run_select(query, timeout)
+
+    sampler.run_count, sampler.run_select = count, select
+    events = []
+    result = sampler.stream(
+        ProgressiveRequest(graph=homeport_graph(), sample_size=1, seed=1, sample_constraints=True, constraint_sample_size=3),
+        emit=events.append,
+    )
+    assert not result.failed_constraints and [m for m in result.modifications if m.constraint]
+    types = [e.type for e in events]
+    assert types[0] == "start" and types[-1] == "done"
+    # the base count is in before the constraint modifications are known
+    assert types.index("count") < types.index("modifications")
+
+
+def test_stream_cancel():
+    sampler = make_sampler(make_ontology(TREE_TTL), config=ProgressiveConfig(parallelism=1, timeout=10))
+    gate, calls = threading.Event(), []
+    run_count = sampler.run_count
+
+    def count(query, timeout):
+        calls.append(query)
+        gate.wait(10)
+        return run_count(query, timeout)
+
+    sampler.run_count = count
+    token, events, outcome = CancelToken(), [], []
+
+    def run():
+        try:
+            sampler.stream(ProgressiveRequest(graph=QueryGraph(subjects=[ship()]), sample_size=10, seed=1), events.append, token)
+        except SamplingCancelled:
+            outcome.append("cancelled")
+
+    thread = threading.Thread(target=run)
+    thread.start()
+    deadline = time.monotonic() + 5
+    while not calls:
+        assert time.monotonic() < deadline
+        time.sleep(0.01)
+    token.cancel()
+    gate.set()
+    thread.join(5)
+    # the running count finishes, the waiting ones are dropped; no events after start
+    assert outcome == ["cancelled"] and len(calls) == 1
+    assert [e.type for e in events] == ["start"]
+
+
+def test_job_pool_order_and_cancel():
+    gate, got = threading.Event(), []
+    pool = JobPool(1)
+    try:
+        pool.submit(lambda: gate.wait(5) and "first", 10, got.append)
+        while not pool._running:
+            time.sleep(0.01)
+        pool.submit_all([lambda i=i: i for i in range(3)], 10, [got.append] * 3)
+        # urgent jobs are queued before the waiting ones
+        pool.submit(lambda: "urgent", 10, got.append, urgent=True)
+        gate.set()
+        pool.join()
+        assert got == ["first", "urgent", 0, 1, 2]
+    finally:
+        pool.close()
+
+    gate, got, ran = threading.Event(), [], []
+    pool = JobPool(1)
+    try:
+        pool.submit(lambda: gate.wait(5) and ran.append("first"), 10, got.append)
+        pool.submit_all([lambda i=i: ran.append(i) for i in range(3)], 10, [got.append] * 3)
+        while not pool._running:
+            time.sleep(0.01)
+        pool.cancel()
+        pool.join()
+        assert pool.run_all([lambda: 1], 10) == [None]
+        gate.set()
+        time.sleep(0.1)
+        # the running job finished without its callback, the waiting ones never ran
+        assert ran == ["first"] and got == []
+    finally:
+        pool.close()
 
 
 def test_sample_endpoint_depth(client, fake_manman):

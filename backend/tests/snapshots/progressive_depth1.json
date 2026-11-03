@@ -32,21 +32,11 @@
       "subjects": {
        "person_1": {
         "descendants": {},
-        "instance_count": 1,
+        "instance_count": 0,
         "label": "person",
         "properties": {},
         "refcount": 0,
         "spos": {
-         "rdf:type": {
-          "label": null,
-          "property": "rdf:type",
-          "values": [
-           {
-            "label": null,
-            "value": "owl:Class"
-           }
-          ]
-         },
          "rdfs:label": {
           "label": null,
           "property": "rdfs:label",
@@ -58,7 +48,7 @@
           ]
          }
         },
-        "subject_id": "<http://dbpedia.org/ontology/Person>",
+        "subject_id": "dbo:Person",
         "subject_type": "class",
         "total_descendants": 0
        }
@@ -83,63 +73,6 @@
     {
      "constraint": null,
      "count": 0,
-     "description": "Start from vehicle",
-     "details": {
-      "links": {},
-      "subjects": {
-       "vehicle_1": {
-        "descendants": {},
-        "instance_count": 0,
-        "label": "vehicle",
-        "properties": {},
-        "refcount": 0,
-        "spos": {
-         "rdf:type": {
-          "label": null,
-          "property": "rdf:type",
-          "values": [
-           {
-            "label": null,
-            "value": "owl:Class"
-           }
-          ]
-         },
-         "rdfs:label": {
-          "label": null,
-          "property": "rdfs:label",
-          "values": [
-           {
-            "label": null,
-            "value": "vehicle"
-           }
-          ]
-         }
-        },
-        "subject_id": "<http://dbpedia.org/ontology/Vehicle>",
-        "subject_type": "class",
-        "total_descendants": 0
-       }
-      }
-     },
-     "id": "start|<http://dbpedia.org/ontology/Vehicle>",
-     "kind": "start",
-     "label": "vehicle",
-     "operations": [
-      {
-       "data": {
-        "id": "vehicle_1",
-        "label": "vehicle",
-        "subqueries": [],
-        "uri": "<http://dbpedia.org/ontology/Vehicle>"
-       },
-       "operation": "add",
-       "subject_id": null
-      }
-     ]
-    },
-    {
-     "constraint": null,
-     "count": 0,
      "description": "Start from place",
      "details": {
       "links": {},
@@ -151,16 +84,6 @@
         "properties": {},
         "refcount": 0,
         "spos": {
-         "rdf:type": {
-          "label": null,
-          "property": "rdf:type",
-          "values": [
-           {
-            "label": null,
-            "value": "owl:Class"
-           }
-          ]
-         },
          "rdfs:label": {
           "label": null,
           "property": "rdfs:label",
@@ -172,7 +95,7 @@
           ]
          }
         },
-        "subject_id": "<http://dbpedia.org/ontology/Place>",
+        "subject_id": "dbo:Place",
         "subject_type": "class",
         "total_descendants": 0
        }
@@ -188,6 +111,53 @@
         "label": "place",
         "subqueries": [],
         "uri": "<http://dbpedia.org/ontology/Place>"
+       },
+       "operation": "add",
+       "subject_id": null
+      }
+     ]
+    },
+    {
+     "constraint": null,
+     "count": 0,
+     "description": "Start from vehicle",
+     "details": {
+      "links": {},
+      "subjects": {
+       "vehicle_1": {
+        "descendants": {},
+        "instance_count": 0,
+        "label": "vehicle",
+        "properties": {},
+        "refcount": 0,
+        "spos": {
+         "rdfs:label": {
+          "label": null,
+          "property": "rdfs:label",
+          "values": [
+           {
+            "label": null,
+            "value": "vehicle"
+           }
+          ]
+         }
+        },
+        "subject_id": "dbo:Vehicle",
+        "subject_type": "class",
+        "total_descendants": 0
+       }
+      }
+     },
+     "id": "start|<http://dbpedia.org/ontology/Vehicle>",
+     "kind": "start",
+     "label": "vehicle",
+     "operations": [
+      {
+       "data": {
+        "id": "vehicle_1",
+        "label": "vehicle",
+        "subqueries": [],
+        "uri": "<http://dbpedia.org/ontology/Vehicle>"
        },
        "operation": "add",
        "subject_id": null
@@ -497,6 +467,76 @@
     },
     {
      "constraint": {
+      "frequency": 5,
+      "kind": "category",
+      "percentile": null,
+      "property_id": "<http://dbpedia.org/ontology/shipClass>",
+      "property_label": "ship class",
+      "subject_id": "ship",
+      "value": "Frigate"
+     },
+     "count": 5,
+     "description": "Keep the ship results with ship class = \"Frigate\" (5 of the current results)",
+     "details": {
+      "links": {},
+      "subjects": {}
+     },
+     "id": "ship|<http://dbpedia.org/ontology/shipClass>|equals|Frigate",
+     "kind": "constraint",
+     "label": "ship: ship class = \"Frigate\"",
+     "operations": [
+      {
+       "data": {
+        "id": "ship_class_1",
+        "operator": "equals",
+        "property_id": "<http://dbpedia.org/ontology/shipClass>",
+        "property_label": "ship class",
+        "property_type": "xsd:string",
+        "type": "string",
+        "value": "Frigate"
+       },
+       "operation": "add",
+       "subject_id": "ship"
+      }
+     ]
+    },
+    {
+     "constraint": {
+      "frequency": 3,
+      "kind": "category",
+      "percentile": null,
+      "property_id": "<http://dbpedia.org/ontology/shipClass>",
+      "property_label": "ship class",
+      "subject_id": "ship",
+      "value": "Sloop"
+     },
+     "count": 3,
+     "description": "Keep the ship results with ship class = \"Sloop\" (3 of the current results)",
+     "details": {
+      "links": {},
+      "subjects": {}
+     },
+     "id": "ship|<http://dbpedia.org/ontology/shipClass>|equals|Sloop",
+     "kind": "constraint",
+     "label": "ship: ship class = \"Sloop\"",
+     "operations": [
+      {
+       "data": {
+        "id": "ship_class_2",
+        "operator": "equals",
+        "property_id": "<http://dbpedia.org/ontology/shipClass>",
+        "property_label": "ship class",
+        "property_type": "xsd:string",
+        "type": "string",
+        "value": "Sloop"
+       },
+       "operation": "add",
+       "subject_id": "ship"
+      }
+     ]
+    },
+    {
+     "constraint": {
       "frequency": null,
       "kind": "percentile",
       "percentile": 10.0,
@@ -672,76 +712,6 @@
     },
     {
      "constraint": {
-      "frequency": 5,
-      "kind": "category",
-      "percentile": null,
-      "property_id": "<http://dbpedia.org/ontology/shipClass>",
-      "property_label": "ship class",
-      "subject_id": "ship",
-      "value": "Frigate"
-     },
-     "count": 5,
-     "description": "Keep the ship results with ship class = \"Frigate\" (5 of the current results)",
-     "details": {
-      "links": {},
-      "subjects": {}
-     },
-     "id": "ship|<http://dbpedia.org/ontology/shipClass>|equals|Frigate",
-     "kind": "constraint",
-     "label": "ship: ship class = \"Frigate\"",
-     "operations": [
-      {
-       "data": {
-        "id": "ship_class_1",
-        "operator": "equals",
-        "property_id": "<http://dbpedia.org/ontology/shipClass>",
-        "property_label": "ship class",
-        "property_type": "xsd:string",
-        "type": "string",
-        "value": "Frigate"
-       },
-       "operation": "add",
-       "subject_id": "ship"
-      }
-     ]
-    },
-    {
-     "constraint": {
-      "frequency": 3,
-      "kind": "category",
-      "percentile": null,
-      "property_id": "<http://dbpedia.org/ontology/shipClass>",
-      "property_label": "ship class",
-      "subject_id": "ship",
-      "value": "Sloop"
-     },
-     "count": 3,
-     "description": "Keep the ship results with ship class = \"Sloop\" (3 of the current results)",
-     "details": {
-      "links": {},
-      "subjects": {}
-     },
-     "id": "ship|<http://dbpedia.org/ontology/shipClass>|equals|Sloop",
-     "kind": "constraint",
-     "label": "ship: ship class = \"Sloop\"",
-     "operations": [
-      {
-       "data": {
-        "id": "ship_class_2",
-        "operator": "equals",
-        "property_id": "<http://dbpedia.org/ontology/shipClass>",
-        "property_label": "ship class",
-        "property_type": "xsd:string",
-        "type": "string",
-        "value": "Sloop"
-       },
-       "operation": "add",
-       "subject_id": "ship"
-      }
-     ]
-    },
-    {
-     "constraint": {
       "frequency": 6,
       "kind": "category",
       "percentile": null,
@@ -857,14 +827,14 @@
      "details": {
       "links": {
        "homeport_1": {
-        "from_id": "<http://dbpedia.org/ontology/Ship>",
+        "from_id": "dbo:Ship",
         "from_subject": null,
         "instance_count": 0,
         "label": "homeport",
-        "link_id": -1,
-        "link_type": "class",
-        "property_id": "<http://dbpedia.org/ontology/homeport>",
-        "to_id": "<http://dbpedia.org/ontology/Country>",
+        "link_id": 6,
+        "link_type": "owl:ObjectProperty",
+        "property_id": "dbo:homeport",
+        "to_id": "dbo:Country",
         "to_proptype": null,
         "to_subject": null
        }
@@ -872,21 +842,11 @@
       "subjects": {
        "country_1": {
         "descendants": {},
-        "instance_count": 3,
+        "instance_count": 0,
         "label": "country",
         "properties": {},
         "refcount": 0,
         "spos": {
-         "rdf:type": {
-          "label": null,
-          "property": "rdf:type",
-          "values": [
-           {
-            "label": null,
-            "value": "owl:Class"
-           }
-          ]
-         },
          "rdfs:label": {
           "label": null,
           "property": "rdfs:label",
@@ -898,7 +858,7 @@
           ]
          }
         },
-        "subject_id": "<http://dbpedia.org/ontology/Country>",
+        "subject_id": "dbo:Country",
         "subject_type": "class",
         "total_descendants": 0
        }
@@ -1149,6 +1109,76 @@
     },
     {
      "constraint": {
+      "frequency": 5,
+      "kind": "category",
+      "percentile": null,
+      "property_id": "<http://dbpedia.org/ontology/shipClass>",
+      "property_label": "ship class",
+      "subject_id": "ship",
+      "value": "Frigate"
+     },
+     "count": 5,
+     "description": "Keep the ship results with ship class = \"Frigate\" (5 of the current results)",
+     "details": {
+      "links": {},
+      "subjects": {}
+     },
+     "id": "ship|<http://dbpedia.org/ontology/shipClass>|equals|Frigate",
+     "kind": "constraint",
+     "label": "ship: ship class = \"Frigate\"",
+     "operations": [
+      {
+       "data": {
+        "id": "ship_class_1",
+        "operator": "equals",
+        "property_id": "<http://dbpedia.org/ontology/shipClass>",
+        "property_label": "ship class",
+        "property_type": "xsd:string",
+        "type": "string",
+        "value": "Frigate"
+       },
+       "operation": "add",
+       "subject_id": "ship"
+      }
+     ]
+    },
+    {
+     "constraint": {
+      "frequency": 3,
+      "kind": "category",
+      "percentile": null,
+      "property_id": "<http://dbpedia.org/ontology/shipClass>",
+      "property_label": "ship class",
+      "subject_id": "ship",
+      "value": "Sloop"
+     },
+     "count": 3,
+     "description": "Keep the ship results with ship class = \"Sloop\" (3 of the current results)",
+     "details": {
+      "links": {},
+      "subjects": {}
+     },
+     "id": "ship|<http://dbpedia.org/ontology/shipClass>|equals|Sloop",
+     "kind": "constraint",
+     "label": "ship: ship class = \"Sloop\"",
+     "operations": [
+      {
+       "data": {
+        "id": "ship_class_2",
+        "operator": "equals",
+        "property_id": "<http://dbpedia.org/ontology/shipClass>",
+        "property_label": "ship class",
+        "property_type": "xsd:string",
+        "type": "string",
+        "value": "Sloop"
+       },
+       "operation": "add",
+       "subject_id": "ship"
+      }
+     ]
+    },
+    {
+     "constraint": {
       "frequency": null,
       "kind": "percentile",
       "percentile": 25.0,
@@ -1251,76 +1281,6 @@
        "subject_id": "ship"
       }
      ]
-    },
-    {
-     "constraint": {
-      "frequency": 5,
-      "kind": "category",
-      "percentile": null,
-      "property_id": "<http://dbpedia.org/ontology/shipClass>",
-      "property_label": "ship class",
-      "subject_id": "ship",
-      "value": "Frigate"
-     },
-     "count": 5,
-     "description": "Keep the ship results with ship class = \"Frigate\" (5 of the current results)",
-     "details": {
-      "links": {},
-      "subjects": {}
-     },
-     "id": "ship|<http://dbpedia.org/ontology/shipClass>|equals|Frigate",
-     "kind": "constraint",
-     "label": "ship: ship class = \"Frigate\"",
-     "operations": [
-      {
-       "data": {
-        "id": "ship_class_1",
-        "operator": "equals",
-        "property_id": "<http://dbpedia.org/ontology/shipClass>",
-        "property_label": "ship class",
-        "property_type": "xsd:string",
-        "type": "string",
-        "value": "Frigate"
-       },
-       "operation": "add",
-       "subject_id": "ship"
-      }
-     ]
-    },
-    {
-     "constraint": {
-      "frequency": 3,
-      "kind": "category",
-      "percentile": null,
-      "property_id": "<http://dbpedia.org/ontology/shipClass>",
-      "property_label": "ship class",
-      "subject_id": "ship",
-      "value": "Sloop"
-     },
-     "count": 3,
-     "description": "Keep the ship results with ship class = \"Sloop\" (3 of the current results)",
-     "details": {
-      "links": {},
-      "subjects": {}
-     },
-     "id": "ship|<http://dbpedia.org/ontology/shipClass>|equals|Sloop",
-     "kind": "constraint",
-     "label": "ship: ship class = \"Sloop\"",
-     "operations": [
-      {
-       "data": {
-        "id": "ship_class_2",
-        "operator": "equals",
-        "property_id": "<http://dbpedia.org/ontology/shipClass>",
-        "property_label": "ship class",
-        "property_type": "xsd:string",
-        "type": "string",
-        "value": "Sloop"
-       },
-       "operation": "add",
-       "subject_id": "ship"
-      }
-     ]
     }
    ],
    "seed": 5
@@ -1361,18 +1321,18 @@
     {
      "constraint": null,
      "count": 0,
-     "description": "Link person by prop 12 to a new place",
+     "description": "Link person by prop 1 to a new place",
      "details": {
       "links": {
-       "prop_12_1": {
-        "from_id": "<http://dbpedia.org/ontology/Person>",
+       "prop_1_1": {
+        "from_id": "dbo:Person",
         "from_subject": null,
         "instance_count": 0,
-        "label": "prop 12",
-        "link_id": -1,
-        "link_type": "class",
-        "property_id": "<http://dbpedia.org/ontology/prop12>",
-        "to_id": "<http://dbpedia.org/ontology/Place>",
+        "label": "prop 1",
+        "link_id": 0,
+        "link_type": "owl:ObjectProperty",
+        "property_id": "dbo:prop1",
+        "to_id": "dbo:Place",
         "to_proptype": null,
         "to_subject": null
        }
@@ -1385,16 +1345,6 @@
         "properties": {},
         "refcount": 0,
         "spos": {
-         "rdf:type": {
-          "label": null,
-          "property": "rdf:type",
-          "values": [
-           {
-            "label": null,
-            "value": "owl:Class"
-           }
-          ]
-         },
          "rdfs:label": {
           "label": null,
           "property": "rdfs:label",
@@ -1406,15 +1356,15 @@
           ]
          }
         },
-        "subject_id": "<http://dbpedia.org/ontology/Place>",
+        "subject_id": "dbo:Place",
         "subject_type": "class",
         "total_descendants": 0
        }
       }
      },
-     "id": "p|<http://dbpedia.org/ontology/prop12>|<http://dbpedia.org/ontology/Place>",
+     "id": "p|<http://dbpedia.org/ontology/prop1>|<http://dbpedia.org/ontology/Place>",
      "kind": "link",
-     "label": "person \u2192 prop 12 \u2192 place",
+     "label": "person \u2192 prop 1 \u2192 place",
      "operations": [
       {
        "data": {
@@ -1432,282 +1382,15 @@
         "from_subject_id": "p",
         "from_subject_label": "person",
         "from_subject_uri": "<http://dbpedia.org/ontology/Person>",
-        "id": "prop_12_1",
-        "label": "prop 12",
+        "id": "prop_1_1",
+        "label": "prop 1",
         "property_type": null,
         "quantifier": null,
         "semantic_link_type": null,
         "to_subject_id": "place_1",
         "to_subject_label": "place",
         "to_subject_uri": "<http://dbpedia.org/ontology/Place>",
-        "uri": "<http://dbpedia.org/ontology/prop12>"
-       },
-       "operation": "add",
-       "subject_id": null
-      }
-     ]
-    },
-    {
-     "constraint": null,
-     "count": 0,
-     "description": "Link person by prop 19 to a new place",
-     "details": {
-      "links": {
-       "prop_19_1": {
-        "from_id": "<http://dbpedia.org/ontology/Person>",
-        "from_subject": null,
-        "instance_count": 0,
-        "label": "prop 19",
-        "link_id": -1,
-        "link_type": "class",
-        "property_id": "<http://dbpedia.org/ontology/prop19>",
-        "to_id": "<http://dbpedia.org/ontology/Place>",
-        "to_proptype": null,
-        "to_subject": null
-       }
-      },
-      "subjects": {
-       "place_2": {
-        "descendants": {},
-        "instance_count": 0,
-        "label": "place",
-        "properties": {},
-        "refcount": 0,
-        "spos": {
-         "rdf:type": {
-          "label": null,
-          "property": "rdf:type",
-          "values": [
-           {
-            "label": null,
-            "value": "owl:Class"
-           }
-          ]
-         },
-         "rdfs:label": {
-          "label": null,
-          "property": "rdfs:label",
-          "values": [
-           {
-            "label": null,
-            "value": "place"
-           }
-          ]
-         }
-        },
-        "subject_id": "<http://dbpedia.org/ontology/Place>",
-        "subject_type": "class",
-        "total_descendants": 0
-       }
-      }
-     },
-     "id": "p|<http://dbpedia.org/ontology/prop19>|<http://dbpedia.org/ontology/Place>",
-     "kind": "link",
-     "label": "person \u2192 prop 19 \u2192 place",
-     "operations": [
-      {
-       "data": {
-        "id": "place_2",
-        "label": "place",
-        "subqueries": [],
-        "uri": "<http://dbpedia.org/ontology/Place>"
-       },
-       "operation": "add",
-       "subject_id": null
-      },
-      {
-       "data": {
-        "allow_arbitrary": null,
-        "from_subject_id": "p",
-        "from_subject_label": "person",
-        "from_subject_uri": "<http://dbpedia.org/ontology/Person>",
-        "id": "prop_19_1",
-        "label": "prop 19",
-        "property_type": null,
-        "quantifier": null,
-        "semantic_link_type": null,
-        "to_subject_id": "place_2",
-        "to_subject_label": "place",
-        "to_subject_uri": "<http://dbpedia.org/ontology/Place>",
-        "uri": "<http://dbpedia.org/ontology/prop19>"
-       },
-       "operation": "add",
-       "subject_id": null
-      }
-     ]
-    },
-    {
-     "constraint": null,
-     "count": 0,
-     "description": "Link person by prop 0 to a new place",
-     "details": {
-      "links": {
-       "prop_0_1": {
-        "from_id": "<http://dbpedia.org/ontology/Person>",
-        "from_subject": null,
-        "instance_count": 0,
-        "label": "prop 0",
-        "link_id": -1,
-        "link_type": "class",
-        "property_id": "<http://dbpedia.org/ontology/prop0>",
-        "to_id": "<http://dbpedia.org/ontology/Place>",
-        "to_proptype": null,
-        "to_subject": null
-       }
-      },
-      "subjects": {
-       "place_3": {
-        "descendants": {},
-        "instance_count": 0,
-        "label": "place",
-        "properties": {},
-        "refcount": 0,
-        "spos": {
-         "rdf:type": {
-          "label": null,
-          "property": "rdf:type",
-          "values": [
-           {
-            "label": null,
-            "value": "owl:Class"
-           }
-          ]
-         },
-         "rdfs:label": {
-          "label": null,
-          "property": "rdfs:label",
-          "values": [
-           {
-            "label": null,
-            "value": "place"
-           }
-          ]
-         }
-        },
-        "subject_id": "<http://dbpedia.org/ontology/Place>",
-        "subject_type": "class",
-        "total_descendants": 0
-       }
-      }
-     },
-     "id": "p|<http://dbpedia.org/ontology/prop0>|<http://dbpedia.org/ontology/Place>",
-     "kind": "link",
-     "label": "person \u2192 prop 0 \u2192 place",
-     "operations": [
-      {
-       "data": {
-        "id": "place_3",
-        "label": "place",
-        "subqueries": [],
-        "uri": "<http://dbpedia.org/ontology/Place>"
-       },
-       "operation": "add",
-       "subject_id": null
-      },
-      {
-       "data": {
-        "allow_arbitrary": null,
-        "from_subject_id": "p",
-        "from_subject_label": "person",
-        "from_subject_uri": "<http://dbpedia.org/ontology/Person>",
-        "id": "prop_0_1",
-        "label": "prop 0",
-        "property_type": null,
-        "quantifier": null,
-        "semantic_link_type": null,
-        "to_subject_id": "place_3",
-        "to_subject_label": "place",
-        "to_subject_uri": "<http://dbpedia.org/ontology/Place>",
-        "uri": "<http://dbpedia.org/ontology/prop0>"
-       },
-       "operation": "add",
-       "subject_id": null
-      }
-     ]
-    },
-    {
-     "constraint": null,
-     "count": 0,
-     "description": "Link person by prop 8 to a new place",
-     "details": {
-      "links": {
-       "prop_8_1": {
-        "from_id": "<http://dbpedia.org/ontology/Person>",
-        "from_subject": null,
-        "instance_count": 0,
-        "label": "prop 8",
-        "link_id": -1,
-        "link_type": "class",
-        "property_id": "<http://dbpedia.org/ontology/prop8>",
-        "to_id": "<http://dbpedia.org/ontology/Place>",
-        "to_proptype": null,
-        "to_subject": null
-       }
-      },
-      "subjects": {
-       "place_4": {
-        "descendants": {},
-        "instance_count": 0,
-        "label": "place",
-        "properties": {},
-        "refcount": 0,
-        "spos": {
-         "rdf:type": {
-          "label": null,
-          "property": "rdf:type",
-          "values": [
-           {
-            "label": null,
-            "value": "owl:Class"
-           }
-          ]
-         },
-         "rdfs:label": {
-          "label": null,
-          "property": "rdfs:label",
-          "values": [
-           {
-            "label": null,
-            "value": "place"
-           }
-          ]
-         }
-        },
-        "subject_id": "<http://dbpedia.org/ontology/Place>",
-        "subject_type": "class",
-        "total_descendants": 0
-       }
-      }
-     },
-     "id": "p|<http://dbpedia.org/ontology/prop8>|<http://dbpedia.org/ontology/Place>",
-     "kind": "link",
-     "label": "person \u2192 prop 8 \u2192 place",
-     "operations": [
-      {
-       "data": {
-        "id": "place_4",
-        "label": "place",
-        "subqueries": [],
-        "uri": "<http://dbpedia.org/ontology/Place>"
-       },
-       "operation": "add",
-       "subject_id": null
-      },
-      {
-       "data": {
-        "allow_arbitrary": null,
-        "from_subject_id": "p",
-        "from_subject_label": "person",
-        "from_subject_uri": "<http://dbpedia.org/ontology/Person>",
-        "id": "prop_8_1",
-        "label": "prop 8",
-        "property_type": null,
-        "quantifier": null,
-        "semantic_link_type": null,
-        "to_subject_id": "place_4",
-        "to_subject_label": "place",
-        "to_subject_uri": "<http://dbpedia.org/ontology/Place>",
-        "uri": "<http://dbpedia.org/ontology/prop8>"
+        "uri": "<http://dbpedia.org/ontology/prop1>"
        },
        "operation": "add",
        "subject_id": null
@@ -1721,36 +1404,26 @@
      "details": {
       "links": {
        "prop_10_1": {
-        "from_id": "<http://dbpedia.org/ontology/Person>",
+        "from_id": "dbo:Person",
         "from_subject": null,
         "instance_count": 0,
         "label": "prop 10",
-        "link_id": -1,
-        "link_type": "class",
-        "property_id": "<http://dbpedia.org/ontology/prop10>",
-        "to_id": "<http://dbpedia.org/ontology/Place>",
+        "link_id": 21,
+        "link_type": "owl:ObjectProperty",
+        "property_id": "dbo:prop10",
+        "to_id": "dbo:Place",
         "to_proptype": null,
         "to_subject": null
        }
       },
       "subjects": {
-       "place_5": {
+       "place_2": {
         "descendants": {},
         "instance_count": 0,
         "label": "place",
         "properties": {},
         "refcount": 0,
         "spos": {
-         "rdf:type": {
-          "label": null,
-          "property": "rdf:type",
-          "values": [
-           {
-            "label": null,
-            "value": "owl:Class"
-           }
-          ]
-         },
          "rdfs:label": {
           "label": null,
           "property": "rdfs:label",
@@ -1762,7 +1435,7 @@
           ]
          }
         },
-        "subject_id": "<http://dbpedia.org/ontology/Place>",
+        "subject_id": "dbo:Place",
         "subject_type": "class",
         "total_descendants": 0
        }
@@ -1774,7 +1447,7 @@
      "operations": [
       {
        "data": {
-        "id": "place_5",
+        "id": "place_2",
         "label": "place",
         "subqueries": [],
         "uri": "<http://dbpedia.org/ontology/Place>"
@@ -1793,7 +1466,7 @@
         "property_type": null,
         "quantifier": null,
         "semantic_link_type": null,
-        "to_subject_id": "place_5",
+        "to_subject_id": "place_2",
         "to_subject_label": "place",
         "to_subject_uri": "<http://dbpedia.org/ontology/Place>",
         "uri": "<http://dbpedia.org/ontology/prop10>"
@@ -1806,18 +1479,255 @@
     {
      "constraint": null,
      "count": 0,
-     "description": "Link person by prop 9 to a new place",
+     "description": "Link person by prop 11 to a new place",
      "details": {
       "links": {
-       "prop_9_1": {
-        "from_id": "<http://dbpedia.org/ontology/Person>",
+       "prop_11_1": {
+        "from_id": "dbo:Person",
         "from_subject": null,
         "instance_count": 0,
-        "label": "prop 9",
-        "link_id": -1,
-        "link_type": "class",
-        "property_id": "<http://dbpedia.org/ontology/prop9>",
-        "to_id": "<http://dbpedia.org/ontology/Place>",
+        "label": "prop 11",
+        "link_id": 4,
+        "link_type": "owl:ObjectProperty",
+        "property_id": "dbo:prop11",
+        "to_id": "dbo:Place",
+        "to_proptype": null,
+        "to_subject": null
+       }
+      },
+      "subjects": {
+       "place_3": {
+        "descendants": {},
+        "instance_count": 0,
+        "label": "place",
+        "properties": {},
+        "refcount": 0,
+        "spos": {
+         "rdfs:label": {
+          "label": null,
+          "property": "rdfs:label",
+          "values": [
+           {
+            "label": null,
+            "value": "place"
+           }
+          ]
+         }
+        },
+        "subject_id": "dbo:Place",
+        "subject_type": "class",
+        "total_descendants": 0
+       }
+      }
+     },
+     "id": "p|<http://dbpedia.org/ontology/prop11>|<http://dbpedia.org/ontology/Place>",
+     "kind": "link",
+     "label": "person \u2192 prop 11 \u2192 place",
+     "operations": [
+      {
+       "data": {
+        "id": "place_3",
+        "label": "place",
+        "subqueries": [],
+        "uri": "<http://dbpedia.org/ontology/Place>"
+       },
+       "operation": "add",
+       "subject_id": null
+      },
+      {
+       "data": {
+        "allow_arbitrary": null,
+        "from_subject_id": "p",
+        "from_subject_label": "person",
+        "from_subject_uri": "<http://dbpedia.org/ontology/Person>",
+        "id": "prop_11_1",
+        "label": "prop 11",
+        "property_type": null,
+        "quantifier": null,
+        "semantic_link_type": null,
+        "to_subject_id": "place_3",
+        "to_subject_label": "place",
+        "to_subject_uri": "<http://dbpedia.org/ontology/Place>",
+        "uri": "<http://dbpedia.org/ontology/prop11>"
+       },
+       "operation": "add",
+       "subject_id": null
+      }
+     ]
+    },
+    {
+     "constraint": null,
+     "count": 0,
+     "description": "Link person by prop 15 to a new place",
+     "details": {
+      "links": {
+       "prop_15_1": {
+        "from_id": "dbo:Person",
+        "from_subject": null,
+        "instance_count": 0,
+        "label": "prop 15",
+        "link_id": 18,
+        "link_type": "owl:ObjectProperty",
+        "property_id": "dbo:prop15",
+        "to_id": "dbo:Place",
+        "to_proptype": null,
+        "to_subject": null
+       }
+      },
+      "subjects": {
+       "place_4": {
+        "descendants": {},
+        "instance_count": 0,
+        "label": "place",
+        "properties": {},
+        "refcount": 0,
+        "spos": {
+         "rdfs:label": {
+          "label": null,
+          "property": "rdfs:label",
+          "values": [
+           {
+            "label": null,
+            "value": "place"
+           }
+          ]
+         }
+        },
+        "subject_id": "dbo:Place",
+        "subject_type": "class",
+        "total_descendants": 0
+       }
+      }
+     },
+     "id": "p|<http://dbpedia.org/ontology/prop15>|<http://dbpedia.org/ontology/Place>",
+     "kind": "link",
+     "label": "person \u2192 prop 15 \u2192 place",
+     "operations": [
+      {
+       "data": {
+        "id": "place_4",
+        "label": "place",
+        "subqueries": [],
+        "uri": "<http://dbpedia.org/ontology/Place>"
+       },
+       "operation": "add",
+       "subject_id": null
+      },
+      {
+       "data": {
+        "allow_arbitrary": null,
+        "from_subject_id": "p",
+        "from_subject_label": "person",
+        "from_subject_uri": "<http://dbpedia.org/ontology/Person>",
+        "id": "prop_15_1",
+        "label": "prop 15",
+        "property_type": null,
+        "quantifier": null,
+        "semantic_link_type": null,
+        "to_subject_id": "place_4",
+        "to_subject_label": "place",
+        "to_subject_uri": "<http://dbpedia.org/ontology/Place>",
+        "uri": "<http://dbpedia.org/ontology/prop15>"
+       },
+       "operation": "add",
+       "subject_id": null
+      }
+     ]
+    },
+    {
+     "constraint": null,
+     "count": 0,
+     "description": "Link person by prop 17 to a new place",
+     "details": {
+      "links": {
+       "prop_17_1": {
+        "from_id": "dbo:Person",
+        "from_subject": null,
+        "instance_count": 0,
+        "label": "prop 17",
+        "link_id": 19,
+        "link_type": "owl:ObjectProperty",
+        "property_id": "dbo:prop17",
+        "to_id": "dbo:Place",
+        "to_proptype": null,
+        "to_subject": null
+       }
+      },
+      "subjects": {
+       "place_5": {
+        "descendants": {},
+        "instance_count": 0,
+        "label": "place",
+        "properties": {},
+        "refcount": 0,
+        "spos": {
+         "rdfs:label": {
+          "label": null,
+          "property": "rdfs:label",
+          "values": [
+           {
+            "label": null,
+            "value": "place"
+           }
+          ]
+         }
+        },
+        "subject_id": "dbo:Place",
+        "subject_type": "class",
+        "total_descendants": 0
+       }
+      }
+     },
+     "id": "p|<http://dbpedia.org/ontology/prop17>|<http://dbpedia.org/ontology/Place>",
+     "kind": "link",
+     "label": "person \u2192 prop 17 \u2192 place",
+     "operations": [
+      {
+       "data": {
+        "id": "place_5",
+        "label": "place",
+        "subqueries": [],
+        "uri": "<http://dbpedia.org/ontology/Place>"
+       },
+       "operation": "add",
+       "subject_id": null
+      },
+      {
+       "data": {
+        "allow_arbitrary": null,
+        "from_subject_id": "p",
+        "from_subject_label": "person",
+        "from_subject_uri": "<http://dbpedia.org/ontology/Person>",
+        "id": "prop_17_1",
+        "label": "prop 17",
+        "property_type": null,
+        "quantifier": null,
+        "semantic_link_type": null,
+        "to_subject_id": "place_5",
+        "to_subject_label": "place",
+        "to_subject_uri": "<http://dbpedia.org/ontology/Place>",
+        "uri": "<http://dbpedia.org/ontology/prop17>"
+       },
+       "operation": "add",
+       "subject_id": null
+      }
+     ]
+    },
+    {
+     "constraint": null,
+     "count": 0,
+     "description": "Link person by prop 2 to a new place",
+     "details": {
+      "links": {
+       "prop_2_1": {
+        "from_id": "dbo:Person",
+        "from_subject": null,
+        "instance_count": 0,
+        "label": "prop 2",
+        "link_id": 15,
+        "link_type": "owl:ObjectProperty",
+        "property_id": "dbo:prop2",
+        "to_id": "dbo:Place",
         "to_proptype": null,
         "to_subject": null
        }
@@ -1830,16 +1740,6 @@
         "properties": {},
         "refcount": 0,
         "spos": {
-         "rdf:type": {
-          "label": null,
-          "property": "rdf:type",
-          "values": [
-           {
-            "label": null,
-            "value": "owl:Class"
-           }
-          ]
-         },
          "rdfs:label": {
           "label": null,
           "property": "rdfs:label",
@@ -1851,15 +1751,15 @@
           ]
          }
         },
-        "subject_id": "<http://dbpedia.org/ontology/Place>",
+        "subject_id": "dbo:Place",
         "subject_type": "class",
         "total_descendants": 0
        }
       }
      },
-     "id": "p|<http://dbpedia.org/ontology/prop9>|<http://dbpedia.org/ontology/Place>",
+     "id": "p|<http://dbpedia.org/ontology/prop2>|<http://dbpedia.org/ontology/Place>",
      "kind": "link",
-     "label": "person \u2192 prop 9 \u2192 place",
+     "label": "person \u2192 prop 2 \u2192 place",
      "operations": [
       {
        "data": {
@@ -1877,15 +1777,15 @@
         "from_subject_id": "p",
         "from_subject_label": "person",
         "from_subject_uri": "<http://dbpedia.org/ontology/Person>",
-        "id": "prop_9_1",
-        "label": "prop 9",
+        "id": "prop_2_1",
+        "label": "prop 2",
         "property_type": null,
         "quantifier": null,
         "semantic_link_type": null,
         "to_subject_id": "place_6",
         "to_subject_label": "place",
         "to_subject_uri": "<http://dbpedia.org/ontology/Place>",
-        "uri": "<http://dbpedia.org/ontology/prop9>"
+        "uri": "<http://dbpedia.org/ontology/prop2>"
        },
        "operation": "add",
        "subject_id": null
@@ -1895,18 +1795,18 @@
     {
      "constraint": null,
      "count": 0,
-     "description": "Link person by prop 16 to a new place",
+     "description": "Link person by prop 5 to a new place",
      "details": {
       "links": {
-       "prop_16_1": {
-        "from_id": "<http://dbpedia.org/ontology/Person>",
+       "prop_5_1": {
+        "from_id": "dbo:Person",
         "from_subject": null,
         "instance_count": 0,
-        "label": "prop 16",
-        "link_id": -1,
-        "link_type": "class",
-        "property_id": "<http://dbpedia.org/ontology/prop16>",
-        "to_id": "<http://dbpedia.org/ontology/Place>",
+        "label": "prop 5",
+        "link_id": 13,
+        "link_type": "owl:ObjectProperty",
+        "property_id": "dbo:prop5",
+        "to_id": "dbo:Place",
         "to_proptype": null,
         "to_subject": null
        }
@@ -1919,16 +1819,6 @@
         "properties": {},
         "refcount": 0,
         "spos": {
-         "rdf:type": {
-          "label": null,
-          "property": "rdf:type",
-          "values": [
-           {
-            "label": null,
-            "value": "owl:Class"
-           }
-          ]
-         },
          "rdfs:label": {
           "label": null,
           "property": "rdfs:label",
@@ -1940,15 +1830,15 @@
           ]
          }
         },
-        "subject_id": "<http://dbpedia.org/ontology/Place>",
+        "subject_id": "dbo:Place",
         "subject_type": "class",
         "total_descendants": 0
        }
       }
      },
-     "id": "p|<http://dbpedia.org/ontology/prop16>|<http://dbpedia.org/ontology/Place>",
+     "id": "p|<http://dbpedia.org/ontology/prop5>|<http://dbpedia.org/ontology/Place>",
      "kind": "link",
-     "label": "person \u2192 prop 16 \u2192 place",
+     "label": "person \u2192 prop 5 \u2192 place",
      "operations": [
       {
        "data": {
@@ -1966,15 +1856,15 @@
         "from_subject_id": "p",
         "from_subject_label": "person",
         "from_subject_uri": "<http://dbpedia.org/ontology/Person>",
-        "id": "prop_16_1",
-        "label": "prop 16",
+        "id": "prop_5_1",
+        "label": "prop 5",
         "property_type": null,
         "quantifier": null,
         "semantic_link_type": null,
         "to_subject_id": "place_7",
         "to_subject_label": "place",
         "to_subject_uri": "<http://dbpedia.org/ontology/Place>",
-        "uri": "<http://dbpedia.org/ontology/prop16>"
+        "uri": "<http://dbpedia.org/ontology/prop5>"
        },
        "operation": "add",
        "subject_id": null
@@ -2011,7 +1901,7 @@
   },
   "result": {
    "base_count": 2,
-   "candidate_count": 4,
+   "candidate_count": 3,
    "constraint_candidate_count": null,
    "count_limit": 1000000,
    "count_subject": "ship",
@@ -2019,118 +1909,19 @@
    "modifications": [
     {
      "constraint": null,
-     "count": 2,
-     "description": "Link ship by homeport to a new country",
-     "details": {
-      "links": {
-       "homeport_1": {
-        "from_id": "<http://dbpedia.org/ontology/Ship>",
-        "from_subject": null,
-        "instance_count": 0,
-        "label": "homeport",
-        "link_id": -1,
-        "link_type": "class",
-        "property_id": "<http://dbpedia.org/ontology/homeport>",
-        "to_id": "<http://dbpedia.org/ontology/Country>",
-        "to_proptype": null,
-        "to_subject": null
-       }
-      },
-      "subjects": {
-       "country_1": {
-        "descendants": {},
-        "instance_count": 1,
-        "label": "country",
-        "properties": {},
-        "refcount": 0,
-        "spos": {
-         "rdf:type": {
-          "label": null,
-          "property": "rdf:type",
-          "values": [
-           {
-            "label": null,
-            "value": "owl:Class"
-           }
-          ]
-         },
-         "rdfs:label": {
-          "label": null,
-          "property": "rdfs:label",
-          "values": [
-           {
-            "label": null,
-            "value": "country"
-           }
-          ]
-         },
-         "rdfs:subClassOf": {
-          "label": null,
-          "property": "rdfs:subClassOf",
-          "values": [
-           {
-            "label": "place",
-            "value": "<http://dbpedia.org/ontology/Place>"
-           }
-          ]
-         }
-        },
-        "subject_id": "<http://dbpedia.org/ontology/Country>",
-        "subject_type": "class",
-        "total_descendants": 0
-       }
-      }
-     },
-     "id": "ship|<http://dbpedia.org/ontology/homeport>|<http://dbpedia.org/ontology/Country>",
-     "kind": "link",
-     "label": "ship \u2192 homeport \u2192 country",
-     "operations": [
-      {
-       "data": {
-        "id": "country_1",
-        "label": "country",
-        "subqueries": [],
-        "uri": "<http://dbpedia.org/ontology/Country>"
-       },
-       "operation": "add",
-       "subject_id": null
-      },
-      {
-       "data": {
-        "allow_arbitrary": null,
-        "from_subject_id": "ship",
-        "from_subject_label": "ship",
-        "from_subject_uri": "<http://dbpedia.org/ontology/Ship>",
-        "id": "homeport_1",
-        "label": "homeport",
-        "property_type": null,
-        "quantifier": null,
-        "semantic_link_type": null,
-        "to_subject_id": "country_1",
-        "to_subject_label": "country",
-        "to_subject_uri": "<http://dbpedia.org/ontology/Country>",
-        "uri": "<http://dbpedia.org/ontology/homeport>"
-       },
-       "operation": "add",
-       "subject_id": null
-      }
-     ]
-    },
-    {
-     "constraint": null,
      "count": 0,
      "description": "Link ship by commander to a new person",
      "details": {
       "links": {
        "commander_1": {
-        "from_id": "<http://dbpedia.org/ontology/Ship>",
+        "from_id": "dbo:Ship",
         "from_subject": null,
         "instance_count": 0,
         "label": "commander",
-        "link_id": -1,
-        "link_type": "class",
-        "property_id": "<http://dbpedia.org/ontology/commander>",
-        "to_id": "<http://dbpedia.org/ontology/Person>",
+        "link_id": 3,
+        "link_type": "owl:ObjectProperty",
+        "property_id": "dbo:commander",
+        "to_id": "dbo:Person",
         "to_proptype": null,
         "to_subject": null
        }
@@ -2138,21 +1929,11 @@
       "subjects": {
        "person_1": {
         "descendants": {},
-        "instance_count": 1,
+        "instance_count": 0,
         "label": "person",
         "properties": {},
         "refcount": 0,
         "spos": {
-         "rdf:type": {
-          "label": null,
-          "property": "rdf:type",
-          "values": [
-           {
-            "label": null,
-            "value": "owl:Class"
-           }
-          ]
-         },
          "rdfs:label": {
           "label": null,
           "property": "rdfs:label",
@@ -2164,7 +1945,7 @@
           ]
          }
         },
-        "subject_id": "<http://dbpedia.org/ontology/Person>",
+        "subject_id": "dbo:Person",
         "subject_type": "class",
         "total_descendants": 0
        }
@@ -2207,35 +1988,68 @@
     },
     {
      "constraint": null,
-     "count": 1,
-     "description": "Link ship by anything to a new thing",
+     "count": 2,
+     "description": "Link ship by homeport to a new country",
      "details": {
       "links": {
-       "anything_1": {
-        "from_id": "<http://dbpedia.org/ontology/Ship>",
+       "homeport_1": {
+        "from_id": "dbo:Ship",
         "from_subject": null,
         "instance_count": 0,
-        "label": "anything",
-        "link_id": -1,
-        "link_type": "class",
-        "property_id": "<http://dbpedia.org/ontology/anything>",
-        "to_id": null,
+        "label": "homeport",
+        "link_id": 11,
+        "link_type": "owl:ObjectProperty",
+        "property_id": "dbo:homeport",
+        "to_id": "dbo:Country",
         "to_proptype": null,
         "to_subject": null
        }
       },
-      "subjects": {}
+      "subjects": {
+       "country_1": {
+        "descendants": {},
+        "instance_count": 0,
+        "label": "country",
+        "properties": {},
+        "refcount": 0,
+        "spos": {
+         "rdfs:label": {
+          "label": null,
+          "property": "rdfs:label",
+          "values": [
+           {
+            "label": null,
+            "value": "country"
+           }
+          ]
+         },
+         "rdfs:subClassOf": {
+          "label": null,
+          "property": "rdfs:subClassOf",
+          "values": [
+           {
+            "label": null,
+            "value": "dbo:Place"
+           }
+          ]
+         }
+        },
+        "subject_id": "dbo:Country",
+        "subject_type": "class",
+        "total_descendants": 0
+       }
+      }
      },
-     "id": "ship|<http://dbpedia.org/ontology/anything>|",
+     "id": "ship|<http://dbpedia.org/ontology/homeport>|<http://dbpedia.org/ontology/Country>",
      "kind": "link",
-     "label": "ship \u2192 anything \u2192 thing",
+     "label": "ship \u2192 homeport \u2192 country",
      "operations": [
       {
        "data": {
-        "id": "thing_1",
-        "label": "thing",
+        "id": "country_1",
+        "label": "country",
         "subqueries": [],
-        "uri": ""
+        "uri": "<http://dbpedia.org/ontology/Country>"
        },
        "operation": "add",
        "subject_id": null
@@ -2246,15 +2060,15 @@
         "from_subject_id": "ship",
         "from_subject_label": "ship",
         "from_subject_uri": "<http://dbpedia.org/ontology/Ship>",
-        "id": "anything_1",
-        "label": "anything",
+        "id": "homeport_1",
+        "label": "homeport",
         "property_type": null,
         "quantifier": null,
         "semantic_link_type": null,
-        "to_subject_id": "thing_1",
-        "to_subject_label": "thing",
-        "to_subject_uri": "",
-        "uri": "<http://dbpedia.org/ontology/anything>"
+        "to_subject_id": "country_1",
+        "to_subject_label": "country",
+        "to_subject_uri": "<http://dbpedia.org/ontology/Country>",
+        "uri": "<http://dbpedia.org/ontology/homeport>"
        },
        "operation": "add",
        "subject_id": null
@@ -2268,13 +2082,13 @@
      "details": {
       "links": {
        "owner_1": {
-        "from_id": "<http://dbpedia.org/ontology/Vehicle>",
+        "from_id": "dbo:Vehicle",
         "from_subject": null,
         "instance_count": 0,
         "label": "owner",
-        "link_id": -1,
-        "link_type": "class",
-        "property_id": "<http://dbpedia.org/ontology/owner>",
+        "link_id": 2,
+        "link_type": "owl:ObjectProperty",
+        "property_id": "dbo:owner",
         "to_id": "owl:Thing",
         "to_proptype": null,
         "to_subject": null
@@ -2288,7 +2102,7 @@
      "operations": [
       {
        "data": {
-        "id": "thing_2",
+        "id": "thing_1",
         "label": "thing",
         "subqueries": [],
         "uri": ""
@@ -2307,7 +2121,7 @@
         "property_type": null,
         "quantifier": null,
         "semantic_link_type": null,
-        "to_subject_id": "thing_2",
+        "to_subject_id": "thing_1",
         "to_subject_label": "thing",
         "to_subject_uri": "",
         "uri": "<http://dbpedia.org/ontology/owner>"

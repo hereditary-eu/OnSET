@@ -30,7 +30,8 @@
                     class="prog_tree_kind" />
                 <span class="prog_tree_label">{{ row.m.label }}</span>
                 <span v-if="row.children && !row.open" class="prog_tree_more">+{{ row.children }}</span>
-                <span class="prog_tree_count">{{ formatCount(row.m.count, count_limit) }}</span>
+                <OnsetIcon v-if="row.m.pending" icon="mdi-loading mdi-spin" class="prog_tree_count" title="Counting…" />
+                <span v-else class="prog_tree_count">{{ formatCount(row.m.count, count_limit) }}</span>
                 <span class="prog_tree_ratio" :class="row.ratio ? (row.ratio.more ? 'prog_tree_up' : 'prog_tree_down') : ''"
                     :title="row.m.depth > 1 ? 'Rows relative to the modification it continues' : 'Rows relative to the current query'">
                     {{ row.ratio?.text ?? '' }}</span>
