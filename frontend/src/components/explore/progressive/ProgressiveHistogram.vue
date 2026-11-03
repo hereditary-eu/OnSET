@@ -1,6 +1,6 @@
 <template>
-    <!-- Histogram of the modifications' row counts on a log axis, with a scrubber: dragging
-         over the chart (or the slider below it) selects a row count. Bars stack the levels of
+    <!-- Histogram of the modifications' row counts on a log axis (bar heights log-scaled too),
+         with a scrubber: dragging over the chart (or the slider below it) selects a row count. Bars stack the levels of
          the tree expansion (depth 1 at the bottom, deeper levels lighter), links below
          constraints within a level; the bin of the selected modification is outlined. -->
     <div ref="container" class="prog_hist">
@@ -13,11 +13,11 @@
                 <rect v-for="segment in bin.segments" :key="`${segment.depth}:${segment.constraint}`"
                     class="prog_hist_bar" :class="{ prog_hist_bar_constraint: segment.constraint }"
                     :fill-opacity="depthOpacity(segment.depth)"
-                    :x="x(bin.x0) + 0.5" :y="y(segment.y0 + segment.n)" :width="Math.max(1, x(bin.x1) - x(bin.x0) - 1)"
-                    :height="y(segment.y0) - y(segment.y0 + segment.n)" />
+                    :x="x(bin.x0) + 0.5" :y="segmentTop(segment)" :width="Math.max(1, x(bin.x1) - x(bin.x0) - 1)"
+                    :height="y(segment.y0) - segmentTop(segment)" />
                 <rect v-if="selected_id != null && bin.ids.includes(selected_id)" class="prog_hist_selected"
-                    :x="x(bin.x0) - 0.5" :y="y(bin.ids.length) - 1.5" :width="Math.max(1, x(bin.x1) - x(bin.x0)) + 1"
-                    :height="y(0) - y(bin.ids.length) + 1.5" />
+                    :x="x(bin.x0) - 0.5" :y="Math.min(y(bin.ids.length), y(0) - MIN_BAR) - 1.5" :width="Math.max(1, x(bin.x1) - x(bin.x0)) + 1"
+                    :height="Math.max(y(0) - y(bin.ids.length), MIN_BAR) + 1.5" />
             </g>
 
             <line class="prog_hist_axis" :x1="x(extent[0])" :x2="x(extent[1])" :y1="y(0)" :y2="y(0)" />
@@ -54,7 +54,7 @@
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import * as d3 from 'd3'
 import {
-    countAtPosition, countPosition, depthOpacity, formatCount, type HistogramBin,
+    countAtPosition, countPosition, depthOpacity, formatCount, type BinSegment, type HistogramBin,
 } from '@/utils/progressive/histogram'
 
 const { bins, extent, base_count = null, scrub_count, nearest_ids, selected_id = null } = defineProps<{
@@ -87,7 +87,13 @@ onBeforeUnmount(() => observer?.disconnect())
 
 const x = computed(() => d3.scaleLinear().domain(extent).range([MARGIN.left, width.value - MARGIN.right]))
 const y_max = computed(() => Math.max(1, ...bins.map((b) => b.ids.length)))
-const y = computed(() => d3.scaleLinear().domain([0, y_max.value]).range([HEIGHT - MARGIN.bottom, MARGIN.top]))
+// bar heights on a log scale (log(1 + n)): with all candidates counted, one bin (often the
+// empty joins at 0 rows) can hold hundreds of modifications, on a linear scale the other bins
+// would shrink to sub-pixel bars as the counts stream in
+const y = computed(() => d3.scaleSymlog().domain([0, y_max.value]).range([HEIGHT - MARGIN.bottom, MARGIN.top]))
+// smallest height of a non-empty bar segment, in px
+const MIN_BAR = 2
+const segmentTop = (segment: BinSegment) => Math.min(y.value(segment.y0 + segment.n), y.value(segment.y0) - MIN_BAR)
 // a tick per decade (thinned to fit), labelled with the row count
 const ticks = computed(() => {
     const decades = d3.range(Math.floor(extent[0]), Math.floor(extent[1]) + 1)
