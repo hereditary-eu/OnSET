@@ -101,8 +101,12 @@ const show_settings = ref(false)
 const status_text = computed(() => {
     const result = prog.state.result
     switch (prog.state.status) {
-        case 'loading':
-            return 'Counting…'
+        case 'loading': {
+            // counts streaming in
+            const total = result ? result.modifications.length + (result.count_subject != null ? 1 : 0) : 0
+            const pending = result ? result.modifications.filter((m) => m.pending).length + (result.base_pending ? 1 : 0) : 0
+            return total ? `Counting… ${total - pending} of ${total}` : 'Counting…'
+        }
         case 'error':
             return 'Counting failed'
         case 'idle':

@@ -1,5 +1,5 @@
 // State of the progressive panel: re-runs the source (debounced) when the editor graph
-// changes, and derives the histogram, the modifications nearest to the scrubbed count and
+// changes (cancelling the running request), shows its partial results as they stream in, and derives the histogram, the modifications nearest to the scrubbed count and
 // the tree of modifications (tree expansion, depth > 1).
 //
 // Graph changes are detected like the agent's sync (agentSession.ts): a deep watch of the
@@ -93,15 +93,27 @@ export function useProgressive(graphSource: () => NodeLinkRepository | null | un
         const own = controller = new AbortController()
         state.status = 'loading'
         state.error = null
-        try {
-            const result = await source.fetch(body, own.signal)
+        // the previous result stays until the first update of this request
+        let first = true
+        const show = (result: ProgressiveResult) => {
             if (own.signal.aborted) {
                 return
             }
             state.result = result
+            if (first) {
+                first = false
+                state.scrub_count = null
+                state.selected_id = null
+            }
+        }
+        try {
+            // counts stream in: placeholders (pending) are filled while the status is loading
+            const result = await source.fetch(body, own.signal, show)
+            if (own.signal.aborted) {
+                return
+            }
+            show(result)
             state.status = 'ready'
-            state.scrub_count = null
-            state.selected_id = null
         } catch (e) {
             if (own.signal.aborted) {
                 return

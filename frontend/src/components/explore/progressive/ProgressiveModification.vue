@@ -19,7 +19,9 @@
                 :title="tag ? 'Constraint' : 'Link'" />
             <span class="prog_mod_label">{{ modification.label }}</span>
             <span v-if="tag" class="prog_mod_tag" :title="tag_title">{{ tag }}</span>
-            <span class="prog_mod_count" :title="modification.count == null ? 'Count failed or timed out' : undefined">
+            <OnsetIcon v-if="modification.pending" icon="mdi-loading mdi-spin" class="prog_mod_count"
+                title="Counting…" />
+            <span v-else class="prog_mod_count" :title="modification.count == null ? 'Count failed or timed out' : undefined">
                 {{ formatCount(modification.count, count_limit) }}</span>
             <span v-if="ratio" class="prog_mod_ratio" :class="ratio.more ? 'prog_mod_more' : 'prog_mod_less'"
                 title="Rows relative to the current query">{{ ratio.text }}</span>

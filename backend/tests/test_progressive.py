@@ -25,6 +25,9 @@ from assistant.assistant_model import (
     VectorSortSubQuery,
 )
 from assistant.progressive import (
+    CancelToken,
+    JobPool,
+    SamplingCancelled,
     ModificationKind,
     ProgressiveRequest,
     ProgressiveResult,
@@ -930,17 +933,126 @@ def test_tree_budget():
         check_tree(sampler, homeport_graph(), result)
 
 
-def test_tree_level_counts_in_one_pool(tree, monkeypatch):
-    import assistant.progressive as progressive
+def test_tree_streams_levels(tree):
+    events = []
+    request = ProgressiveRequest(graph=QueryGraph(subjects=[ship()]), sample_size=10, seed=1, depth=2)
+    result = tree.stream(request, emit=events.append)
+    assert result == tree.sample(request)
+    types = [e.type for e in events]
+    assert types[0] == "start" and types[-1] == "done" and types.count("level") == 1
+    level = types.index("level")
+    # the level starts once every first-level count is in
+    first = {m.id for m in events[0].modifications}
+    assert {e.id for e in events[:level] if e.type == "count"} == first | {None}
+    assert events[level].parent_ids == result.expanded_ids
+    # the children of each parent are emitted (then counted) on their own
+    batches = [e for e in events if e.type == "modifications"]
+    assert [b.parent_id for b in batches] == [p for p in result.expanded_ids if any(m.parent_id == p for m in result.modifications)]
+    children = [m.id for b in batches for m in b.modifications]
+    assert children == [m.id for m in result.modifications if m.depth == 2]
+    assert all(m.count is None for b in batches for m in b.modifications)
+    # every modification and the base are counted exactly once, with the result's count
+    counts = [(e.id, e.count) for e in events if e.type == "count"]
+    assert sorted(counts, key=str) == sorted([(None, result.base_count)] + [(m.id, m.count) for m in result.modifications], key=str)
+    done = events[-1]
+    assert done.complete and done.depth == 2 and done.query_count == result.query_count and done.base_count == 6
 
-    sizes = []
-    run = progressive.run_bounded
-    monkeypatch.setattr(progressive, "run_bounded", lambda jobs, *a: sizes.append(len(jobs)) or run(jobs, *a))
-    result = tree.sample(ProgressiveRequest(graph=QueryGraph(subjects=[ship()]), sample_size=10, seed=1, depth=2))
-    children = [m for m in result.modifications if m.depth == 2]
-    # first level: base count and counts; second: the counts of all children (details are
-    # schema lookups, no jobs)
-    assert sizes == [1 + 2, len(children)]
+
+def test_counts_stream_while_distributions_run():
+    """The value distributions run besides the counts: a distribution that waits for a
+    count finishes (if counts waited for the distributions, it would time out)."""
+    sampler = make_sampler(make_ontology(FLEET_TTL), config=ProgressiveConfig(parallelism=4, timeout=5))
+    counted = threading.Event()
+    run_count, run_select = sampler.run_count, sampler.run_select
+
+    def count(query, timeout):
+        try:
+            return run_count(query, timeout)
+        finally:
+            counted.set()
+
+    def select(query, timeout):
+        assert counted.wait(4), "no count finished before the distribution"
+        return run_select(query, timeout)
+
+    sampler.run_count, sampler.run_select = count, select
+    events = []
+    result = sampler.stream(
+        ProgressiveRequest(graph=homeport_graph(), sample_size=1, seed=1, sample_constraints=True, constraint_sample_size=3),
+        emit=events.append,
+    )
+    assert not result.failed_constraints and [m for m in result.modifications if m.constraint]
+    types = [e.type for e in events]
+    assert types[0] == "start" and types[-1] == "done"
+    # the base count is in before the constraint modifications are known
+    assert types.index("count") < types.index("modifications")
+
+
+def test_stream_cancel():
+    sampler = make_sampler(make_ontology(TREE_TTL), config=ProgressiveConfig(parallelism=1, timeout=10))
+    gate, calls = threading.Event(), []
+    run_count = sampler.run_count
+
+    def count(query, timeout):
+        calls.append(query)
+        gate.wait(10)
+        return run_count(query, timeout)
+
+    sampler.run_count = count
+    token, events, outcome = CancelToken(), [], []
+
+    def run():
+        try:
+            sampler.stream(ProgressiveRequest(graph=QueryGraph(subjects=[ship()]), sample_size=10, seed=1), events.append, token)
+        except SamplingCancelled:
+            outcome.append("cancelled")
+
+    thread = threading.Thread(target=run)
+    thread.start()
+    deadline = time.monotonic() + 5
+    while not calls:
+        assert time.monotonic() < deadline
+        time.sleep(0.01)
+    token.cancel()
+    gate.set()
+    thread.join(5)
+    # the running count finishes, the waiting ones are dropped; no events after start
+    assert outcome == ["cancelled"] and len(calls) == 1
+    assert [e.type for e in events] == ["start"]
+
+
+def test_job_pool_order_and_cancel():
+    gate, got = threading.Event(), []
+    pool = JobPool(1)
+    try:
+        pool.submit(lambda: gate.wait(5) and "first", 10, got.append)
+        while not pool._running:
+            time.sleep(0.01)
+        pool.submit_all([lambda i=i: i for i in range(3)], 10, [got.append] * 3)
+        # urgent jobs are queued before the waiting ones
+        pool.submit(lambda: "urgent", 10, got.append, urgent=True)
+        gate.set()
+        pool.join()
+        assert got == ["first", "urgent", 0, 1, 2]
+    finally:
+        pool.close()
+
+    gate, got, ran = threading.Event(), [], []
+    pool = JobPool(1)
+    try:
+        pool.submit(lambda: gate.wait(5) and ran.append("first"), 10, got.append)
+        pool.submit_all([lambda i=i: ran.append(i) for i in range(3)], 10, [got.append] * 3)
+        while not pool._running:
+            time.sleep(0.01)
+        pool.cancel()
+        pool.join()
+        assert pool.run_all([lambda: 1], 10) == [None]
+        gate.set()
+        time.sleep(0.1)
+        # the running job finished without its callback, the waiting ones never ran
+        assert ran == ["first"] and got == []
+    finally:
+        pool.close()
 
 
 def test_sample_endpoint_depth(client, fake_manman):

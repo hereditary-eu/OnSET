@@ -1,58 +1,298 @@
 // Where the progressive panel gets its (modification, count) records from.
 //
-// `progressiveSource` is the backend endpoint (POST /{config_id}/progressive/sample).
+// `progressiveSource` is the backend's streaming WebSocket (/{config_id}/progressive/ws,
+// protocol.ts): the panel shows the modifications as placeholders (`pending`) as soon as
+// they are known and fills in each count the moment it arrives.
 // The mock source below invents candidate links and counts locally, for an offline demo:
 // build/serve with ONSET_PROGRESSIVE_MOCK=1, or pass `mockProgressiveSource` as the
 // `source` option of useProgressive.
-import axios from 'axios'
-import { OperationType, type ProgressiveResult as ApiProgressiveResult } from '@/api/client.ts/Api'
+import { OperationType, type ProgressiveModification as ApiProgressiveModification } from '@/api/client.ts/Api'
 import type { AgentLink, AgentSubject, GraphDetails } from '@/utils/agent/protocol'
-import { api } from '@/utils/api'
+import { configWebSocketUrl, requireActiveConfig } from '@/utils/api'
+import type { ProgressiveClientMessage, ProgressiveServerEvent } from './protocol'
 import type { ProgressiveModification, ProgressiveRequest, ProgressiveResult } from './types'
 
 export interface ProgressiveSource {
     /** short name shown in the panel header, e.g. "mock data" ('' for the backend) */
     readonly label: string
-    /** count the request graph and a sample of its modifications; rejects with an AbortError when aborted */
-    fetch(request: ProgressiveRequest, signal: AbortSignal): Promise<ProgressiveResult>
+    /**
+     * count the request graph and a sample of its modifications; `onUpdate` receives the
+     * result so far whenever counts or modifications arrived (at most once per frame).
+     * Resolves with the complete result, rejects with an AbortError when aborted.
+     */
+    fetch(request: ProgressiveRequest, signal: AbortSignal,
+        onUpdate?: (partial: ProgressiveResult) => void): Promise<ProgressiveResult>
 }
 
 // --- backend source ----------------------------------------------------------------
 
-/** The response with the defaults of the backend model filled in. */
-export function normalizeResult(result: ApiProgressiveResult): ProgressiveResult {
+const RECONNECT_MIN_MS = 500
+const RECONNECT_MAX_MS = 15000
+
+const abortError = () => new DOMException('Aborted', 'AbortError')
+
+/** A modification with the defaults of the backend model filled in. */
+export function normalizeModification(m: ApiProgressiveModification, pending = false): ProgressiveModification {
     return {
-        ...result,
-        depth: result.depth ?? 1,
-        expanded_ids: result.expanded_ids ?? [],
-        modifications: (result.modifications ?? []).map((m) => ({
-            ...m,
-            kind: m.kind ?? 'link',
-            operations: m.operations ?? [],
-            details: m.details ? { subjects: m.details.subjects ?? {}, links: m.details.links ?? {} } : null,
-            depth: m.depth ?? 1,
-            parent_id: m.parent_id ?? null,
-            step_operations: m.step_operations ?? null,
-        })),
+        ...m,
+        kind: m.kind ?? 'link',
+        operations: m.operations ?? [],
+        details: m.details ? { subjects: m.details.subjects ?? {}, links: m.details.links ?? {} } : null,
+        depth: m.depth ?? 1,
+        parent_id: m.parent_id ?? null,
+        step_operations: m.step_operations ?? null,
+        pending,
     }
 }
 
-/** POST /progressive/sample of the active configuration. */
+interface Run {
+    request: ProgressiveRequest
+    /** id of the last sample message of the run (a new one after a reconnect) */
+    request_id: string | null
+    result: ProgressiveResult | null
+    by_id: Map<string, ProgressiveModification>
+    frame: ReturnType<typeof setTimeout> | null
+    onUpdate?: (partial: ProgressiveResult) => void
+    resolve: (result: ProgressiveResult) => void
+    reject: (error: unknown) => void
+}
+
+/** A snapshot of the result (new objects, so the panel's reactive state picks it up). */
+function snapshot(result: ProgressiveResult): ProgressiveResult {
+    return { ...result, expanded_ids: [...result.expanded_ids], modifications: result.modifications.map((m) => ({ ...m })) }
+}
+
+/**
+ * One WebSocket of the active configuration, with at most one running request: a new
+ * request (or an abort) cancels the running one on the server. The socket is opened on the
+ * first request and re-opened with backoff when it closes during a request, which is then
+ * sent again.
+ */
+class ProgressiveSocket {
+    private socket: WebSocket | null = null
+    private config_id: string | null = null
+    private current: Run | null = null
+    private reconnect_timer: ReturnType<typeof setTimeout> | null = null
+    private reconnect_attempt = 0
+    private counter = 0
+
+    run(request: ProgressiveRequest, signal: AbortSignal,
+        onUpdate?: (partial: ProgressiveResult) => void): Promise<ProgressiveResult> {
+        return new Promise((resolve, reject) => {
+            if (signal.aborted) {
+                reject(abortError())
+                return
+            }
+            this.current?.reject(abortError())
+            const run: Run = {
+                request, request_id: null, result: null, by_id: new Map(), frame: null, onUpdate, resolve, reject,
+            }
+            this.current = run
+            signal.addEventListener('abort', () => {
+                if (this.current === run) {
+                    this.finish(run)
+                    this.send({ type: 'cancel' })
+                }
+                reject(abortError())
+            }, { once: true })
+            this.connect(requireActiveConfig())
+            this.sendSample(run)
+        })
+    }
+
+    private connect(config_id: string) {
+        if (config_id == this.config_id && this.socket) {
+            return
+        }
+        if (config_id != this.config_id) {
+            this.close()
+            this.config_id = config_id
+            this.reconnect_attempt = 0
+        }
+        if (!this.reconnect_timer) {
+            this.open()
+        }
+    }
+
+    private close() {
+        if (this.reconnect_timer) {
+            clearTimeout(this.reconnect_timer)
+            this.reconnect_timer = null
+        }
+        const socket = this.socket
+        this.socket = null
+        if (socket) {
+            socket.onclose = null
+            socket.close()
+        }
+    }
+
+    private open() {
+        if (!this.config_id) {
+            return
+        }
+        const socket = new WebSocket(configWebSocketUrl(this.config_id, '/progressive/ws'))
+        this.socket = socket
+        socket.onopen = () => {
+            this.reconnect_attempt = 0
+            // the request sent before the socket was open, or lost with the last socket
+            if (this.current) {
+                this.sendSample(this.current)
+            }
+        }
+        socket.onmessage = (evt) => {
+            try {
+                this.handle(JSON.parse(evt.data) as ProgressiveServerEvent)
+            } catch (e) {
+                console.error('Invalid progressive message', evt.data, e)
+            }
+        }
+        socket.onclose = () => {
+            if (this.socket !== socket) {
+                return
+            }
+            this.socket = null
+            // re-request the running sampling; otherwise the next request re-opens
+            if (this.current) {
+                const delay = Math.min(RECONNECT_MAX_MS, RECONNECT_MIN_MS * 2 ** this.reconnect_attempt)
+                this.reconnect_attempt++
+                this.reconnect_timer = setTimeout(() => {
+                    this.reconnect_timer = null
+                    this.open()
+                }, delay)
+            }
+        }
+    }
+
+    private send(message: ProgressiveClientMessage): boolean {
+        if (!this.socket || this.socket.readyState != WebSocket.OPEN) {
+            return false
+        }
+        this.socket.send(JSON.stringify(message))
+        return true
+    }
+
+    private sendSample(run: Run) {
+        const request_id = `p${++this.counter}`
+        if (this.send({ type: 'sample', request_id, request: run.request })) {
+            // a re-sent request starts over
+            run.request_id = request_id
+            run.result = null
+            run.by_id.clear()
+        }
+    }
+
+    private finish(run: Run) {
+        if (run.frame) {
+            clearTimeout(run.frame)
+            run.frame = null
+        }
+        if (this.current === run) {
+            this.current = null
+        }
+    }
+
+    /** an update of the result so far, at most once per frame */
+    private scheduleUpdate(run: Run) {
+        if (run.frame || !run.onUpdate) {
+            return
+        }
+        run.frame = setTimeout(() => {
+            run.frame = null
+            if (this.current === run && run.result) {
+                run.onUpdate!(snapshot(run.result))
+            }
+        }, 16)
+    }
+
+    private handle(event: ProgressiveServerEvent) {
+        const run = this.current
+        if (!run || event.request_id == null || event.request_id != run.request_id) {
+            if (event.type == 'error' && event.request_id == null) {
+                console.warn('Progressive discovery:', event.message)
+            }
+            return
+        }
+        if (event.type == 'error') {
+            this.finish(run)
+            run.reject(new Error(event.message))
+            return
+        }
+        if (event.type == 'start') {
+            const modifications = event.modifications.map((m) =>
+                normalizeModification(m, !event.cached && m.count == null))
+            run.by_id = new Map(modifications.map((m) => [m.id, m]))
+            run.result = {
+                base_count: event.base_count ?? null,
+                base_pending: !event.cached && event.count_subject != null && event.base_count == null,
+                candidate_count: event.candidate_count,
+                count_limit: event.count_limit,
+                count_subject: event.count_subject ?? null,
+                seed: event.seed,
+                constraint_candidate_count: event.constraint_candidate_count ?? null,
+                query_budget: event.query_budget ?? null,
+                depth: 1,
+                expanded_ids: [],
+                modifications,
+            }
+            this.scheduleUpdate(run)
+            return
+        }
+        const result = run.result
+        if (!result) {
+            return
+        }
+        switch (event.type) {
+            case 'count':
+                if (event.id == null) {
+                    result.base_count = event.count
+                    result.base_pending = false
+                } else {
+                    const modification = run.by_id.get(event.id)
+                    if (modification) {
+                        modification.count = event.count
+                        modification.pending = false
+                    }
+                }
+                break
+            case 'modifications':
+                for (const m of event.modifications) {
+                    const modification = normalizeModification(m, true)
+                    run.by_id.set(modification.id, modification)
+                    result.modifications.push(modification)
+                }
+                if (event.parent_id != null && !result.expanded_ids.includes(event.parent_id)) {
+                    result.expanded_ids.push(event.parent_id)
+                }
+                result.depth = Math.max(result.depth, event.depth)
+                break
+            case 'level':
+                break
+            case 'done': {
+                const { type: _type, request_id: _id, complete: _complete, cached: _cached, ...summary } = event
+                Object.assign(result, summary, {
+                    depth: summary.depth ?? result.depth,
+                    expanded_ids: summary.expanded_ids ?? result.expanded_ids,
+                    base_pending: false,
+                })
+                for (const modification of result.modifications) {
+                    modification.pending = false
+                }
+                this.finish(run)
+                run.resolve(snapshot(result))
+                return
+            }
+        }
+        this.scheduleUpdate(run)
+    }
+}
+
+const progressiveSocket = new ProgressiveSocket()
+
+/** The streaming WebSocket of the active configuration. */
 export const apiProgressiveSource: ProgressiveSource = {
     label: '',
-    async fetch(request, signal) {
-        try {
-            const response = await api.progressive.sampleModificationsProgressiveSamplePost(request, { signal })
-            return normalizeResult(response.data)
-        } catch (e) {
-            if (axios.isCancel(e) || signal.aborted) {
-                throw new DOMException('Aborted', 'AbortError')
-            }
-            // the backend's message (e.g. an invalid count_subject) instead of the status text
-            const detail = axios.isAxiosError(e) ? e.response?.data?.detail : null
-            throw typeof detail == 'string' ? new Error(detail) : e
-        }
-    },
+    fetch: (request, signal, onUpdate) => progressiveSocket.run(request, signal, onUpdate),
 }
 
 // --- MOCK fixture source -----------------------------------------------------------
