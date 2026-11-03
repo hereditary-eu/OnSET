@@ -1,4 +1,5 @@
 from functools import lru_cache
+import re
 
 from pydantic import BaseModel, Field
 from rdflib import Graph, URIRef, Literal
@@ -17,7 +18,7 @@ import traceback
 from rdflib.plugins.parsers.notation3 import BadSyntax
 from eval_config import MultimodalConfig
 
-from utils import to_prefix, wrap_iri
+from utils import to_prefix
 
 
 class Prefix(BaseModel):
@@ -130,12 +131,34 @@ class OntologyManager:
             ns_man.update(dict(self.addtional_graph.namespace_manager.namespaces()))
         return ns_man
 
-    def __query(self, q: str):
+    def wrap_iri(self, s: str) -> str:
+        if (
+            s.startswith("http://")
+            or s.startswith("https://")
+            or not re.match(r"^[A-Za-z_][A-Za-z0-9_]*:", s)
+        ) and not s.startswith("<"):
+            return f"<{s}>"
+        if re.match(r"[A-Za-z_][A-Za-z0-9_]*:.*[/+:_]", s):
+            # re-add namespace prefix to the IRI if it was stripped by rdflib
+            prefix, local_name = s.split(":", 1)
+            if prefix in self.namespaces():
+                return f"<{self.namespaces()[prefix]}{local_name}>"
+        return s
+
+    def to_prefix(self, s: str) -> str:
+        return to_prefix(s, self.namespaces())
+
+    def __prefix_query(self, q: str):
         # add prefixes to the query
         prefixes = "\n".join(
             [f"PREFIX {prefix}: <{ns}>" for prefix, ns in self.namespaces().items()]
         )
         q = prefixes + "\n" + q
+        return q
+
+    def __query(self, q: str):
+        # add prefixes to the query
+        q = self.__prefix_query(q)
         # print("Querying:", q)
         res = list(self.onto.query(q))
         if self.addtional_graph is not None:
@@ -144,6 +167,7 @@ class OntologyManager:
         return res
 
     def __queries_res_raw(self, q: str):
+        q = self.__prefix_query(q)
         res = [self.onto.query(q)]
         if self.addtional_graph is not None:
             res.append(self.addtional_graph.query(q))
@@ -156,6 +180,10 @@ class OntologyManager:
     def q_to_df(self, q: str):
         return pd.DataFrame(self.__query(q))
 
+    def q_rows(self, q: str) -> list:
+        """Result rows of ``q`` as rdflib terms (a DataFrame turns them into strings)."""
+        return self.__query(q)
+
     def q_to_df_values(self, q: str) -> pd.DataFrame:
         result_sets = self.__queries_res_raw(q)
         assert len(result_sets) > 0, "Expected non-empty result set"
@@ -167,7 +195,8 @@ class OntologyManager:
         results_df = results_df.map(self.to_readable)
         return results_df
 
-    def get_root_classes(self, load_properties=False) -> list[Subject]:
+    def root_class_ids(self) -> list:
+        """Ids of the root classes, by parent_class_query or else the subclasses of owl:Thing."""
         classes = self.q_to_df(self.config.parent_class_query)
         if classes.empty:
             # if no parent classes, return all classes belonging to owl:Thing
@@ -183,7 +212,10 @@ class OntologyManager:
                 }}
                 """
             )
-        classes_list = classes[0].tolist()
+        return classes[0].tolist() if not classes.empty else []
+
+    def get_root_classes(self, load_properties=False) -> list[Subject]:
+        classes_list = self.root_class_ids()
         onto_classes: list[Subject] = [
             self.enrich_subject(cls, load_properties=load_properties)
             for cls in tqdm(classes_list, desc="Loading root classes")
@@ -191,14 +223,14 @@ class OntologyManager:
         return onto_classes
 
     def get_subclasses(self, cls: str, load_properties=False) -> list[Subject]:
-        cls = wrap_iri(cls)
+        cls = self.wrap_iri(cls)
         return self.__subjects_for(
             self.config.sub_class_query.replace("?cls", cls),
             load_properties=load_properties,
         )
 
     def get_all_subclasses(self, cls: str) -> list[Subject]:
-        cls = wrap_iri(cls)
+        cls = self.wrap_iri(cls)
         query = f"""SELECT ?scls
                     WHERE {{
                          ?scls rdf:type owl:Class.
@@ -208,7 +240,7 @@ class OntologyManager:
         return self.__subjects_for(query, subject_type="class")
 
     def get_named_individuals(self, cls: str, limit=128) -> list[Subject]:
-        cls = wrap_iri(cls)
+        cls = self.wrap_iri(cls)
         query = f"""SELECT ?ind
                     WHERE {{
                          ?ind rdf:type owl:NamedIndividual.
@@ -301,7 +333,7 @@ class OntologyManager:
         return label_candidates
 
     def outgoing_edges_for(self, cls: str, edges: list[str] = [], limit=128):
-        cls = wrap_iri(cls)
+        cls = self.wrap_iri(cls)
         if cls.startswith("_"):
             print("Skipping", cls)
             return {}
@@ -361,7 +393,7 @@ OPTIONAL {{?obj rdfs:label ?obj_lbl.}}
     def properties_for(
         self, cls: str, property_type: str = "ObjectProperty", n_props=None
     ) -> list[Subject]:
-        cls = wrap_iri(cls)
+        cls = self.wrap_iri(cls)
         if cls.startswith("_"):
             print("Skipping", cls)
             return []
@@ -382,11 +414,12 @@ OPTIONAL {{?obj rdfs:label ?obj_lbl.}}
             return []
 
     def range_of(self, prop: str, n_ranges: int = None):
+        wrap_prop = self.wrap_iri(prop)
         try:
             return self.__subjects_for(
                 f"""
                 SELECT DISTINCT ?range WHERE {{ 
-                {prop} rdfs:range/(owl:unionOf/rdf:rest*/rdf:first)* ?range.
+                {wrap_prop} rdfs:range/(owl:unionOf/rdf:rest*/rdf:first)* ?range.
                 }} {f"LIMIT {n_ranges}" if n_ranges else ""}""",
                 subject_type="individual",
             )
@@ -394,6 +427,41 @@ OPTIONAL {{?obj rdfs:label ?obj_lbl.}}
             print(traceback.format_exc())
             print("Failed to load range of", prop, e)
             return []
+
+    def outgoing_properties(
+        self,
+        cls: str,
+        property_types: tuple[str, ...] = ("owl:ObjectProperty", "rdf:Property"),
+    ) -> list[tuple[str, str | None]]:
+        """(property, range) of the properties whose domain is ``cls`` or one of its parents.
+
+        Like properties_for, but in one query and including inherited properties;
+        a property without (or with a blank-node) range has range None.
+        """
+        classes = {self.wrap_iri(c) for c in self.get_parents(cls)} | {self.wrap_iri(cls)}
+        query = f"""
+            SELECT DISTINCT ?prop ?range WHERE {{
+                VALUES ?cls {{ {" ".join(sorted(classes))} }}
+                VALUES ?ptype {{ {" ".join(property_types)} }}
+                ?prop rdf:type ?ptype .
+                {{ ?prop rdfs:domain ?cls . }}
+                UNION
+                {{ ?prop rdfs:domain/(owl:unionOf/rdf:rest*/rdf:first)* ?cls . }}
+                OPTIONAL {{ ?prop rdfs:range ?range . }}
+            }}"""
+        try:
+            rows = self.__query(query)
+        except Exception as e:
+            print(traceback.format_exc())
+            print("Failed to load outgoing properties of", cls, e)
+            return []
+        properties = {}
+        for prop, range_ in rows:
+            if not isinstance(prop, URIRef):
+                continue
+            key = (self.to_readable(prop), self.to_readable(range_) if isinstance(range_, URIRef) else None)
+            properties[key] = None
+        return list(properties)
 
     def open_properties(self):
         open_properties = list(
@@ -492,25 +560,25 @@ OPTIONAL {{?obj rdfs:label ?obj_lbl.}}
         return graph
 
     def instance_count(self, cls: str):
-        cls = wrap_iri(cls)
+        cls = self.wrap_iri(cls)
         return self.q_to_df(
             f"SELECT DISTINCT (COUNT(?s) as ?count) WHERE {{?s a {cls}}}"
         )[0][0]
 
     def property_count(self, cls: str):
-        cls = wrap_iri(cls)
+        cls = self.wrap_iri(cls)
         return list(
             self.__query(f"SELECT DISTINCT (COUNT(?s) as ?count) WHERE {{?s {cls} ?o}}")
         )[0][0]
 
     def get_parents(self, cls: str) -> list[str]:
-        cls = wrap_iri(cls)
+        cls = self.wrap_iri(cls)
         parents = self.q_to_df_values(
             f"""SELECT DISTINCT ?p WHERE {{ {cls} rdfs:subClassOf* ?p. }}"""
         )
         if "p" not in parents.columns:
             return []
-        return parents["p"].to_list()
+        return [to_prefix(p, self.namespaces()) for p in parents["p"].to_list()]
 
     def get_most_generic_classes(self, q: GeneralizationQuery):
         """
@@ -520,10 +588,11 @@ OPTIONAL {{?obj rdfs:label ?obj_lbl.}}
         * Find the classes linked by the in/out links
         * Choose the highest class with at least one in/out link
         """
+        cls = self.wrap_iri(q.cls)
         query = f"""SELECT ?cls (count(?mid) as ?distance)
                      WHERE {{
                         ?cls rdf:type owl:Class.
-                        {q.cls} rdfs:subClassOf* ?mid .
+                        {cls} rdfs:subClassOf* ?mid .
                         ?mid rdfs:subClassOf+ ?cls .
                     }}
                     group by ?cls ?distance 
@@ -531,7 +600,7 @@ OPTIONAL {{?obj rdfs:label ?obj_lbl.}}
                     """
         parent_classes: list[LinkedSubject] = self.__subjects_for(
             query, subject_type="class"
-        ) + [self.enrich_subject(q.cls, subject_type="class")]
+        ) + [self.enrich_subject(cls, subject_type="class")]
         parent_classes = [
             LinkedSubject.model_validate(cls.model_dump()) for cls in parent_classes
         ]

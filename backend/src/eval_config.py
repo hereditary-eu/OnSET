@@ -16,7 +16,8 @@ default, overridable through the ``ONSET_CONFIG`` environment variable)::
     }
 
 Every configuration resolves to a list of ``EvalConfig`` objects: one per
-variant (defaults <- config <- variant) followed by the base configuration
+variant (defaults <- config <- variant, nested objects such as ``agent`` or
+``progressive`` merged field by field) followed by the base configuration
 itself, so ``ALL_CONFIG_MAP[key][-1]`` is always the base configuration that
 the API serves. String values may reference environment variables as
 ``${VAR}`` or ``${VAR:-fallback}``.
@@ -28,7 +29,7 @@ import re
 from enum import Enum
 from functools import lru_cache
 from pathlib import Path
-from typing import Any
+from typing import Annotated, Any
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -42,7 +43,7 @@ class MultimodalConfig(BaseModel):
     encoding_model: str = "clip-ViT-B-32"
     image_vector_properties: list[str] = ["dbo:thumbnail_embedding"]
     image_properties: list[str] = ["dbo:thumbnail"]
-    image_types: list[str] = ["<http://dbpedia.org/ontology/Image>"]
+    image_types: list[str] = ["dbo:Image"]
 
 
 class AgentConfig(BaseModel):
@@ -71,6 +72,62 @@ class AgentConfig(BaseModel):
         return value or None
 
 
+class ProgressiveConfig(BaseModel):
+    """Progressive discovery (assistant/progressive.py, POST /{config_id}/progressive/sample)."""
+
+    # seconds per count query
+    timeout: float = 10.0
+    # concurrent queries per request
+    parallelism: int = Field(4, ge=1)
+    # sample size of requests that do not send one
+    default_sample_size: int = Field(48, ge=1)
+    # cap of the requested sample size
+    max_sample_size: int = Field(256, ge=1)
+    # cap of the counts of requests that do not send one
+    count_limit: int = Field(1_000_000, ge=1)
+    # send the timeout to the endpoint as well (QLever's `timeout` parameter),
+    # so it stops queries the sampler gave up on
+    server_timeout: bool = True
+
+    # constraint modifications (subqueries), defaults of requests that do not send them
+    sample_constraints: bool = False
+    # constrained properties (subject, property) with values in the query's results to
+    # sample, each yields several modifications
+    constraint_sample_size: int = Field(8, ge=0)
+    max_constraint_sample_size: int = Field(64, ge=0)
+    # percentiles (0-100) of numeric/date values that become thresholds
+    numeric_percentiles: list[Annotated[float, Field(ge=0, le=100)]] = Field(
+        default_factory=lambda: [10, 25, 50, 75, 90]
+    )
+    # values sampled per categorical property, among its max_categorical_values most frequent
+    categorical_samples: int = Field(3, ge=1)
+    max_categorical_values: int = Field(50, ge=1)
+    # a property is categorical if a value occurs for at least this many counted results
+    min_category_count: int = Field(2, ge=1)
+    # distinct numeric/date values fetched at once (one GROUP BY), else percentiles by ORDER BY/OFFSET
+    max_numeric_values: int = Field(10_000, ge=1)
+
+    # tree expansion (request depth > 1): levels below the first expand `branching`
+    # modifications of the previous level each, sampling child_sample_size links (and
+    # child_constraint_sample_size constrained properties) of each expanded graph
+    max_depth: int = Field(3, ge=1)
+    default_branching: int = Field(4, ge=1)
+    max_branching: int = Field(16, ge=1)
+    child_sample_size: int = Field(12, ge=1)
+    child_constraint_sample_size: int = Field(2, ge=0)
+    # endpoint queries (counts and value distributions) of a whole request; the first
+    # level is always sampled in full, deeper levels stop when the budget is spent
+    max_total_queries: int = Field(400, ge=1)
+
+    @field_validator("numeric_percentiles", mode="before")
+    @classmethod
+    def _split_percentiles(cls, value: Any) -> Any:
+        # comma-separated in an environment variable
+        if isinstance(value, str):
+            return [v.strip() for v in value.split(",") if v.strip()]
+        return value
+
+
 class EvalConfig(BaseModel):
     model_id: str = Field(
         "NousResearch/Hermes-3-Llama-3.1-8B-GGUF"
@@ -81,10 +138,12 @@ class EvalConfig(BaseModel):
     description: str = ""
     selection_distribution: SelectionDistribution = SelectionDistribution.INSTANCES
     model_quant: str = "*.Q8_0.gguf"
+    device: str = "cuda"  # "cuda", "cpu", "mps", etc.
     redis_cache_url: str = "redis://localhost:6379/1"
     ontology_extension: str = ""
     multimodal_config: MultimodalConfig | None = None
     agent: AgentConfig = Field(default_factory=AgentConfig)
+    progressive: ProgressiveConfig = Field(default_factory=ProgressiveConfig)
     save_named_individuals: bool = True
     additional_namespaces: dict[str, str] = Field(default_factory=dict)
 
@@ -123,6 +182,16 @@ def _interpolate_env(value: Any) -> Any:
     return value
 
 
+def _merge(base: dict[str, Any], override: dict[str, Any]) -> dict[str, Any]:
+    """``base`` updated by ``override``, nested objects (e.g. ``agent``) field by field."""
+    merged = dict(base)
+    for key, value in override.items():
+        if isinstance(value, dict) and isinstance(merged.get(key), dict):
+            value = _merge(merged[key], value)
+        merged[key] = value
+    return merged
+
+
 class OnsetConfigFile(BaseModel):
     default: str
     defaults: dict[str, Any] = {}
@@ -147,8 +216,8 @@ class OnsetConfigFile(BaseModel):
     def resolve(self, key: str) -> list[EvalConfig]:
         """All configurations for ``key``: its variants followed by the base config."""
         raw = self.configs[key]
-        base = {**self.defaults, **{k: v for k, v in raw.items() if k != "variants"}}
-        variants = [EvalConfig(**{**base, **v}) for v in raw.get("variants", [])]
+        base = _merge(self.defaults, {k: v for k, v in raw.items() if k != "variants"})
+        variants = [EvalConfig(**_merge(base, v)) for v in raw.get("variants", [])]
         return variants + [EvalConfig(**base)]
 
     def base(self, key: str) -> EvalConfig:
@@ -160,7 +229,10 @@ def load_config_file(path: str | os.PathLike | None = None) -> OnsetConfigFile:
     path = Path(path or os.getenv(CONFIG_PATH_ENV) or DEFAULT_CONFIG_PATH)
     with open(path) as f:
         raw = json.load(f)
-    return OnsetConfigFile(**_interpolate_env(raw))
+    print(f"Loading config file {path}:")
+    cfg = OnsetConfigFile(**_interpolate_env(raw))
+    print(f"Interpolated config: {json.dumps(cfg.model_dump(), indent=2)}")
+    return cfg
 
 
 def get_configs(key: str) -> list[EvalConfig]:

@@ -63,8 +63,9 @@ All knowledge graph configurations live in `backend/config.json` (path overridab
 }
 ```
 
-- Each configuration resolves to `defaults <- config <- variant`; `eval_config.ALL_CONFIG_MAP[key]` lists the variants followed by the base configuration, so `[-1]` (or `get_config(key)`) is the base configuration served by the API.
+- Each configuration resolves to `defaults <- config <- variant` (nested objects such as `agent` or `progressive` are merged field by field); `eval_config.ALL_CONFIG_MAP[key]` lists the variants followed by the base configuration, so `[-1]` (or `get_config(key)`) is the base configuration served by the API.
 - String values may reference environment variables as `${VAR}` or `${VAR:-fallback}`, e.g. `ONSET_DB_HOST`, `ONSET_SPARQL_HOST`, `REDIS_CACHE_URL`, `LLM_MODEL_ID`, `LLM_MODEL_QUANT`, `ONSET_DEFAULT_CONFIG`.
+- `progressive` holds the limits of progressive discovery (`POST /{config_id}/progressive/sample`): `timeout` (seconds per count query, 10), `parallelism` (concurrent count queries, 4), `default_sample_size` (48), `max_sample_size` (256), `count_limit` (1000000) and `server_timeout` (also send the timeout to QLever, true). The repository's `defaults` read them from `ONSET_PROGRESSIVE_<FIELD>` (e.g. `ONSET_PROGRESSIVE_TIMEOUT`); the sample sizes and count limit are served to the frontend by `GET /{config_id}/ontology/config`.
 - The API lists configurations at `GET /configs`; every other endpoint is scoped to a configuration as `/{config_id}/...` (e.g. `/dbpedia/classes/roots`, docs at `/dbpedia/docs`). Configurations are loaded lazily on first use; `ONSET_MAX_LOADED_CONFIGS` limits how many stay loaded at once (0 = unlimited).
 - The frontend mirrors this: `/` selects a configuration, `/:configId/explore` and `/:configId/circles` are the pages for it. Regenerate the API client from any configuration's schema, e.g. `sta generate -p http://localhost:8123/dbpedia/openapi.json -o ./src/api/client.ts --axios`.
 

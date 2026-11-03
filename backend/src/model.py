@@ -62,7 +62,9 @@ class Subject(BaseModel):
             link_id=-1,
             label=self.label,
             property_id=self.subject_id,
-            from_id=self.spos["rdfs:domain"].first_value(),
+            from_id=self.spos["rdfs:domain"].first_value()
+            if self.spos.get("rdfs:domain")
+            else "owl:Thing",
             to_id=self.spos["rdfs:range"].first_value()
             if self.spos.get("rdfs:range")
             else None,

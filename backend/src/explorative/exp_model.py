@@ -171,6 +171,9 @@ class SubjectInDB(BasePostgres):
 class SubjectLinkDB(BasePostgres):
     __tablename__ = "subject_links"
     link_id: Mapped[int] = mapped_column(primary_key=True)
+    property_id: Mapped[str | None] = mapped_column(
+        unique=True
+    )  # property_id can be None for instance links
     # do not enforce foreign key constraints
 
     from_id: Mapped[str | None] = mapped_column(ForeignKey("subjects.subject_id"))
@@ -178,7 +181,6 @@ class SubjectLinkDB(BasePostgres):
     # none means no specific target
     to_id: Mapped[str | None] = mapped_column(ForeignKey("subjects.subject_id"))
     to_proptype: Mapped[str | None] = mapped_column()
-    property_id: Mapped[str | None] = mapped_column()
     label: Mapped[str | None] = mapped_column()
     instance_count: Mapped[int] = mapped_column(default=0)
 

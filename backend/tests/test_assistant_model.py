@@ -4,10 +4,21 @@ import pytest
 
 from assistant.assistant_model import (
     AssistantLink,
+    AssistantNumberConstraintType,
     AssistantSubject,
+    AssistantSubQueryType,
+    BooleanSubQuery,
+    DateSubQuery,
+    ImagePropSubQuery,
+    InstancePropSubQuery,
+    LinkQuantifier,
+    LinkQuantifierType,
+    LinkSemanticType,
+    NumberSubQuery,
     Operation,
     Operations,
     QueryGraph,
+    QueryPropSubQuery,
     StringSubQuery,
     SubjectSubQuery,
     VectorSortSubQuery,
@@ -134,3 +145,87 @@ def test_operations_round_trip():
     assert isinstance(parsed.operations[0].data, AssistantLink)
     assert isinstance(parsed.operations[1].data, AssistantSubject)
     assert parsed == ops
+
+
+def full_graph():
+    """An editor graph with every subquery kind and all link options."""
+    return QueryGraph.model_validate(
+        {
+            "subjects": [
+                {
+                    "id": "node_1",
+                    "uri": dbo("Ship"),
+                    "label": "ship",
+                    "subqueries": [
+                        {"type": "query_prop", "id": "1", "property_id": "rdfs:label", "property_label": "label", "property_type": "xsd:string"},
+                        {"type": "image_prop", "id": "2", "property_id": dbo("thumbnail"), "property_type": dbo("Image")},
+                        {"type": "instance_prop", "id": "3", "property_id": dbo("length"), "value": "120"},
+                        {"type": "subject", "id": "4", "instance_id": "dbr:Bounty", "instance_label": "Bounty", "property_type": "owl:Thing"},
+                        {"type": "string", "id": "5", "property_id": "rdfs:label", "value": "HMS", "operator": "startswith"},
+                        {"type": "number", "id": "6", "property_id": dbo("length"), "property_type": "xsd:double", "value": 42.5, "operator": "less"},
+                        {"type": "boolean", "id": "7", "property_id": dbo("active"), "value": True},
+                        {"type": "date", "id": "8", "property_id": dbo("completionDate"), "value": "1900-01-01T00:00:00.000Z", "operator": "equals"},
+                        {
+                            "type": "vector_sort", "id": "9", "property_id": dbo("thumbnail_embedding"),
+                            "modality": "text", "direction": "ascending", "distance": "euclidean",
+                            "vector": [0.25, -1.0], "input_state": {"text": "a frigate"},
+                        },
+                    ],
+                },
+                {"id": "node_2", "uri": dbo("Country"), "label": "country"},
+            ],
+            "links": [
+                {"id": "l1", "uri": dbo("homeport"), "label": "homeport", "from_subject_id": "node_1", "to_subject_id": "node_2"},
+                {
+                    "id": "l2", "uri": dbo("country"), "label": "country", "from_subject_id": "node_2", "to_subject_id": "node_2",
+                    "quantifier": {"type": "BETWEEN", "min": 1, "max": 3},
+                },
+                {"id": "l3", "uri": "", "label": "*", "from_subject_id": "node_1", "to_subject_id": "node_2", "allow_arbitrary": True},
+                {
+                    "id": "l4", "uri": dbo("thumbnail_embedding"), "label": "similar", "from_subject_id": "node_1",
+                    "to_subject_id": "node_2", "semantic_link_type": "similarity",
+                },
+            ],
+        }
+    )
+
+
+def test_full_graph_round_trip():
+    graph = full_graph()
+    # every subquery kind is covered
+    assert {q.type for q in graph.subjects[0].subqueries} == set(AssistantSubQueryType)
+    assert [type(q) for q in graph.subjects[0].subqueries] == [
+        QueryPropSubQuery, ImagePropSubQuery, InstancePropSubQuery, SubjectSubQuery, StringSubQuery,
+        NumberSubQuery, BooleanSubQuery, DateSubQuery, VectorSortSubQuery,
+    ]
+    # image/instance props are query props as well
+    assert all(isinstance(q, QueryPropSubQuery) for q in graph.subjects[0].subqueries[:3])
+    for dumped in (graph.model_dump_json(), graph.model_dump_json(exclude_none=True)):
+        assert QueryGraph.model_validate_json(dumped) == graph
+
+    subqueries = graph.subjects[0].subqueries
+    assert subqueries[0].property_type == "xsd:string" and subqueries[0].property_label == "label"
+    assert subqueries[2].value == "120"
+    assert subqueries[5].operator == AssistantNumberConstraintType.LESS
+    assert subqueries[8].input_state.text == "a frigate" and subqueries[8].vector == [0.25, -1.0]
+    links = graph.links
+    assert links[0].quantifier is None and links[0].allow_arbitrary is None and links[0].semantic_link_type is None
+    assert links[1].quantifier == LinkQuantifier(type=LinkQuantifierType.BETWEEN, min=1, max=3)
+    assert links[2].allow_arbitrary
+    assert links[3].semantic_link_type == LinkSemanticType.SIMILARITY
+
+
+def test_editor_defaults_stay_out_of_compact_dumps():
+    # tool results/prompts are dumped with exclude_none, the old shapes must not change
+    assert link("ab", "a", "b").model_dump(exclude_none=True) == {
+        "uri": "<urn:ab>", "label": "ab", "id": "ab", "from_subject_id": "a", "to_subject_id": "b",
+    }
+    assert StringSubQuery(property_id="rdfs:label").model_dump(mode="json", exclude_none=True) == {
+        "type": "string", "property_id": "rdfs:label", "value": "", "operator": "contains",
+    }
+
+
+def test_operations_carry_new_subquery_kinds():
+    ops = Operations(operations=[Operation(operation="add", data=ImagePropSubQuery(property_id=dbo("thumbnail")))])
+    parsed = Operations.model_validate_json(ops.model_dump_json())
+    assert isinstance(parsed.operations[0].data, ImagePropSubQuery)

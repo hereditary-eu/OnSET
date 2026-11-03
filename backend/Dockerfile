@@ -9,13 +9,14 @@ RUN rm ./miniconda3/miniconda.sh
 # RUN sh ~/miniconda3/bin/activate
 
 ENV PATH="/conda/miniconda3/bin/:$PATH"
-ENV CUDA_VERSION=13.2.2
+ENV CUDA_VERSION=13.3.1
 RUN conda tos accept
 
 RUN conda install \
     nvidia/label/cuda-${CUDA_VERSION}::cuda-nvcc \
     nvidia/label/cuda-${CUDA_VERSION}::libcublas-dev \
-    nvidia/label/cuda-${CUDA_VERSION}::cuda-cudart-dev
+    nvidia/label/cuda-${CUDA_VERSION}::cuda-cudart-dev \
+    nvidia/label/cuda-${CUDA_VERSION}::cuda-cudart
 
 # Force gcc/ld to use the system toolchain, not conda's (conda's binutils'
 # ld is incompatible with the Ubuntu glibc and causes
@@ -34,17 +35,17 @@ RUN sh uv-installer.sh && rm uv-installer.sh
 # Ensure the installed binary is on the `PATH`
 ENV PATH="/root/.local/bin/:$PATH"
 
+
 WORKDIR /app
 ADD pyproject.toml /app
 ADD uv.lock /app
-RUN --mount=type=cache,target=/root/.cache CMAKE_ARGS="-DGGML_CUDA=on  -DLLAVA_BUILD=off" uv sync
+RUN --mount=type=cache,target=/root/.cache CMAKE_ARGS="-DGGML_CUDA=on  -DLLAVA_BUILD=off" uv sync  --extra cuda
 
-WORKDIR /app
-
+ENV PATH="/app/.venv/bin:$PATH"
 ADD . /app
 
-# Sync the project into a new environment, asserting the lockfile is up to date
-ENV PATH="/app/.venv/bin:$PATH"
+# add lib path for llama-cpp-python
+ENV LD_LIBRARY_PATH="/conda/miniconda3/lib/:$LD_LIBRARY_PATH"
 
 WORKDIR /app/src
 

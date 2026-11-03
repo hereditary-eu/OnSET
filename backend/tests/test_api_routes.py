@@ -8,6 +8,10 @@ from assistant.assistant_model import Operations, QueryGraph
 
 from fakes import DBO, RES, dbo
 
+# the constraint and depth defaults of the panel (eval_config.ProgressiveConfig)
+CONSTRAINTS = {"sample_constraints": False, "constraint_sample_size": 8, "max_constraint_sample_size": 64, "numeric_percentiles": [10, 25, 50, 75, 90], "categorical_samples": 3,
+               "max_depth": 3, "default_branching": 4, "max_branching": 16, "child_sample_size": 12, "max_total_queries": 400}
+
 
 def test_root(raw_client):
     assert raw_client.get("/").json() == "Welcome to the Ontology Provenance API"
@@ -44,6 +48,7 @@ def test_ontology_config(client):
             "image_properties": ["dbo:thumbnail"],
             "image_types": ["<http://dbpedia.org/ontology/Image>"],
         },
+        "progressive": {"default_sample_size": 48, "max_sample_size": 256, "count_limit": 1_000_000, **CONSTRAINTS},
     }
 
 

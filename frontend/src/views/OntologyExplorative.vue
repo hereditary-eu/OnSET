@@ -61,10 +61,13 @@
             <ResultsView class="explore_results" :query_string="query_string" :store="store" :diff="ui_state.diff">
             </ResultsView>
 
-            <!-- (c) side panel: agent chat and topics -->
+            <!-- (c) side panel: agent chat, progressive discovery and topics -->
             <SidePanel :tabs="side_tabs" v-model:active="ui_state.side_tab" v-model:collapsed="ui_state.side_collapsed">
                 <template #chat>
                     <AgentChat :session="agent"></AgentChat>
+                </template>
+                <template #progressive>
+                    <ProgressivePanel :store="store" @apply="applyEditorChange"></ProgressivePanel>
                 </template>
                 <template #topics>
                     <div class="explore_topics">
@@ -93,6 +96,7 @@ import { NodeLinkRepository, RepositoryState, type MixedResponse } from '@/utils
 import SidePanel, { type SidePanelTab } from '@/components/explore/SidePanel.vue';
 import ExampleQueries from '@/components/explore/ExampleQueries.vue';
 import AgentChat from '@/components/explore/chat/AgentChat.vue';
+import ProgressivePanel from '@/components/explore/progressive/ProgressivePanel.vue';
 import { jsonClone, parseJSON, stringifyJSON } from '@/utils/parsing';
 import { NodeLinkRepositoryDiff } from '@/utils/sparql/diff';
 import HistoryView from '@/components/explore/history/HistoryView.vue';
@@ -115,6 +119,7 @@ const selected_start = ref(null as MixedResponse | null)
 // tabs of the side panel, each rendered from the slot with its id
 const side_tabs: SidePanelTab[] = [
     { id: 'chat', label: 'Agent', icon: 'mdi-robot-outline' },
+    { id: 'progressive', label: 'Progressive', icon: 'mdi-chart-histogram' },
     { id: 'topics', label: 'Topics', icon: 'mdi-shape-outline' },
 ]
 const ui_state = reactive({
@@ -221,8 +226,10 @@ const compareToCurrent = (entry: HistoryEntry) => {
     if (!entry.query || !store.value) {
         return
     }
+    // track changes from the entry, so the diff_active watcher keeps this baseline
+    old_store.value = jsonClone(entry.query)
     ui_state.diff_active = true
-    ui_state.diff = new NodeLinkRepositoryDiff(entry.query, store.value)
+    updateDiff()
 }
 const revertToEntry = (entry: HistoryEntry) => {
     if (!entry.query || !store.value) {
@@ -241,9 +248,9 @@ const selected_example = (example: MixedResponse) => {
     selected_root(example)
 }
 
-// agent chat: the agent edits the editor graph like any other edit, i.e. the change
-// shows up in the change tracking diff and as a history entry (store watcher above)
-const applyAgentChange = (change: GraphChange, _graph: unknown, details: GraphDetails) => {
+// agent chat and progressive panel: they edit the editor graph like any other edit, i.e. the
+// change shows up in the change tracking diff and as a history entry (store watcher above)
+const applyEditorChange = (change: GraphChange, details: GraphDetails) => {
     if (!store.value) {
         store.value = new NodeLinkRepository()
     }
@@ -252,10 +259,12 @@ const applyAgentChange = (change: GraphChange, _graph: unknown, details: GraphDe
         startDiff()
     }
     applyGraphChange(store.value, change, details)
+    // the store watcher only refreshes the diff when the query string changes
+    updateDiff()
 }
 const agent = useAgentSession(activeConfigId, {
     read: () => toAgentGraph(store.value),
-    apply: applyAgentChange,
+    apply: (change, _graph, details) => applyEditorChange(change, details),
 }, () => store.value)
 
 const saveState = () => {

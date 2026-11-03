@@ -11,6 +11,7 @@ from agent.llm import AgentLLM
 from agent.session import AgentSession, AgentSessionStore
 from assistant.iterative_assistant import IterativeAssistant
 from assistant.assistant_model import Operations
+from assistant.progressive import ProgressiveResult, ProgressiveSampler
 from datasetmatcher import DatasetManager
 from eval_config import CONFIG_FILE, EvalConfig, MultimodalConfig
 from explorative.explorative_support import GuidanceManager
@@ -34,6 +35,13 @@ class ManMan:
         print(f"Using DB config '{config_id}':", eval_cfg)
 
         self.base_path = base_path
+
+        self.ontology_manager: OntologyManager
+        self.dataset_manager: DatasetManager
+        self.guidance_man: GuidanceManager
+        self.llm_query: LLMQuery
+        self.initatior: InitatorManager
+
         self.start_systems()
 
     def start_systems(self):
@@ -64,6 +72,8 @@ class ManMan:
             self.ontology_manager,
             conn_str=db_config.conn_str,
             llm_model_id=db_config.model_id,
+            llm_quant_model=db_config.model_quant,
+            device=db_config.device,
         )
 
         self.llm_query = LLMQuery(
@@ -87,17 +97,31 @@ class ManMan:
     def agent_llm(self) -> AgentLLM:
         return AgentLLM(self.db_config.agent)
 
+    def build_agent_session(self, session_id: str) -> AgentSession:
+        return AgentSession(
+            session_id,
+            llm=self.agent_llm,
+            ontology_manager=self.ontology_manager,
+            guidance=self.guidance_man,
+            config=self.db_config.agent,
+        )
+
     @cached_property
     def agent_sessions(self) -> AgentSessionStore:
         return AgentSessionStore(
-            lambda session_id: AgentSession(
-                session_id,
-                llm=self.agent_llm,
-                ontology_manager=self.ontology_manager,
-                guidance=self.guidance_man,
-                config=self.db_config.agent,
-            )
+            lambda session_id: self.build_agent_session(session_id),
         )
+
+
+    # --- progressive discovery (api/router/progressive.py), created on first use ---
+
+    @cached_property
+    def progressive(self) -> ProgressiveSampler:
+        return ProgressiveSampler(self.ontology_manager, self.db_config.progressive)
+
+    @cached_property
+    def progressive_cache(self) -> RedisCache[ProgressiveResult]:
+        return RedisCache(redis_url=self.db_config.redis_cache_url, model=ProgressiveResult)
 
 
 class ManManRegistry:

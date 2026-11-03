@@ -29,7 +29,7 @@ There is no test suite or linter configuration. CI (`.gitlab-ci.yml`) only build
 
 ## Architecture
 
-**Configurations drive everything.** `backend/config.json` (overridable via `ONSET_CONFIG`) defines one entry per KG: SPARQL endpoint, Postgres `conn_str`, LLM model and multimodal settings. Values may contain `${VAR:-fallback}`. `backend/src/eval_config.py` resolves each entry as `defaults <- config <- variant`. `CONFIG_FILE.base(key)` / `get_config(key)` returns the base config that the API serves. `ALL_CONFIG_MAP` lists variants, which the evaluation scripts use.
+**Configurations drive everything.** `backend/config.json` (overridable via `ONSET_CONFIG`) defines one entry per KG: SPARQL endpoint, Postgres `conn_str`, LLM model and multimodal settings. Values may contain `${VAR:-fallback}`. `backend/src/eval_config.py` resolves each entry as `defaults <- config <- variant` (nested objects merged field by field). Sub-models: `multimodal_config`, `agent`, `progressive` (progressive discovery timeout/parallelism/sample and count caps, env-overridable as `ONSET_PROGRESSIVE_<FIELD>` through `${VAR:-fallback}` in `config.json`). `CONFIG_FILE.base(key)` / `get_config(key)` returns the base config that the API serves. `ALL_CONFIG_MAP` lists variants, which the evaluation scripts use.
 
 **Per-config service bundle ("ManMan").** `backend/src/api/app.py` mounts a sub-app at `/{config_id}`. Every route under it takes `ManManDep`, which resolves the config from the URL. `api/config.py` lazily builds one `ManMan` per config (an LRU capped by `ONSET_MAX_LOADED_CONFIGS`). A ManMan wires up:
 - `OntologyManager` (`ontology.py`): rdflib `Graph` over a `SPARQLStore`. Handles class hierarchy, instances, labels and SPARQL→DataFrame.

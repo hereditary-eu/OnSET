@@ -48,7 +48,7 @@ class GuidanceManager:
         device=None,
         conn_str: str = "postgresql+psycopg://postgres:postgres@localhost:5434/onset",
         llm_model_id: str = "bartowski/Hermes-3-Llama-3.2-3B-GGUF",
-        llm_quant_model: str = "*.Q8_0.gguf",
+        llm_quant_model: str = "*Q8_0.gguf",
         langchain_model: LLM = None,
         ctx_size=10000,
     ) -> None:
@@ -247,6 +247,9 @@ class GuidanceManager:
                     .where(SubjectInDB.onto_hash == self.identifier)
                     .order_by(order_by)
                     .offset(query.skip)
+                    .group_by(
+                        SubjectInDB.subject_id,
+                    )
                     .limit(query.limit)
                 )
                 if query.entity_type is not None:
@@ -266,12 +269,20 @@ class GuidanceManager:
                     if query.order == FUZZY_QUERY_ORDER.SCORE
                     else SubjectLinkDB.instance_count
                 )
-                query_link = select(
-                    SubjectLinkDB,
-                    SubjectLinkDB.embedding.cosine_distance(query_embedding).label(
-                        "distance"
-                    ),
-                ).where(SubjectLinkDB.onto_hash == self.identifier)
+                query_link = (
+                    select(
+                        SubjectLinkDB,
+                        SubjectLinkDB.embedding.cosine_distance(query_embedding).label(
+                            "distance"
+                        ),
+                    )
+                    .where(SubjectLinkDB.onto_hash == self.identifier)
+                    .group_by(
+                        SubjectLinkDB.link_id,
+                        SubjectLinkDB.from_id,
+                        SubjectLinkDB.to_id,
+                    )
+                )
                 if query.from_id is not None:
                     if isinstance(query.from_id, str):
                         query.from_id = [query.from_id]

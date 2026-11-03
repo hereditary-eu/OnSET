@@ -103,7 +103,7 @@ class IterativeAssistant:
                             ),
                         )
                     ]
-                ).model_dump_json(),
+                ).model_dump_json(exclude={"operations": {"__all__": {"subject_id"}}}),
             },
         ]
         self.top_k = 15

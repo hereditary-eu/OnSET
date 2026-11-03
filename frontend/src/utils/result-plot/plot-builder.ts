@@ -112,14 +112,22 @@ export function analyzeProps(prop: QueryProp, result_set: Record<string, any>[])
         let is_number = typeof prop_data[0] == 'number'
         try {
             // try to convert to number
-            parseFloat(prop_data[0])
+            let parsed = parseFloat(prop_data[0])
+            if (isNaN(parsed)) {
+                throw new Error('Not a number')
+            }
             result_set.forEach((row) => {
-                row[query_id] = parseFloat(row[query_id])
+                let parsed = parseFloat(row[query_id])
+                if (isNaN(parsed)) {
+                    throw new Error('Not a number')
+                }
             })
             is_number = true
         } catch (error) {
+            console.error('Error while converting prop to number', prop, error)
         }
         if (is_number) {
+            console.log('Prop', prop, 'is number')
             prop_type = PropType.CONTINOUS
             prop_specific_type = PropSpecificType.NUMBER
         } else {
@@ -129,6 +137,7 @@ export function analyzeProps(prop: QueryProp, result_set: Record<string, any>[])
                     prop_data = date_data
                     prop_type = PropType.CONTINOUS
                     prop_specific_type = PropSpecificType.DATE
+                    console.log('Prop', prop, 'is date')
                 }
             } catch (error) {
                 console.error('Error while analyzing prop', prop, error)

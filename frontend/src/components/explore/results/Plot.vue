@@ -1,6 +1,6 @@
 <template>
-    <div class="result_plot_wrapper">
-        <div v-if="!ui_data.loading" class="result_plot_container">
+    <div class="result_plot_wrapper" ref="plot_container">
+        <div v-if="!ui_data.loading" class="result_plot_container" >
             <VuePlotly :data="chart_data" :layout="chart_options" :config="{
                 displayModeBar: false,
             }"></VuePlotly>
@@ -42,6 +42,7 @@ const { store, query_string, diff } = defineProps({
         default: null
     }
 })
+const plot_container = ref<HTMLDivElement | null>(null)
 const chart_mode = ref(ChartMode.BAR)
 const result_set = ref([] as Record<string, any>[])
 const chart_data = ref<TraceData[]>([] as TraceData[])
@@ -108,6 +109,15 @@ const loadData = async () => {
         } = buildChartTraces(analyzed_props, result_set.value, query_limitless, store)
         console.log('Chart mode', mode, 'Chart options', options, 'Trace', trace)
 
+        const rect = plot_container.value?.getBoundingClientRect()
+        if (rect) {
+            options.width = rect.width - 20
+            options.height = rect.height - 128
+            console.log('Plot container rect', rect, 'Setting chart options width and height to', options.width, options.height)
+        } else {
+            options.width = 800
+            options.height = 600
+        }
         ui_data.chart_mode = mode
         chart_options.value = options as Plotly.Layout
         chart_data.value = [trace]
@@ -213,7 +223,7 @@ watch(() => diff, () => {
     flex-direction: column;
     align-items: center;
     gap: var(--space-1);
-    width: 100%;
+    max-width: 100%;
     height: 100%;
 }
 </style>
