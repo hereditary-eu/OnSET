@@ -4,7 +4,7 @@
 // counts and the modifications nearest to a scrubbed count as difference views.
 //
 // The generated types of POST /progressive/sample (also the payloads of the streaming
-// WebSocket, protocol.ts) (backend/src/assistant/progressive.py),
+// WebSocket, protocol.ts) (backend/src/assistant/progressive/models.py),
 // with the editor's graph (ids always set) and the fields the backend always fills required;
 // source.ts normalises responses to these.
 import type {

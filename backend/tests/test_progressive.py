@@ -1,4 +1,4 @@
-"""assistant/progressive.py: candidates, sampling and counts on the in-memory ontology, and the endpoint."""
+"""assistant/progressive/: candidates, sampling and counts on the in-memory ontology, and the endpoint."""
 
 import json
 import random

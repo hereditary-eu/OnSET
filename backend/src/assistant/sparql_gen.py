@@ -30,7 +30,7 @@ Deliberate differences to the editor (known bugs there):
 
 Beyond the editor: count mode counts the solutions (or a subject's bindings), and
 with ``group_by`` the counts per value of a subject or query prop (the value
-distributions of progressive discovery, assistant/progressive.py); ``projection``
+distributions of progressive discovery, assistant/progressive/sampler.py); ``projection``
 and ``order_by`` select/sort by graph ids.
 """
 

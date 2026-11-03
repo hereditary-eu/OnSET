@@ -1,10 +1,4 @@
-"""Progressive discovery: counts of candidate modifications of a query graph.
-
-Given the editor's QueryGraph, the sampler enumerates the modifications the
-user could make next, samples some of them, and counts the results of every
-modified graph (and of the graph itself), so the frontend can show how each
-step would change the result (frontend/src/utils/progressive, the panel in
-components/explore/progressive).
+"""The sampler of progressive discovery (the overview is the package's docstring).
 
 Candidates
 - non-empty graph: every outgoing link of a (typed) subject, i.e. each
@@ -61,8 +55,8 @@ fail (invalid graph, endpoint error) or exceed the per-query timeout are None.
 
 Streaming: every count and value distribution of a request runs on one bounded pool
 (JobPool, ``parallelism`` threads, per-job timeouts) and each result is streamed the
-moment it is in (ProgressiveSampler.stream, the events of the "streaming protocol"
-below, sent by the WebSocket /{config_id}/progressive/ws). The counts of the first level
+moment it is in (ProgressiveSampler.stream, the events of the streaming protocol
+(protocol.py), sent by the WebSocket /{config_id}/progressive/ws). The counts of the first level
 start as soon as its modifications are built; the value distributions of the constraint
 candidates run besides them (queued before waiting counts), and the constraint
 modifications are counted once their distributions are in; a tree level is expanded once
@@ -106,31 +100,18 @@ so it applies to the request graph like a first-level modification; its id is
   (``budget_exhausted``). A count is spent when it is submitted, a value distribution
   when it is done (see QueryBudget), so the budget's decisions do not depend on the
   order in which the concurrent queries finish.
-
-Timeouts, parallelism and the sample/count caps are per configuration, the
-``progressive`` object of backend/config.json (eval_config.ProgressiveConfig).
 """
 
 from __future__ import annotations
 
 import copy
-import enum
-import hashlib
-import json
-import math
 import random
 import re
 import threading
-import time
 from contextlib import nullcontext
-from collections import deque
-from dataclasses import dataclass, field
-from datetime import datetime
-from typing import TYPE_CHECKING, Annotated, Callable, Literal, Sequence, TypeVar
+from typing import TYPE_CHECKING, Callable, Sequence
 
-import httpx
-from pydantic import BaseModel, Field, TypeAdapter
-from rdflib import Literal as RDFLiteral, URIRef
+from pydantic import BaseModel
 from rdflib.plugins.stores.sparqlstore import SPARQLStore
 
 from agent.protocol import GraphDetails
@@ -139,10 +120,8 @@ from assistant.assistant_model import (
     AssistantNumberConstraintType,
     AssistantStringConstraintType,
     AssistantSubject,
-    AssistantSubQueryType,
     BooleanSubQuery,
     DateSubQuery,
-    LinkSemanticType,
     NumberSubQuery,
     Operation,
     OperationType,
@@ -151,7 +130,57 @@ from assistant.assistant_model import (
     StringSubQuery,
     SubjectSubQuery,
 )
-from assistant.sparql_gen import INTEGER_TYPES, SparqlOptions, format_number
+from assistant.progressive.candidates import (
+    Candidate,
+    ConstraintCandidate,
+    default_seed,
+    graph_ids,
+    graph_key,
+    max_cost,
+    select_expansions,
+    slug,
+    stable_seed,
+)
+from assistant.progressive.concurrency import CancelToken, JobPool, QueryBudget, QueryMeter
+from assistant.progressive.models import (
+    ConstraintKind,
+    ModificationKind,
+    ProgressiveConstraint,
+    ProgressiveModification,
+    ProgressiveRequest,
+    ProgressiveResult,
+    complete,
+    summary,
+)
+from assistant.progressive.protocol import (
+    ProgressiveCount,
+    ProgressiveDone,
+    ProgressiveLevel,
+    ProgressiveModifications,
+    ProgressiveStart,
+)
+from assistant.progressive.runners import (
+    CountRunner,
+    SelectRunner,
+    Term,
+    counted_graph,
+    endpoint_counter,
+    endpoint_selector,
+    ontology_counter,
+    ontology_selector,
+)
+from assistant.progressive.values import (
+    LITERAL_RANGES,
+    ORDERED_KINDS,
+    XSD,
+    ValueDistribution,
+    literal_value_kind,
+    percentile_rank,
+    split_prologue,
+    weighted_percentiles,
+    weighted_sample,
+)
+from assistant.sparql_gen import SparqlOptions, format_number
 from eval_config import ProgressiveConfig
 
 if TYPE_CHECKING:
@@ -161,840 +190,14 @@ if TYPE_CHECKING:
     # the schema lookups' source: an index or a provider of one (resolved per request)
     SchemaSource = SchemaIndex | Callable[[], SchemaIndex]
 
-T = TypeVar("T")
-
-XSD = "http://www.w3.org/2001/XMLSchema#"
-# ranges that are literals, i.e. of datatype properties declared as rdf:Property
-LITERAL_RANGES = {
-    "http://www.w3.org/2000/01/rdf-schema#Literal",
-    "http://www.w3.org/1999/02/22-rdf-syntax-ns#langString",
-    "http://www.w3.org/1999/02/22-rdf-syntax-ns#HTML",
-    "http://www.w3.org/1999/02/22-rdf-syntax-ns#XMLLiteral",
-}
 # ranges that do not restrict the target, which then stays untyped
 UNTYPED_RANGES = {"http://www.w3.org/2002/07/owl#Thing"}
 RDFS_LABEL = "rdfs:label"
-
-# value kinds of constraint candidates by literal range (local names of xsd types)
-NUMERIC_TYPES = {"decimal", "double", "float"} | (INTEGER_TYPES - {"gYear"})
-DATE_TYPES = {"date", "dateTime"}
-STRING_RANGES = {
-    XSD + "string",
-    "http://www.w3.org/2000/01/rdf-schema#Literal",
-    "http://www.w3.org/1999/02/22-rdf-syntax-ns#langString",
-}
-# value kinds with percentile thresholds, the others are categorical
-ORDERED_KINDS = {"number", "date"}
 # subquery id of the value variable of the distribution queries
 VALUE_ID = "progressive_value"
 # rounds of constraint candidates tried until enough have values (at most this many
 # times constraint_sample_size distribution queries)
 CONSTRAINT_ROUNDS = 3
-
-Percentile = Annotated[float, Field(ge=0, le=100)]
-
-
-# --- API models (frontend/src/utils/progressive/types.ts) ---
-
-
-class ProgressiveRequest(BaseModel):
-    graph: QueryGraph
-    # maximum number of candidate modifications to sample and count (capped by
-    # the configured max_sample_size), None for the configured default
-    sample_size: int | None = Field(None, ge=1)
-    # subjects whose outgoing links are candidates, None for all subjects
-    subject_ids: list[str] | None = None
-    # seed of the sampling, None for one derived from the graph (stable re-runs)
-    seed: int | None = None
-    # subject whose distinct bindings are counted, None for the first subject
-    count_subject: str | None = None
-    # cap of every count, None for the configured default
-    count_limit: int | None = Field(None, ge=1)
-    # constraint modifications (subqueries of the graph's subjects); the settings
-    # below are None for the configured defaults
-    sample_constraints: bool | None = None
-    # constrained properties with values to sample (capped by max_constraint_sample_size)
-    constraint_sample_size: int | None = Field(None, ge=0)
-    # percentiles (0-100) of numeric/date values that become thresholds
-    numeric_percentiles: list[Percentile] | None = None
-    # values sampled per categorical property
-    categorical_samples: int | None = Field(None, ge=1)
-    # tree expansion: levels of modifications (1: of the request graph only), at most
-    # the configured max_depth; each level below the first expands `branching`
-    # modifications of the previous one (capped by max_branching), sampling
-    # child_sample_size links (capped by max_sample_size) and, with constraints,
-    # child_constraint_sample_size constrained properties of each; None for the
-    # configured defaults
-    depth: int = Field(1, ge=1)
-    branching: int | None = Field(None, ge=1)
-    child_sample_size: int | None = Field(None, ge=1)
-    child_constraint_sample_size: int | None = Field(None, ge=0)
-
-
-class ModificationKind(str, enum.Enum):
-    # a starting point of an empty graph
-    START = "start"
-    # a link to a new subject
-    LINK = "link"
-    # a subquery of a subject
-    CONSTRAINT = "constraint"
-
-
-class ConstraintKind(str, enum.Enum):
-    # a numeric/date threshold at a percentile
-    PERCENTILE = "percentile"
-    # equals a sampled value (or instance)
-    CATEGORY = "category"
-
-
-class ProgressiveConstraint(BaseModel):
-    """What a constraint modification restricts, for display."""
-
-    kind: ConstraintKind
-    subject_id: str
-    # constrained property, None for the instance of the subject
-    property_id: str | None = None
-    property_label: str | None = None
-    # readable threshold, value or instance label
-    value: str
-    # percentile kind: the percentile of the threshold
-    percentile: float | None = None
-    # category kind: counted results with the value in the request graph
-    frequency: int | None = None
-
-
-class ProgressiveModification(BaseModel):
-    id: str
-    kind: ModificationKind = ModificationKind.LINK
-    # operations applied to the request graph (add subjects, links, or a subquery
-    # of the subject operation.subject_id)
-    operations: list[Operation] = Field([])
-    # count of the modified graph, None if it failed or timed out
-    count: int | None = None
-    label: str
-    description: str | None = None
-    # ontology data of the added subjects/links keyed by graph id (as the agent sends it)
-    details: GraphDetails | None = None
-    # constraint modifications: what they restrict
-    constraint: ProgressiveConstraint | None = None
-    # tree expansion: the modification this one continues (None on the first level),
-    # its level (1: a modification of the request graph), and its own operations after
-    # the parent's (None on the first level, where they are `operations`); `operations`
-    # are cumulative, label/description/constraint describe the own step
-    parent_id: str | None = None
-    depth: int = 1
-    step_operations: list[Operation] | None = None
-
-
-class ProgressiveSummary(BaseModel):
-    """The fields of a result besides its modifications (the ``done`` event's)."""
-
-    # count of the request graph, None for an empty graph or a failed count
-    base_count: int | None = None
-    # candidates before sampling (>= the number of first-level link modifications)
-    candidate_count: int | None = None
-    # cap of the counts, a count equal to it is a lower bound
-    count_limit: int | None = None
-    # subject id the counts are of (of the request graph, None if empty)
-    count_subject: str | None = None
-    seed: int | None = None
-    # constrained properties before sampling, None if constraints were not sampled
-    constraint_candidate_count: int | None = None
-    # keys (subject|property) of sampled constraint candidates whose value
-    # distribution failed or timed out, so they have no modifications
-    failed_constraints: list[str] = Field([])
-    # tree expansion: levels sampled (fewer than requested if none could be expanded),
-    # ids of the modifications whose children were sampled, children left out as their
-    # graph is another modification's (same steps in another order), endpoint queries
-    # (counts, value distributions) of the request, their cap (max_total_queries) and
-    # whether deeper levels were cut short by it
-    depth: int = 1
-    expanded_ids: list[str] = Field([])
-    duplicate_count: int = 0
-    query_count: int | None = None
-    query_budget: int | None = None
-    budget_exhausted: bool = False
-
-
-class ProgressiveResult(ProgressiveSummary):
-    modifications: list[ProgressiveModification] = Field([])
-
-
-# --- streaming protocol (/{config_id}/progressive/ws, api/router/progressive.py) ---
-#
-# Client -> server
-#     sample  {request_id, request}   start sampling ``request`` (a ProgressiveRequest);
-#                                     cancels the running one of the connection
-#     cancel  {}                      cancel the running sampling
-#
-# Server -> client, every event with the request_id of its sample message; events of a
-# cancelled request are not sent any more. Per request, in order of occurrence:
-#     start          the request's parameters and the first-level link (or start)
-#                    modifications, uncounted (count None) in a live run
-#     count          {id, count} as soon as a count finished (id None: the base count);
-#                    count None if it failed or timed out; once per modification
-#     modifications  {depth, parent_id, modifications} modifications that became known:
-#                    first-level constraint modifications (parent_id None) once their
-#                    value distributions are in, children of an expanded parent
-#     level          {depth, parent_ids} a tree level starts (its parents are expanded)
-#     done           the summary (ProgressiveSummary), whether it is complete (cached)
-#     error          {message} invalid request or failed sampling, instead of done
-# A cached result is replayed as start (all modifications, counted, and the base count)
-# and done, both with cached true.
-
-
-class ProgressiveSample(BaseModel):
-    type: Literal["sample"] = "sample"
-    request_id: str
-    request: ProgressiveRequest
-
-
-class ProgressiveCancel(BaseModel):
-    type: Literal["cancel"] = "cancel"
-
-
-PROGRESSIVE_CLIENT_MESSAGE = TypeAdapter(
-    Annotated[ProgressiveSample | ProgressiveCancel, Field(discriminator="type")]
-)
-
-
-class ProgressiveStart(BaseModel):
-    type: Literal["start"] = "start"
-    request_id: str | None = None
-    seed: int
-    candidate_count: int
-    count_limit: int
-    count_subject: str | None = None
-    constraint_candidate_count: int | None = None
-    # requested levels and query cap of the tree expansion (None for depth 1)
-    depth: int = 1
-    query_budget: int | None = None
-    # known counts: None in a live run (a count event follows), set in a replay
-    base_count: int | None = None
-    modifications: list[ProgressiveModification] = Field([])
-    cached: bool = False
-
-
-class ProgressiveCount(BaseModel):
-    type: Literal["count"] = "count"
-    request_id: str | None = None
-    # modification id, None for the base count
-    id: str | None = None
-    count: int | None = None
-
-
-class ProgressiveModifications(BaseModel):
-    type: Literal["modifications"] = "modifications"
-    request_id: str | None = None
-    depth: int = 1
-    parent_id: str | None = None
-    modifications: list[ProgressiveModification] = Field([])
-
-
-class ProgressiveLevel(BaseModel):
-    type: Literal["level"] = "level"
-    request_id: str | None = None
-    depth: int
-    parent_ids: list[str] = Field([])
-
-
-class ProgressiveDone(ProgressiveSummary):
-    type: Literal["done"] = "done"
-    request_id: str | None = None
-    # every count and lookup succeeded (see complete), only then the result is cached
-    complete: bool = False
-    cached: bool = False
-
-
-class ProgressiveError(BaseModel):
-    type: Literal["error"] = "error"
-    request_id: str | None = None
-    message: str
-
-
-ProgressiveEvent = Annotated[
-    ProgressiveStart | ProgressiveCount | ProgressiveModifications | ProgressiveLevel | ProgressiveDone | ProgressiveError,
-    Field(discriminator="type"),
-]
-PROGRESSIVE_EVENT = TypeAdapter(ProgressiveEvent)
-
-
-# --- bounded concurrent execution ---
-
-
-class SamplingCancelled(Exception):
-    """The sampling was cancelled (CancelToken), its partial result is discarded."""
-
-
-class CancelToken:
-    """Cancellation of a running sampling: cancel() drops the pending jobs of its pool and
-    stops the events (thread-safe, idempotent)."""
-
-    def __init__(self):
-        self._event = threading.Event()
-        self._lock = threading.Lock()
-        self._callbacks: list[Callable[[], None]] = []
-
-    @property
-    def cancelled(self) -> bool:
-        return self._event.is_set()
-
-    def cancel(self):
-        with self._lock:
-            if self._event.is_set():
-                return
-            self._event.set()
-            callbacks, self._callbacks = self._callbacks, []
-        for callback in callbacks:
-            callback()
-
-    def on_cancel(self, callback: Callable[[], None]):
-        """Run ``callback`` on cancel (at once if it is cancelled already)."""
-        with self._lock:
-            if not self._event.is_set():
-                self._callbacks.append(callback)
-                return
-        callback()
-
-    def check(self):
-        if self.cancelled:
-            raise SamplingCancelled()
-
-
-@dataclass(eq=False)
-class _Job:
-    run: Callable[[], object]
-    timeout: float
-    callback: Callable[[object], None] | None
-    started: float | None = None
-    # the callback was called (result, failure or timeout) or is being called
-    settled: bool = False
-
-
-class JobPool:
-    """Bounded pool of the endpoint queries of one request, streaming each result.
-
-    Every submitted job's callback is called exactly once, from a worker thread, with the
-    job's result, or with None if it raised or ran longer than its timeout (counted from
-    its start). Timed-out jobs cannot be interrupted: their thread finishes in the
-    background (the endpoint runners have their own HTTP timeout) and its worker is
-    replaced, so at most ``parallelism`` jobs that have not timed out run at once and
-    waiting jobs never starve behind stuck ones. ``urgent`` jobs (value distributions,
-    which further counts wait for) are queued before the others.
-
-    cancel() drops the waiting jobs and suppresses the callbacks of the running ones;
-    join()/run_all() return at once then.
-    """
-
-    def __init__(self, parallelism: int, name: str = "progressive"):
-        self.parallelism = max(1, parallelism)
-        self.name = name
-        self.cancelled = False
-        self._cond = threading.Condition(threading.Lock())
-        self._queue: deque[_Job] = deque()
-        self._running: set[_Job] = set()
-        # workers that are not stuck in a timed-out job
-        self._workers = 0
-        # submitted jobs whose callback has not returned yet
-        self._outstanding = 0
-        self._closed = False
-        self._watchdog: threading.Thread | None = None
-
-    def submit(self, run: Callable[[], T], timeout: float, callback: Callable[[T | None], None] | None = None, urgent: bool = False):
-        self.submit_all([run], timeout, [callback], urgent)
-
-    def submit_all(self, runs: list[Callable[[], T]], timeout: float, callbacks: list, urgent: bool = False):
-        jobs = [_Job(run, timeout, callback) for run, callback in zip(runs, callbacks)]
-        with self._cond:
-            if self.cancelled or self._closed or not jobs:
-                return
-            if urgent:
-                self._queue.extendleft(reversed(jobs))
-            else:
-                self._queue.extend(jobs)
-            self._outstanding += len(jobs)
-            self._spawn()
-            if self._watchdog is None:
-                self._watchdog = threading.Thread(target=self._watch, name=f"{self.name}-watchdog", daemon=True)
-                self._watchdog.start()
-
-    def run_all(self, runs: list[Callable[[], T]], timeout: float, urgent: bool = False) -> list[T | None]:
-        """Results of ``runs`` (None where one raised or timed out), once all are done;
-        the pool's other jobs keep running meanwhile."""
-        results: list = [None] * len(runs)
-        remaining = [len(runs)]
-
-        def callback(i: int):
-            def store(value):
-                results[i] = value
-                with self._cond:
-                    remaining[0] -= 1
-                    self._cond.notify_all()
-
-            return store
-
-        self.submit_all(runs, timeout, [callback(i) for i in range(len(runs))], urgent)
-        with self._cond:
-            while remaining[0] > 0 and not self.cancelled:
-                self._cond.wait()
-        return results
-
-    def join(self):
-        """Wait until every submitted job's callback returned (or the pool is cancelled)."""
-        with self._cond:
-            while self._outstanding > 0 and not self.cancelled:
-                self._cond.wait()
-
-    def cancel(self):
-        with self._cond:
-            self.cancelled = True
-            self._outstanding -= len(self._queue)
-            self._queue.clear()
-            self._cond.notify_all()
-
-    def close(self):
-        """Stop the watchdog (after the request); running jobs finish in the background."""
-        with self._cond:
-            self._closed = True
-            self._cond.notify_all()
-
-    def _spawn(self):
-        # under the lock
-        missing = min(self.parallelism - self._workers, len(self._queue))
-        for _ in range(max(0, missing)):
-            self._workers += 1
-            threading.Thread(target=self._work, name=self.name, daemon=True).start()
-
-    def _work(self):
-        while True:
-            with self._cond:
-                if not self._queue:
-                    self._workers -= 1
-                    return
-                job = self._queue.popleft()
-                job.started = time.monotonic()
-                self._running.add(job)
-                # the watchdog's next expiry changed
-                self._cond.notify_all()
-            try:
-                value = job.run()
-            except Exception as e:
-                print(f"Progressive job failed: {e!r}")
-                value = None
-            with self._cond:
-                self._running.discard(job)
-                abandoned, job.settled = job.settled, True
-            if abandoned:
-                # timed out: the watchdog replaced this worker
-                return
-            self._finish(job, value)
-
-    def _finish(self, job: _Job, value):
-        try:
-            if job.callback is not None and not self.cancelled:
-                job.callback(value)
-        except Exception as e:
-            print(f"Progressive job callback failed: {e!r}")
-        finally:
-            with self._cond:
-                self._outstanding -= 1
-                self._cond.notify_all()
-
-    def _watch(self):
-        with self._cond:
-            while not self._closed:
-                now = time.monotonic()
-                expired = [job for job in self._running if now - job.started > job.timeout]
-                if expired:
-                    for job in expired:
-                        self._running.discard(job)
-                        job.settled = True
-                        self._workers -= 1
-                    self._spawn()
-                    self._cond.release()
-                    try:
-                        for job in expired:
-                            print(f"Progressive job timed out after {job.timeout:g}s")
-                            self._finish(job, None)
-                    finally:
-                        self._cond.acquire()
-                    continue
-                expiry = min((job.started + job.timeout for job in self._running), default=None)
-                self._cond.wait(None if expiry is None else max(0.01, expiry - now))
-
-
-def run_bounded(
-    jobs: list[Callable[[], T]], parallelism: int, timeout: float
-) -> list[T | None]:
-    """Results of ``jobs`` run on ``parallelism`` threads; None where a job raised
-    or ran longer than ``timeout`` seconds (see JobPool)."""
-    if not jobs:
-        return []
-    pool = JobPool(parallelism)
-    try:
-        return pool.run_all(jobs, timeout)
-    finally:
-        pool.close()
-
-
-class QueryMeter:
-    """Counts the calls of the wrapped query runners (thread-safe), in total and, within
-    measured(), of the current thread."""
-
-    def __init__(self):
-        self.count = 0
-        self._lock = threading.Lock()
-        self._local = threading.local()
-
-    def wrap(self, run: Callable[[str, float], T]) -> Callable[[str, float], T]:
-        def metered(query: str, timeout: float) -> T:
-            with self._lock:
-                self.count += 1
-            if getattr(self._local, "count", None) is not None:
-                self._local.count += 1
-            return run(query, timeout)
-
-        return metered
-
-    def measured(self, run: Callable[[], T], costs: dict, key) -> Callable[[], T]:
-        """``run`` storing the queries it ran (in its thread) as ``costs[key]``."""
-
-        def job() -> T:
-            self._local.count = 0
-            try:
-                return run()
-            finally:
-                costs[key] = self._local.count
-                self._local.count = None
-
-        return job
-
-
-@dataclass
-class QueryBudget:
-    """Endpoint queries left of a request: the cap minus the queries spent (run, or
-    committed: counts submitted to the pool) and those reserved for modifications that
-    are not submitted yet. Spending at submission keeps the budget's decisions
-    independent of the order in which the concurrent queries run."""
-
-    limit: int
-    spent: int = 0
-    reserved: int = 0
-
-    def remaining(self) -> int:
-        return self.limit - self.spent - self.reserved
-
-
-# --- counting and value queries ---
-
-# count of a SPARQL query (with a single ?count binding) within a timeout in seconds
-CountRunner = Callable[[str, float], int]
-
-
-@dataclass(frozen=True)
-class Term:
-    """An RDF term of a query result: an IRI (full, without <>) or a literal."""
-
-    value: str
-    iri: bool = False
-    datatype: str | None = None
-    lang: str | None = None
-
-    @staticmethod
-    def of(term) -> "Term | None":
-        """Term of an rdflib node (None for unbound variables and blank nodes)."""
-        if isinstance(term, URIRef):
-            return Term(str(term), iri=True)
-        if isinstance(term, RDFLiteral):
-            return Term(str(term), datatype=str(term.datatype) if term.datatype else None, lang=term.language)
-        return None
-
-
-# rows (terms in projection order, None if unbound) of a SPARQL query within a timeout
-SelectRunner = Callable[[str, float], list[tuple["Term | None", ...]]]
-
-
-def endpoint_post(endpoint: str, query: str, timeout: float, server_timeout: bool) -> dict:
-    """SPARQL JSON results of POSTing a query (as the SPARQLStore does), with timeouts."""
-    data = {"query": query}
-    if server_timeout:
-        data["timeout"] = f"{max(1, round(timeout))}s"
-    response = httpx.post(
-        endpoint,
-        data=data,
-        headers={"Accept": "application/sparql-results+json"},
-        timeout=timeout + 1,
-    )
-    if response.status_code == 400 and server_timeout:
-        # an endpoint without the timeout parameter
-        data.pop("timeout")
-        response = httpx.post(
-            endpoint, data=data, headers={"Accept": "application/sparql-results+json"}, timeout=timeout + 1
-        )
-    response.raise_for_status()
-    return response.json()
-
-
-def endpoint_counter(endpoint: str, count_var: str = "count", server_timeout: bool = True) -> CountRunner:
-    """Counts by POSTing to a SPARQL endpoint, with timeouts."""
-
-    def run(query: str, timeout: float) -> int:
-        bindings = endpoint_post(endpoint, query, timeout, server_timeout)["results"]["bindings"]
-        return int(bindings[0][count_var]["value"]) if bindings else 0
-
-    return run
-
-
-def endpoint_selector(endpoint: str, server_timeout: bool = True) -> SelectRunner:
-    """Result rows by POSTing to a SPARQL endpoint, with timeouts."""
-
-    def term(binding: dict | None) -> Term | None:
-        if binding is None or binding.get("type") == "bnode":
-            return None
-        if binding.get("type") == "uri":
-            return Term(binding["value"], iri=True)
-        return Term(binding["value"], datatype=binding.get("datatype"), lang=binding.get("xml:lang"))
-
-    def run(query: str, timeout: float) -> list[tuple[Term | None, ...]]:
-        results = endpoint_post(endpoint, query, timeout, server_timeout)
-        variables = results["head"]["vars"]
-        return [tuple(term(row.get(v)) for v in variables) for row in results["results"]["bindings"]]
-
-    return run
-
-
-def ontology_counter(ontology_manager: "OntologyManager", lock=None) -> CountRunner:
-    """Counts through the OntologyManager (e.g. an in-memory graph); timeouts by run_bounded only.
-
-    ``lock`` serialises the queries (see ProgressiveSampler._local_lock); time spent
-    waiting for it counts against the timeout.
-    """
-    lock = lock if lock is not None else threading.Lock()
-
-    def run(query: str, timeout: float) -> int:
-        with lock:
-            df = ontology_manager.q_to_df(query)
-        return int(df.iloc[0, 0]) if not df.empty else 0
-
-    return run
-
-
-def ontology_selector(ontology_manager: "OntologyManager", lock=None) -> SelectRunner:
-    """Result rows through the OntologyManager, serialised by ``lock`` like ontology_counter."""
-    lock = lock if lock is not None else threading.Lock()
-
-    def run(query: str, timeout: float) -> list[tuple[Term | None, ...]]:
-        with lock:
-            rows = ontology_manager.q_rows(query)
-        return [tuple(Term.of(t) for t in row) for row in rows]
-
-    return run
-
-
-def counted_graph(graph: QueryGraph) -> QueryGraph:
-    """The graph without similarity links and vector sorts, which are not counted."""
-    graph = graph.model_copy(deep=True)
-    graph.links = [l for l in graph.links if l.semantic_link_type != LinkSemanticType.SIMILARITY]
-    for subject in graph.subjects:
-        subject.subqueries = [sq for sq in subject.subqueries if sq.type != AssistantSubQueryType.VECTOR_SORT]
-    return graph
-
-
-# --- candidates ---
-
-
-@dataclass
-class Candidate:
-    """A modification before counting: the subject to add, linked from ``from_id`` by ``prop``."""
-
-    # class of the added subject, "" for an untyped one
-    target_uri: str
-    # None: a starting point of an empty graph
-    from_id: str | None = None
-    prop: str | None = None
-
-    @property
-    def key(self) -> str:
-        if self.from_id is None:
-            return f"start|{self.target_uri}"
-        return f"{self.from_id}|{self.prop}|{self.target_uri}"
-
-
-@dataclass
-class ConstraintCandidate:
-    """A constrained property of a subject before sampling: ``prop`` None for its instance."""
-
-    subject_id: str
-    # number, date (percentiles), boolean, string, label, instance (categories)
-    value_kind: str
-    prop: str | None = None
-    # literal range of prop, the property_type of the subqueries
-    range_uri: str | None = None
-
-    @property
-    def key(self) -> str:
-        return f"{self.subject_id}|{self.prop or 'instance'}"
-
-
-@dataclass
-class ValueDistribution:
-    """Values of a constraint candidate in the request graph's context.
-
-    ordered kinds: the thresholds (percentile, value); categories: the most frequent
-    (value, count of counted results) that pass min_category_count, most frequent first.
-    """
-
-    thresholds: list[tuple[float, Term]] = field(default_factory=list)
-    categories: list[tuple[Term, int]] = field(default_factory=list)
-
-
-def sort_key(kind: str, term: Term):
-    """Order of numeric/date values, None for values that cannot be compared."""
-    try:
-        if kind == "number":
-            return float(term.value)
-        value = term.value.strip().replace("Z", "+00:00")
-        parsed = datetime.fromisoformat(value)
-        # dates and naive date-times compare as naive (time zones are dropped)
-        return parsed.replace(tzinfo=None)
-    except ValueError:
-        return None
-
-
-def percentile_rank(percentile: float, total: int) -> int:
-    """1-based nearest rank of a percentile among ``total`` (weighted) values."""
-    return min(total, max(1, math.ceil(percentile / 100 * total)))
-
-
-def weighted_percentiles(kind: str, values: list[tuple[Term, int]], percentiles: Sequence[float]) -> list[tuple[float, Term]]:
-    """(percentile, value) by weighted nearest rank; values that cannot be ordered are left out."""
-    keyed = sorted(
-        ((key, term, weight) for term, weight in values if weight > 0 and (key := sort_key(kind, term)) is not None),
-        key=lambda v: v[0],
-    )
-    total = sum(weight for _, _, weight in keyed)
-    if total == 0:
-        return []
-    thresholds = []
-    for percentile in percentiles:
-        rank, cumulative = percentile_rank(percentile, total), 0
-        for _, term, weight in keyed:
-            cumulative += weight
-            if cumulative >= rank:
-                thresholds.append((percentile, term))
-                break
-    return thresholds
-
-
-def weighted_sample(items: Sequence[T], weights: Sequence[float], k: int, rng: random.Random) -> list[T]:
-    """``k`` items drawn without replacement, each draw proportional to the weights.
-
-    Efraimidis-Spirakis: the k largest keys u^(1/weight), u uniform from ``rng``, in the
-    order of ``items`` (which must be deterministic for a seeded sample).
-    """
-    keys = [(rng.random() ** (1 / weight), i) for i, weight in enumerate(weights) if weight > 0]
-    chosen = sorted(i for _, i in sorted(keys, reverse=True)[:k])
-    return [items[i] for i in chosen]
-
-
-def split_prologue(query: str) -> tuple[str, str]:
-    """PREFIX lines and the rest of a generated query."""
-    lines = query.split("\n")
-    prologue = [line for line in lines if line.startswith("PREFIX ")]
-    return "\n".join(prologue), "\n".join(lines[len(prologue):])
-
-
-def slug(label: str) -> str:
-    return re.sub(r"[^a-z0-9]+", "_", label.lower()).strip("_") or "subject"
-
-
-def literal_value_kind(iri: str) -> str | None:
-    """Constraint kind (number, date, boolean, string) of a literal range given as a
-    full IRI (without <>), None if it has none."""
-    local = iri[len(XSD):] if iri.startswith(XSD) else None
-    if local in NUMERIC_TYPES:
-        return "number"
-    if local in DATE_TYPES:
-        return "date"
-    if local == "boolean":
-        return "boolean"
-    if iri in STRING_RANGES:
-        return "string"
-    return None
-
-
-def stable_seed(key: str) -> int:
-    return int.from_bytes(hashlib.sha256(key.encode()).digest()[:4], "big")
-
-
-def default_seed(request: ProgressiveRequest) -> int:
-    """Seed derived from the graph and sampling parameters, stable across processes."""
-    return stable_seed(request.model_dump_json(include={"graph", "subject_ids", "sample_size"}))
-
-
-def graph_ids(graph: QueryGraph) -> set[str]:
-    """Ids of the subjects, links and subqueries of a graph (taken for new elements)."""
-    taken = {s.id for s in graph.subjects} | {l.id for l in graph.links}
-    return taken | {sq.id for s in graph.subjects for sq in s.subqueries if sq.id}
-
-
-def graph_key(graph: QueryGraph, base_ids: set[str]) -> str:
-    """Key of a modified graph that does not depend on the ids the sampler assigned.
-
-    Subjects of the request graph (``base_ids``) keep their ids, an added subject is
-    named by the path of links that added it (``from>property>class``), a starting
-    point by its class; subqueries and links are compared without their ids.
-    """
-    names = {s.id: s.id for s in graph.subjects if s.id in base_ids}
-    changed = True
-    while changed:
-        changed = False
-        for link in graph.links:
-            if link.from_subject_id in names and link.to_subject_id not in names:
-                target = graph.get_subject_by_id(link.to_subject_id)
-                names[target.id] = f"{names[link.from_subject_id]}>{link.uri}>{target.uri}"
-                changed = True
-    for subject in graph.subjects:
-        names.setdefault(subject.id, f"+{subject.uri}")
-
-    def dump(model, exclude: set[str]) -> str:
-        return json.dumps(model.model_dump(mode="json", exclude=exclude), sort_keys=True)
-
-    subjects = sorted(
-        (names[s.id], s.uri, sorted(dump(sq, {"id"}) for sq in s.subqueries)) for s in graph.subjects
-    )
-    link_fields = {"id", "from_subject_id", "to_subject_id", "label", "from_subject_label", "to_subject_label"}
-    links = sorted(
-        (names.get(l.from_subject_id, ""), names.get(l.to_subject_id, ""), dump(l, link_fields)) for l in graph.links
-    )
-    return json.dumps([subjects, links])
-
-
-def select_expansions(
-    modifications: list[ProgressiveModification], branching: int, limit: int, seed: str
-) -> list[ProgressiveModification]:
-    """The modifications of a level to expand, in their order (see the module docstring).
-
-    Eligible: counted, non-empty and below the count ``limit``. Of more than
-    ``branching`` eligible ones, the nearest to ``branching`` targets evenly spread over
-    their log-count range (the middle of the range for one), each chosen once; ties are
-    broken by a seeded shuffle.
-    """
-    eligible = [m for m in modifications if m.count is not None and 0 < m.count < limit]
-    if len(eligible) <= branching:
-        return eligible
-    order = {m.id: i for i, m in enumerate(modifications)}
-    # the seeded shuffle orders ties of equal distance (min is stable)
-    pool = random.Random(seed).sample(eligible, k=len(eligible))
-    position = {m.id: math.log10(m.count + 1) for m in pool}
-    lo, hi = min(position.values()), max(position.values())
-    targets = [(lo + hi) / 2] if branching == 1 else [lo + i * (hi - lo) / (branching - 1) for i in range(branching)]
-    chosen: list[ProgressiveModification] = []
-    for target in targets:
-        best = min(pool, key=lambda m: abs(position[m.id] - target))
-        pool.remove(best)
-        chosen.append(best)
-    return sorted(chosen, key=lambda m: order[m.id])
 
 
 class ProgressiveSampler:
@@ -1416,7 +619,7 @@ class ProgressiveSampler:
         cancel: CancelToken | None = None,
     ) -> ProgressiveResult:
         """Samples ``request``, calling ``emit`` with each event of the streaming protocol
-        (start, count, modifications, level, done; see above) as soon as it is known, from
+        (start, count, modifications, level, done; see protocol.py) as soon as it is known, from
         the calling or a pool thread (one at a time), and returns the result.
 
         Raises ValueError for an invalid request (before any event) and SamplingCancelled
@@ -1746,54 +949,3 @@ class ProgressiveSampler:
         for candidate, distribution in sampled:
             modifications += self.constraint_modifications(graph, candidate, distribution, taken)
         return modifications, failed, len(candidates)
-
-
-def max_cost(candidate: ConstraintCandidate) -> int:
-    """Endpoint queries a candidate's value distribution runs at most."""
-    return 3 if candidate.value_kind in ORDERED_KINDS else 1
-
-
-def summary(result: ProgressiveResult) -> ProgressiveSummary:
-    return ProgressiveSummary(**result.model_dump(exclude={"modifications"}))
-
-
-def replay(result: ProgressiveResult) -> list[BaseModel]:
-    """The events of a (cached) result: start with every modification counted, and done."""
-    return [
-        ProgressiveStart(
-            seed=result.seed,
-            candidate_count=result.candidate_count or 0,
-            count_limit=result.count_limit or 0,
-            count_subject=result.count_subject,
-            constraint_candidate_count=result.constraint_candidate_count,
-            depth=result.depth,
-            query_budget=result.query_budget,
-            base_count=result.base_count,
-            modifications=result.modifications,
-            cached=True,
-        ),
-        ProgressiveDone(**summary(result).model_dump(), complete=complete(result), cached=True),
-    ]
-
-
-# version of the cached results, bumped whenever their content changes for the same request
-# 2: details from the stored schema (before: Subject.to_link, instance_count 0)
-CACHE_VERSION = 2
-
-
-def cache_key(request: ProgressiveRequest) -> str:
-    digest = hashlib.sha256(request.model_dump_json().encode()).hexdigest()
-    return f"progressive:v{CACHE_VERSION}:{digest}"
-
-
-def complete(result: ProgressiveResult) -> bool:
-    """Whether every count and lookup succeeded, only then a result is worth caching."""
-    counts = [m.count for m in result.modifications]
-    if result.count_subject is not None:
-        # an empty graph has no base count
-        counts.append(result.base_count)
-    return (
-        all(c is not None for c in counts)
-        and all(m.details is not None for m in result.modifications)
-        and not result.failed_constraints
-    )

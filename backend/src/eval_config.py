@@ -75,7 +75,7 @@ class AgentConfig(BaseModel):
 
 
 class ProgressiveConfig(BaseModel):
-    """Progressive discovery (assistant/progressive.py, POST /{config_id}/progressive/sample)."""
+    """Progressive discovery (assistant/progressive/, POST /{config_id}/progressive/sample)."""
 
     # seconds per count query
     timeout: float = 10.0

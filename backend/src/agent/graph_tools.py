@@ -5,7 +5,7 @@ Besides subjects and links, the optional constraint tools (group
 subqueries to subjects: a filter on a datatype property (Number/Date/String/
 BooleanSubQuery, picked by the property's literal range) or the restriction to
 one instance (SubjectSubQuery), as progressive discovery builds them
-(assistant/progressive.py, constraint_modifications).
+(assistant/progressive/sampler.py, constraint_modifications).
 """
 
 import re

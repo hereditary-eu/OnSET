@@ -1,7 +1,7 @@
-"""Progressive discovery: counts of sampled modifications of the editor graph, see assistant/progressive.py.
+"""Progressive discovery: counts of sampled modifications of the editor graph, see assistant/progressive/.
 
 ``WS /progressive/ws`` streams each count as soon as it is in (the protocol is documented
-in assistant/progressive.py, "streaming protocol"); ``POST /progressive/sample`` returns
+in assistant/progressive/protocol.py); ``POST /progressive/sample`` returns
 the whole result at once. Both share the Redis cache of complete results.
 """
 

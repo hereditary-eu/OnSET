@@ -1,6 +1,6 @@
 // Message protocol of the progressive discovery WebSocket (`/{config_id}/progressive/ws`).
 // Hand-written mirror of the "streaming protocol" models of
-// backend/src/assistant/progressive.py (WebSockets are not part of the OpenAPI schema);
+// backend/src/assistant/progressive/protocol.py (WebSockets are not part of the OpenAPI schema);
 // the protocol is documented there. Modifications and summary fields are the generated
 // REST types (ProgressiveModification, ProgressiveResult).
 import type {
