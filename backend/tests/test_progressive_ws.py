@@ -181,3 +181,20 @@ def test_errors(client):
         # still serving
         sample(ws, "ok", graph=ship_graph().model_dump(), sample_size=10, seed=3)
         assert collect(ws, "ok")[-1]["type"] == "done"
+
+
+def test_stream_details_carry_instance_counts(client, fake_manman):
+    fake_manman.progressive = make_sampler(make_ontology(FLEET_TTL), config=ProgressiveConfig())
+    body = {"graph": ship_graph().model_dump(), "sample_size": 4, "seed": 1, "depth": 2, "branching": 2}
+    with client.websocket_connect(WS) as ws:
+        sample(ws, "r1", **body)
+        events = collect(ws, "r1")
+    modifications = list(events[0]["modifications"])
+    modifications += [m for e in events if e["type"] == "modifications" for m in e["modifications"]]
+    # the same details (and counts) as the whole result, links of used properties counted
+    expected = fake_manman.progressive.sample(ProgressiveRequest(**body))
+    expected_details = {m.id: m.details.model_dump(mode="json") for m in expected.modifications}
+    assert {m["id"]: m["details"] for m in modifications} == expected_details
+    homeport = next(m for m in modifications if m["label"] == "ship → homeport → country")
+    assert homeport["details"]["links"]["homeport_1"]["instance_count"] == 10
+    assert homeport["details"]["subjects"]["country_1"]["instance_count"] == 3

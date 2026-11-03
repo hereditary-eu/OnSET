@@ -1771,8 +1771,14 @@ def replay(result: ProgressiveResult) -> list[BaseModel]:
     ]
 
 
+# version of the cached results, bumped whenever their content changes for the same request
+# 2: details from the stored schema (before: Subject.to_link, instance_count 0)
+CACHE_VERSION = 2
+
+
 def cache_key(request: ProgressiveRequest) -> str:
-    return "progressive:" + hashlib.sha256(request.model_dump_json().encode()).hexdigest()
+    digest = hashlib.sha256(request.model_dump_json().encode()).hexdigest()
+    return f"progressive:v{CACHE_VERSION}:{digest}"
 
 
 def complete(result: ProgressiveResult) -> bool:

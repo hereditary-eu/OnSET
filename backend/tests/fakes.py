@@ -2,7 +2,8 @@
 
 - ``make_ontology``: a real ``OntologyManager`` over an in-memory rdflib graph
   (a tiny DBpedia-like ontology) instead of the QLever ``SPARQLStore``.
-- ``StubGuidance``: the search side of ``GuidanceManager`` (no Postgres/embeddings).
+- ``StubGuidance``: the search side of ``GuidanceManager`` (no Postgres/embeddings)
+  and its stored schema (``schema_of``).
 - ``ScriptedLLM`` / ``BlockingLLM``: ``AgentLLMBase`` implementations that play
   back Responses API output items.
 - ``FakeManMan``: just the attributes the routers touch.
@@ -101,7 +102,19 @@ def schema_of(ontology) -> SchemaIndex:
         } GROUP BY ?c""",
         initNs=NS,
     )
-    classes = [SchemaClass(prefixed(c), str(l) if l else None, prefixed(p)) for c, p, l in rows]
+    def count(query: str, term) -> int:
+        return int(next(iter(graph.query(query, initBindings={"x": term})))[0])
+
+    # counts as topic_init stores them: instances of a class, triples of a property
+    classes = [
+        SchemaClass(
+            prefixed(c),
+            str(l) if l else None,
+            prefixed(p),
+            instance_count=count("SELECT (COUNT(?s) AS ?n) WHERE { ?s a ?x }", c),
+        )
+        for c, p, l in rows
+    ]
     classes.append(SchemaClass("owl:Thing", "thing"))
     class_ids = {c.subject_id for c in classes}
     rows = graph.query(
@@ -123,6 +136,7 @@ def schema_of(ontology) -> SchemaIndex:
                 None if known else range_id,
                 str(label) if label else None,
                 prefixed(type_),
+                instance_count=count("SELECT (COUNT(?s) AS ?n) WHERE { ?s ?x ?o }", prop),
                 link_id=i,
             )
         )
@@ -145,6 +159,12 @@ class StubGuidance:
     def __init__(self, ontology: OntologyManager):
         self.ontology = ontology
         self.queries = []
+        self._schema_index = None
+
+    def schema_index(self) -> SchemaIndex:
+        if self._schema_index is None:
+            self._schema_index = schema_of(self.ontology)
+        return self._schema_index
 
     def subject(self, name: str) -> Subject:
         return self.ontology.enrich_subject(dbo(name))

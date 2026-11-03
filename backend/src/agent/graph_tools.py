@@ -273,6 +273,8 @@ class GraphEditorTools(ToolCollection):
                     f"Property {uri} does not exist, search it with search_links."
                 )
             link = prop.to_link()
+            # to_link counts the instances of the property as a class (0)
+            link.instance_count = self._link_count(uri)
         added = AssistantLink.from_link(
             graph=self.graph,
             link=link,
@@ -283,6 +285,20 @@ class GraphEditorTools(ToolCollection):
         self.graph.add_link(added)
         self.details.links[added.id] = link
         return added
+
+    def _link_count(self, uri: str) -> int:
+        """Usage count of a property (its triples), from the stored schema if it has
+        the property, else counted on the endpoint; 0 if neither works."""
+        try:
+            stored = self.guidance.schema_index().link(uri)
+            if stored is not None:
+                return stored.instance_count
+        except Exception:
+            pass
+        try:
+            return int(self.ontology_manager.property_count(uri))
+        except Exception:
+            return 0
 
     @tool()
     def remove_subject(self, subject_id: str) -> dict:

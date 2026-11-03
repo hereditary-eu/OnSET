@@ -1070,3 +1070,28 @@ def test_sample_endpoint_depth(client, fake_manman):
     assert "max_depth" in client.post("/dbpedia/progressive/sample", json={**body, "depth": 4}).json()["detail"]
     assert client.post("/dbpedia/progressive/sample", json={**body, "depth": 0}).status_code == 422
     assert client.post("/dbpedia/progressive/sample", json={**body, "branching": 0}).status_code == 422
+
+
+# --- instance counts of the details ---
+
+
+def test_details_carry_instance_counts(sampler):
+    # links: the triples of the property, subjects: the instances of the class (the
+    # stored schema's counts), which the frontend renders as link widths
+    result = sampler.sample(ProgressiveRequest(graph=ship_graph(), sample_size=10))
+    details = {m.label: m.details for m in result.modifications}
+    homeport, commander = details["ship → homeport → country"], details["ship → commander → person"]
+    assert {k: l.instance_count for k, l in homeport.links.items()} == {"homeport_1": 2}
+    assert {k: l.instance_count for k, l in commander.links.items()} == {"commander_1": 0}
+    assert {k: s.instance_count for k, s in homeport.subjects.items()} == {"country_1": 1}
+    assert {k: s.instance_count for k, s in commander.subjects.items()} == {"person_1": 1}
+
+
+def test_cache_key_is_versioned():
+    from assistant.progressive import CACHE_VERSION, cache_key
+
+    request = ProgressiveRequest(graph=ship_graph(), sample_size=10)
+    key = cache_key(request)
+    assert CACHE_VERSION >= 2 and key.startswith(f"progressive:v{CACHE_VERSION}:")
+    assert key == cache_key(request.model_copy())
+    assert key != cache_key(request.model_copy(update={"seed": 7}))

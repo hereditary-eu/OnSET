@@ -32,7 +32,7 @@
       "subjects": {
        "person_1": {
         "descendants": {},
-        "instance_count": 0,
+        "instance_count": 1,
         "label": "person",
         "properties": {},
         "refcount": 0,
@@ -829,7 +829,7 @@
        "homeport_1": {
         "from_id": "dbo:Ship",
         "from_subject": null,
-        "instance_count": 0,
+        "instance_count": 10,
         "label": "homeport",
         "link_id": 6,
         "link_type": "owl:ObjectProperty",
@@ -842,7 +842,7 @@
       "subjects": {
        "country_1": {
         "descendants": {},
-        "instance_count": 0,
+        "instance_count": 3,
         "label": "country",
         "properties": {},
         "refcount": 0,
@@ -1929,7 +1929,7 @@
       "subjects": {
        "person_1": {
         "descendants": {},
-        "instance_count": 0,
+        "instance_count": 1,
         "label": "person",
         "properties": {},
         "refcount": 0,
@@ -1995,7 +1995,7 @@
        "homeport_1": {
         "from_id": "dbo:Ship",
         "from_subject": null,
-        "instance_count": 0,
+        "instance_count": 2,
         "label": "homeport",
         "link_id": 11,
         "link_type": "owl:ObjectProperty",
@@ -2008,7 +2008,7 @@
       "subjects": {
        "country_1": {
         "descendants": {},
-        "instance_count": 0,
+        "instance_count": 1,
         "label": "country",
         "properties": {},
         "refcount": 0,
@@ -2084,7 +2084,7 @@
        "owner_1": {
         "from_id": "dbo:Vehicle",
         "from_subject": null,
-        "instance_count": 0,
+        "instance_count": 1,
         "label": "owner",
         "link_id": 2,
         "link_type": "owl:ObjectProperty",

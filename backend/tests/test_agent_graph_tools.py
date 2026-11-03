@@ -100,6 +100,27 @@ def test_add_link_without_search_enriches_property(tools):
     link = add(tools, "add_link", from_id=ship, to_id=person, uri=f"{DBO}commander")
     details = tools.details.links[link["id"]]
     assert (details.from_id, details.to_id) == (dbo("Ship"), dbo("Person"))
+    # the property's usage count (none in the ontology), not the instances of it as a class
+    assert details.instance_count == 0
+
+
+def test_add_link_without_search_counts_the_property(tools, guidance):
+    ship = add(tools, "add_subject", uri=dbo("Ship"))["id"]
+    country = add(tools, "add_subject", uri=dbo("Country"))["id"]
+    link = add(tools, "add_link", from_id=ship, to_id=country, uri=dbo("homeport"))
+    # from the stored schema: two ships have a homeport
+    assert tools.details.links[link["id"]].instance_count == 2
+
+
+def test_add_link_counts_on_the_endpoint_without_schema(tools, guidance, monkeypatch):
+    def no_schema():
+        raise RuntimeError("no stored schema")
+
+    monkeypatch.setattr(guidance, "schema_index", no_schema)
+    ship = add(tools, "add_subject", uri=dbo("Ship"))["id"]
+    country = add(tools, "add_subject", uri=dbo("Country"))["id"]
+    link = add(tools, "add_link", from_id=ship, to_id=country, uri=dbo("homeport"))
+    assert tools.details.links[link["id"]].instance_count == 2
 
 
 @pytest.mark.parametrize(
