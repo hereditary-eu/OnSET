@@ -74,12 +74,13 @@ test-frontend:
   cache:
     key:
       files:
-        - frontend/package-lock.json
+        - frontend/package.json
     paths:
       - .npm
   script:
     - cd frontend
-    - npm ci --cache "$CI_PROJECT_DIR/.npm" --prefer-offline
+    # no package-lock.json (bun.lock is tracked): install like the Dockerfile does
+    - npm install --cache "$CI_PROJECT_DIR/.npm" --prefer-offline --no-audit --no-fund
     - npm run type-check
 
 # deploy:

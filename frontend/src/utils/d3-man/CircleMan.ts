@@ -120,7 +120,7 @@ export class CircleMan {
                     .style("fill-opacity", 1);
             })
             .on("mouseout", (e, d) => {
-                d3.select(e.currentTarget).attr("stroke", null);
+                d3.select(e.currentTarget as SVGElement).attr("stroke", null);
                 d3.select(`#label_${d.data.n_id}`)
                     .style("display", d.parent === this.focus ? "inline" : "none")
                     .style("fill-opacity", d.parent === this.focus ? 1 : 0);
@@ -270,7 +270,7 @@ export class CircleMan {
             .attr("fill", "none")
             .on("mouseover", (e, d) => {
                 // console.log('mouseover', e, d)
-                d3.select(e.currentTarget).attr("stroke", "rgb(128 128 128 / 80%)")
+                d3.select(e.currentTarget as SVGElement).attr("stroke", "rgb(128 128 128 / 80%)")
                 source_label.style("display", "inline")
                     .style("fill-opacity", 1)
                 target_label.style("display", "inline")
@@ -278,7 +278,7 @@ export class CircleMan {
 
             })
             .on("mouseout", (e, d) => {
-                d3.select(e.currentTarget).attr("stroke", path_color);
+                d3.select(e.currentTarget as SVGElement).attr("stroke", path_color);
                 source_label.style("display", "none")
                     .style("fill-opacity", 0)
                 target_label.style("display", "none")
