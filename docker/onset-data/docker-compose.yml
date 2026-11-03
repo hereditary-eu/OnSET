@@ -10,6 +10,7 @@ services:
     ports:
       - "5434:5432"
     volumes:
+      - ./dumps:/dumps
       - ./pg-data/pg-data:/var/lib/postgresql/data
   # nominatim:
   #   image: mediagis/nominatim:4.4

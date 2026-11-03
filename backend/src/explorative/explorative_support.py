@@ -125,8 +125,7 @@ class GuidanceManager:
                 "unpad_inputs": False,
             },
             revision="eb1ce34a33908596b61c83a88903b5f5f30beaa9",  # problematic merge, wrong dimensionality,
-            device=self.device,
-        )
+        ).to(self.device)
         # self.embedding_model = SentenceTransformer(
         #     "paraphrase-MiniLM-L6-v2",
         # ).to(device)
@@ -344,6 +343,8 @@ class GuidanceManager:
                     ]
                     if query.include_thing:
                         from_parents.append("owl:Thing")
+                    else:
+                        from_parents = [p for p in from_parents if p != "owl:Thing"]
                     query_link = query_link.where(
                         SubjectLinkDB.from_id.in_(from_parents),
                     )
@@ -352,6 +353,8 @@ class GuidanceManager:
                     to_parents = self.oman.get_parents(query.to_id) + [query.to_id]
                     if query.include_thing:
                         to_parents.append("owl:Thing")
+                    else:
+                        to_parents = [p for p in to_parents if p != "owl:Thing"]
                     query_link = query_link.where(SubjectLinkDB.to_id.in_(to_parents))
                 if query.relation_type == RELATION_TYPE.INSTANCE:
                     query_link = query_link.where(
