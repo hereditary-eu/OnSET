@@ -18,3 +18,4 @@ demo-video
 Qleverfile-ui.yml
 *.ui-db.sqlite3
 .env
+.claude/worktrees/
