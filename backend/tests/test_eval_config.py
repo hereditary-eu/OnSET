@@ -135,7 +135,15 @@ def test_progressive_config_defaults():
     progressive = EvalConfig().progressive
     assert progressive == ProgressiveConfig()
     assert (progressive.timeout, progressive.parallelism, progressive.server_timeout) == (10.0, 4, True)
-    assert (progressive.default_sample_size, progressive.max_sample_size, progressive.count_limit) == (48, 256, 1_000_000)
+    # every candidate is counted unless a sample size is configured
+    assert (progressive.default_sample_size, progressive.count_limit) == (None, 1_000_000)
+    assert (progressive.constraint_sample_size, progressive.categorical_samples) == (None, None)
+    assert (progressive.child_sample_size, progressive.child_constraint_sample_size) == (None, None)
+    # an empty interpolated size (${VAR:-}) is None, a number samples that many
+    assert ProgressiveConfig(default_sample_size="", categorical_samples=" ").default_sample_size is None
+    assert ProgressiveConfig(default_sample_size="12", child_constraint_sample_size="0").default_sample_size == 12
+    with pytest.raises(ValidationError):
+        ProgressiveConfig(default_sample_size=0)
     # interpolated values are strings
     parsed = ProgressiveConfig(timeout="2.5", parallelism="8", server_timeout="false")
     assert (parsed.timeout, parsed.parallelism, parsed.server_timeout) == (2.5, 8, False)
@@ -151,12 +159,12 @@ def test_nested_objects_are_merged(tmp_path, monkeypatch):
             {
                 "default": "kg",
                 "defaults": {
-                    "progressive": {"timeout": "${ONSET_TEST_TIMEOUT:-10}", "max_sample_size": 64},
+                    "progressive": {"timeout": "${ONSET_TEST_TIMEOUT:-10}", "child_sample_size": 64},
                     "agent": {"base_url": "http://default/v1", "max_steps": 3},
                 },
                 "configs": {
                     "kg": {
-                        "progressive": {"max_sample_size": 32},
+                        "progressive": {"child_sample_size": 32},
                         "variants": [{"name": "KG variant", "progressive": {"count_limit": 5}}],
                     },
                     "plain": {},
@@ -166,9 +174,9 @@ def test_nested_objects_are_merged(tmp_path, monkeypatch):
     )
     variant, base = config.resolve("kg")
     # defaults <- config <- variant, field by field
-    assert (base.progressive.timeout, base.progressive.max_sample_size, base.progressive.count_limit) == (3, 32, 1_000_000)
-    assert (variant.progressive.timeout, variant.progressive.max_sample_size, variant.progressive.count_limit) == (3, 32, 5)
-    assert config.base("plain").progressive.max_sample_size == 64
+    assert (base.progressive.timeout, base.progressive.child_sample_size, base.progressive.count_limit) == (3, 32, 1_000_000)
+    assert (variant.progressive.timeout, variant.progressive.child_sample_size, variant.progressive.count_limit) == (3, 32, 5)
+    assert config.base("plain").progressive.child_sample_size == 64
     assert (base.agent.base_url, base.agent.max_steps) == ("http://default/v1", 3)
 
 
@@ -186,7 +194,7 @@ def test_test_config_file_is_loaded():
     assert "thumbnail_embedding" in dbpedia.ontology_extension
     # progressive: defaults (with an interpolated timeout) <- dbpedia
     assert (dbpedia.progressive.timeout, dbpedia.progressive.default_sample_size) == (5, 32)
-    assert dbpedia.progressive.max_sample_size == 64 and eval_config.get_config("oma").progressive.max_sample_size == 128
+    assert dbpedia.progressive.child_sample_size == 4 and eval_config.get_config("oma").progressive.child_sample_size == 8
 
 
 def test_repository_config_is_valid(monkeypatch):

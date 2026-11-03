@@ -85,20 +85,19 @@ def sparql_query_get(manman: ManManDep, query: str = Query(...)) -> dict[str, An
 class ProgressiveSettings(BaseModel):
     """The progressive discovery limits the frontend panel needs (eval_config.ProgressiveConfig)."""
 
-    default_sample_size: int
-    max_sample_size: int
+    # sample sizes, None for all candidates (counted in full)
+    default_sample_size: int | None
     count_limit: int
     # defaults of the constraint sampling settings of the panel
     sample_constraints: bool
-    constraint_sample_size: int
-    max_constraint_sample_size: int
+    constraint_sample_size: int | None
     numeric_percentiles: list[float]
-    categorical_samples: int
+    categorical_samples: int | None
     # tree expansion: the depth selector's range and the defaults of the branching settings
     max_depth: int
     default_branching: int
     max_branching: int
-    child_sample_size: int
+    child_sample_size: int | None
     max_total_queries: int
 
     @classmethod

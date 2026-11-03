@@ -11,7 +11,7 @@
     "progressive": {
       "timeout": "${ONSET_TEST_PROGRESSIVE_TIMEOUT:-5}",
       "default_sample_size": 32,
-      "max_sample_size": 128,
+      "child_sample_size": 8,
       "count_limit": 1000
     }
   },
@@ -27,7 +27,7 @@
       "multimodal_config": {
         "encoding_model": "clip-test"
       },
-      "progressive": { "max_sample_size": 64 },
+      "progressive": { "child_sample_size": 4 },
       "variants": [
         { "name": "DBpedia Variant", "model_id": "test/Variant-GGUF" }
       ]

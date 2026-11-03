@@ -1,10 +1,16 @@
 """Progressive discovery: counts of candidate modifications of a query graph.
 
 Given the editor's QueryGraph, the sampler enumerates the modifications the
-user could make next, samples some of them, and counts the results of every
-modified graph (and of the graph itself), so the frontend can show how each
-step would change the result (frontend/src/utils/progressive, the panel in
-components/explore/progressive).
+user could make next (links, starting points of an empty graph and, optionally,
+constraints) and counts the results of every modified graph (and of the graph
+itself), so the frontend can show how each step would change the result
+(frontend/src/utils/progressive, the panel in components/explore/progressive).
+
+Count all, optional sampling: by default every candidate is counted (every link,
+every constrained property, every frequent category; with depth > 1 every child of
+an expanded modification, deeper levels within max_total_queries). The size fields of
+the request (or configuration) are optional limits that sample that many with the
+request's seed; the modifications keep their enumeration order either way.
 
 Modules
 - sampler.py: ProgressiveSampler, with the details of the candidates, constraint
@@ -16,7 +22,7 @@ Modules
 - values.py: value kinds of literal ranges, weighted percentiles and samples
 - candidates.py: candidates before counting, ids, graph keys, seeds and expansions
 
-Timeouts, parallelism and the sample/count caps are per configuration, the
+Timeouts, parallelism, the optional sample sizes and the count/query caps are per configuration, the
 ``progressive`` object of backend/config.json (eval_config.ProgressiveConfig).
 """
 

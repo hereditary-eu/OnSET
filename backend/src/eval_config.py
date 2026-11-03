@@ -75,16 +75,22 @@ class AgentConfig(BaseModel):
 
 
 class ProgressiveConfig(BaseModel):
-    """Progressive discovery (assistant/progressive/, POST /{config_id}/progressive/sample)."""
+    """Progressive discovery (assistant/progressive/, POST /{config_id}/progressive/sample).
+
+    By default every candidate modification is enumerated and counted: the sample sizes
+    below are optional limits, None (the default; an empty string, e.g. an unset
+    ``${VAR:-}``) for all candidates. A size (here or in a request, which overrides it)
+    samples that many with the request's seed instead. No cap applies to a requested
+    size, which never exceeds the candidates anyway; max_total_queries bounds the tree
+    levels below the first.
+    """
 
     # seconds per count query
     timeout: float = 10.0
     # concurrent queries per request
     parallelism: int = Field(4, ge=1)
-    # sample size of requests that do not send one
-    default_sample_size: int = Field(48, ge=1)
-    # cap of the requested sample size
-    max_sample_size: int = Field(256, ge=1)
+    # links (or starting points) sampled of requests that do not send a size, None for all
+    default_sample_size: int | None = Field(None, ge=1)
     # cap of the counts of requests that do not send one
     count_limit: int = Field(1_000_000, ge=1)
     # send the timeout to the endpoint as well (QLever's `timeout` parameter),
@@ -94,15 +100,15 @@ class ProgressiveConfig(BaseModel):
     # constraint modifications (subqueries), defaults of requests that do not send them
     sample_constraints: bool = False
     # constrained properties (subject, property) with values in the query's results to
-    # sample, each yields several modifications
-    constraint_sample_size: int = Field(8, ge=0)
-    max_constraint_sample_size: int = Field(64, ge=0)
+    # sample, each yields several modifications; None to try every one
+    constraint_sample_size: int | None = Field(None, ge=0)
     # percentiles (0-100) of numeric/date values that become thresholds
     numeric_percentiles: list[Annotated[float, Field(ge=0, le=100)]] = Field(
         default_factory=lambda: [10, 25, 50, 75, 90]
     )
-    # values sampled per categorical property, among its max_categorical_values most frequent
-    categorical_samples: int = Field(3, ge=1)
+    # values sampled per categorical property (weighted by frequency) among its
+    # max_categorical_values most frequent, None for all of them
+    categorical_samples: int | None = Field(None, ge=1)
     max_categorical_values: int = Field(50, ge=1)
     # a property is categorical if a value occurs for at least this many counted results
     min_category_count: int = Field(2, ge=1)
@@ -110,16 +116,28 @@ class ProgressiveConfig(BaseModel):
     max_numeric_values: int = Field(10_000, ge=1)
 
     # tree expansion (request depth > 1): levels below the first expand `branching`
-    # modifications of the previous level each, sampling child_sample_size links (and
-    # child_constraint_sample_size constrained properties) of each expanded graph
+    # modifications of the previous level each, enumerating the links (and constrained
+    # properties) of each expanded graph, or sampling child_sample_size links (and
+    # child_constraint_sample_size constrained properties; 0 for none) if set
     max_depth: int = Field(3, ge=1)
     default_branching: int = Field(4, ge=1)
     max_branching: int = Field(16, ge=1)
-    child_sample_size: int = Field(12, ge=1)
-    child_constraint_sample_size: int = Field(2, ge=0)
+    child_sample_size: int | None = Field(None, ge=1)
+    child_constraint_sample_size: int | None = Field(None, ge=0)
     # endpoint queries (counts and value distributions) of a whole request; the first
-    # level is always sampled in full, deeper levels stop when the budget is spent
+    # level is always counted in full, deeper levels stop when the budget is spent
     max_total_queries: int = Field(400, ge=1)
+
+    @field_validator(
+        "default_sample_size", "constraint_sample_size", "categorical_samples",
+        "child_sample_size", "child_constraint_sample_size", mode="before",
+    )
+    @classmethod
+    def _empty_is_all(cls, value: Any) -> Any:
+        # an empty (interpolated) size means all candidates
+        if isinstance(value, str) and not value.strip():
+            return None
+        return value
 
     @field_validator("numeric_percentiles", mode="before")
     @classmethod

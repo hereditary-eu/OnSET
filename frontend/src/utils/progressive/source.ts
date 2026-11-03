@@ -354,7 +354,7 @@ function mockModifications(request: ProgressiveRequest): ProgressiveResult {
     const modifications: ProgressiveModification[] = []
 
     if (graph.subjects.length == 0) {
-        for (const name of MOCK_ROOTS.slice(0, request.sample_size)) {
+        for (const name of MOCK_ROOTS.slice(0, request.sample_size ?? undefined)) {
             const subject: AgentSubject = { id: `prog_${name}`, uri: n3(name), label: name, subqueries: [] }
             modifications.push({
                 id: `root_${name}`,
@@ -380,7 +380,7 @@ function mockModifications(request: ProgressiveRequest): ProgressiveResult {
         const j = Math.floor(rand() * (i + 1));
         [candidates[i], candidates[j]] = [candidates[j], candidates[i]]
     }
-    for (const [from, [property, property_label, range, range_label]] of candidates.slice(0, request.sample_size)) {
+    for (const [from, [property, property_label, range, range_label]] of candidates.slice(0, request.sample_size ?? undefined)) {
         const id = `${from.id}_${property}`
         const to: AgentSubject = { id: `prog_${id}`, uri: n3(range), label: range_label, subqueries: [] }
         const link: AgentLink = {

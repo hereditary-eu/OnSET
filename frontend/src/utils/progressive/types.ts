@@ -21,15 +21,15 @@ export type ProgressiveOperation = Operation
 
 /**
  * graph: the current editor graph, toQueryGraph(store, { payloads: false });
- * sample_size: maximum number of candidates to sample and count; subject_ids: subjects
+ * sample_size: number of candidates to sample and count (left out: the configured default,
+ * by default every candidate is counted); subject_ids: subjects
  * whose outgoing links are candidates (null for all); seed: of the sampling (null: derived
  * from the graph, so re-runs are stable); count_subject: subject whose distinct bindings are
  * counted (null: the first subject); count_limit: cap of the counts (null: backend default);
  * depth/branching/child_sample_size: the tree expansion (DepthSettings), sent when depth > 1.
  */
-export type ProgressiveRequest = Omit<ApiProgressiveRequest, 'graph' | 'sample_size'> & {
+export type ProgressiveRequest = Omit<ApiProgressiveRequest, 'graph'> & {
     graph: EditorQueryGraph
-    sample_size: number
 }
 
 /**
@@ -57,15 +57,16 @@ export type ProgressiveModification = Omit<ApiProgressiveModification,
     pending?: boolean
 }
 
-/** Constraint sampling settings the panel sends with a request (defaults: GET /ontology/config). */
+/** Constraint sampling settings the panel sends with a request (defaults: GET /ontology/config);
+ * a size of null tries every property/keeps every value (not sent). */
 export interface ConstraintSettings {
     sample_constraints: boolean
-    /** constrained properties to sample */
-    constraint_sample_size: number
+    /** constrained properties to sample, null for all */
+    constraint_sample_size: number | null
     /** percentiles (0-100) of numeric/date values that become thresholds */
     numeric_percentiles: number[]
-    /** values sampled per categorical property */
-    categorical_samples: number
+    /** values sampled per categorical property, null for all frequent ones */
+    categorical_samples: number | null
 }
 
 /** Tree expansion settings the panel sends with a request (defaults: GET /ontology/config). */
@@ -74,13 +75,13 @@ export interface DepthSettings {
     depth: number
     /** modifications of a level that are expanded further */
     branching: number
-    /** links sampled per expanded modification */
-    child_sample_size: number
+    /** links sampled per expanded modification, null for all (not sent) */
+    child_sample_size: number | null
 }
 
 /**
  * base_count: of the request graph, null when it is empty or the count failed;
- * candidate_count: candidates before sampling (>= modifications.length); count_limit: cap
+ * candidate_count: link candidates (the first-level links unless sample_size was set); count_limit: cap
  * of the counts, a count equal to it is a lower bound; count_subject: the counted subject
  * (null for an empty graph); depth: levels sampled; expanded_ids: modifications whose children
  * were sampled; duplicate_count: children left out as another order of the same steps;

@@ -813,7 +813,13 @@ export interface ProgressiveModification {
   step_operations?: Operation[] | null;
 }
 
-/** ProgressiveRequest */
+/**
+ * ProgressiveRequest
+ * A request of progressive discovery. Every candidate is counted unless a size is set:
+ * the sizes below are optional limits, None for the configured default (itself None, i.e.
+ * all candidates, unless the configuration sets one); a size samples that many candidates
+ * with ``seed`` (never more than there are), keeping their enumeration order.
+ */
 export interface ProgressiveRequest {
   graph: QueryGraph;
   /** Sample Size */
@@ -904,21 +910,17 @@ export interface ProgressiveResult {
  */
 export interface ProgressiveSettings {
   /** Default Sample Size */
-  default_sample_size: number;
-  /** Max Sample Size */
-  max_sample_size: number;
+  default_sample_size: number | null;
   /** Count Limit */
   count_limit: number;
   /** Sample Constraints */
   sample_constraints: boolean;
   /** Constraint Sample Size */
-  constraint_sample_size: number;
-  /** Max Constraint Sample Size */
-  max_constraint_sample_size: number;
+  constraint_sample_size: number | null;
   /** Numeric Percentiles */
   numeric_percentiles: number[];
   /** Categorical Samples */
-  categorical_samples: number;
+  categorical_samples: number | null;
   /** Max Depth */
   max_depth: number;
   /** Default Branching */
@@ -926,7 +928,7 @@ export interface ProgressiveSettings {
   /** Max Branching */
   max_branching: number;
   /** Child Sample Size */
-  child_sample_size: number;
+  child_sample_size: number | null;
   /** Max Total Queries */
   max_total_queries: number;
 }

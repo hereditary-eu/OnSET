@@ -22,8 +22,9 @@ export type ProgressiveView = 'nearest' | 'tree'
 
 export interface ProgressiveOptions {
     source?: ProgressiveSource
-    /** initial sample size, by default the configuration's (GET /ontology/config) */
-    sample_size?: number
+    /** initial sample size, by default the configuration's (GET /ontology/config); null or
+     * left out there: every candidate is counted */
+    sample_size?: number | null
     /** modifications shown as difference views */
     nearest?: number
     bin_count?: number
@@ -37,23 +38,22 @@ export function useProgressive(graphSource: () => NodeLinkRepository | null | un
         status: 'idle' as ProgressiveStatus,
         error: null as string | null,
         result: null as ProgressiveResult | null,
-        sample_size: options.sample_size ?? 48,
-        /** cap of the sample size of the active configuration, null until it is loaded */
-        max_sample_size: null as number | null,
+        /** links sampled and counted, null for all of them */
+        sample_size: (options.sample_size ?? null) as number | null,
         nearest: options.nearest ?? 10,
         bin_count: options.bin_count ?? 24,
         /** row count selected by the scrubber, null to follow the base count */
         scrub_count: null as number | null,
-        /** constraint modifications (subqueries) besides the links, defaults from the configuration */
+        /** constraint modifications (subqueries) besides the links, defaults from the configuration
+         * (null sizes: every property and frequent value) */
         constraints: {
             sample_constraints: false,
-            constraint_sample_size: 8,
+            constraint_sample_size: null,
             numeric_percentiles: [10, 25, 50, 75, 90],
-            categorical_samples: 3,
+            categorical_samples: null,
         } as ConstraintSettings,
-        max_constraint_sample_size: null as number | null,
-        /** tree expansion, defaults and caps from the configuration */
-        tree: { depth: 1, branching: 4, child_sample_size: 12 } as DepthSettings,
+        /** tree expansion, defaults and caps from the configuration (null: all links of a node) */
+        tree: { depth: 1, branching: 4, child_sample_size: null } as DepthSettings,
         max_depth: null as number | null,
         max_branching: null as number | null,
         view: 'nearest' as ProgressiveView,
@@ -62,13 +62,24 @@ export function useProgressive(graphSource: () => NodeLinkRepository | null | un
     })
 
     /** the request of the graph; the constraint settings only when they are sampled, the tree
-     * settings only beyond depth 1 */
+     * settings only beyond depth 1; sizes that are null (all candidates) are left out */
     const request = (graph: ProgressiveRequest['graph']): ProgressiveRequest => {
         const constraints = state.constraints
         const body: ProgressiveRequest = constraints.sample_constraints
-            ? { graph, sample_size: state.sample_size, ...constraints, numeric_percentiles: [...constraints.numeric_percentiles] }
-            : { graph, sample_size: state.sample_size, sample_constraints: false }
-        return state.tree.depth > 1 ? { ...body, ...state.tree } : body
+            ? { graph, ...constraints, numeric_percentiles: [...constraints.numeric_percentiles] }
+            : { graph, sample_constraints: false }
+        const full: ProgressiveRequest = {
+            ...body,
+            sample_size: state.sample_size,
+            ...(state.tree.depth > 1 ? state.tree : {}),
+        }
+        const sizes = ['sample_size', 'constraint_sample_size', 'categorical_samples', 'child_sample_size'] as const
+        for (const size of sizes) {
+            if (full[size] == null) {
+                delete full[size]
+            }
+        }
+        return full
     }
 
     // key of the graph (and sample size) the result/the running request is for
@@ -135,39 +146,37 @@ export function useProgressive(graphSource: () => NodeLinkRepository | null | un
         }, debounce_ms)
     }
 
-    const setSampleSize = (size: number) => {
-        if (!Number.isFinite(size)) {
-            return
-        }
-        const max = state.max_sample_size ?? Infinity
-        state.sample_size = Math.max(1, Math.min(Math.round(size), max))
+    /** a sample size of at least ``min``, null (all candidates) for null or an empty input (NaN) */
+    const optionalSize = (size: number | null | undefined, min: number) =>
+        size == null || !Number.isFinite(size) ? null : Math.max(min, Math.round(size))
+    /** sets the links to sample and count, null (or NaN, an empty input) for all of them */
+    const setSampleSize = (size: number | null) => {
+        state.sample_size = optionalSize(size, 1)
     }
-    /** updates constraint settings; sizes are clamped, percentiles kept within 0-100 and sorted */
+    /** updates constraint settings; sizes at least 0/1 (null: all), percentiles kept within 0-100 and sorted */
     const setConstraints = (settings: Partial<ConstraintSettings>) => {
         const next = { ...state.constraints, ...settings }
-        const max = state.max_constraint_sample_size ?? Infinity
-        next.constraint_sample_size = Math.max(0, Math.min(Math.round(next.constraint_sample_size) || 0, max))
-        next.categorical_samples = Math.max(1, Math.round(next.categorical_samples) || 1)
+        next.constraint_sample_size = optionalSize(next.constraint_sample_size, 0)
+        next.categorical_samples = optionalSize(next.categorical_samples, 1)
         next.numeric_percentiles = [...new Set(next.numeric_percentiles
             .filter((p) => Number.isFinite(p) && p >= 0 && p <= 100))].sort((a, b) => a - b)
         state.constraints = next
     }
-    /** updates the tree settings; depth within 1..max_depth, sizes at least 1 (and capped) */
+    /** updates the tree settings; depth within 1..max_depth, branching at least 1 (and capped),
+     * links per node at least 1 (null: all) */
     const setTree = (settings: Partial<DepthSettings>) => {
         const next = { ...state.tree, ...settings }
         const clamp = (value: number, max: number | null) => Math.max(1, Math.min(Math.round(value) || 1, max ?? Infinity))
         next.depth = clamp(next.depth, state.max_depth)
         next.branching = clamp(next.branching, state.max_branching)
-        next.child_sample_size = clamp(next.child_sample_size, state.max_sample_size)
+        next.child_sample_size = optionalSize(next.child_sample_size, 1)
         state.tree = next
     }
-    // the backend caps larger sizes anyway, clamping shows the cap
+    // the defaults of the active configuration (sizes null: every candidate is counted)
     OntoConfig.ensureConfig().then(({ config }) => {
         const progressive = config.progressive
-        state.max_sample_size = progressive.max_sample_size
-        setSampleSize(options.sample_size ?? progressive.default_sample_size)
+        setSampleSize(options.sample_size !== undefined ? options.sample_size : progressive.default_sample_size)
         if (progressive.numeric_percentiles) {
-            state.max_constraint_sample_size = progressive.max_constraint_sample_size
             setConstraints({
                 sample_constraints: progressive.sample_constraints,
                 constraint_sample_size: progressive.constraint_sample_size,

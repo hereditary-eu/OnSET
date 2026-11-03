@@ -1759,6 +1759,7 @@
     "type": "object"
    },
    "ProgressiveRequest": {
+    "description": "A request of progressive discovery. Every candidate is counted unless a size is set:\nthe sizes below are optional limits, None for the configured default (itself None, i.e.\nall candidates, unless the configuration sets one); a size samples that many candidates\nwith ``seed`` (never more than there are), keeping their enumeration order.",
     "properties": {
      "branching": {
       "anyOf": [
@@ -2060,16 +2061,37 @@
     "description": "The progressive discovery limits the frontend panel needs (eval_config.ProgressiveConfig).",
     "properties": {
      "categorical_samples": {
-      "title": "Categorical Samples",
-      "type": "integer"
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Categorical Samples"
      },
      "child_sample_size": {
-      "title": "Child Sample Size",
-      "type": "integer"
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Child Sample Size"
      },
      "constraint_sample_size": {
-      "title": "Constraint Sample Size",
-      "type": "integer"
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Constraint Sample Size"
      },
      "count_limit": {
       "title": "Count Limit",
@@ -2080,23 +2102,22 @@
       "type": "integer"
      },
      "default_sample_size": {
-      "title": "Default Sample Size",
-      "type": "integer"
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Default Sample Size"
      },
      "max_branching": {
       "title": "Max Branching",
       "type": "integer"
      },
-     "max_constraint_sample_size": {
-      "title": "Max Constraint Sample Size",
-      "type": "integer"
-     },
      "max_depth": {
       "title": "Max Depth",
-      "type": "integer"
-     },
-     "max_sample_size": {
-      "title": "Max Sample Size",
       "type": "integer"
      },
      "max_total_queries": {
@@ -2117,11 +2138,9 @@
     },
     "required": [
      "default_sample_size",
-     "max_sample_size",
      "count_limit",
      "sample_constraints",
      "constraint_sample_size",
-     "max_constraint_sample_size",
      "numeric_percentiles",
      "categorical_samples",
      "max_depth",

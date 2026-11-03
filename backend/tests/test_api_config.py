@@ -16,9 +16,9 @@ from eval_config import CONFIG_FILE, MultimodalConfig
 from fakes import StubGuidance, make_ontology
 
 # the constraint and depth defaults of the panel (eval_config.ProgressiveConfig)
-CONSTRAINTS = {"sample_constraints": False, "constraint_sample_size": 8, "max_constraint_sample_size": 64, "numeric_percentiles": [10, 25, 50, 75, 90], "categorical_samples": 3,
+CONSTRAINTS = {"sample_constraints": False, "constraint_sample_size": None, "numeric_percentiles": [10, 25, 50, 75, 90], "categorical_samples": None,
                # tree expansion
-               "max_depth": 3, "default_branching": 4, "max_branching": 16, "child_sample_size": 12, "max_total_queries": 400}
+               "max_depth": 3, "default_branching": 4, "max_branching": 16, "max_total_queries": 400}
 
 
 class LightManMan:
@@ -114,11 +114,11 @@ def test_get_manman_uses_registry(app, light, monkeypatch):
         "description": "Test DBpedia",
         "multimodal": MultimodalConfig(encoding_model="clip-test").model_dump(),
         # tests/data/config.json: defaults <- dbpedia
-        "progressive": {"default_sample_size": 32, "max_sample_size": 64, "count_limit": 1000, **CONSTRAINTS},
+        "progressive": {"default_sample_size": 32, "child_sample_size": 4, "count_limit": 1000, **CONSTRAINTS},
     }
     oma = client.get("/oma/ontology/config").json()
     assert oma["name"] == "OMA"
-    assert oma["progressive"] == {"default_sample_size": 32, "max_sample_size": 128, "count_limit": 1000, **CONSTRAINTS}
+    assert oma["progressive"] == {"default_sample_size": 32, "child_sample_size": 8, "count_limit": 1000, **CONSTRAINTS}
     client.get("/dbpedia/ontology/config")
     assert light.created == ["dbpedia", "oma"]
 

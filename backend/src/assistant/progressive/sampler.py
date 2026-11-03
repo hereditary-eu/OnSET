@@ -1,5 +1,12 @@
 """The sampler of progressive discovery (the overview is the package's docstring).
 
+Count all, optional sampling: by default every candidate below becomes a modification
+and is counted (and, with constraints, every constrained property is tried and every
+category kept). The request's sizes (sample_size, constraint_sample_size,
+categorical_samples, child_sample_size, child_constraint_sample_size; or the
+configuration's defaults) are optional limits: a size samples that many from the
+request's seed instead. Either way the modifications keep the enumeration order.
+
 Candidates
 - non-empty graph: every outgoing link of a (typed) subject, i.e. each
   (property, range) of the stored object properties whose domain is the
@@ -13,7 +20,7 @@ Candidates
 
 Constraint candidates (``sample_constraints``, non-empty graphs): subqueries
 on the (typed) subjects, each an Operation with the subject's ``subject_id``.
-A sampled candidate (subject, property) yields several modifications, from the
+A tried candidate (subject, property) yields several modifications, from the
 property's value distribution in the context of the request graph (the graph's
 query with ``?subject <property> ?value`` added, weighted by the distinct
 bindings of the counted subject per value, i.e. the share of the counted result
@@ -37,14 +44,17 @@ a value stands for; see value_distribution):
   The max_categorical_values most frequent values are fetched (GROUP BY, ORDER
   BY DESC(count)); values of fewer than min_category_count counted results are
   dropped, so identifiers and names (every value unique) are no categories.
-  categorical_samples values are drawn without replacement with probability
-  proportional to their frequency (Efraimidis-Spirakis keys from the seeded
-  RNG), so frequent values are likelier but rare ones still appear.
-Properties a subject already has a subquery on are left out. Candidates are
-tried in a seeded random order (an own RNG, so the link sample does not change
-with them) until constraint_sample_size of them have values (thresholds or
-categories) in the context, in at most CONSTRAINT_ROUNDS rounds: in DBpedia most
-datatype properties of a class are unused by the instances of a given query.
+  Every remaining value becomes a modification (most frequent first); with
+  ``categorical_samples`` set, that many are drawn without replacement with
+  probability proportional to their frequency (Efraimidis-Spirakis keys from the
+  seeded RNG), so frequent values are likelier but rare ones still appear.
+Properties a subject already has a subquery on are left out. Every candidate's
+distribution is queried (in one round on the pool); those without values in the
+context (in DBpedia most datatype properties of a class are unused by the
+instances of a given query) yield no modifications. With ``constraint_sample_size``
+set, candidates are tried in a seeded random order (an own RNG, so the link sample
+does not change with them) until that many have values (thresholds or categories),
+in at most CONSTRAINT_ROUNDS rounds.
 
 Counts are of the distinct bindings of the counted subject (the request's
 ``count_subject``, by default the first subject of the graph), capped at
@@ -61,7 +71,7 @@ start as soon as its modifications are built; the value distributions of the con
 candidates run besides them (queued before waiting counts), and the constraint
 modifications are counted once their distributions are in; a tree level is expanded once
 the previous level's counts are in, each parent's children counted as soon as they are
-sampled. Which modifications are sampled stays seeded and deterministic, and the result's
+sampled. Which modifications are built stays deterministic (seeded if sampled), and the result's
 modifications keep their order (links, constraints, then level by level); only the
 arrival order of the events varies. A CancelToken stops a sampling, dropping its waiting
 jobs. sample() is stream() without events.
@@ -77,10 +87,11 @@ one query per batch; counts and value distributions run on the endpoint.
 Tree expansion (``depth`` > 1): the modifications of the request graph are the
 first level, as with depth 1 (same sample, ids and counts). Each further level
 continues from ``branching`` modifications of the previous one: the modified
-graph (request graph + its operations) is sampled like the request graph, with
-child_sample_size links and, with constraints, child_constraint_sample_size
-constrained properties (values in the context of the modified graph), from a
-seed derived from the request's seed and the parent's id. A child's
+graph (request graph + its operations) is enumerated like the request graph: all
+its links and, with constraints, all its constrained properties (values in the
+context of the modified graph), or, if set, a sample of child_sample_size links and
+child_constraint_sample_size constrained properties (0: none) from a seed derived
+from the request's seed and the parent's id. A child's
 ``operations`` are cumulative (the parent's, then its own ``step_operations``),
 so it applies to the request graph like a first-level modification; its id is
 ``<parent id> > <own key>``, unique across the tree.
@@ -95,7 +106,7 @@ so it applies to the request graph like a first-level modification; its id is
   with the sampler's ids replaced by the paths of links that added them).
 - budget: endpoint queries (counts and value distributions, not the cached
   ontology lookups of labels/details) of the whole request are capped by
-  max_total_queries. The first level is always sampled in full; deeper levels
+  max_total_queries. The first level is always counted in full; deeper levels
   stop expanding, or drop the children that do not fit, once it is spent
   (``budget_exhausted``). A count is spent when it is submitted, a value distribution
   when it is done (see QueryBudget), so the budget's decisions do not depend on the
@@ -198,6 +209,16 @@ VALUE_ID = "progressive_value"
 # rounds of constraint candidates tried until enough have values (at most this many
 # times constraint_sample_size distribution queries)
 CONSTRAINT_ROUNDS = 3
+
+
+def pick(candidates: list[Candidate], size: int | None, seed: int) -> list[Candidate]:
+    """All candidates for a ``size`` None, else a seeded sample of ``size``, in enumeration order."""
+    if size is None:
+        return list(candidates)
+    sampled = random.Random(seed).sample(candidates, k=min(size, len(candidates)))
+    # keep the enumeration order, the sample is a set
+    order = {c.key: i for i, c in enumerate(candidates)}
+    return sorted(sampled, key=lambda c: order[c.key])
 
 
 class ProgressiveSampler:
@@ -668,7 +689,8 @@ class ProgressiveSampler:
         graph = request.graph
         seed = request.seed if request.seed is not None else default_seed(request)
         limit = request.count_limit or self.config.count_limit
-        sample_size = min(request.sample_size or self.config.default_sample_size, self.config.max_sample_size)
+        # None: every candidate
+        sample_size = request.sample_size or self.config.default_sample_size
 
         count_subject = request.count_subject
         if count_subject is None and graph.subjects:
@@ -677,10 +699,7 @@ class ProgressiveSampler:
             raise ValueError(f"count_subject {count_subject} is not in the graph")
 
         candidates = self.candidates(graph, request.subject_ids)
-        sampled = random.Random(seed).sample(candidates, k=min(sample_size, len(candidates)))
-        # keep the enumeration order, the sample is a set
-        order = {c.key: i for i, c in enumerate(candidates)}
-        sampled.sort(key=lambda c: order[c.key])
+        sampled = pick(candidates, sample_size, seed)
 
         self.load_labels([c.target_uri for c in sampled] + [c.prop for c in sampled if c.prop])
         taken = graph_ids(graph)
@@ -729,8 +748,10 @@ class ProgressiveSampler:
 
         if constraints:
             # the value distributions run on the pool besides the link counts (queued first)
+            size = request.constraint_sample_size
+            size = self.config.constraint_sample_size if size is None else size
             constrained, failed, _ = self.sample_constraints(
-                request, graph, count_subject, seed, taken, candidates=constraint_candidates
+                request, graph, count_subject, seed, taken, size, candidates=constraint_candidates
             )
             self.token.check()
             result.failed_constraints = failed
@@ -764,10 +785,10 @@ class ProgressiveSampler:
         first level's modifications."""
         config = self.config
         branching = min(request.branching or config.default_branching, config.max_branching)
-        size = min(request.child_sample_size or config.child_sample_size, config.max_sample_size)
+        # None: every candidate of each expanded graph
+        size = request.child_sample_size or config.child_sample_size
         constraint_size = request.child_constraint_sample_size
         constraint_size = config.child_constraint_sample_size if constraint_size is None else constraint_size
-        child_request = request.model_copy(update={"constraint_sample_size": constraint_size})
         limit = result.count_limit
         # the first level is done: its queries are spent
         budget = QueryBudget(config.max_total_queries, spent=self.queries.count)
@@ -788,7 +809,9 @@ class ProgressiveSampler:
                     break
                 graph, counted = nodes[parent.id]
                 own: list[tuple[ProgressiveModification, QueryGraph]] = []
-                for child, modified in self.children(child_request, parent, graph, counted, size, constraints, budget):
+                for child, modified in self.children(
+                    request, parent, graph, counted, size, constraint_size if constraints else 0, budget
+                ):
                     key = graph_key(modified, base_ids)
                     if key in seen:
                         result.duplicate_count += 1
@@ -832,31 +855,31 @@ class ProgressiveSampler:
         parent: ProgressiveModification,
         graph: QueryGraph,
         count_subject: str,
-        size: int,
-        constraints: bool,
+        size: int | None,
+        constraint_size: int | None,
         budget: QueryBudget,
     ) -> list[tuple[ProgressiveModification, QueryGraph]]:
-        """The (uncounted) modifications of a parent's graph: a sample of ``size`` links and,
-        with ``constraints``, of request.constraint_sample_size constrained properties
-        (value distributions within the budget), from a seed of the parent."""
+        """The (uncounted) modifications of a parent's graph: its links and constrained
+        properties (value distributions within the budget; 0: no constraints), all of them
+        for a size None, else a sample of ``size``/``constraint_size`` from a seed of the parent."""
         seed = stable_seed(f"{request.seed}:{parent.id}") if request.seed is not None else stable_seed(parent.id)
         subject_ids = request.subject_ids
         if subject_ids is not None:
             # the subjects the path added are continued from as well
             subject_ids = subject_ids + [op.data.id for op in parent.operations if isinstance(op.data, AssistantSubject)]
         candidates = self.candidates(graph, subject_ids)
-        sampled = random.Random(seed).sample(candidates, k=min(size, len(candidates)))
-        order = {c.key: i for i, c in enumerate(candidates)}
-        sampled.sort(key=lambda c: order[c.key])
+        sampled = pick(candidates, size, seed)
         self.load_labels([c.target_uri for c in sampled] + [c.prop for c in sampled if c.prop])
         taken = graph_ids(graph)
         results = [self.modification(graph, candidate, taken) for candidate in sampled]
-        if constraints and request.constraint_sample_size:
+        if constraint_size != 0:
             request = request.model_copy(update={"subject_ids": subject_ids})
             # the links' counts are reserved before the distributions
             budget.reserved += len(results)
             try:
-                constrained, _, _ = self.sample_constraints(request, graph, count_subject, seed, taken, budget)
+                constrained, _, _ = self.sample_constraints(
+                    request, graph, count_subject, seed, taken, constraint_size, budget
+                )
             finally:
                 budget.reserved -= len(results)
             results += constrained
@@ -869,11 +892,13 @@ class ProgressiveSampler:
         count_subject: str,
         seed: int,
         taken: set[str],
+        size: int | None,
         budget: QueryBudget | None = None,
         candidates: list[ConstraintCandidate] | None = None,
     ) -> tuple[list[tuple[ProgressiveModification, QueryGraph]], list[str], int]:
-        """Constraint modifications (uncounted) of a sample of the constrained properties,
-        the keys of the candidates whose distribution failed, and the number of candidates.
+        """Constraint modifications (uncounted) of the constrained properties (every one for
+        a ``size`` None, else a sample of ``size`` with values), the keys of the candidates
+        whose distribution failed, and the number of candidates.
 
         The distributions of a round run on the pool (before its waiting counts). With a
         ``budget``, a round tries only as many candidates as their distributions can cost
@@ -881,26 +906,29 @@ class ProgressiveSampler:
         the queries they ran (the maximum for a timed-out one).
         """
         config = self.config
-        size = request.constraint_sample_size
-        size = min(config.constraint_sample_size if size is None else size, config.max_constraint_sample_size)
         percentiles = request.numeric_percentiles if request.numeric_percentiles is not None else config.numeric_percentiles
         # sorted and unique, so equal settings give equal modifications
         percentiles = sorted(set(percentiles))
+        # None: every category
         categorical_samples = request.categorical_samples or config.categorical_samples
 
         if candidates is None:
             candidates = self.constraint_candidates(graph, count_subject, request.subject_ids)
-        # a seeded random order, from an own RNG, so the link sample is the same with and
-        # without constraints
-        shuffled = random.Random(f"{seed}:constraints").sample(candidates, k=len(candidates))
-        # many properties have no values in the context (or no categories), so the
-        # candidates are tried in rounds of the missing number until `size` have some
-        # (failed ones count as tried, a failing endpoint is not asked again)
+        if size is None:
+            # every candidate in enumeration order, in one round (as far as the budget allows)
+            ordered, size, rounds = candidates, len(candidates), 1
+        else:
+            # a seeded random order, from an own RNG, so the link sample is the same with
+            # and without constraints; many properties have no values in the context (or no
+            # categories), so the candidates are tried in rounds of the missing number until
+            # `size` have some (failed ones count as tried, a failing endpoint is not asked again)
+            ordered = random.Random(f"{seed}:constraints").sample(candidates, k=len(candidates))
+            rounds = CONSTRAINT_ROUNDS
         sampled: list[tuple[ConstraintCandidate, ValueDistribution]] = []
         failed: list[str] = []
         tried = 0
-        for _ in range(CONSTRAINT_ROUNDS):
-            batch = shuffled[tried : tried + size - len(sampled) - len(failed)]
+        for _ in range(rounds):
+            batch = ordered[tried : tried + size - len(sampled) - len(failed)]
             if budget is not None:
                 allowance, affordable = budget.remaining(), 0
                 for candidate in batch:
@@ -936,11 +964,14 @@ class ProgressiveSampler:
         order = {c.key: i for i, c in enumerate(candidates)}
         sampled.sort(key=lambda cd: order[cd[0].key])
 
-        for candidate, distribution in sampled:
-            # an RNG per candidate, so its values do not depend on the other candidates
-            rng = random.Random(f"{seed}:{candidate.key}")
-            categories = distribution.categories
-            distribution.categories = weighted_sample(categories, [n for _, n in categories], categorical_samples, rng)
+        if categorical_samples is not None:
+            for candidate, distribution in sampled:
+                # an RNG per candidate, so its values do not depend on the other candidates
+                rng = random.Random(f"{seed}:{candidate.key}")
+                categories = distribution.categories
+                distribution.categories = weighted_sample(
+                    categories, [n for _, n in categories], categorical_samples, rng
+                )
         self.load_labels([c.prop for c, _ in sampled if c.prop])
         self.load_labels(
             [f"<{term.value}>" for c, d in sampled if c.value_kind == "instance" for term, _ in d.categories]

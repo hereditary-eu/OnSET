@@ -328,7 +328,7 @@ def test_sampler_uses_config(ontology):
     """ManMan builds the sampler from the configuration's ``progressive`` settings."""
     from api.config import ManMan
 
-    config = EvalConfig(progressive={"default_sample_size": 3, "max_sample_size": 5, "count_limit": 7})
+    config = EvalConfig(progressive={"default_sample_size": 3, "count_limit": 7})
     ontology = make_ontology(WIDE_TTL)
     guidance = SimpleNamespace(schema_index=lambda: schema_of(ontology))
     manman = SimpleNamespace(ontology_manager=ontology, db_config=config, guidance_man=guidance)
@@ -337,10 +337,10 @@ def test_sampler_uses_config(ontology):
     # schema lookups from the stored schema
     assert sampler._schema_source == guidance.schema_index
     person = QueryGraph(subjects=[AssistantSubject(id="p", uri=dbo("Person"), label="person")])
-    # without a sample size the configured default, a larger one is capped
+    # without a sample size the configured default, a larger one is not capped (all candidates)
     assert len(sampler.sample(ProgressiveRequest(graph=person)).modifications) == 3
     result = sampler.sample(ProgressiveRequest(graph=person, sample_size=50))
-    assert len(result.modifications) == 5 and result.count_limit == 7
+    assert len(result.modifications) == result.candidate_count == 20 and result.count_limit == 7
     assert sampler.sample(ProgressiveRequest(graph=person, sample_size=2, count_limit=9)).count_limit == 9
 
 
@@ -567,9 +567,9 @@ def test_constraints_off_is_unchanged(fleet):
     with_constraints = fleet.sample(ProgressiveRequest(graph=graph, sample_size=10, seed=2, sample_constraints=True))
     links = [m for m in with_constraints.modifications if m.kind == ModificationKind.LINK]
     assert links == plain.modifications
-    # sampled properties, by default the configured number of them
+    # by default every property with values in the context
     sampled = {m.constraint.property_id for m in with_constraints.modifications if m.constraint}
-    assert 0 < len(sampled) <= ProgressiveConfig().constraint_sample_size
+    assert sampled == {dbo("length"), dbo("shipLaunch"), dbo("inService"), dbo("shipClass"), None}
     fewer = constraints(fleet, graph, constraint_sample_size=1)
     assert len({m.constraint.property_id for m in fewer.modifications if m.constraint}) <= 1
     # empty graphs have no constraints
@@ -864,6 +864,92 @@ def test_tree_is_seeded(tree):
 
     assert ids(seed=1) == ids(seed=1) and ids() == ids()
     assert len({tuple(ids(seed=s)) for s in range(8)}) > 1
+
+
+# --- count all (no sample sizes) ---
+
+
+def test_count_all_links_by_default(wide, sampler):
+    person = QueryGraph(subjects=[AssistantSubject(id="p", uri=dbo("Person"), label="person")])
+    result = wide.sample(ProgressiveRequest(graph=person))
+    # every candidate is a modification, in enumeration order
+    assert result.candidate_count == len(result.modifications) == 20
+    assert [m.id for m in result.modifications] == [c.key for c in wide.candidates(person)]
+    assert all(m.count is not None for m in result.modifications) and complete(result)
+    # the seed does not change what is counted
+    assert [m.id for m in wide.sample(ProgressiveRequest(graph=person, seed=7)).modifications] == [
+        m.id for m in result.modifications
+    ]
+    # an empty graph: every root class
+    empty = sampler.sample(ProgressiveRequest(graph=QueryGraph()))
+    assert len(empty.modifications) == empty.candidate_count == len(sampler.candidates(QueryGraph())) > 0
+
+
+def test_count_all_constraints_by_default(fleet):
+    result = fleet.sample(ProgressiveRequest(graph=homeport_graph(), sample_constraints=True))
+    assert result.constraint_candidate_count == 7 and not result.failed_constraints
+    tried = {(m.constraint.subject_id, m.constraint.property_id) for m in result.modifications if m.constraint}
+    # every property with values in the context (not: the unique ship labels, the draft)
+    assert tried == {
+        ("ship", dbo("length")), ("ship", dbo("shipLaunch")), ("ship", dbo("inService")),
+        ("ship", dbo("shipClass")), ("t0", None),
+    }
+    # every category of at least min_category_count results, most frequent first
+    assert list(constrained(result)) == ["country: = England", "country: = France"]
+    assert list(constrained(result, "shipClass")) == ['ship: ship class = "Frigate"', 'ship: ship class = "Sloop"']
+    assert list(constrained(result, "inService")) == ["ship: in service = true", "ship: in service = false"]
+    # every configured percentile
+    assert len(constrained(result, "length")) == len(ProgressiveConfig().numeric_percentiles)
+    # the constraint modifications follow the links, in the candidates' order
+    kinds = [m.kind for m in result.modifications]
+    assert kinds == sorted(kinds, key=lambda k: k == ModificationKind.CONSTRAINT)
+    assert len([k for k in kinds if k == ModificationKind.LINK]) == result.candidate_count
+    assert result == fleet.sample(ProgressiveRequest(graph=homeport_graph(), sample_constraints=True))
+
+
+def test_explicit_sizes_still_sample(wide, fleet):
+    person = QueryGraph(subjects=[AssistantSubject(id="p", uri=dbo("Person"), label="person")])
+    sampled = wide.sample(ProgressiveRequest(graph=person, sample_size=5, seed=1))
+    assert len(sampled.modifications) == 5 and sampled.candidate_count == 20
+    assert sampled == wide.sample(ProgressiveRequest(graph=person, sample_size=5, seed=1))
+    result = fleet.sample(ProgressiveRequest(
+        graph=homeport_graph(), sample_size=1, seed=1, sample_constraints=True,
+        constraint_sample_size=2, categorical_samples=1,
+    ))
+    constraints_of = [m for m in result.modifications if m.constraint]
+    assert len({(m.constraint.subject_id, m.constraint.property_id) for m in constraints_of}) == 2
+    # one value per categorical property
+    categories = [m for m in constraints_of if m.constraint.kind == "category"]
+    assert len(categories) == len({(m.constraint.subject_id, m.constraint.property_id) for m in categories})
+    # a configured size is the default of requests without one
+    configured = make_sampler(make_ontology(WIDE_TTL), config=ProgressiveConfig(default_sample_size=4))
+    assert len(configured.sample(ProgressiveRequest(graph=person)).modifications) == 4
+
+
+def test_tree_enumerates_all_children(tree):
+    graph = QueryGraph(subjects=[ship()])
+    result = tree.sample(ProgressiveRequest(graph=graph, seed=1, depth=2, branching=8))
+    check_tree(tree, graph, result)
+    assert not result.budget_exhausted and result.expanded_ids
+    by_id = {m.id: m for m in result.modifications}
+    expected = 0
+    for parent_id in result.expanded_ids:
+        parent = by_id[parent_id]
+        modified = graph.model_copy(deep=True)
+        for operation in parent.operations:
+            modified.apply(operation)
+        keys = [c.key for c in tree.candidates(modified)]
+        own = [m.id.split(" > ", 1)[1] for m in result.modifications if m.parent_id == parent_id]
+        # every candidate of the parent's graph, in enumeration order (but duplicates of others)
+        assert own == [k for k in keys if k in own]
+        expected += len(keys)
+    children = [m for m in result.modifications if m.depth == 2]
+    assert len(children) + result.duplicate_count == expected
+    # the budget still caps the levels below the first
+    capped = make_sampler(make_ontology(TREE_TTL), config=ProgressiveConfig(max_total_queries=4))
+    small = capped.sample(ProgressiveRequest(graph=graph, seed=1, depth=2, branching=8))
+    assert small.budget_exhausted and len([m for m in small.modifications if m.depth == 2]) < len(children)
+    assert [m for m in small.modifications if m.depth == 1] == [m for m in result.modifications if m.depth == 1]
 
 
 def test_select_expansions():

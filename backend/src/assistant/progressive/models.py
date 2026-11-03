@@ -16,13 +16,19 @@ Percentile = Annotated[float, Field(ge=0, le=100)]
 
 
 class ProgressiveRequest(BaseModel):
+    """A request of progressive discovery. Every candidate is counted unless a size is set:
+    the sizes below are optional limits, None for the configured default (itself None, i.e.
+    all candidates, unless the configuration sets one); a size samples that many candidates
+    with ``seed`` (never more than there are), keeping their enumeration order."""
+
     graph: QueryGraph
-    # maximum number of candidate modifications to sample and count (capped by
-    # the configured max_sample_size), None for the configured default
+    # links (or starting points of an empty graph) to sample and count, None for the
+    # configured default (all)
     sample_size: int | None = Field(None, ge=1)
     # subjects whose outgoing links are candidates, None for all subjects
     subject_ids: list[str] | None = None
-    # seed of the sampling, None for one derived from the graph (stable re-runs)
+    # seed of the sampling (of explicit sizes and of the expanded modifications' ties),
+    # None for one derived from the graph (stable re-runs)
     seed: int | None = None
     # subject whose distinct bindings are counted, None for the first subject
     count_subject: str | None = None
@@ -31,18 +37,19 @@ class ProgressiveRequest(BaseModel):
     # constraint modifications (subqueries of the graph's subjects); the settings
     # below are None for the configured defaults
     sample_constraints: bool | None = None
-    # constrained properties with values to sample (capped by max_constraint_sample_size)
+    # constrained properties with values to sample, None for the configured default (every one)
     constraint_sample_size: int | None = Field(None, ge=0)
     # percentiles (0-100) of numeric/date values that become thresholds
     numeric_percentiles: list[Percentile] | None = None
-    # values sampled per categorical property
+    # values sampled per categorical property (weighted by frequency), None for the
+    # configured default (every value of at least min_category_count results)
     categorical_samples: int | None = Field(None, ge=1)
     # tree expansion: levels of modifications (1: of the request graph only), at most
     # the configured max_depth; each level below the first expands `branching`
-    # modifications of the previous one (capped by max_branching), sampling
-    # child_sample_size links (capped by max_sample_size) and, with constraints,
-    # child_constraint_sample_size constrained properties of each; None for the
-    # configured defaults
+    # modifications of the previous one (capped by max_branching), enumerating the links
+    # and, with constraints, the constrained properties of each, or sampling
+    # child_sample_size links and child_constraint_sample_size constrained properties
+    # (0: none) if set; None for the configured defaults (all)
     depth: int = Field(1, ge=1)
     branching: int | None = Field(None, ge=1)
     child_sample_size: int | None = Field(None, ge=1)
@@ -109,16 +116,16 @@ class ProgressiveSummary(BaseModel):
 
     # count of the request graph, None for an empty graph or a failed count
     base_count: int | None = None
-    # candidates before sampling (>= the number of first-level link modifications)
+    # link candidates (== the number of first-level link modifications unless sample_size is set)
     candidate_count: int | None = None
     # cap of the counts, a count equal to it is a lower bound
     count_limit: int | None = None
     # subject id the counts are of (of the request graph, None if empty)
     count_subject: str | None = None
     seed: int | None = None
-    # constrained properties before sampling, None if constraints were not sampled
+    # constrained properties (all tried unless constraint_sample_size is set), None without constraints
     constraint_candidate_count: int | None = None
-    # keys (subject|property) of sampled constraint candidates whose value
+    # keys (subject|property) of tried constraint candidates whose value
     # distribution failed or timed out, so they have no modifications
     failed_constraints: list[str] = Field([])
     # tree expansion: levels sampled (fewer than requested if none could be expanded),
@@ -144,7 +151,8 @@ def summary(result: ProgressiveResult) -> ProgressiveSummary:
 
 # version of the cached results, bumped whenever their content changes for the same request
 # 2: details from the stored schema (before: Subject.to_link, instance_count 0)
-CACHE_VERSION = 2
+# 3: all candidates counted by default (before: samples of 48 links, 8 properties, 3 values)
+CACHE_VERSION = 3
 
 
 def cache_key(request: ProgressiveRequest) -> str:

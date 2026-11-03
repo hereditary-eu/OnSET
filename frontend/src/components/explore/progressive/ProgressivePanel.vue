@@ -9,10 +9,10 @@
             <OnsetIcon v-else-if="prog.state.status == 'error'" icon="mdi-alert-circle-outline" class="prog_panel_error" />
             <span class="prog_panel_status_text">{{ status_text }}</span>
             <span class="toolbar_spacer"></span>
-            <label class="prog_panel_size" title="Modifications to sample and count">
+            <label class="prog_panel_size" title="Links to sample and count, empty to count all of them">
                 <OnsetIcon icon="mdi-dice-multiple-outline" />
-                <input type="number" min="1" :max="prog.state.max_sample_size ?? undefined"
-                    :value="prog.state.sample_size" @change="setSampleSize">
+                <input type="number" min="1" placeholder="all"
+                    :value="prog.state.sample_size ?? ''" @change="setSampleSize">
             </label>
             <span v-if="prog.source.label" class="prog_panel_source" :title="'Data source: ' + prog.source.label">
                 {{ prog.source.label }}</span>
@@ -31,10 +31,8 @@
         </div>
         <template v-if="show_settings">
             <ProgressiveDepthSettings :settings="prog.state.tree" :max_depth="prog.state.max_depth"
-                :max_branching="prog.state.max_branching" :max_children="prog.state.max_sample_size"
-                @update="prog.setTree"></ProgressiveDepthSettings>
-            <ProgressiveConstraintSettings :settings="prog.state.constraints"
-                :max_properties="prog.state.max_constraint_sample_size" @update="prog.setConstraints">
+                :max_branching="prog.state.max_branching" @update="prog.setTree"></ProgressiveDepthSettings>
+            <ProgressiveConstraintSettings :settings="prog.state.constraints" @update="prog.setConstraints">
             </ProgressiveConstraintSettings>
         </template>
         <div v-if="prog.state.error" class="message prog_panel_error">{{ prog.state.error }}</div>
@@ -143,9 +141,10 @@ const status_text = computed(() => {
 
 const setSampleSize = (event: Event) => {
     const input = event.target as HTMLInputElement
+    // an empty input (NaN) counts every candidate
     prog.setSampleSize(input.valueAsNumber)
     // show the clamped size even if it did not change
-    input.value = String(prog.state.sample_size)
+    input.value = prog.state.sample_size == null ? '' : String(prog.state.sample_size)
 }
 
 const apply = (modification: Modification, change: GraphChange) => {

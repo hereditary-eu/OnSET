@@ -1,6 +1,7 @@
 <template>
     <!-- Settings of the tree expansion: the levels of modifications (depth), how many
-         modifications of a level are continued (branching) and the links sampled for each.
+         modifications of a level are continued (branching) and the links sampled for each
+         (empty: all of them).
          Like the constraint settings, numbers apply on blur/Enter. -->
     <div class="prog_dset">
         <div class="prog_dset_row">
@@ -22,9 +23,9 @@
         </div>
         <div class="prog_dset_row" :class="{ prog_dset_off: settings.depth == 1 }">
             <label class="prog_dset_name" for="prog_dset_children"
-                title="Links sampled for each expanded modification">Links per node</label>
-            <input id="prog_dset_children" class="prog_dset_input" type="number" min="1"
-                :max="max_children ?? undefined" :value="settings.child_sample_size" :disabled="settings.depth == 1"
+                title="Links sampled for each expanded modification, empty for all">Links per node</label>
+            <input id="prog_dset_children" class="prog_dset_input" type="number" min="1" placeholder="all"
+                :value="settings.child_sample_size ?? ''" :disabled="settings.depth == 1"
                 @change="update({ child_sample_size: ($event.target as HTMLInputElement).valueAsNumber })">
         </div>
     </div>
@@ -34,12 +35,11 @@ import { computed } from 'vue'
 import OnsetBtn from '@/components/ui/OnsetBtn.vue'
 import type { DepthSettings } from '@/utils/progressive/types'
 
-const { settings, max_depth = null, max_branching = null, max_children = null } = defineProps<{
+const { settings, max_depth = null, max_branching = null } = defineProps<{
     settings: DepthSettings
     /** caps of the configuration */
     max_depth?: number | null
     max_branching?: number | null
-    max_children?: number | null
 }>()
 const emit = defineEmits<{
     update: [settings: Partial<DepthSettings>]

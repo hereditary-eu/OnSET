@@ -1,8 +1,8 @@
 <template>
     <!-- Settings of the constraint modifications: the percentiles of numeric/date values that
          become thresholds (chips, add by typing a value 0-100), the values sampled per
-         categorical property and the number of constrained properties. Changes apply on
-         blur/Enter, so the panel does not re-count on every keystroke. -->
+         categorical property and the number of constrained properties (empty: all of them).
+         Changes apply on blur/Enter, so the panel does not re-count on every keystroke. -->
     <div class="prog_cset">
         <div class="prog_cset_row">
             <span class="prog_cset_name" title="Percentiles of numeric and date values that become thresholds">
@@ -23,16 +23,16 @@
         <div v-if="invalid" class="prog_cset_error">Percentiles are numbers from 0 to 100</div>
         <div class="prog_cset_row">
             <label class="prog_cset_name" for="prog_cset_categories"
-                title="Values sampled per categorical property, by their frequency">Values per category</label>
-            <input id="prog_cset_categories" class="prog_cset_input" type="number" min="1"
-                :value="settings.categorical_samples"
+                title="Values sampled per categorical property, by their frequency; empty for every frequent value">Values per category</label>
+            <input id="prog_cset_categories" class="prog_cset_input" type="number" min="1" placeholder="all"
+                :value="settings.categorical_samples ?? ''"
                 @change="update({ categorical_samples: ($event.target as HTMLInputElement).valueAsNumber })">
         </div>
         <div class="prog_cset_row">
             <label class="prog_cset_name" for="prog_cset_properties"
-                title="Constrained properties to sample, each yields several modifications">Properties</label>
-            <input id="prog_cset_properties" class="prog_cset_input" type="number" min="0"
-                :max="max_properties ?? undefined" :value="settings.constraint_sample_size"
+                title="Constrained properties to sample, each yields several modifications; empty for all">Properties</label>
+            <input id="prog_cset_properties" class="prog_cset_input" type="number" min="0" placeholder="all"
+                :value="settings.constraint_sample_size ?? ''"
                 @change="update({ constraint_sample_size: ($event.target as HTMLInputElement).valueAsNumber })">
         </div>
     </div>
@@ -43,10 +43,8 @@ import OnsetIcon from '@/components/ui/OnsetIcon.vue'
 import type { ConstraintSettings } from '@/utils/progressive/types'
 import { parsePercentiles } from '@/utils/progressive/histogram'
 
-const { settings, max_properties = null } = defineProps<{
+const { settings } = defineProps<{
     settings: ConstraintSettings
-    /** cap of the constrained properties of the configuration */
-    max_properties?: number | null
 }>()
 const emit = defineEmits<{
     update: [settings: Partial<ConstraintSettings>]
