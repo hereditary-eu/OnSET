@@ -71,17 +71,20 @@ test-frontend:
   image: node:26-alpine
   services: []
   before_script: []
+  variables:
+    BUN_INSTALL_CACHE_DIR: "$CI_PROJECT_DIR/.bun-cache"
   cache:
     key:
       files:
-        - frontend/package.json
+        - frontend/bun.lock
     paths:
-      - .npm
+      - .bun-cache
   script:
+    # dependencies are pinned by bun.lock, like the Dockerfile
+    - npm install -g bun@1.4.3
     - cd frontend
-    # no package-lock.json (bun.lock is tracked): install like the Dockerfile does
-    - npm install --cache "$CI_PROJECT_DIR/.npm" --prefer-offline --no-audit --no-fund
-    - npm run type-check
+    - bun install --frozen-lockfile
+    - bun run type-check
 
 # deploy:
 #   stage: deploy

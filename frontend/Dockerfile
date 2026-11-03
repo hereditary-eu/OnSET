@@ -1,9 +1,11 @@
 FROM node:26-alpine AS build-stage
+# dependencies are pinned by bun.lock (there is no package-lock.json)
+RUN npm install -g bun@1.4.3
 WORKDIR /app
-COPY package*.json ./
-RUN npm install -D
+COPY package.json bun.lock ./
+RUN bun install --frozen-lockfile
 COPY . .
-RUN npm run build
+RUN bun run build
 
 # production stage
 FROM nginx:stable-alpine AS production-stage
