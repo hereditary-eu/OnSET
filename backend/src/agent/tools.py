@@ -16,6 +16,10 @@ signature (type annotations) and its Google-style docstring::
     Editor().definitions()             # Responses API tool definitions
     Editor().call("add_subject", '{"uri": "dbo:Ship"}')
 
+Tools may belong to a ``group`` (``@tool(group="constraints")``); an instance
+hides the tools of the groups in its ``disabled_groups`` from its definitions,
+tool names and calls, so optional tool sets can be switched off per instance.
+
 Tools signal failures the model should react to by raising ``ToolError``; any
 other exception is reported to the model as well, but logged as a bug.
 """
@@ -117,9 +121,11 @@ class ToolSpec:
     parameters: dict = field(default_factory=dict)
     required: list[str] = field(default_factory=list)
     strict: bool = True
+    # optional tool set the tool belongs to (ToolCollection.disabled_groups)
+    group: str | None = None
 
     @classmethod
-    def from_method(cls, func: Callable, strict: bool = True) -> "ToolSpec":
+    def from_method(cls, func: Callable, strict: bool = True, group: str | None = None) -> "ToolSpec":
         description, arg_docs = parse_docstring(func.__doc__)
         hints = typing.get_type_hints(func)
         parameters: dict[str, dict] = {}
@@ -147,6 +153,7 @@ class ToolSpec:
             parameters=parameters,
             required=required,
             strict=strict,
+            group=group,
         )
 
     def definition(self) -> dict:
@@ -165,12 +172,15 @@ class ToolSpec:
         }
 
 
-def tool(strict: bool = True):
-    """Expose a public method of a ``ToolCollection`` as a function tool."""
+def tool(strict: bool = True, group: str | None = None):
+    """Expose a public method of a ``ToolCollection`` as a function tool.
+
+    ``group`` names an optional tool set that instances can disable.
+    """
 
     def wrap(func: Callable) -> Callable:
         assert not func.__name__.startswith("_"), "Only public methods can be tools"
-        setattr(func, _TOOL_ATTR, ToolSpec.from_method(func, strict=strict))
+        setattr(func, _TOOL_ATTR, ToolSpec.from_method(func, strict=strict, group=group))
         return func
 
     return wrap
@@ -210,6 +220,8 @@ class ToolCollection:
     """Base class collecting the ``@tool`` methods of a class and its bases."""
 
     _tools_: dict[str, ToolSpec] = {}
+    # groups of tools hidden from the model (definitions, names and calls)
+    disabled_groups: frozenset[str] = frozenset()
 
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
@@ -222,11 +234,19 @@ class ToolCollection:
                 tools[spec.name] = spec
         cls._tools_ = tools
 
+    def active_tools(self) -> dict[str, ToolSpec]:
+        """The tools exposed by this instance (without disabled groups)."""
+        return {
+            name: spec
+            for name, spec in self._tools_.items()
+            if spec.group is None or spec.group not in self.disabled_groups
+        }
+
     def tool_names(self) -> list[str]:
-        return list(self._tools_)
+        return list(self.active_tools())
 
     def definitions(self) -> list[dict]:
-        return [spec.definition() for spec in self._tools_.values()]
+        return [spec.definition() for spec in self.active_tools().values()]
 
     def call(self, name: str, arguments: str | dict | None) -> ToolResult:
         """Run tool ``name`` with the model's (JSON) arguments, never raises."""
@@ -236,7 +256,7 @@ class ToolCollection:
             return ToolResult(name, {}, error=f"Arguments are not valid JSON: {e}")
         if not isinstance(args, dict):
             return ToolResult(name, {}, error="Arguments must be a JSON object.")
-        spec = self._tools_.get(name)
+        spec = self.active_tools().get(name)
         if spec is None:
             return ToolResult(
                 name, args, error=f"Tool {name} not found, available: {self.tool_names()}"

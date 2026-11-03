@@ -908,6 +908,21 @@ def slug(label: str) -> str:
     return re.sub(r"[^a-z0-9]+", "_", label.lower()).strip("_") or "subject"
 
 
+def literal_value_kind(iri: str) -> str | None:
+    """Constraint kind (number, date, boolean, string) of a literal range given as a
+    full IRI (without <>), None if it has none."""
+    local = iri[len(XSD):] if iri.startswith(XSD) else None
+    if local in NUMERIC_TYPES:
+        return "number"
+    if local in DATE_TYPES:
+        return "date"
+    if local == "boolean":
+        return "boolean"
+    if iri in STRING_RANGES:
+        return "string"
+    return None
+
+
 def stable_seed(key: str) -> int:
     return int.from_bytes(hashlib.sha256(key.encode()).digest()[:4], "big")
 
@@ -1088,17 +1103,7 @@ class ProgressiveSampler:
 
     def value_kind(self, range_uri: str) -> str | None:
         """Constraint kind of a literal range (see the module docstring), None for none."""
-        iri = self.expand(range_uri)
-        local = iri[len(XSD):] if iri.startswith(XSD) else None
-        if local in NUMERIC_TYPES:
-            return "number"
-        if local in DATE_TYPES:
-            return "date"
-        if local == "boolean":
-            return "boolean"
-        if iri in STRING_RANGES:
-            return "string"
-        return None
+        return literal_value_kind(self.expand(range_uri))
 
     def target_class(self, range_uri: str | None) -> str:
         if range_uri is None or self.expand(range_uri) in UNTYPED_RANGES:

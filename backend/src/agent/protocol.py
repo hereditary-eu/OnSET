@@ -30,7 +30,9 @@ Server -> client (per turn, in order of occurrence)
                                         sent with status "running" before and
                                         "success"/"error" after the tool ran;
                                         ``changes`` holds the subjects/links it
-                                        added/removed as a mini graph
+                                        added/removed as a mini graph, and the
+                                        subqueries (constraints) it added to or
+                                        removed from existing subjects
     graph_state      {graph, details}   full server graph after the agent
                                         changed it; ``details`` carries the
                                         ontology data of agent-added elements
@@ -45,7 +47,12 @@ from typing import Annotated, Any, Literal
 
 from pydantic import BaseModel, Field, TypeAdapter
 
-from assistant.assistant_model import AssistantLink, AssistantSubject, QueryGraph
+from assistant.assistant_model import (
+    AnyAssistantSubQuery,
+    AssistantLink,
+    AssistantSubject,
+    QueryGraph,
+)
 from model import Subject, SubjectLink
 
 # --- graph payloads ---
@@ -58,13 +65,23 @@ class GraphDetails(BaseModel):
     links: dict[str, SubjectLink] = Field({})
 
 
+class SubQueryChange(BaseModel):
+    """A subquery (e.g. a constraint) added to/removed from a subject, by its id."""
+
+    operation: Literal["add", "remove"]
+    subject_id: str
+    subquery: AnyAssistantSubQuery
+
+
 class GraphChange(BaseModel):
     """Subjects/links a tool call added or removed, renderable as a mini graph."""
 
     added: QueryGraph = Field(default_factory=QueryGraph)
     removed: QueryGraph = Field(default_factory=QueryGraph)
-    # unchanged subjects the changed links attach to
+    # unchanged subjects the changed links (and subqueries) attach to
     context: list[AssistantSubject] = Field([])
+    # subqueries added to/removed from subjects that are in both graphs
+    subqueries: list[SubQueryChange] = Field([])
 
     @property
     def empty(self) -> bool:
@@ -73,6 +90,7 @@ class GraphChange(BaseModel):
             or self.added.links
             or self.removed.subjects
             or self.removed.links
+            or self.subqueries
         )
 
 
@@ -178,8 +196,27 @@ SERVER_MESSAGE = TypeAdapter(ServerMessage)
 # --- graph helpers ---
 
 
+def diff_subqueries(before: AssistantSubject, after: AssistantSubject) -> list[SubQueryChange]:
+    """Subqueries (by id) only in ``after`` (add) or only in ``before`` (remove) of one
+    subject; a changed subquery is removed and added again."""
+    old = {sq.id: sq for sq in before.subqueries}
+    new = {sq.id: sq for sq in after.subqueries}
+    changes = [
+        SubQueryChange(operation="remove", subject_id=after.id, subquery=sq)
+        for i, sq in old.items()
+        if i not in new or new[i] != sq
+    ]
+    changes += [
+        SubQueryChange(operation="add", subject_id=after.id, subquery=sq)
+        for i, sq in new.items()
+        if i not in old or old[i] != sq
+    ]
+    return changes
+
+
 def diff_graphs(before: QueryGraph, after: QueryGraph) -> GraphChange:
-    """Subjects/links (by id) that are only in ``after`` (added) or only in ``before`` (removed)."""
+    """Subjects/links (by id) that are only in ``after`` (added) or only in ``before``
+    (removed), and the subquery changes of the subjects in both."""
     before_subjects = {s.id: s for s in before.subjects}
     after_subjects = {s.id: s for s in after.subjects}
     before_links = {l.id: l for l in before.links}
@@ -195,8 +232,13 @@ def diff_graphs(before: QueryGraph, after: QueryGraph) -> GraphChange:
             links=[l for i, l in before_links.items() if i not in after_links],
         ),
     )
+    for subject_id, subject in after_subjects.items():
+        if subject_id in before_subjects:
+            change.subqueries += diff_subqueries(before_subjects[subject_id], subject)
     changed_ids = {s.id for s in change.added.subjects + change.removed.subjects}
     context: dict[str, AssistantSubject] = {}
+    for subquery_change in change.subqueries:
+        context[subquery_change.subject_id] = after_subjects[subquery_change.subject_id]
     for link in change.added.links + change.removed.links:
         for subject_id in (link.from_subject_id, link.to_subject_id):
             subject = after_subjects.get(subject_id) or before_subjects.get(subject_id)
@@ -222,6 +264,7 @@ __all__ = [
     "QueryGraph",
     "GraphDetails",
     "GraphChange",
+    "SubQueryChange",
     "UserMessage",
     "GraphSync",
     "Cancel",

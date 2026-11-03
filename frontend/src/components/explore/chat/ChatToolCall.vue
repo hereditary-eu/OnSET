@@ -54,8 +54,11 @@ const change_summary = computed(() => {
     if (!change) {
         return ''
     }
-    const added = [count(change.added.subjects.length, 'subject'), count(change.added.links.length, 'link')].filter((s) => s)
-    const removed = [count(change.removed.subjects.length, 'subject'), count(change.removed.links.length, 'link')].filter((s) => s)
+    const subqueries = (operation: 'add' | 'remove') => (change.subqueries ?? []).filter((c) => c.operation == operation).length
+    const added = [count(change.added.subjects.length, 'subject'), count(change.added.links.length, 'link'),
+        count(subqueries('add'), 'constraint')].filter((s) => s)
+    const removed = [count(change.removed.subjects.length, 'subject'), count(change.removed.links.length, 'link'),
+        count(subqueries('remove'), 'constraint')].filter((s) => s)
     return [added.length ? `+${added.join(', ')}` : '', removed.length ? `−${removed.join(', ')}` : ''].filter((s) => s).join(' ')
 })
 

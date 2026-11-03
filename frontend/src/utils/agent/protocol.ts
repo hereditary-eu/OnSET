@@ -38,7 +38,7 @@ export interface GraphChange {
     removed: AgentQueryGraph
     /** unchanged subjects the changed links (and subqueries) attach to */
     context: AgentSubject[]
-    /** subquery changes of existing subjects (progressive constraints; the agent sends none) */
+    /** subquery changes of existing subjects (the agent's constraint tools, progressive constraints) */
     subqueries?: SubQueryChange[]
 }
 

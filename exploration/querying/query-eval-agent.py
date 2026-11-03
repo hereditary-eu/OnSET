@@ -67,6 +67,8 @@ def load_erl(erl_str: str) -> EnrichedEntitiesRelations:
 
 generated_queries["erl_loaded"] = generated_queries["erl"].apply(load_erl)
 setup.agent.max_steps = generated_queries["n_nodes"].max() * 2
+# the evaluation compares subjects and links only, so the agent gets no constraint tools
+setup.agent.constraint_tools = False
 man_man = ManMan(
     config_id=id,
     eval_cfg=setup,

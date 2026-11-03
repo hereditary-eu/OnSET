@@ -3,12 +3,12 @@
 // The conversion itself, and its identity mapping, is utils/sparql/querygraph.ts; the agent
 // gets the full graph except for the vector payloads of vector sorts.
 //
-// Subqueries are sent to the agent as read-only context; the agent cannot create them, so
-// they are never converted back. The agent's graph changes are applied as a diff
-// (added/removed by id) to the editor store, so concurrent edits and everything the agent
-// does not change (positions, subqueries, link options) are kept. Changes may also carry
-// subquery additions/removals of single subjects (GraphChange.subqueries, the constraints of
-// the progressive panel), which are applied to those subjects' nodes the same way.
+// The agent's graph changes are applied as a diff (added/removed by id) to the editor
+// store, so concurrent edits and everything the agent does not change (positions, link
+// options, untouched subqueries) are kept. Changes may also carry subquery
+// additions/removals of single subjects (GraphChange.subqueries: the constraints the agent
+// adds with its constraint tools, or those of the progressive panel), which are applied to
+// those subjects' nodes the same way.
 import { NodeLinkRepository } from '@/utils/sparql/store'
 import { type Link, type SubjectNode } from '@/utils/sparql/representation'
 import {
@@ -49,8 +49,29 @@ export function graphKey(graph: AgentQueryGraph): string {
     return JSON.stringify([subjects, links])
 }
 
-/** Subjects/links only in `after` (added) or only in `before` (removed), by id. */
+/**
+ * Subquery changes of one subject, by subquery id: only in `after` (add) or only in
+ * `before` (remove). Subqueries with the same id are kept as they are in the editor (the
+ * agent only adds and removes them). Without `before` (an added subject) all its
+ * subqueries are added.
+ */
+function diffSubQueries(before: AgentSubject | undefined, after: AgentSubject): SubQueryChange[] {
+    const old = new Set((before?.subqueries || []).map((sq) => String(sq.id)))
+    const now = new Set((after.subqueries || []).map((sq) => String(sq.id)))
+    return [
+        ...(before?.subqueries || []).filter((sq) => !now.has(String(sq.id)))
+            .map((subquery) => ({ operation: 'remove' as const, subject_id: after.id, subquery })),
+        ...(after.subqueries || []).filter((sq) => !old.has(String(sq.id)))
+            .map((subquery) => ({ operation: 'add' as const, subject_id: after.id, subquery })),
+    ]
+}
+
+/**
+ * Subjects/links only in `after` (added) or only in `before` (removed), by id, and the
+ * subquery changes of the subjects (added subjects' nodes get theirs this way).
+ */
 export function diffAgentGraphs(before: AgentQueryGraph, after: AgentQueryGraph): GraphChange {
+    const before_by_id = new Map(before.subjects.map((s) => [s.id, s]))
     const before_subjects = new Set(before.subjects.map((s) => s.id))
     const after_subjects = new Set(after.subjects.map((s) => s.id))
     const before_links = new Set(before.links.map((l) => l.id))
@@ -65,6 +86,7 @@ export function diffAgentGraphs(before: AgentQueryGraph, after: AgentQueryGraph)
             links: before.links.filter((l) => !after_links.has(l.id)),
         },
         context: [],
+        subqueries: after.subjects.flatMap((s) => diffSubQueries(before_by_id.get(s.id), s)),
     }
 }
 

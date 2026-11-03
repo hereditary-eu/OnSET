@@ -23,7 +23,7 @@ from assistant.assistant_model import EnrichedEntitiesRelations, Operations
 from assistant.progressive import ProgressiveSampler
 from eval_config import AgentConfig, MultimodalConfig, ProgressiveConfig
 from explorative.schema_index import SchemaClass, SchemaIndex, SchemaLink
-from explorative.exp_model import RETURN_TYPE, FuzzyQueryResult, FuzzyQueryResults, Topic
+from explorative.exp_model import RELATION_TYPE, RETURN_TYPE, FuzzyQueryResult, FuzzyQueryResults, Topic
 from model import Subject, SubjectLink
 from ontology import OntologyConfig, OntologyManager
 from utils import to_prefix
@@ -188,6 +188,17 @@ class StubGuidance:
             subject = self.subject(name)
             return FuzzyQueryResults(
                 results=[FuzzyQueryResult(subject=subject, score=0.1)] * 2
+            )
+        if query.type == RETURN_TYPE.LINK and query.relation_type == RELATION_TYPE.PROPERTY:
+            # datatype properties of the class (from_id) in the stored schema
+            schema = self.schema_index()
+            links = [
+                schema.link(l.property_id)
+                for l in schema.links_of(query.from_id, include_thing=query.include_thing)
+                if l.to_id is None
+            ]
+            return FuzzyQueryResults(
+                results=[FuzzyQueryResult(link=l, score=0.1 * i) for i, l in enumerate(links[: query.limit])]
             )
         if query.type == RETURN_TYPE.LINK:
             return FuzzyQueryResults(

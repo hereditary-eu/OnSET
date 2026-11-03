@@ -38,7 +38,7 @@ from agent.protocol import (
     diff_graphs,
 )
 
-SYSTEM_PROMPT = """You are an agentic editor of a visual SPARQL query graph over a knowledge graph.
+BASE_SYSTEM_PROMPT = """You are an agentic editor of a visual SPARQL query graph over a knowledge graph.
 The query graph consists of subjects (nodes, each an ontology class) and links (ontology properties) between them.
 Always keep in mind the following rules when editing the graph:
 - The class hierarchy is always considered in the search results, so if a link is valid for a superclass, it is also valid for its subclasses, e.g. a link valid for "Person" is also valid for "Scientist", and a link for owl:Thing is valid for all classes - this holds for both sides of the link.
@@ -53,6 +53,23 @@ For each user request:
 
 You do not speculate about the class hierarchy, as all tool calls are validated against the ontology, each response of the tools is guaranteed to be correct and can be, given the intent, directly used to edit the graph. You can also use the search results to find more relevant classes and links, and you can always search for links between two existing subjects in the graph.
 """
+
+CONSTRAINT_PROMPT = """
+Constraints (filters on the values of a subject's properties):
+- When the user restricts a subject by a literal value (a number, date, text or yes/no, e.g. "ships longer than 100 m", "people born before 1900", "books whose title contains 'war'"), first find the property with search_properties(subject_id, query), then add it with add_constraint(subject_id, property_uri, operator, value). The value type of the property decides the operators: numbers and dates "equals"/"less"/"greater", texts "equals"/"!="/"contains"/"startswith"/"endswith"/"regex", booleans "equals"/"!=". Dates are ISO 8601 ("1900-01-01") or a year.
+- Use "rdfs:label" as the property to constrain the name of the instances.
+- When the user means one specific entity (e.g. "the HMS Victory", "born in Graz"), add a subject of its class and restrict it with restrict_to_instance(subject_id, name) instead of a text constraint.
+- Constraints are listed with their "id" in the subjects' "subqueries"; remove one with remove_constraint(subject_id, constraint_id).
+- Prefer links to other subjects for relations between entities; constraints only compare literal values.
+"""
+
+
+def build_system_prompt(constraint_tools: bool = True) -> str:
+    """The system prompt, with the constraint section only if those tools are enabled."""
+    return BASE_SYSTEM_PROMPT + (CONSTRAINT_PROMPT if constraint_tools else "")
+
+
+SYSTEM_PROMPT = build_system_prompt(True)
 
 
 def new_id(prefix: str) -> str:
@@ -91,12 +108,17 @@ class GraphAgent:
         llm: AgentLLMBase,
         tools: GraphEditorTools,
         max_steps: int = 12,
-        system_prompt: str = SYSTEM_PROMPT,
+        system_prompt: str | None = None,
     ):
         self.llm = llm
         self.tools = tools
         self.max_steps = max_steps
-        self.system_prompt = system_prompt
+        # by default the prompt matches the tools (constraint section if enabled)
+        self.system_prompt = (
+            system_prompt
+            if system_prompt is not None
+            else build_system_prompt(getattr(tools, "constraint_tools", True))
+        )
         self.reset()
 
     def reset(self):

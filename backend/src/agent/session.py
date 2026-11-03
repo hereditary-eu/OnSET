@@ -37,7 +37,10 @@ class AgentSession:
     ):
         self.session_id = session_id
         self.tools = GraphEditorTools(
-            ontology_manager, guidance, retrieve_k=config.retrieve_k
+            ontology_manager,
+            guidance,
+            retrieve_k=config.retrieve_k,
+            constraint_tools=config.constraint_tools,
         )
         self.agent = GraphAgent(llm, self.tools, max_steps=config.max_steps)
         self._lock = threading.Lock()

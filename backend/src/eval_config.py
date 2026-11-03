@@ -64,6 +64,8 @@ class AgentConfig(BaseModel):
     max_steps: int = 12
     # results returned by the search tools
     retrieve_k: int = 5
+    # expose the constraint tools (subqueries on property values / instances)
+    constraint_tools: bool = True
     temperature: float | None = None
 
     @field_validator("model", mode="before")
