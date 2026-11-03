@@ -3,6 +3,7 @@ import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { listConfigs, type ConfigSummary } from '@/utils/api'
 import OnsetIcon from './OnsetIcon.vue'
+import Logo from './Logo.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -28,7 +29,9 @@ const switchConfig = (event: Event) => {
         <RouterLink v-if="configId" :to="{ name: 'configs' }" class="back" title="Back to the configurations">
             <OnsetIcon icon="mdi-arrow-left" />
         </RouterLink>
-        <RouterLink :to="{ name: 'configs' }" class="brand">OnSET</RouterLink>
+        <RouterLink :to="{ name: 'configs' }" class="brand">
+            <Logo /> OnSET
+        </RouterLink>
         <template v-if="configId">
             <span class="divider">/</span>
             <select class="config" :value="configId" @change="switchConfig" title="Loaded configuration">
@@ -63,6 +66,9 @@ const switchConfig = (event: Event) => {
 .brand {
     font-weight: 700;
     color: var(--color-text);
+    display: flex;
+    flex-direction: row;
+    align-items: center;
 }
 
 .back {
@@ -108,7 +114,7 @@ const switchConfig = (event: Event) => {
     opacity: 0.7;
 }
 
-.views ~ .disclaimer {
+.views~.disclaimer {
     margin-left: 1rem;
 }
 

@@ -1,28 +1,32 @@
 <template>
-    <div class="loading_wrapper">
+    <span class="loading_wrapper">
         <svg class="loading_svg" viewBox="0 0 150 67">
             <g>
                 <rect v-for="(node, i) of nodes" class="node_loading" :x="node.x" :y="node.y" :width="node.width"
-                    :style="`animation-delay: ${i / nodes.length}s;`" :height="node.height">
+                    :style="`animation-delay: ${animationDelay(i, nodes.length)};`" :height="node.height">
                 </rect>
                 <path v-for="(link, i) of links" class="link_loading" :d="`M ${link.left.x + link.left.width},${link.left.y + link.left.height / 2} 
                 C ${link.right.x},${link.left.y + link.left.height / 2} 
                 ${link.left.x + link.left.width},${link.right.y + link.right.height / 2} 
                 ${link.right.x},${link.right.y + link.right.height / 2}`"
-                    :style="`animation-delay: ${i / links.length}s;`"></path>
+                    :style="`animation-delay: ${animationDelay(i, links.length)};`"></path>
             </g>
         </svg>
-    </div>
+    </span>
 </template>
 <script setup lang="ts">
 
 import { ref } from 'vue'
 
 // height of the animation; the width follows from the aspect ratio
-const { height } = defineProps({
+const { height , fixed} = defineProps({
     height: {
         type: String,
         default: "2rem"
+    },
+    fixed: {
+        type: Boolean,
+        default: false
     }
 })
 class NodeLoading {
@@ -51,6 +55,18 @@ new NodeLoading(10, 40, 50, 25)])
 const links = ref([new LinkLoading(nodes.value[0], nodes.value[1]), new
     LinkLoading(nodes.value[2], nodes.value[1])])
 
+function animationDelay(index: number, total: number) {
+    if (fixed){
+        return "0s"
+    }
+    return `${index / total}s`
+}
+function animationIterationCount() {
+    if (fixed){
+        return "1"
+    }
+    return "infinite"
+}
 </script>
 <style lang="scss" scoped>
 @keyframes loading_transition {
@@ -74,7 +90,7 @@ const links = ref([new LinkLoading(nodes.value[0], nodes.value[1]), new
     animation-name: loading_transition;
     animation-duration: 2s;
     animation-timing-function: ease-in-out;
-    animation-iteration-count: infinite;
+    animation-iteration-count: v-bind(animationIterationCount);
     stroke-width: 1.5px;
 }
 
@@ -84,7 +100,7 @@ const links = ref([new LinkLoading(nodes.value[0], nodes.value[1]), new
     animation-name: loading_transition;
     animation-duration: 2s;
     animation-timing-function: ease-in-out;
-    animation-iteration-count: infinite;
+    animation-iteration-count: v-bind(animationIterationCount);
     stroke-width: 1.5px;
 }
 
