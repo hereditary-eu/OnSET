@@ -103,7 +103,6 @@ def test_property_to_link(ontology):
 
 
 def test_counts_and_ranges(ontology):
-    # a string under pandas 3 (see test_q_to_df_values_readable), Subject coerces it
     assert int(ontology.instance_count(dbo("Ship"))) == 2
     assert int(ontology.property_count(dbo("homeport"))) == 2
     assert ids(ontology.range_of(dbo("homeport"))) == [dbo("Country")]
@@ -144,10 +143,10 @@ def test_to_readable(ontology):
     assert ontology.to_readable(Literal("3", datatype=URIRef(f"{xsd}integer"))) == 3
     assert ontology.to_readable(Literal("2.5", datatype=URIRef(f"{xsd}double"))) == 2.5
     assert ontology.to_readable(Literal("12", datatype=URIRef(f"{DBO}kilogram"))) == 12.0
-    # NOTE: plain literals are title-cased (Literal.title() is str.title)
-    assert ontology.to_readable(Literal("hms victory")) == "Hms Victory"
-    # unconvertible values are kept (title-cased)
-    assert ontology.to_readable(Literal("x", datatype=URIRef(f"{xsd}integer"))) == "X"
+    # plain literals are kept as they are
+    assert ontology.to_readable(Literal("HMS Victory")) == "HMS Victory"
+    # unconvertible values are kept
+    assert ontology.to_readable(Literal("x", datatype=URIRef(f"{xsd}integer"))) == "x"
     assert ontology.to_readable(URIRef("http://www.w3.org/2002/07/owl#Class")) == "owl:Class"
     assert ontology.to_readable(URIRef(f"{DBO}Ship")) == dbo("Ship")
     assert ontology.to_readable(5) == 5
@@ -158,23 +157,16 @@ def test_q_to_df_values_columns(ontology):
     assert list(df.columns) == ["s", "len"] and len(df) == 1
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="pandas 3 stores str subclasses (URIRef/Literal) as plain strings, so "
-    "q_to_df_values no longer applies to_readable: IRIs lose their <>/prefix "
-    "form and typed literals stay strings (also breaks get_parents)",
-)
 def test_q_to_df_values_readable(ontology):
+    # the DataFrame keeps the rdflib terms (pandas 3 would turn them into str with pyarrow installed)
     df = ontology.q_to_df_values(f"SELECT ?s ?len WHERE {{ ?s <{DBO}length> ?len }}")
     assert df.to_dict(orient="records") == [{"s": f"<{RES}Bounty>", "len": 27.7}]
 
 
-@pytest.mark.xfail(strict=True, reason="see test_q_to_df_values_readable")
 def test_get_parents_match_subject_ids(ontology):
     assert ontology.get_parents(dbo("Warship")) == [dbo("Warship"), dbo("Ship"), dbo("Vehicle")]
 
 
 def test_get_parents(ontology):
-    parents = ontology.get_parents(dbo("Warship"))
-    assert [p.strip("<>") for p in parents] == [f"{DBO}Warship", f"{DBO}Ship", f"{DBO}Vehicle"]
-    assert ontology.get_parents(f"{DBO}Place") == [f"{DBO}Place"]
+    assert ontology.get_parents(f"{DBO}Place") == [dbo("Place")]
+    assert ontology.get_parents("<urn:unknown>") == ["<urn:unknown>"]

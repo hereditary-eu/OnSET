@@ -95,7 +95,7 @@ def test_history_has_an_output_per_call(tools):
     output_ids = [m["call_id"] for m in agent.history if m.get("type") == "function_call_output"]
     assert call_ids == output_ids == ["c1", "c2", "c3", "c4", "c5", "c6"]
     outputs = {m["call_id"]: json.loads(m["output"]) for m in agent.history if m.get("type") == "function_call_output"}
-    assert outputs["c1"] == [{"uri": dbo("Ship"), "label": "ship"}]
+    assert outputs["c1"] == [{"uri": dbo("Ship"), "label": "ship", "parents": [dbo("Ship"), dbo("Vehicle")]}]
     assert outputs["c3"]["id"] == "ship_1"
 
 

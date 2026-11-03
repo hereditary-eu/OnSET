@@ -318,7 +318,7 @@ class GraphEditorTools(ToolCollection):
         Returns:
             list[LinkCandidate]: Matching links with their domain (from_*) and range (to_*) matching to general classes (owl:Thing)
         """
-        return self.search_links_generic(
+        return self.search_links(
             query=query,
             class_uri="owl:Thing",
             side=side,

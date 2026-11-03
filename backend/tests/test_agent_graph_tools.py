@@ -20,19 +20,29 @@ def add(tools, name, **args):
     return result.output
 
 
-def test_definitions_cover_all_tools(tools):
-    assert set(tools.tool_names()) == {
-        "search_classes",
-        "search_links",
-        "add_subject",
-        "add_link",
-        "remove_subject",
-        "remove_link",
-        "get_query_graph",
-    }
+GRAPH_TOOLS = {
+    "search_classes",
+    "search_links",
+    "search_links_generic",
+    "add_subject",
+    "add_link",
+    "remove_subject",
+    "remove_link",
+    "get_query_graph",
+}
+CONSTRAINT_TOOL_NAMES = {"search_properties", "add_constraint", "restrict_to_instance", "remove_constraint"}
+
+
+def test_definitions_cover_all_tools(tools, ontology, guidance):
+    assert set(tools.tool_names()) == GRAPH_TOOLS | CONSTRAINT_TOOL_NAMES
+    assert {d["name"] for d in tools.definitions()} == GRAPH_TOOLS | CONSTRAINT_TOOL_NAMES
+    without = GraphEditorTools(ontology, guidance, constraint_tools=False)
+    assert set(without.tool_names()) == GRAPH_TOOLS
     search_links = {d["name"]: d for d in tools.definitions()}["search_links"]
     side = search_links["parameters"]["properties"]["side"]
-    assert side["enum"] == ["source", "target"] and side["default"] == "source"
+    # optional: without a side both sides are searched
+    assert side["enum"] == ["source", "target"] and "default" not in side
+    assert "side" not in search_links["parameters"].get("required", [])
 
 
 def test_same_uri():
@@ -42,7 +52,9 @@ def test_same_uri():
 
 
 def test_search_classes_dedupes_and_uses_retrieve_k(tools, guidance):
-    assert add(tools, "search_classes", query="ship") == [{"uri": dbo("Ship"), "label": "ship"}]
+    assert add(tools, "search_classes", query="ship") == [
+        {"uri": dbo("Ship"), "label": "ship", "parents": [dbo("Ship"), dbo("Vehicle")]}
+    ]
     query = guidance.queries[-1]
     assert query.type == RETURN_TYPE.SUBJECT and query.limit == 3
     assert add(tools, "search_classes", query="unicorn") == []
@@ -64,6 +76,13 @@ def test_search_links_side(tools, guidance, side, from_id, to_id):
         "to_uri": dbo("Country"),
         "to_label": "country",
     }
+
+
+def test_search_links_generic(tools, guidance):
+    links = add(tools, "search_links_generic", query="homeport", side="source")
+    query = guidance.queries[-1]
+    assert (query.from_id, query.to_id, query.include_thing) == ("owl:Thing", None, True)
+    assert [l["uri"] for l in links] == [dbo("homeport"), dbo("commander")]
 
 
 def test_add_subject_records_details(tools):

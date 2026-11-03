@@ -881,7 +881,7 @@
       "title": "From Id"
      },
      "include_thing": {
-      "default": true,
+      "default": false,
       "title": "Include Thing",
       "type": "boolean"
      },
@@ -1379,7 +1379,7 @@
      },
      "image_types": {
       "default": [
-       "<http://dbpedia.org/ontology/Image>"
+       "dbo:Image"
       ],
       "items": {
        "type": "string"
@@ -3489,7 +3489,7 @@
         "$ref": "#/components/schemas/FuzzyQuery",
         "default": {
          "entity_type": "class",
-         "include_thing": true,
+         "include_thing": false,
          "limit": 25,
          "mix_topic_factor": 0.5,
          "order": "score",
@@ -3738,7 +3738,7 @@
         "$ref": "#/components/schemas/FuzzyQuery",
         "default": {
          "entity_type": "class",
-         "include_thing": true,
+         "include_thing": false,
          "limit": 25,
          "mix_topic_factor": 0.5,
          "order": "score",

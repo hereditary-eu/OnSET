@@ -46,7 +46,7 @@ def test_ontology_config(client):
             "encoding_model": "clip-ViT-B-32",
             "image_vector_properties": ["dbo:thumbnail_embedding"],
             "image_properties": ["dbo:thumbnail"],
-            "image_types": ["<http://dbpedia.org/ontology/Image>"],
+            "image_types": ["dbo:Image"],
         },
         "progressive": {"default_sample_size": 48, "max_sample_size": 256, "count_limit": 1_000_000, **CONSTRAINTS},
     }
@@ -117,11 +117,11 @@ def test_topics(client):
 
 
 def test_sparql(client):
-    # plain IRIs: q_to_df_values does not apply to_readable under pandas 3 (see test_ontology.py)
+    # values are made readable by q_to_df_values (wrapped/prefixed IRIs)
     query = f"SELECT ?s WHERE {{ ?s a <{DBO}Country> }}"
-    assert client.post("/dbpedia/sparql", json={"query": query}).json() == [{"s": f"{RES}England"}]
+    assert client.post("/dbpedia/sparql", json={"query": query}).json() == [{"s": f"<{RES}England>"}]
     bindings = client.get("/dbpedia/sparql", params={"query": query}).json()
-    assert bindings == {"results": {"bindings": [{"s": f"{RES}England"}]}}
+    assert bindings == {"results": {"bindings": [{"s": f"<{RES}England>"}]}}
 
 
 def test_nlp_embeddings(client):

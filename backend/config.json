@@ -10,7 +10,7 @@
     "selection_distribution": "instances",
     "agent": {
       "base_url": "${AGENT_LLM_BASE_URL:-https://hereditary.cgv.tugraz.at/lm-large/api/v1}",
-      "api_key": "${AGENT_LLM_API_KEY}",
+      "api_key": "${AGENT_LLM_API_KEY:-none}",
       "model": "${AGENT_LLM_MODEL:-}"
     },
     "progressive": {

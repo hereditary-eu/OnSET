@@ -178,10 +178,12 @@ class OntologyManager:
         return [self.enrich_subject(row[0], **enrich_kwargs) for row in self.__query(q)]
 
     def q_to_df(self, q: str):
-        return pd.DataFrame(self.__query(q))
+        # dtype=object keeps the rdflib terms: pandas 3 would otherwise infer the str
+        # dtype, which (only when pyarrow is installed) turns URIRef/Literal into str
+        return pd.DataFrame(self.__query(q), dtype=object)
 
     def q_rows(self, q: str) -> list:
-        """Result rows of ``q`` as rdflib terms (a DataFrame turns them into strings)."""
+        """Result rows of ``q`` as rdflib terms."""
         return self.__query(q)
 
     def q_to_df_values(self, q: str) -> pd.DataFrame:
@@ -191,7 +193,7 @@ class OntologyManager:
         results = [
             dict(zip(cols, row)) for result_set in result_sets for row in result_set
         ]
-        results_df = pd.DataFrame(results)
+        results_df = pd.DataFrame(results, dtype=object)  # see q_to_df
         results_df = results_df.map(self.to_readable)
         return results_df
 
@@ -287,7 +289,7 @@ class OntologyManager:
 
     def to_readable(self, cls: str | Literal | URIRef):
         if isinstance(cls, Literal):
-            value = cls.title()
+            value = str(cls)
             if cls.datatype is not None:
                 try:
                     cls_dtype = str(cls.datatype)
@@ -482,7 +484,7 @@ OPTIONAL {{?obj rdfs:label ?obj_lbl.}}
     ):
         if cls is None:
             return None
-        col_ref = cls.n3(self.onto.namespace_manager) if hasattr(cls, "n3") else cls
+        col_ref = cls.n3(self.onto.namespace_manager) if hasattr(cls, "n3") else self.wrap_iri(cls)
 
         # print("Enriching", col_ref)
         outgoing_edges = self.outgoing_edges_for(
