@@ -31,6 +31,57 @@ build-backend:
     - docker build --build-arg BUILDKIT_INLINE_CACHE=1 --cache-from $CONTAINER_BACKEND_IMAGE --pull -t $CONTAINER_BACKEND_IMAGE ./backend
     - docker push $CONTAINER_BACKEND_IMAGE
 
+# Tests run without docker: they override the default image, services and docker login.
+# `needs: []` starts them right away instead of after the build stage.
+test-backend:
+  stage: test
+  needs: []
+  image: ghcr.io/astral-sh/uv:0.13-python3.13-bookworm
+  services: []
+  before_script: []
+  variables:
+    UV_CACHE_DIR: $CI_PROJECT_DIR/.uv-cache
+    UV_LINK_MODE: copy
+    UV_PYTHON_DOWNLOADS: never
+    UV_PROJECT_ENVIRONMENT: $CI_PROJECT_DIR/backend/.venv
+    # llama-cpp-python has no wheel on PyPI: CPU build (cached as a wheel in UV_CACHE_DIR)
+    CMAKE_ARGS: "-DGGML_NATIVE=off -DGGML_CUDA=off -DLLAVA_BUILD=off"
+    HF_HUB_OFFLINE: "1"
+  cache:
+    key:
+      files:
+        - backend/uv.lock
+    paths:
+      - .uv-cache
+  script:
+    - cd backend
+    # no `cuda` extra (cudf/cuml); the dev group (pytest, fakeredis) is synced by default
+    - uv sync --frozen
+    - uv run --frozen pytest -q --junitxml=report.xml
+  after_script:
+    - uv cache prune --ci --cache-dir "$CI_PROJECT_DIR/.uv-cache" || true
+  artifacts:
+    when: always
+    reports:
+      junit: backend/report.xml
+
+test-frontend:
+  stage: test
+  needs: []
+  image: node:26-alpine
+  services: []
+  before_script: []
+  cache:
+    key:
+      files:
+        - frontend/package-lock.json
+    paths:
+      - .npm
+  script:
+    - cd frontend
+    - npm ci --cache "$CI_PROJECT_DIR/.npm" --prefer-offline
+    - npm run type-check
+
 # deploy:
 #   stage: deploy
 #   script:
