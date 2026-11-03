@@ -43,7 +43,7 @@ class MultimodalConfig(BaseModel):
     encoding_model: str = "clip-ViT-B-32"
     image_vector_properties: list[str] = ["dbo:thumbnail_embedding"]
     image_properties: list[str] = ["dbo:thumbnail"]
-    image_types: list[str] = ["<http://dbpedia.org/ontology/Image>"]
+    image_types: list[str] = ["dbo:Image"]
 
 
 class AgentConfig(BaseModel):
@@ -96,7 +96,9 @@ class ProgressiveConfig(BaseModel):
     constraint_sample_size: int = Field(8, ge=0)
     max_constraint_sample_size: int = Field(64, ge=0)
     # percentiles (0-100) of numeric/date values that become thresholds
-    numeric_percentiles: list[Annotated[float, Field(ge=0, le=100)]] = Field(default_factory=lambda: [10, 25, 50, 75, 90])
+    numeric_percentiles: list[Annotated[float, Field(ge=0, le=100)]] = Field(
+        default_factory=lambda: [10, 25, 50, 75, 90]
+    )
     # values sampled per categorical property, among its max_categorical_values most frequent
     categorical_samples: int = Field(3, ge=1)
     max_categorical_values: int = Field(50, ge=1)
