@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import threading
 from contextlib import contextmanager
 from hashlib import sha256
 from typing import Iterator
@@ -13,6 +14,7 @@ from sqlalchemy import Engine, create_engine, select, text
 from sqlalchemy.orm import Session
 
 from explorative.data_tensor import DataTensor
+from explorative.schema_index import SchemaClass, SchemaIndex, SchemaLink
 from model import SubjectLink
 from ontology import OntologyManager
 from utils import wrap_iri
@@ -84,6 +86,8 @@ class GuidanceManager:
         ).hexdigest()
         self.__lama_model = None
         self.__embedding_model = None
+        self._schema_index: SchemaIndex | None = None
+        self._schema_index_lock = threading.Lock()
 
     @property
     def llama_model(self) -> Llama:
@@ -127,6 +131,49 @@ class GuidanceManager:
         #     "paraphrase-MiniLM-L6-v2",
         # ).to(device)
         return self.__embedding_model
+
+    def schema_index(self) -> SchemaIndex:
+        """The stored classes and properties of this ontology, loaded once (see
+        explorative/schema_index.py); raises if the ontology is not initialised."""
+        if self._schema_index is None:
+            with self._schema_index_lock:
+                if self._schema_index is None:
+                    index = self.load_schema_index()
+                    if len(index) == 0:
+                        raise RuntimeError(f"no stored schema for the ontology {self.identifier}, initialise it first")
+                    self._schema_index = index
+        return self._schema_index
+
+    def load_schema_index(self) -> SchemaIndex:
+        """Read the subjects and links of this ontology, without their embeddings."""
+        with read_only_session(self.engine) as session:
+            classes = session.execute(
+                select(
+                    SubjectInDB.subject_id,
+                    SubjectInDB.label,
+                    SubjectInDB.parent_id,
+                    SubjectInDB.subject_type,
+                    SubjectInDB.instance_count,
+                    SubjectInDB.comment,
+                ).where(SubjectInDB.onto_hash == self.identifier)
+            ).all()
+            links = session.execute(
+                select(
+                    SubjectLinkDB.property_id,
+                    SubjectLinkDB.from_id,
+                    SubjectLinkDB.to_id,
+                    SubjectLinkDB.to_proptype,
+                    SubjectLinkDB.label,
+                    SubjectLinkDB.link_type,
+                    SubjectLinkDB.instance_count,
+                    SubjectLinkDB.link_id,
+                ).where(SubjectLinkDB.onto_hash == self.identifier)
+            ).all()
+        return SchemaIndex(
+            [SchemaClass(*row) for row in classes],
+            [SchemaLink(*row) for row in links],
+            namespaces=self.oman.namespaces(),
+        )
 
     def get_topic_tree(self) -> Topic:
         with Session(self.engine) as session:

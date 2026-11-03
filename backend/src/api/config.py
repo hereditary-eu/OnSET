@@ -117,7 +117,12 @@ class ManMan:
 
     @cached_property
     def progressive(self) -> ProgressiveSampler:
-        return ProgressiveSampler(self.ontology_manager, self.db_config.progressive)
+        # schema lookups from the stored schema (Postgres), counts from the endpoint
+        return ProgressiveSampler(
+            self.ontology_manager,
+            schema=self.guidance_man.schema_index,
+            config=self.db_config.progressive,
+        )
 
     @cached_property
     def progressive_cache(self) -> RedisCache[ProgressiveResult]:

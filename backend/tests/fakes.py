@@ -21,9 +21,11 @@ from agent.session import AgentSession, AgentSessionStore
 from assistant.assistant_model import EnrichedEntitiesRelations, Operations
 from assistant.progressive import ProgressiveSampler
 from eval_config import AgentConfig, MultimodalConfig, ProgressiveConfig
+from explorative.schema_index import SchemaClass, SchemaIndex, SchemaLink
 from explorative.exp_model import RETURN_TYPE, FuzzyQueryResult, FuzzyQueryResults, Topic
 from model import Subject, SubjectLink
 from ontology import OntologyConfig, OntologyManager
+from utils import to_prefix
 
 DBO = "http://dbpedia.org/ontology/"
 RES = "http://dbpedia.org/resource/"
@@ -71,6 +73,65 @@ def make_ontology(ttl: str = ONTOLOGY_TTL, **config) -> OntologyManager:
     graph = Graph(bind_namespaces="core")
     graph += Graph().parse(data=ttl, format="turtle")
     return OntologyManager(OntologyConfig(**config), graph)
+
+
+# --- stored schema ---
+
+OWL = "http://www.w3.org/2002/07/owl#"
+NS = {
+    "owl": OWL,
+    "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
+    "rdfs": "http://www.w3.org/2000/01/rdf-schema#",
+}
+
+
+def schema_of(ontology) -> SchemaIndex:
+    """The schema topic_init would store for ``ontology``: classes (and owl:Thing) with
+    their first parent, one link per property with a range (to_id a stored class, else
+    to_proptype), ids prefixed (dbo:, xsd:) like OntologyManager's to_prefix."""
+    namespaces = {**ontology.namespaces(), "dbo": DBO}
+
+    def prefixed(term) -> str | None:
+        return to_prefix(str(term), namespaces) if term is not None else None
+
+    graph = ontology.onto
+    rows = graph.query(
+        """SELECT ?c (SAMPLE(?p) AS ?parent) (SAMPLE(?l) AS ?label) WHERE {
+            ?c a owl:Class . OPTIONAL { ?c rdfs:subClassOf ?p } OPTIONAL { ?c rdfs:label ?l FILTER (lang(?l) IN ("en", "")) }
+        } GROUP BY ?c""",
+        initNs=NS,
+    )
+    classes = [SchemaClass(prefixed(c), str(l) if l else None, prefixed(p)) for c, p, l in rows]
+    classes.append(SchemaClass("owl:Thing", "thing"))
+    class_ids = {c.subject_id for c in classes}
+    rows = graph.query(
+        """SELECT ?prop (SAMPLE(?t) AS ?type) (SAMPLE(?d) AS ?domain) (SAMPLE(?r) AS ?range) (SAMPLE(?l) AS ?label) WHERE {
+            ?prop a ?t . ?prop rdfs:range ?r . OPTIONAL { ?prop rdfs:domain ?d } OPTIONAL { ?prop rdfs:label ?l FILTER (lang(?l) IN ("en", "")) }
+            FILTER (?t IN (owl:ObjectProperty, owl:DatatypeProperty, rdf:Property))
+        } GROUP BY ?prop""",
+        initNs=NS,
+    )
+    links = []
+    for i, (prop, type_, domain, range_, label) in enumerate(rows):
+        range_id = prefixed(range_)
+        known = range_id in class_ids
+        links.append(
+            SchemaLink(
+                prefixed(prop),
+                prefixed(domain) or "owl:Thing",
+                range_id if known else None,
+                None if known else range_id,
+                str(label) if label else None,
+                prefixed(type_),
+                link_id=i,
+            )
+        )
+    return SchemaIndex(classes, links, namespaces)
+
+
+def make_sampler(ontology: OntologyManager, **kwargs) -> ProgressiveSampler:
+    """A sampler of ``ontology`` with its stored schema (schema_of)."""
+    return ProgressiveSampler(ontology, schema=schema_of(ontology), **kwargs)
 
 
 # --- search ---
@@ -381,7 +442,7 @@ class FakeManMan:
         self.assistant_cache = DictCache()
         # counts run on the in-memory ontology
         self.progressive_config = ProgressiveConfig()
-        self.progressive = ProgressiveSampler(self.ontology_manager, self.progressive_config)
+        self.progressive = make_sampler(self.ontology_manager, config=self.progressive_config)
         self.progressive_cache = DictCache()
         self.assistant_runs = []
         self.iterative_assistant = SimpleNamespace(

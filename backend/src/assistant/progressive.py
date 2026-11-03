@@ -8,9 +8,8 @@ components/explore/progressive).
 
 Candidates
 - non-empty graph: every outgoing link of a (typed) subject, i.e. each
-  (property, range) of the object properties (owl:ObjectProperty,
-  rdf:Property) whose rdfs:domain is the subject's class or a parent
-  (OntologyManager.outgoing_properties). A candidate adds the link and a new
+  (property, range) of the stored object properties whose domain is the
+  subject's class or a parent (SchemaIndex.links_of). A candidate adds the link and a new
   target subject of the range class; a property without (blank-node, union,
   owl:Thing) range gets an untyped target (empty uri, no type triple).
   Datatype properties are no candidates: they would be query_prop subqueries,
@@ -60,8 +59,16 @@ links and vector sorts are dropped before counting (the tensorIndex SERVICE is
 too costly per candidate), so their restrictions are not counted. Counts that
 fail (invalid graph, endpoint error) or exceed the per-query timeout are None.
 
-All counts (and the ontology details of the sampled candidates) run
+All counts run
 concurrently on a bounded thread pool, see run_bounded.
+
+Schema lookups (the properties of a class, labels, root classes, the details of
+added subjects/links) come from the schema stored by the initialisation
+(``schema``: GuidanceManager.schema_index, explorative/schema_index.py), read
+from Postgres once and answered in memory; a class it does not know has no
+candidates. It has a single domain class and range per property and no
+properties without a range. Only labels it lacks (instances) are queried, in
+one query per batch; counts and value distributions run on the endpoint.
 
 Tree expansion (``depth`` > 1): the modifications of the request graph are the
 first level, as with depth 1 (same sample, ids and counts). Each further level
@@ -134,10 +141,13 @@ from assistant.assistant_model import (
 )
 from assistant.sparql_gen import INTEGER_TYPES, SparqlOptions, format_number
 from eval_config import ProgressiveConfig
-from model import Subject, SubjectLink
 
 if TYPE_CHECKING:
+    from explorative.schema_index import SchemaIndex
     from ontology import OntologyManager
+
+    # the schema lookups' source: an index or a provider of one (resolved per request)
+    SchemaSource = SchemaIndex | Callable[[], SchemaIndex]
 
 T = TypeVar("T")
 
@@ -680,20 +690,22 @@ class ProgressiveSampler:
     def __init__(
         self,
         ontology_manager: "OntologyManager",
+        schema: SchemaSource,
         config: ProgressiveConfig | None = None,
         run_count: CountRunner | None = None,
         run_select: SelectRunner | None = None,
     ):
         self.ontology = ontology_manager
+        # schema lookups (properties, labels, root classes, details) from the stored schema
+        # (GuidanceManager.schema_index), resolved once per request (metered)
+        self._schema_source = schema
+        self.schema: SchemaIndex | None = None if callable(schema) else schema
         self.config = config or ProgressiveConfig()
         store = getattr(ontology_manager.onto, "store", None)
         self.native_paths = isinstance(store, SPARQLStore)
         # rdflib's SPARQL parser is not thread-safe, so queries of a local graph
         # (anything but a SPARQLStore, which passes them through) run one at a time
         self._local_lock = nullcontext() if self.native_paths else threading.Lock()
-        # ontology lookups (labels, details) go through rdflib's parser with a SPARQLStore
-        # as well, so the concurrent ones (the details jobs) always run one at a time
-        self._ontology_lock = threading.Lock() if self.native_paths else self._local_lock
         if run_count is None:
             run_count = (
                 endpoint_counter(store.query_endpoint, server_timeout=self.config.server_timeout)
@@ -708,36 +720,38 @@ class ProgressiveSampler:
                 else ontology_selector(ontology_manager, self._local_lock)
             )
         self.run_select = run_select
-        # per class / URI, the ontology does not change while the server runs
-        self._properties: dict[str, list[tuple[str, str | None]]] = {}
-        self._literal_properties: dict[str, list[tuple[str, str]]] = {}
-        self._subjects: dict[str, Subject] = {}
+        # labels by URI (of instances, the schema's are looked up directly)
         self._labels: dict[str, str] = {}
 
     # --- ontology lookups (cached) ---
 
     def outgoing(self, cls: str) -> list[tuple[str, str | None]]:
-        if cls not in self._properties:
-            self._properties[cls] = self.ontology.outgoing_properties(cls)
-        return self._properties[cls]
+        """(property, range) of the object properties of a class (and its parents)."""
+        properties = {}
+        for link in self.schema.links_of(cls):
+            range_uri = link.range
+            # literal ranges, and custom datatypes (stored as to_proptype)
+            if (range_uri is not None and self.is_literal(range_uri)) or "DatatypeProperty" in link.link_type:
+                continue
+            if link.to_id is not None:
+                range_uri = self.schema.iri(link.to_id)
+            properties[(self.schema.iri(link.property_id), range_uri)] = None
+        return list(properties)
 
     def literal_properties(self, cls: str) -> list[tuple[str, str]]:
         """(property, literal range) of the datatype properties of a class (and its parents)."""
-        if cls not in self._literal_properties:
-            properties = self.ontology.outgoing_properties(
-                cls, ("owl:ObjectProperty", "owl:DatatypeProperty", "rdf:Property")
-            )
-            self._literal_properties[cls] = [(p, r) for p, r in properties if r is not None and self.is_literal(r)]
-        return self._literal_properties[cls]
-
-    def subject(self, uri: str) -> Subject:
-        if uri not in self._subjects:
-            self._subjects[uri] = self.ontology.enrich_subject(uri)
-        return self._subjects[uri]
+        properties = {}
+        for link in self.schema.links_of(cls):
+            if link.range is not None and self.is_literal(link.range):
+                properties[(self.schema.iri(link.property_id), link.range)] = None
+        return list(properties)
 
     def load_labels(self, uris: list[str]):
         """Fetch the labels of ``uris`` (in the configured language or untagged) in one query."""
         missing = sorted({u for u in uris if u and u not in self._labels})
+        known = {u: label for u in missing if (label := self.schema.label(u))}
+        self._labels.update(known)
+        missing = [u for u in missing if u not in known]
         if not missing:
             return
         language = self.ontology.config.language
@@ -796,8 +810,7 @@ class ProgressiveSampler:
         return range_uri
 
     def root_classes(self) -> list[str]:
-        # in the form of outgoing_properties/enrich_subject (n3 or prefixed)
-        return list(dict.fromkeys(self.ontology.to_readable(URIRef(str(c))) for c in self.ontology.root_class_ids()))
+        return self.schema.root_classes()
 
     def candidates(self, graph: QueryGraph, subject_ids: list[str] | None = None) -> list[Candidate]:
         """All candidate modifications of ``graph``, in a deterministic order."""
@@ -807,11 +820,9 @@ class ProgressiveSampler:
         for subject in graph.subjects:
             if not subject.uri or (subject_ids is not None and subject.id not in subject_ids):
                 continue
-            linked = {
-                self.ontology.wrap_iri(l.uri) for l in graph.links if l.from_subject_id == subject.id and l.uri
-            }
+            linked = {self.expand(l.uri) for l in graph.links if l.from_subject_id == subject.id and l.uri}
             for prop, range_uri in self.outgoing(subject.uri):
-                if self.ontology.wrap_iri(prop) in linked or (range_uri is not None and self.is_literal(range_uri)):
+                if self.expand(prop) in linked or (range_uri is not None and self.is_literal(range_uri)):
                     continue
                 candidate = Candidate(target_uri=self.target_class(range_uri), from_id=subject.id, prop=prop)
                 candidates.setdefault(candidate.key, candidate)
@@ -825,16 +836,16 @@ class ProgressiveSampler:
         for subject in graph.subjects:
             if not subject.uri or (subject_ids is not None and subject.id not in subject_ids):
                 continue
-            constrained = {self.ontology.wrap_iri(sq.property_id) for sq in subject.subqueries if sq.property_id}
+            constrained = {self.expand(sq.property_id) for sq in subject.subqueries if sq.property_id}
             if subject.id == count_subject:
                 # its instances are counted once each, only shared labels are categories
-                if self.ontology.wrap_iri(RDFS_LABEL) not in constrained:
+                if self.expand(RDFS_LABEL) not in constrained:
                     candidates.append(ConstraintCandidate(subject.id, "label", RDFS_LABEL, "xsd:string"))
             elif not any(isinstance(sq, SubjectSubQuery) and sq.instance_id for sq in subject.subqueries):
                 candidates.append(ConstraintCandidate(subject.id, "instance"))
             for prop, range_uri in self.literal_properties(subject.uri):
                 kind = self.value_kind(range_uri)
-                if kind is not None and self.ontology.wrap_iri(prop) not in constrained:
+                if kind is not None and self.expand(prop) not in constrained:
                     candidates.append(ConstraintCandidate(subject.id, kind, prop, range_uri))
         return candidates
 
@@ -1048,21 +1059,18 @@ class ProgressiveSampler:
             modified,
         )
 
-    def guarded(self, fn: Callable[..., T], *args) -> T:
-        with self._ontology_lock:
-            return fn(*args)
-
     def details(self, modification: ProgressiveModification) -> GraphDetails:
-        """Ontology data of the added elements, like the agent's add_subject/add_link."""
+        """Ontology data of the added elements (from the schema; left out if it does not
+        know them), like the agent's add_subject/add_link."""
         details = GraphDetails()
         for operation in modification.operations:
             data = operation.data
             if isinstance(data, AssistantSubject) and data.uri:
-                details.subjects[data.id] = self.subject(data.uri)
+                if (subject := self.schema.subject(data.uri)) is not None:
+                    details.subjects[data.id] = subject
             elif isinstance(data, AssistantLink):
-                prop = self.subject(data.uri)
-                link: SubjectLink = prop.to_link()
-                details.links[data.id] = link
+                if (link := self.schema.link(data.uri)) is not None:
+                    details.links[data.id] = link
         return details
 
     def count_job(self, graph: QueryGraph, count_subject: str, limit: int | None) -> Callable[[], int]:
@@ -1087,6 +1095,10 @@ class ProgressiveSampler:
         """A copy for one request (sharing the caches) whose endpoint queries are
         counted by its ``queries`` meter."""
         sampler = copy.copy(self)
+        source = self._schema_source
+        sampler.schema = source() if callable(source) else source
+        if sampler.schema is None:
+            raise RuntimeError("the schema index is not available")
         sampler.queries = QueryMeter()
         sampler.run_count = sampler.queries.wrap(self.run_count)
         sampler.run_select = sampler.queries.wrap(self.run_select)
@@ -1125,12 +1137,12 @@ class ProgressiveSampler:
             jobs.append(self.count_job(graph, count_subject, limit))
         for candidate in sampled:
             modification, modified = self.modification(graph, candidate, taken)
+            modification.details = self.details(modification)
             modifications.append(modification)
             # a starting point counts its own subject
             counted = count_subject if count_subject is not None else modification.operations[0].data.id
             nodes[modification.id] = (modified, counted)
             jobs.append(self.count_job(modified, counted, limit))
-        link_modifications = list(modifications)
 
         constraints = request.sample_constraints
         constraints = self.config.sample_constraints if constraints is None else constraints
@@ -1143,15 +1155,11 @@ class ProgressiveSampler:
                 modifications.append(modification)
                 nodes[modification.id] = (modified, count_subject)
                 jobs.append(self.count_job(modified, count_subject, limit))
-        for modification in link_modifications:
-            jobs.append(lambda m=modification: self.guarded(self.details, m))
 
         results = run_bounded(jobs, self.config.parallelism, self.config.timeout)
         base_count = results.pop(0) if graph.subjects else None
         for i, modification in enumerate(modifications):
             modification.count = results[i]
-        for i, modification in enumerate(link_modifications):
-            modification.details = results[len(modifications) + i]
         result = ProgressiveResult(
             base_count=base_count,
             modifications=modifications,
@@ -1219,16 +1227,15 @@ class ProgressiveSampler:
                     child.id = f"{parent.id} > {child.id}"
                     child.parent_id = parent.id
                     child.depth = depth
+                    # the children's details cover all their (cumulative) operations
+                    child.details = self.details(child)
                     nodes[child.id] = (modified, counted)
                     children.append(child)
                     jobs.append(self.count_job(modified, counted, limit))
-            # the children's details cover all their (cumulative) operations
-            jobs += [lambda m=child: self.guarded(self.details, m) for child in children]
             results = run_bounded(jobs, config.parallelism, config.timeout)
             budget.reserved = 0
             for i, child in enumerate(children):
                 child.count = results[i]
-                child.details = results[len(children) + i]
             if not children:
                 break
             result.modifications += children
