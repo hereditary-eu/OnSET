@@ -31,6 +31,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Annotated, Any, Literal
 
+from dotenv import load_dotenv
 from pydantic import BaseModel, Field, field_validator
 
 
@@ -298,11 +299,15 @@ class OnsetConfigFile(BaseModel):
 @lru_cache
 def load_config_file(path: str | os.PathLike | None = None) -> OnsetConfigFile:
     path = Path(path or os.getenv(CONFIG_PATH_ENV) or DEFAULT_CONFIG_PATH)
+    # secrets such as AGENT_LLM_API_KEY live in an (untracked) .env next to the config,
+    # variables set in the environment win
+    load_dotenv(path.resolve().parent / ".env", override=False)
     with open(path) as f:
         raw = json.load(f)
     print(f"Loading config file {path}:")
     cfg = OnsetConfigFile(**_interpolate_env(raw), base_dir=str(path.resolve().parent))
-    print(f"Interpolated config: {json.dumps(cfg.model_dump(), indent=2)}")
+    dump = json.dumps(cfg.model_dump(), indent=2)
+    print("Interpolated config:", re.sub(r'("api_key": )"[^"]*"', r'\1"***"', dump))
     return cfg
 
 

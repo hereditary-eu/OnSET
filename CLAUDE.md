@@ -25,7 +25,7 @@ npm run generate-client   # regenerate src/api/client.ts/Api.ts from the running
 
 Infrastructure: `cd docker/onset-data && docker compose up -d` starts Postgres (pgvector/PostGIS) and Redis. Each KG is a QLever instance started from its `docker/<kg>-data` folder (`qlever get-data && qlever index && qlever start`). DBpedia runs on port 7012.
 
-There is no test suite or linter configuration. CI (`.gitlab-ci.yml`) only builds and pushes the `frontend` and `backend` Docker images.
+Backend tests: `cd backend && uv run pytest` (offline fakes in `tests/fakes.py`; `-m live` for tests against real services; refresh OpenAPI snapshots with `ONSET_UPDATE_SNAPSHOTS=1`).
 
 ## Architecture
 
@@ -41,6 +41,8 @@ There is no test suite or linter configuration. CI (`.gitlab-ci.yml`) only build
 Routers live in `api/router/`: `classes` (hierarchy, search, instances, LLM search), `nlp` (embeddings/manifold), `search` (multimodal text/image encoding, dim-reduction). `GET /configs` is the only top-level, unscoped endpoint.
 
 **Frontend.** Routes are `/:configId/{explore,circles,graph,linked-circles}`. A router guard in `src/router/index.ts` sets the active config. A single generated `Api` client (`src/utils/api.ts`) rewrites each request's base URL to `${BACKEND_URL}/${activeConfigId}`. `src/api/client.ts/Api.ts` is generated: regenerate it, don't hand-edit it, after backend schema changes. The visual query editor's model is in `src/utils/sparql/`: node/link representation, `NodeLinkRepository` store, diff/history, and `querymapper.ts`, which turns the graph into SPARQL. Visualisations use d3 (`utils/d3-man`) and three.js (`utils/three-man`).
+
+**Ontology builder** (`backend/src/builder/`, `api/router/builder.py`, frontend `/onto-builder`). Builds an ontology for a text collection instead of querying a KG. The `builders` section of `config.json` (`BuilderConfig`) holds the text set (`files` glob, e.g. Enron maildir, or a `json` dict of records, e.g. GutBrainIE; paths resolve against the config file's directory, `ONSET_TEXT_SETS` points to `data/text-sets`) and the extraction model. Each session (`BuilderSession`) holds an `Ontology` (classes with typed fields, links), a SPARQL query and a triple store. The store is native Tentris where its wheel exists (x86_64 Linux) and rdflib's memory store elsewhere. Every schema change restarts a background build: `LlamaExtractor` (LFM2-350M-Extract, output constrained to `extraction_schema`) reads the documents one by one, and queries see the partial KG. `BuilderAgent` reuses the `GraphAgent` loop (state hooks `describe_state`/`state_message`/`call_tool`). Its tools edit the ontology, search the text (`Corpus.search`, TF-IDF sentence snippets), set or read the query, and prepare downloads. Routes live on the main app under `/onto-builder`, which is included before the `/{config_id}` mount.
 
 **Exploration / evaluation.** `exploration/` holds notebooks and the paper's query-generation evaluation (`exploration/querying/querygen.py`, `query-eval.py`, `init-db.py`, plus SLURM scripts). These scripts add `backend/src` to `sys.path` and use `ALL_CONFIG_MAP`. The generated `.tex` tables and figures are copied to the paper.
 

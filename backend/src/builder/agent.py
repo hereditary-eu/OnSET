@@ -22,7 +22,7 @@ After every change of the ontology, a small extraction model re-reads the docume
 - Use search_text to learn what the documents talk about before proposing classes, and to check whether a class or field actually occurs in them.
 - Keep classes concrete and extractable from single documents (e.g. Person, Organization, Meeting), give them short descriptions: the extraction model only sees the names and descriptions.
 - Fields hold literal values (string, integer, float, date, boolean, vector); relations between entities are links between classes.
-- Inspect the KG with set_query (SPARQL; the prefixes onto:, rdfs:, rdf:, xsd: and prov: are predefined, onto: is the ontology's namespace) or query_class, then get_results. The user sees the query and its results.
+- Inspect the KG with set_query (SPARQL; the prefixes onto:, rdfs:, rdf:, xsd: and prov: are predefined, onto: is the ontology's namespace) or query_class, then get_results. The user sees the query and its results, which update live. The build takes minutes and restarts after every ontology change, so do not call get_results repeatedly to wait for it: report what is there and let the user come back to you.
 - To export, call prepare_download; the user gets a download link.
 Finish with a short answer summarising what you did.
 """
