@@ -16,6 +16,7 @@ import uuid
 from typing import Callable, Iterator
 
 from agent.graph_tools import GraphEditorTools
+from agent.tools import ToolResult
 from agent.llm import (
     AgentLLMBase,
     LLMError,
@@ -133,12 +134,33 @@ class GraphAgent:
         # the graph as the model last saw it, to only repeat it when it changed
         self._seen_graph: str | None = None
 
+    # --- what the agent edits; overridden by agents of other state (builder/agent.py) ---
+    state_name = "query graph"
+
+    def describe_state(self) -> str:
+        return describe_graph(self.tools.graph)
+
+    def state_message(self) -> ServerMessage:
+        return GraphState(
+            graph=self.tools.graph.model_copy(deep=True),
+            details=self.tools.details_for(self.tools.graph),
+        )
+
+    def call_tool(self, name: str, arguments: str | None) -> tuple[ToolResult, dict]:
+        """Run a tool, returns its result and the extra ToolCall fields (graph changes)."""
+        before = self.tools.graph.model_copy(deep=True)
+        result = self.tools.call(name, arguments)
+        change = diff_graphs(before, self.tools.graph)
+        if change.empty:
+            return result, {}
+        return result, {"changes": change, "details": self.tools.details_for(change.added)}
+
     def _user_content(self, content: str) -> str:
-        graph = describe_graph(self.tools.graph)
-        if graph == self._seen_graph:
+        state = self.describe_state()
+        if state == self._seen_graph:
             return content
-        self._seen_graph = graph
-        return f"{content}\n\nCurrent query graph:\n{graph}"
+        self._seen_graph = state
+        return f"{content}\n\nCurrent {self.state_name}:\n{state}"
 
     def run_turn(
         self, content: str, cancelled: Callable[[], bool] = lambda: False
@@ -156,7 +178,6 @@ class GraphAgent:
                 if not calls:
                     yield Done(reason="completed")
                     return
-                graph_changed = False
                 for call in calls:
                     if cancelled():
                         # every call needs an output, or the history is invalid
@@ -164,13 +185,11 @@ class GraphAgent:
                             call, json.dumps({"error": "Cancelled by the user."})
                         )
                         continue
-                    graph_changed |= yield from self._run_tool(call)
-                if graph_changed:
-                    self._seen_graph = describe_graph(self.tools.graph)
-                    yield GraphState(
-                        graph=self.tools.graph.model_copy(deep=True),
-                        details=self.tools.details_for(self.tools.graph),
-                    )
+                    yield from self._run_tool(call)
+                state = self.describe_state()
+                if state != self._seen_graph:
+                    self._seen_graph = state
+                    yield self.state_message()
             yield ErrorMessage(
                 message=f"Stopped after {self.max_steps} steps without a final answer."
             )
@@ -238,7 +257,7 @@ class GraphAgent:
         )
 
     def _run_tool(self, call: dict) -> Iterator[ServerMessage]:
-        """Execute one function call, returns whether it changed the graph."""
+        """Execute one function call."""
         name = call.get("name", "")
         call_id = call.get("call_id") or new_id("call")
         call["call_id"] = call_id
@@ -250,9 +269,7 @@ class GraphAgent:
             arguments = {"raw": arguments}
         yield ToolCall(call_id=call_id, name=name, arguments=arguments)
 
-        before = self.tools.graph.model_copy(deep=True)
-        result = self.tools.call(name, call.get("arguments"))
-        change = diff_graphs(before, self.tools.graph)
+        result, extra = self.call_tool(name, call.get("arguments"))
         self._add_output(call, result.for_model())
         yield ToolCall(
             call_id=call_id,
@@ -261,7 +278,5 @@ class GraphAgent:
             status="success" if result.ok else "error",
             result=result.output,
             error=result.error,
-            changes=None if change.empty else change,
-            details=None if change.empty else self.tools.details_for(change.added),
+            **extra,
         )
-        return not change.empty

@@ -29,7 +29,7 @@ import re
 from enum import Enum
 from functools import lru_cache
 from pathlib import Path
-from typing import Annotated, Any
+from typing import Annotated, Any, Literal
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -176,6 +176,45 @@ class EvalConfig(BaseModel):
         return value
 
 
+class TextSetConfig(BaseModel):
+    """Where the documents of an ontology builder come from (builder/corpus.py).
+
+    ``files``: every file matching ``glob`` below ``path`` is one document (e-mails are
+    parsed: subject as title, plain text body). ``json``: ``path`` is a JSON object
+    (or list) of records, ``title_field`` and ``text_fields`` select the text.
+    Relative paths are resolved against the config file's directory.
+    """
+
+    format: Literal["files", "json"] = "files"
+    path: str
+    glob: str = "**/*"
+    title_field: str = "title"
+    text_fields: list[str] = Field(default_factory=lambda: ["text"])
+    # documents loaded (in sorted path/key order), None for all
+    max_documents: int | None = Field(1000, ge=1)
+    # characters of a document given to the extraction model
+    max_chars: int = Field(4000, ge=100)
+
+
+class BuilderConfig(BaseModel):
+    """One ontology builder (``builders`` in config.json, served under /onto-builder)."""
+
+    name: str
+    description: str = ""
+    text_set: TextSetConfig
+    # grammar-constrained extraction model (llama.cpp GGUF from the Hugging Face Hub)
+    extract_model_id: str = "LiquidAI/LFM2-350M-Extract-GGUF"
+    extract_model_quant: str = "*Q8_0.gguf"
+    extract_n_ctx: int = 8192
+    # default IRI prefix of new ontologies
+    prefix: str = "http://example.org/onto/"
+    # snippets returned by a text search
+    search_k: int = 8
+    # where saved sessions (TTL) are kept
+    save_dir: str = "builder-saves"
+    agent: AgentConfig = Field(default_factory=AgentConfig)
+
+
 CONFIG_PATH_ENV = "ONSET_CONFIG"
 DEFAULT_CONFIG_PATH = Path(__file__).resolve().parent.parent / "config.json"
 
@@ -216,6 +255,10 @@ class OnsetConfigFile(BaseModel):
     default: str
     defaults: dict[str, Any] = {}
     configs: dict[str, dict[str, Any]]
+    # ontology builders (builder/), they share the ``agent`` of the defaults
+    builders: dict[str, dict[str, Any]] = {}
+    # directory of the config file, relative builder paths resolve against it
+    base_dir: str = "."
 
     @field_validator("configs")
     @classmethod
@@ -243,6 +286,14 @@ class OnsetConfigFile(BaseModel):
     def base(self, key: str) -> EvalConfig:
         return self.resolve(key)[-1]
 
+    def builder(self, key: str) -> BuilderConfig:
+        """The ontology builder ``key`` (KeyError if unknown), paths made absolute."""
+        raw = _merge({"agent": self.defaults.get("agent", {})}, self.builders[key])
+        config = BuilderConfig(**raw)
+        config.text_set.path = str(Path(self.base_dir) / config.text_set.path)
+        config.save_dir = str(Path(self.base_dir) / config.save_dir)
+        return config
+
 
 @lru_cache
 def load_config_file(path: str | os.PathLike | None = None) -> OnsetConfigFile:
@@ -250,7 +301,7 @@ def load_config_file(path: str | os.PathLike | None = None) -> OnsetConfigFile:
     with open(path) as f:
         raw = json.load(f)
     print(f"Loading config file {path}:")
-    cfg = OnsetConfigFile(**_interpolate_env(raw))
+    cfg = OnsetConfigFile(**_interpolate_env(raw), base_dir=str(path.resolve().parent))
     print(f"Interpolated config: {json.dumps(cfg.model_dump(), indent=2)}")
     return cfg
 

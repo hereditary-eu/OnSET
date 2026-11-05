@@ -10,6 +10,7 @@ from pydantic import BaseModel
 from ontology import Graph
 from explorative.exp_model import SparqlQuery, Topic
 from api.router.agent import agent_router
+from api.router.builder import builder_router
 from api.router.classes import classes_router
 from api.router.multimodal import multimodal_router
 from api.router.nlp_helper import nlp_router
@@ -157,4 +158,6 @@ config_app.include_router(multimodal_router)
 config_app.include_router(agent_router)
 config_app.include_router(progressive_router)
 
+# before the config mount, which would match /onto-builder as a config id
+app.include_router(builder_router)
 app.mount(f"/{{{CONFIG_PATH_PARAM}}}", config_app)
