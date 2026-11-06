@@ -8,6 +8,9 @@
 // - applies `graph_state` from the agent to the editor through the bound GraphBinding,
 //   as a diff against the graph the server had before.
 //
+// Other chats over the same protocol (the ontology builder) pass a ChatEndpoint: their own
+// URL and session id, a hook for extra messages, and no graph binding (no graph_sync).
+//
 // Echo loops are avoided by comparing graphKey()s: after a `graph_state` is applied the
 // editor graph equals the server graph, so the editor's change does not sync back.
 import { reactive, watch, onBeforeUnmount, type Ref } from 'vue'
@@ -34,6 +37,19 @@ export interface GraphBinding {
     read(): AgentQueryGraph
     /** apply the agent's change (diff against the previous server graph) to the editor */
     apply(change: GraphChange, graph: AgentQueryGraph, details: GraphDetails): void
+}
+
+/** Where a chat connects to; `key` is what connect() was called with. */
+export interface ChatEndpoint {
+    url(key: string, session_id: string): URL
+    /** the server session to use (default: a new random id per key) */
+    session_id?(key: string): string
+    /** called with every server message before it is handled */
+    onMessage?(message: ServerMessage): void
+}
+
+const configEndpoint: ChatEndpoint = {
+    url: (config_id) => configWebSocketUrl(config_id, '/agent/ws'),
 }
 
 const SYNC_DEBOUNCE_MS = 400
@@ -73,6 +89,8 @@ export class AgentSession {
     // chats of other configurations, restored when switching back
     private config_sessions = new Map<string, ConfigSession>()
 
+    constructor(private endpoint: ChatEndpoint = configEndpoint) { }
+
     get connected(): boolean {
         return this.state.status == 'open'
     }
@@ -100,7 +118,7 @@ export class AgentSession {
             return
         }
         const saved = this.config_sessions.get(config_id)
-        this.state.session_id = saved?.session_id ?? newSessionId()
+        this.state.session_id = saved?.session_id ?? this.endpoint.session_id?.(config_id) ?? newSessionId()
         this.state.entries = saved?.entries ?? []
         this.reconnect_attempt = 0
         this.open()
@@ -130,7 +148,7 @@ export class AgentSession {
         if (!config_id) {
             return
         }
-        const url = configWebSocketUrl(config_id, '/agent/ws')
+        const url = this.endpoint.url(config_id, this.state.session_id!)
         url.searchParams.set('session_id', this.state.session_id!)
         this.state.status = this.reconnect_attempt > 0 ? 'reconnecting' : 'connecting'
         const socket = new WebSocket(url)
@@ -245,6 +263,7 @@ export class AgentSession {
     }
 
     private handle(message: ServerMessage) {
+        this.endpoint.onMessage?.(message)
         switch (message.type) {
             case 'session':
                 this.state.session_id = message.session_id
@@ -292,11 +311,14 @@ export class AgentSession {
                 break
             }
             case 'tool_call': {
-                const entry = this.state.entries.find((e) => e.kind == 'tool' && e.id == message.call_id)
+                // call ids come from the LLM and repeat across turns: only look in the current turn
+                const entries = this.state.entries
+                const turn_start = entries.map((e) => e.kind).lastIndexOf('user')
+                const entry = entries.slice(turn_start + 1).find((e) => e.kind == 'tool' && e.call.call_id == message.call_id)
                 if (entry && entry.kind == 'tool') {
                     entry.call = message
                 } else {
-                    this.state.entries.push({ kind: 'tool', id: message.call_id, call: message })
+                    entries.push({ kind: 'tool', id: nextEntryId('tool'), call: message })
                 }
                 break
             }

@@ -260,7 +260,7 @@ class OntologyManager:
                     WHERE {{
                         ?ind rdf:type {query.cls}.
                         ?ind rdfs:label ?ind_lbl.
-                        FILTER (lang(?ind_lbl) = "{self.config.language}")
+                        FILTER (lang(?ind_lbl) IN ("{self.config.language}", ""))
                         FILTER (CONTAINS(LCASE(?ind_lbl), LCASE("{query.q}")))
                     }}
                     ORDER BY ?ind ?ind_lbl

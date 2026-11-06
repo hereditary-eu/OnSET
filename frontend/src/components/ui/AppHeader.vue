@@ -43,6 +43,9 @@ const switchConfig = (event: Event) => {
                 <RouterLink :to="{ name: 'circles', params: { configId } }">Class tree</RouterLink>
             </nav>
         </template>
+        <RouterLink v-if="!configId" :to="{ name: 'onto-builder' }" class="builder_link">
+            <OnsetIcon icon="mdi-sitemap-outline" /> Ontology builder
+        </RouterLink>
         <a class="disclaimer" href="https://github.com/hereditary-eu/OnSET/blob/main/DISCLAIMER.md" target="_blank"
             rel="noopener">Research use only. Not a medical device.</a>
     </header>
@@ -115,6 +118,15 @@ const switchConfig = (event: Event) => {
 }
 
 .views~.disclaimer {
+    margin-left: 1rem;
+}
+
+.builder_link {
+    margin-left: auto;
+    color: var(--color-text);
+}
+
+.builder_link~.disclaimer {
     margin-left: 1rem;
 }
 

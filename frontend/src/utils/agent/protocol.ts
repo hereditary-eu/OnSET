@@ -3,6 +3,7 @@
 // the OpenAPI schema, so src/api/client.ts/Api.ts does not contain these types);
 // the protocol is documented there.
 import type { Subject, SubjectLink } from '@/api/client.ts/Api'
+import type { SessionState } from '@/utils/builder/api'
 import type { GraphLink, GraphSubject, GraphSubQuery } from '@/utils/sparql/querygraph'
 
 // --- graph payloads (backend assistant/assistant_model.py) ---
@@ -93,6 +94,12 @@ export interface GraphStateMessage {
     details: GraphDetails
 }
 
+/** The ontology builder's session state, sent after the agent changed it (instead of graph_state). */
+export interface BuilderStateMessage {
+    type: 'builder_state'
+    state: SessionState
+}
+
 export interface ErrorMessage {
     type: 'error'
     message: string
@@ -112,6 +119,7 @@ export type ServerMessage =
     | AssistantTextMessage
     | ToolCallMessage
     | GraphStateMessage
+    | BuilderStateMessage
     | ErrorMessage
     | DoneMessage
 

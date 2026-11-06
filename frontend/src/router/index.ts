@@ -11,6 +11,17 @@ const router = createRouter({
       name: 'configs',
       component: ConfigSelectView
     },
+    // the ontology builder is not bound to a configuration: before /:configId
+    {
+      path: '/onto-builder',
+      name: 'onto-builder',
+      component: () => import('@/views/OntoBuilderSelectView.vue')
+    },
+    {
+      path: '/onto-builder/:builderId',
+      name: 'onto-builder-session',
+      component: () => import('@/views/OntoBuilder.vue')
+    },
     // Every page below operates on the configuration given by the first path segment
     {
       path: '/:configId',

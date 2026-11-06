@@ -14,7 +14,7 @@
         </div>
         <div ref="list" class="agent_chat_list">
             <div v-if="session.state.entries.length == 0" class="message agent_chat_empty">
-                Describe how the query should change, e.g.
+                {{ hint }}
                 <span v-for="example in examples" :key="example" class="chip" @click="send(example)">{{ example }}</span>
             </div>
             <template v-for="entry in session.state.entries" :key="entry.id">
@@ -31,7 +31,7 @@
                 </div>
             </template>
         </div>
-        <ChatInput :busy="session.state.busy" :disabled="session.state.status != 'open'" @send="send"
+        <ChatInput :placeholder="placeholder" :busy="session.state.busy" :disabled="session.state.status != 'open'" @send="send"
             @cancel="session.cancel()"></ChatInput>
     </div>
 </template>
@@ -44,14 +44,20 @@ import ChatThinking from './ChatThinking.vue'
 import ChatToolCall from './ChatToolCall.vue'
 import type { AgentSession } from '@/utils/agent/agentSession'
 
-const { session } = defineProps<{
+const {
+    session,
+    hint = 'Describe how the query should change, e.g.',
+    placeholder = undefined,
+    examples = [
+        'Add a ship that has a homeport in a country.',
+        'Find films directed by a person born in a city.',
+    ],
+} = defineProps<{
     session: AgentSession
+    hint?: string
+    placeholder?: string
+    examples?: string[]
 }>()
-
-const examples = [
-    'Add a ship that has a homeport in a country.',
-    'Find films directed by a person born in a city.',
-]
 
 const list = ref<HTMLElement | null>(null)
 
@@ -124,6 +130,11 @@ watch(() => session.state.entries.length, () => nextTick(() => list.value?.scrol
     flex-direction: column;
     gap: var(--space-1);
     padding-right: 2px;
+}
+
+/* entries keep their height when the list overflows (tool calls have overflow: hidden) */
+.agent_chat_list>* {
+    flex-shrink: 0;
 }
 
 .agent_chat_empty {

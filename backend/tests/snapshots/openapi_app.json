@@ -1,6 +1,129 @@
 {
  "components": {
   "schemas": {
+   "Body_import_ttl_onto_builder__builder_id__sessions__session_id__import_post": {
+    "properties": {
+     "file": {
+      "contentMediaType": "application/octet-stream",
+      "title": "File",
+      "type": "string"
+     }
+    },
+    "required": [
+     "file"
+    ],
+    "title": "Body_import_ttl_onto_builder__builder_id__sessions__session_id__import_post",
+    "type": "object"
+   },
+   "BuildStatus": {
+    "properties": {
+     "errors": {
+      "default": 0,
+      "title": "Errors",
+      "type": "integer"
+     },
+     "last_error": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Last Error"
+     },
+     "processed": {
+      "default": 0,
+      "title": "Processed",
+      "type": "integer"
+     },
+     "running": {
+      "default": false,
+      "title": "Running",
+      "type": "boolean"
+     },
+     "store": {
+      "default": "",
+      "title": "Store",
+      "type": "string"
+     },
+     "total": {
+      "default": 0,
+      "title": "Total",
+      "type": "integer"
+     },
+     "triples": {
+      "default": 0,
+      "title": "Triples",
+      "type": "integer"
+     }
+    },
+    "title": "BuildStatus",
+    "type": "object"
+   },
+   "BuilderSummary": {
+    "properties": {
+     "description": {
+      "title": "Description",
+      "type": "string"
+     },
+     "id": {
+      "title": "Id",
+      "type": "string"
+     },
+     "name": {
+      "title": "Name",
+      "type": "string"
+     },
+     "prefix": {
+      "title": "Prefix",
+      "type": "string"
+     }
+    },
+    "required": [
+     "id",
+     "name",
+     "description",
+     "prefix"
+    ],
+    "title": "BuilderSummary",
+    "type": "object"
+   },
+   "Cell": {
+    "properties": {
+     "kind": {
+      "enum": [
+       "uri",
+       "literal",
+       "bnode"
+      ],
+      "title": "Kind",
+      "type": "string"
+     },
+     "label": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Label"
+     },
+     "value": {
+      "title": "Value",
+      "type": "string"
+     }
+    },
+    "required": [
+     "value",
+     "kind"
+    ],
+    "title": "Cell",
+    "type": "object"
+   },
    "ConfigSummary": {
     "properties": {
      "default": {
@@ -32,6 +155,384 @@
      "default"
     ],
     "title": "ConfigSummary",
+    "type": "object"
+   },
+   "DocumentOut": {
+    "properties": {
+     "id": {
+      "title": "Id",
+      "type": "string"
+     },
+     "text": {
+      "title": "Text",
+      "type": "string"
+     },
+     "title": {
+      "title": "Title",
+      "type": "string"
+     }
+    },
+    "required": [
+     "id",
+     "title",
+     "text"
+    ],
+    "title": "DocumentOut",
+    "type": "object"
+   },
+   "HTTPValidationError": {
+    "properties": {
+     "detail": {
+      "items": {
+       "$ref": "#/components/schemas/ValidationError"
+      },
+      "title": "Detail",
+      "type": "array"
+     }
+    },
+    "title": "HTTPValidationError",
+    "type": "object"
+   },
+   "OntoClass": {
+    "properties": {
+     "description": {
+      "default": "",
+      "title": "Description",
+      "type": "string"
+     },
+     "fields": {
+      "items": {
+       "$ref": "#/components/schemas/OntoField"
+      },
+      "title": "Fields",
+      "type": "array"
+     },
+     "id": {
+      "title": "Id",
+      "type": "string"
+     },
+     "label": {
+      "default": "",
+      "title": "Label",
+      "type": "string"
+     },
+     "x": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "X"
+     },
+     "y": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Y"
+     }
+    },
+    "required": [
+     "id"
+    ],
+    "title": "OntoClass",
+    "type": "object"
+   },
+   "OntoField": {
+    "properties": {
+     "description": {
+      "default": "",
+      "title": "Description",
+      "type": "string"
+     },
+     "name": {
+      "title": "Name",
+      "type": "string"
+     },
+     "type": {
+      "default": "string",
+      "enum": [
+       "string",
+       "integer",
+       "float",
+       "date",
+       "boolean",
+       "vector"
+      ],
+      "title": "Type",
+      "type": "string"
+     }
+    },
+    "required": [
+     "name"
+    ],
+    "title": "OntoField",
+    "type": "object"
+   },
+   "OntoLink": {
+    "properties": {
+     "description": {
+      "default": "",
+      "title": "Description",
+      "type": "string"
+     },
+     "id": {
+      "title": "Id",
+      "type": "string"
+     },
+     "label": {
+      "default": "",
+      "title": "Label",
+      "type": "string"
+     },
+     "source": {
+      "title": "Source",
+      "type": "string"
+     },
+     "target": {
+      "title": "Target",
+      "type": "string"
+     }
+    },
+    "required": [
+     "id",
+     "source",
+     "target"
+    ],
+    "title": "OntoLink",
+    "type": "object"
+   },
+   "Ontology": {
+    "properties": {
+     "classes": {
+      "items": {
+       "$ref": "#/components/schemas/OntoClass"
+      },
+      "title": "Classes",
+      "type": "array"
+     },
+     "links": {
+      "items": {
+       "$ref": "#/components/schemas/OntoLink"
+      },
+      "title": "Links",
+      "type": "array"
+     },
+     "prefix": {
+      "default": "http://example.org/onto/",
+      "title": "Prefix",
+      "type": "string"
+     }
+    },
+    "title": "Ontology",
+    "type": "object"
+   },
+   "QueryIn": {
+    "properties": {
+     "query": {
+      "title": "Query",
+      "type": "string"
+     },
+     "visual_query": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Visual Query"
+     }
+    },
+    "required": [
+     "query"
+    ],
+    "title": "QueryIn",
+    "type": "object"
+   },
+   "QueryResult": {
+    "properties": {
+     "columns": {
+      "default": [],
+      "items": {
+       "type": "string"
+      },
+      "title": "Columns",
+      "type": "array"
+     },
+     "error": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Error"
+     },
+     "rows": {
+      "default": [],
+      "items": {
+       "items": {
+        "anyOf": [
+         {
+          "$ref": "#/components/schemas/Cell"
+         },
+         {
+          "type": "null"
+         }
+        ]
+       },
+       "type": "array"
+      },
+      "title": "Rows",
+      "type": "array"
+     },
+     "status": {
+      "$ref": "#/components/schemas/BuildStatus",
+      "default": {
+       "errors": 0,
+       "processed": 0,
+       "running": false,
+       "store": "",
+       "total": 0,
+       "triples": 0
+      }
+     }
+    },
+    "title": "QueryResult",
+    "type": "object"
+   },
+   "SaveOut": {
+    "properties": {
+     "path": {
+      "title": "Path",
+      "type": "string"
+     }
+    },
+    "required": [
+     "path"
+    ],
+    "title": "SaveOut",
+    "type": "object"
+   },
+   "SessionState": {
+    "properties": {
+     "ontology": {
+      "$ref": "#/components/schemas/Ontology"
+     },
+     "query": {
+      "title": "Query",
+      "type": "string"
+     },
+     "session_id": {
+      "title": "Session Id",
+      "type": "string"
+     },
+     "status": {
+      "$ref": "#/components/schemas/BuildStatus"
+     },
+     "version": {
+      "title": "Version",
+      "type": "integer"
+     },
+     "visual_query": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Visual Query"
+     }
+    },
+    "required": [
+     "session_id",
+     "version",
+     "ontology",
+     "query",
+     "status"
+    ],
+    "title": "SessionState",
+    "type": "object"
+   },
+   "Snippet": {
+    "properties": {
+     "doc_id": {
+      "title": "Doc Id",
+      "type": "string"
+     },
+     "score": {
+      "title": "Score",
+      "type": "number"
+     },
+     "text": {
+      "title": "Text",
+      "type": "string"
+     },
+     "title": {
+      "title": "Title",
+      "type": "string"
+     }
+    },
+    "required": [
+     "doc_id",
+     "title",
+     "text",
+     "score"
+    ],
+    "title": "Snippet",
+    "type": "object"
+   },
+   "ValidationError": {
+    "properties": {
+     "ctx": {
+      "title": "Context",
+      "type": "object"
+     },
+     "input": {
+      "title": "Input"
+     },
+     "loc": {
+      "items": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "integer"
+        }
+       ]
+      },
+      "title": "Location",
+      "type": "array"
+     },
+     "msg": {
+      "title": "Message",
+      "type": "string"
+     },
+     "type": {
+      "title": "Error Type",
+      "type": "string"
+     }
+    },
+    "required": [
+     "loc",
+     "msg",
+     "type"
+    ],
+    "title": "ValidationError",
     "type": "object"
    }
   }
@@ -78,6 +579,735 @@
      }
     },
     "summary": "List Configs"
+   }
+  },
+  "/onto-builder/configs": {
+   "get": {
+    "operationId": "list_builders_onto_builder_configs_get",
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/BuilderSummary"
+         },
+         "title": "Response List Builders Onto Builder Configs Get",
+         "type": "array"
+        }
+       }
+      },
+      "description": "Successful Response"
+     }
+    },
+    "summary": "List Builders",
+    "tags": [
+     "onto-builder"
+    ]
+   }
+  },
+  "/onto-builder/{builder_id}/documents/{doc_id}": {
+   "get": {
+    "operationId": "get_document_onto_builder__builder_id__documents__doc_id__get",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "builder_id",
+      "required": true,
+      "schema": {
+       "title": "Builder Id",
+       "type": "string"
+      }
+     },
+     {
+      "in": "path",
+      "name": "doc_id",
+      "required": true,
+      "schema": {
+       "title": "Doc Id",
+       "type": "string"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/DocumentOut"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Get Document",
+    "tags": [
+     "onto-builder"
+    ]
+   }
+  },
+  "/onto-builder/{builder_id}/search": {
+   "get": {
+    "operationId": "search_text_onto_builder__builder_id__search_get",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "builder_id",
+      "required": true,
+      "schema": {
+       "title": "Builder Id",
+       "type": "string"
+      }
+     },
+     {
+      "in": "query",
+      "name": "q",
+      "required": true,
+      "schema": {
+       "title": "Q",
+       "type": "string"
+      }
+     },
+     {
+      "in": "query",
+      "name": "k",
+      "required": false,
+      "schema": {
+       "default": 20,
+       "maximum": 100,
+       "minimum": 1,
+       "title": "K",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/Snippet"
+         },
+         "title": "Response Search Text Onto Builder  Builder Id  Search Get",
+         "type": "array"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Search Text",
+    "tags": [
+     "onto-builder"
+    ]
+   }
+  },
+  "/onto-builder/{builder_id}/sessions/{session_id}": {
+   "get": {
+    "operationId": "get_state_onto_builder__builder_id__sessions__session_id__get",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "builder_id",
+      "required": true,
+      "schema": {
+       "title": "Builder Id",
+       "type": "string"
+      }
+     },
+     {
+      "in": "path",
+      "name": "session_id",
+      "required": true,
+      "schema": {
+       "title": "Session Id",
+       "type": "string"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/SessionState"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Get State",
+    "tags": [
+     "onto-builder"
+    ]
+   }
+  },
+  "/onto-builder/{builder_id}/sessions/{session_id}/class-query/{class_id}": {
+   "get": {
+    "operationId": "get_class_query_onto_builder__builder_id__sessions__session_id__class_query__class_id__get",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "builder_id",
+      "required": true,
+      "schema": {
+       "title": "Builder Id",
+       "type": "string"
+      }
+     },
+     {
+      "in": "path",
+      "name": "session_id",
+      "required": true,
+      "schema": {
+       "title": "Session Id",
+       "type": "string"
+      }
+     },
+     {
+      "in": "path",
+      "name": "class_id",
+      "required": true,
+      "schema": {
+       "title": "Class Id",
+       "type": "string"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/QueryIn"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Get Class Query",
+    "tags": [
+     "onto-builder"
+    ]
+   }
+  },
+  "/onto-builder/{builder_id}/sessions/{session_id}/export": {
+   "get": {
+    "operationId": "export_ttl_onto_builder__builder_id__sessions__session_id__export_get",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "builder_id",
+      "required": true,
+      "schema": {
+       "title": "Builder Id",
+       "type": "string"
+      }
+     },
+     {
+      "in": "path",
+      "name": "session_id",
+      "required": true,
+      "schema": {
+       "title": "Session Id",
+       "type": "string"
+      }
+     },
+     {
+      "in": "query",
+      "name": "content",
+      "required": false,
+      "schema": {
+       "default": "all",
+       "enum": [
+        "ontology",
+        "kg",
+        "all"
+       ],
+       "title": "Content",
+       "type": "string"
+      }
+     },
+     {
+      "in": "query",
+      "name": "prefix",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Prefix"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Export Ttl",
+    "tags": [
+     "onto-builder"
+    ]
+   }
+  },
+  "/onto-builder/{builder_id}/sessions/{session_id}/import": {
+   "post": {
+    "operationId": "import_ttl_onto_builder__builder_id__sessions__session_id__import_post",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "builder_id",
+      "required": true,
+      "schema": {
+       "title": "Builder Id",
+       "type": "string"
+      }
+     },
+     {
+      "in": "path",
+      "name": "session_id",
+      "required": true,
+      "schema": {
+       "title": "Session Id",
+       "type": "string"
+      }
+     },
+     {
+      "in": "query",
+      "name": "prefix",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Prefix"
+      }
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "multipart/form-data": {
+       "schema": {
+        "$ref": "#/components/schemas/Body_import_ttl_onto_builder__builder_id__sessions__session_id__import_post"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/SessionState"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Import Ttl",
+    "tags": [
+     "onto-builder"
+    ]
+   }
+  },
+  "/onto-builder/{builder_id}/sessions/{session_id}/ontology": {
+   "put": {
+    "operationId": "put_ontology_onto_builder__builder_id__sessions__session_id__ontology_put",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "builder_id",
+      "required": true,
+      "schema": {
+       "title": "Builder Id",
+       "type": "string"
+      }
+     },
+     {
+      "in": "path",
+      "name": "session_id",
+      "required": true,
+      "schema": {
+       "title": "Session Id",
+       "type": "string"
+      }
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/Ontology"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/SessionState"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Put Ontology",
+    "tags": [
+     "onto-builder"
+    ]
+   }
+  },
+  "/onto-builder/{builder_id}/sessions/{session_id}/query": {
+   "put": {
+    "operationId": "put_query_onto_builder__builder_id__sessions__session_id__query_put",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "builder_id",
+      "required": true,
+      "schema": {
+       "title": "Builder Id",
+       "type": "string"
+      }
+     },
+     {
+      "in": "path",
+      "name": "session_id",
+      "required": true,
+      "schema": {
+       "title": "Session Id",
+       "type": "string"
+      }
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/QueryIn"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/SessionState"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Put Query",
+    "tags": [
+     "onto-builder"
+    ]
+   }
+  },
+  "/onto-builder/{builder_id}/sessions/{session_id}/rebuild": {
+   "post": {
+    "operationId": "rebuild_onto_builder__builder_id__sessions__session_id__rebuild_post",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "builder_id",
+      "required": true,
+      "schema": {
+       "title": "Builder Id",
+       "type": "string"
+      }
+     },
+     {
+      "in": "path",
+      "name": "session_id",
+      "required": true,
+      "schema": {
+       "title": "Session Id",
+       "type": "string"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/SessionState"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Rebuild",
+    "tags": [
+     "onto-builder"
+    ]
+   }
+  },
+  "/onto-builder/{builder_id}/sessions/{session_id}/results": {
+   "get": {
+    "operationId": "get_results_onto_builder__builder_id__sessions__session_id__results_get",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "builder_id",
+      "required": true,
+      "schema": {
+       "title": "Builder Id",
+       "type": "string"
+      }
+     },
+     {
+      "in": "path",
+      "name": "session_id",
+      "required": true,
+      "schema": {
+       "title": "Session Id",
+       "type": "string"
+      }
+     },
+     {
+      "in": "query",
+      "name": "limit",
+      "required": false,
+      "schema": {
+       "default": 500,
+       "maximum": 5000,
+       "minimum": 1,
+       "title": "Limit",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/QueryResult"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Get Results",
+    "tags": [
+     "onto-builder"
+    ]
+   }
+  },
+  "/onto-builder/{builder_id}/sessions/{session_id}/save": {
+   "post": {
+    "operationId": "save_session_onto_builder__builder_id__sessions__session_id__save_post",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "builder_id",
+      "required": true,
+      "schema": {
+       "title": "Builder Id",
+       "type": "string"
+      }
+     },
+     {
+      "in": "path",
+      "name": "session_id",
+      "required": true,
+      "schema": {
+       "title": "Session Id",
+       "type": "string"
+      }
+     },
+     {
+      "in": "query",
+      "name": "content",
+      "required": false,
+      "schema": {
+       "default": "all",
+       "enum": [
+        "ontology",
+        "kg",
+        "all"
+       ],
+       "title": "Content",
+       "type": "string"
+      }
+     },
+     {
+      "in": "query",
+      "name": "prefix",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Prefix"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/SaveOut"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Save Session",
+    "tags": [
+     "onto-builder"
+    ]
    }
   }
  }

@@ -78,6 +78,10 @@ watch(() => route.query.failed, (failed) => {
                 </RouterLink>
             </div>
         </div>
+        <p class="intro builder">
+            No knowledge graph yet? The <RouterLink :to="{ name: 'onto-builder' }">ontology builder</RouterLink>
+            extracts one from a collection of text documents while you design its ontology.
+        </p>
     </main>
 </template>
 
@@ -150,6 +154,10 @@ select {
 .action.primary {
     border-color: var(--color-link);
     color: var(--color-link);
+}
+
+.builder {
+    margin-top: 2rem;
 }
 
 .notice {

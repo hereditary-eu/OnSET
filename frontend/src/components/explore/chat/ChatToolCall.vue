@@ -17,11 +17,17 @@
                 <pre>{{ call.error ?? pretty(call.result) }}</pre>
             </template>
         </div>
+        <a v-if="download_url" class="chip chat_tool_download" :href="download_url" target="_blank" rel="noopener">
+            <OnsetIcon icon="mdi-download" /> Download {{ download?.content }} (Turtle)
+        </a>
+        <ul v-if="snippets.length && !expanded" class="chat_tool_snippets">
+            <li v-for="(s, i) in snippets" :key="i"><b>{{ s.title }}</b>: {{ s.text }}</li>
+        </ul>
         <ChatGraphPreview v-if="call.changes" :change="call.changes" :details="call.details"></ChatGraphPreview>
     </div>
 </template>
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, inject, ref } from 'vue'
 import OnsetIcon from '@/components/ui/OnsetIcon.vue'
 import ChatGraphPreview from './ChatGraphPreview.vue'
 import type { ToolCallMessage } from '@/utils/agent/protocol'
@@ -31,6 +37,15 @@ const { call } = defineProps<{
 }>()
 
 const expanded = ref(false)
+
+// ontology builder tools: prepare_download -> download link (the builder view provides the export URL),
+// search_text -> the found sentences
+const exportUrl = inject<((content: string, prefix: string) => string) | null>('builderExportUrl', null)
+const download = computed(() => call.status == 'success' && call.name == 'prepare_download'
+    ? (call.result as { download?: { content: string, prefix: string } } | null)?.download : undefined)
+const download_url = computed(() => download.value && exportUrl ? exportUrl(download.value.content, download.value.prefix) : '')
+const snippets = computed(() => call.status == 'success' && call.name == 'search_text' && Array.isArray(call.result)
+    ? call.result as { title: string, text: string }[] : [])
 
 const status_icon = computed(() => {
     switch (call.status) {
@@ -122,6 +137,23 @@ const pretty = (value: unknown) => JSON.stringify(value, null, 1)
     white-space: nowrap;
     color: var(--c-accent);
     font-weight: 600;
+}
+
+.chat_tool_download {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    margin: 0 var(--space-1) var(--space-1);
+    color: inherit;
+    font-size: var(--fs-xs);
+}
+
+.chat_tool_snippets {
+    margin: 0;
+    padding: 0 var(--space-1) var(--space-1);
+    list-style: none;
+    max-height: 8rem;
+    overflow: auto;
 }
 
 .chat_tool_body {

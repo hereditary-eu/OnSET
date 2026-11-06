@@ -9,8 +9,8 @@
         </header>
         <div class="panel_body">
             <ResultMinitatures v-if="ui_state.result_mode == ResultMode.MINI" :diff="diff" :store="store"
-                :query_string="query_string"></ResultMinitatures>
-            <ResultPlot v-else :store="store" :query_string="query_string" :diff="diff"></ResultPlot>
+                :query_string="query_string" :refresh="refresh"></ResultMinitatures>
+            <ResultPlot v-else :store="store" :query_string="query_string" :diff="diff" :refresh="refresh"></ResultPlot>
         </div>
     </section>
 </template>
@@ -26,7 +26,7 @@ enum ResultMode {
     MINI = 'Miniatures',
     PROP = 'Properties',
 }
-const { store, query_string, diff } = defineProps({
+const { store, query_string, diff, refresh } = defineProps({
     store: {
         type: Object as () => NodeLinkRepository,
         required: true
@@ -38,6 +38,11 @@ const { store, query_string, diff } = defineProps({
     diff: {
         type: Object as () => NodeLinkRepositoryDiff | null,
         default: null
+    },
+    // bump to run the query again (e.g. while the data changes)
+    refresh: {
+        type: Number,
+        default: 0
     }
 })
 const ui_state = reactive({

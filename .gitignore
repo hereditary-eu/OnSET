@@ -19,3 +19,4 @@ Qleverfile-ui.yml
 *.ui-db.sqlite3
 .env
 .claude/worktrees/
+backend/builder-saves/
