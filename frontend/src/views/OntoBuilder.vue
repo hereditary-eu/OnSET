@@ -45,7 +45,7 @@
                 </div>
             </section>
 
-            <BuilderResults v-if="state" ref="results_panel" :key="sessionId" :query="state.query" :result="result"
+            <BuilderResults v-if="state" ref="results_panel" :key="sessionId" :query="state.query" :visual-query="state.visual_query" :result="result"
                 :classes="state.ontology.classes" :refresh="results_refresh" v-model:collapsed="results_collapsed"
                 @apply="applyQuery" @query-class="queryClass" />
 
@@ -212,8 +212,8 @@ const run = async (action: () => Promise<unknown>) => {
         error.value = describe(e)
     }
 }
-const applyQuery = (query: string) => run(async () => {
-    adopt(await api.value.setQuery(query))
+const applyQuery = (query: string, visual_query: string | null = null) => run(async () => {
+    adopt(await api.value.setQuery(query, visual_query))
     await loadResults()
 })
 const queryClass = (class_id: string) => run(async () => {

@@ -77,6 +77,7 @@ class SessionState(BaseModel):
     version: int
     ontology: Ontology
     query: str
+    visual_query: str | None = None
     status: BuildStatus
 
 
@@ -99,6 +100,9 @@ class BuilderSession:
         self.builder = builder
         self.ontology = Ontology(prefix=builder.config.prefix)
         self.query = ""
+        # the visual query (the editor's serialized NodeLinkRepository) that generated
+        # ``query``, None if the query is plain SPARQL (e.g. the agent's)
+        self.visual_query: str | None = None
         # bumped on every change of the ontology or query (clients refetch the state)
         self.version = 0
         # instance triples of an imported TTL, kept across rebuilds
@@ -122,7 +126,7 @@ class BuilderSession:
         with self._lock:
             return SessionState(
                 session_id=self.session_id, version=self.version,
-                ontology=self.ontology.model_copy(deep=True), query=self.query,
+                ontology=self.ontology.model_copy(deep=True), query=self.query, visual_query=self.visual_query,
                 status=self.status.model_copy(),
             )
 
@@ -136,9 +140,10 @@ class BuilderSession:
             else:
                 self._write_schema()
 
-    def set_query(self, query: str):
+    def set_query(self, query: str, visual_query: str | None = None):
         with self._lock:
             self.query = query
+            self.visual_query = visual_query
             self.version += 1
 
     @cached_property
@@ -300,7 +305,7 @@ class BuilderSession:
         path = self.save_path
         path.parent.mkdir(parents=True, exist_ok=True)
         with self._lock:
-            state = {"ontology": self.ontology.model_dump(), "query": self.query}
+            state = {"ontology": self.ontology.model_dump(), "query": self.query, "visual_query": self.visual_query}
         path.with_suffix(".json").write_text(json.dumps(state, indent=2))
         ttl = path.with_suffix(".ttl")
         ttl.write_text(self.export(content, prefix))
@@ -312,6 +317,7 @@ class BuilderSession:
             state = json.loads(path.read_text())
             self.ontology = Ontology(**state["ontology"])
             self.query = state.get("query", "")
+            self.visual_query = state.get("visual_query")
             self.rebuild()
 
 

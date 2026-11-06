@@ -75,16 +75,19 @@ import { fitNode } from '@/utils/sparql/helpers'
 import OnsetBtn from '@/components/ui/OnsetBtn.vue'
 import OnsetIcon from '@/components/ui/OnsetIcon.vue'
 import SelectorGroup from '@/components/ui/SelectorGroup.vue'
+import { parseJSON, stringifyJSON } from '@/utils/parsing'
 import { cellText, type OntoClass, type QueryResult } from '@/utils/builder/api'
 
-const { query, result, classes, refresh = 0 } = defineProps<{
+const { query, visualQuery = null, result, classes, refresh = 0 } = defineProps<{
     query: string
+    // the serialized visual query (NodeLinkRepository, as the explore view saves it) behind ``query``
+    visualQuery?: string | null
     result: QueryResult | null
     classes: OntoClass[]
     // bumped while the KG grows, re-runs the visual query's results
     refresh?: number
 }>()
-const emit = defineEmits<{ apply: [query: string], queryClass: [class_id: string] }>()
+const emit = defineEmits<{ apply: [query: string, visual_query?: string | null], queryClass: [class_id: string] }>()
 const collapsed = defineModel<boolean>('collapsed', { default: false })
 
 const display = ref('labels')
@@ -92,12 +95,11 @@ const display = ref('labels')
 const draft = ref(query)
 watch(() => query, (q) => draft.value = q)
 
-// --- visual mode: the editor's query is the session's query (so the agent sees it) ---
-const store = ref(new NodeLinkRepository())
-const visual_query = ref('')
-// queries the editor generated: any other session query (e.g. the agent's) is shown as SPARQL
-const generated = new Set<string>()
-const mode = ref<'visual' | 'sparql'>(query ? 'sparql' : 'visual')
+// --- visual mode: the editor's query is the session's query (so the agent sees it), saved with
+// the serialized editor graph; a session query without one (e.g. the agent's) is shown as SPARQL ---
+const store = ref(visualQuery ? parseJSON<NodeLinkRepository>(visualQuery) : new NodeLinkRepository())
+const visual_query = ref(visualQuery ? query : '')
+const mode = ref<'visual' | 'sparql'>(visualQuery || !query ? 'visual' : 'sparql')
 
 let put_timer: ReturnType<typeof setTimeout> | null = null
 const applyVisual = () => {
@@ -105,8 +107,14 @@ const applyVisual = () => {
         clearTimeout(put_timer)
     }
     put_timer = setTimeout(() => {
-        if (mode.value == 'visual' && visual_query.value && visual_query.value != query) {
-            emit('apply', visual_query.value)
+        // an empty editor keeps the session query (e.g. a SPARQL one when switching modes)
+        if (mode.value != 'visual' || !store.value.nodes.length) {
+            return
+        }
+        // also saves layout-only changes of the editor graph
+        const serialized = stringifyJSON(store.value)
+        if (visual_query.value != query || serialized != visualQuery) {
+            emit('apply', visual_query.value, serialized)
         }
     }, 500)
 }
@@ -115,15 +123,12 @@ watch(store, () => {
         return
     }
     const q = store.value.nodes.length ? store.value.generateQuery().trim() : ''
-    if (q != visual_query.value) {
-        visual_query.value = q
-        generated.add(q)
-        applyVisual()
-    }
+    visual_query.value = q
+    applyVisual()
 }, { deep: true })
 watch(mode, applyVisual)
-watch(() => query, (q) => {
-    if (q && !generated.has(q)) {
+watch(() => [query, visualQuery], () => {
+    if (query && !visualQuery) {
         mode.value = 'sparql'
     }
 })

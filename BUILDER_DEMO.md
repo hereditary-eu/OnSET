@@ -49,7 +49,7 @@ Every change is sent to the backend. A change to the schema (names, types, links
 
 **The middle panel** holds the query and its results, and collapses to a narrow strip. It has two modes:
 
-- **Visual:** the query editor of the explore view. "Instances of…" and the table button on each card start a query with that class; add links and fields from the points around a class. The instances (or, for fields, a plot) show below.
+- **Visual:** the query editor of the explore view. "Instances of…" and the table button on each card start a query with that class; add links and fields from the points around a class. The instances (or, for fields, a plot) show below. The editor graph is saved with the session in the explore view's format, so it comes back after a reload.
 - **SPARQL:** the query as text with a result table. Here "Instances of…" and the table button generate a query for a class, with its label, fields and links. A query the agent sets is shown in this mode.
 - The prefixes `onto:`, `rdfs:`, `rdf:`, `xsd:` and `prov:` are predefined.
 - Results refresh while the build runs, and the table switches between labels and IRIs.
@@ -102,7 +102,7 @@ The *Import / Export* dialog:
 - **Prefix IRI:** settable. Ontology terms and instances are rewritten to the new prefix on export.
 - **Content:** the ontology (OWL classes, datatype and object properties with domains and ranges), the KG, or both.
 - **Download** a Turtle file.
-- **Save on server:** writes the TTL plus the session (ontology with layout and query) to `backend/builder-saves/<builder>/<session>`. The session is restored from there after a restart.
+- **Save on server:** writes the TTL plus the session (ontology with layout, query and visual query) to `backend/builder-saves/<builder>/<session>`. The session is restored from there after a restart.
 - **Import** a TTL file. Its OWL/RDFS classes and properties become the ontology, and its instance triples are kept in the KG.
 
 The agent can prepare a download as well:

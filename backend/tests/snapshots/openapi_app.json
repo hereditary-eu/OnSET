@@ -339,6 +339,17 @@
      "query": {
       "title": "Query",
       "type": "string"
+     },
+     "visual_query": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Visual Query"
      }
     },
     "required": [
@@ -433,6 +444,17 @@
      "version": {
       "title": "Version",
       "type": "integer"
+     },
+     "visual_query": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Visual Query"
      }
     },
     "required": [

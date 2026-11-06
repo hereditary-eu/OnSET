@@ -135,10 +135,11 @@ def test_export_import_roundtrip(builder):
     rows = other.run_query(class_query(onto, "Person")).rows
     assert {r[1].value for r in rows} == {"Alice Smith", "Bob Jones"}
     # saved sessions are restored
-    session.set_query("SELECT * WHERE { ?s ?p ?o }")
+    session.set_query("SELECT * WHERE { ?s ?p ?o }", visual_query='{"nodes":[]}')
     session.save("ontology")
     del builder.sessions["s1"]
     assert builder.session("s1").query == "SELECT * WHERE { ?s ?p ?o }"
+    assert builder.session("s1").visual_query == '{"nodes":[]}'
 
 
 def test_api(builder, client, monkeypatch):
@@ -150,7 +151,11 @@ def test_api(builder, client, monkeypatch):
     assert state["version"] == 1
     wait_built(builder.session("a"))
     query = client.get("/onto-builder/test/sessions/a/class-query/Person").json()["query"]
-    client.put("/onto-builder/test/sessions/a/query", json={"query": query})
+    # a visual query is kept with the SPARQL it generated, a plain query drops it
+    state = client.put("/onto-builder/test/sessions/a/query", json={"query": query, "visual_query": '{"nodes":[]}'}).json()
+    assert state["visual_query"] == '{"nodes":[]}'
+    state = client.put("/onto-builder/test/sessions/a/query", json={"query": query}).json()
+    assert state["visual_query"] is None
     results = client.get("/onto-builder/test/sessions/a/results").json()
     assert len(results["rows"]) == 2 and not results["status"]["running"]
     ttl = client.get("/onto-builder/test/sessions/a/export", params={"content": "ontology"})

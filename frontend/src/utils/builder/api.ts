@@ -15,7 +15,7 @@ export interface OntoClass { id: string, label: string, description: string, fie
 export interface OntoLink { id: string, label: string, source: string, target: string, description: string }
 export interface Ontology { prefix: string, classes: OntoClass[], links: OntoLink[] }
 export interface BuildStatus { running: boolean, processed: number, total: number, triples: number, errors: number, last_error: string | null, store: string }
-export interface SessionState { session_id: string, version: number, ontology: Ontology, query: string, status: BuildStatus }
+export interface SessionState { session_id: string, version: number, ontology: Ontology, query: string, visual_query: string | null, status: BuildStatus }
 export interface Cell { value: string, kind: 'uri' | 'literal' | 'bnode', label: string | null }
 export interface QueryResult { columns: string[], rows: (Cell | null)[][], error: string | null, status: BuildStatus }
 
@@ -38,7 +38,8 @@ export function builderSession(bid: string, sid: string) {
     return {
         state: () => get<SessionState>(base),
         setOntology: (ontology: Ontology) => put('/ontology', ontology),
-        setQuery: (query: string) => put('/query', { query }),
+        /** ``visual_query``: the serialized visual query (NodeLinkRepository) that generated ``query`` */
+        setQuery: (query: string, visual_query: string | null = null) => put('/query', { query, visual_query }),
         classQuery: (class_id: string) => get<{ query: string }>(`${base}/class-query/${encodeURIComponent(class_id)}`),
         results: (limit = 500) => get<QueryResult>(`${base}/results`, { limit }),
         rebuild: () => post<SessionState>('/rebuild'),

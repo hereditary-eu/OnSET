@@ -91,12 +91,14 @@ def put_ontology(builder_id: str, session_id: str, ontology: Ontology = Body(...
 
 class QueryIn(BaseModel):
     query: str
+    # the visual query that generated ``query`` (frontend NodeLinkRepository JSON)
+    visual_query: str | None = None
 
 
 @builder_router.put("/{builder_id}/sessions/{session_id}/query")
 def put_query(builder_id: str, session_id: str, body: QueryIn = Body(...)) -> SessionState:
     session = get_session(builder_id, session_id)
-    session.set_query(body.query)
+    session.set_query(body.query, body.visual_query)
     return session.state()
 
 
