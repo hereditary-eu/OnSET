@@ -2,9 +2,11 @@
     <!-- Graph editor of a builder ontology: classes are cards listing their fields, links are labelled arrows.
          Edits mutate the ontology model in place; the builder view syncs it to the backend. -->
     <div class="onto_editor" :class="{ onto_editor_linking: linking }" @keydown.esc="linking = null" tabindex="-1">
-        <div class="onto_scroll">
-        <div class="onto_canvas" :style="{ width: `${extent.x}px`, height: `${extent.y}px` }"
-            @pointerdown.self="selected = null">
+        <!-- pan & zoom viewport: the wheel zooms around the cursor, dragging the background pans (d3-zoom);
+             the canvas is transformed, the cards keep their ontology coordinates -->
+        <div ref="viewport" class="onto_viewport" @click="clickBackground">
+        <div class="onto_canvas" :style="{ width: `${extent.x}px`, height: `${extent.y}px`,
+            transform: `translate(${view.x}px, ${view.y}px) scale(${view.k})` }">
             <svg class="onto_links" :width="extent.x" :height="extent.y">
                 <defs>
                     <marker id="onto_arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8"
@@ -38,6 +40,14 @@
                 <div v-if="cls.fields.length == 0" class="onto_card_row onto_card_type">no fields</div>
             </div>
         </div>
+        </div>
+
+        <!-- zoom controls -->
+        <div class="toolbar onto_overlay onto_zoom">
+            <OnsetBtn size="small" :toggleable="false" icon="mdi-plus" title="Zoom in" @click="zoomBy(ZOOM_STEP)" />
+            <OnsetBtn size="small" :toggleable="false" icon="mdi-minus" title="Zoom out" @click="zoomBy(1 / ZOOM_STEP)" />
+            <OnsetBtn size="small" :toggleable="false" icon="mdi-fit-to-screen-outline"
+                title="Fit the ontology to the view" @click="fit(true)" />
         </div>
 
         <!-- add a class / link mode hint -->
@@ -107,11 +117,13 @@
     </div>
 </template>
 <script setup lang="ts">
-import { computed, reactive, ref } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
+import { select as d3select, zoom as d3zoom, zoomIdentity, type D3ZoomEvent, type ZoomBehavior } from 'd3'
 import OnsetBtn from '@/components/ui/OnsetBtn.vue'
 import OnsetIcon from '@/components/ui/OnsetIcon.vue'
 import { FIELD_TYPES, toId, uniqueId, type FieldType, type OntoClass, type OntoField, type OntoLink, type Ontology } from '@/utils/builder/api'
 import { linkGeometry, parallelIndex, pointerDrag } from '@/utils/graph-layout'
+import { centerTransform, nodesBox } from '@/utils/sparql/fit'
 
 const CARD_W = 190
 // must match the card CSS below (header, rows, padding)
@@ -244,7 +256,7 @@ const clickCard = (cls: OntoClass) => {
     select('link', links[links.length - 1].id)
 }
 
-// drag a card by its header; the position is stored in the class
+// drag a card by its header; the position is stored in the class (screen pixels divided by the zoom)
 const dragStart = (evt: PointerEvent, cls: OntoClass) => {
     if (linking.value) {
         return
@@ -252,8 +264,99 @@ const dragStart = (evt: PointerEvent, cls: OntoClass) => {
     pointerDrag(evt, pos(cls), (x, y) => {
         cls.x = Math.max(0, Math.round(x))
         cls.y = Math.max(0, Math.round(y))
-    })
+    }, view.k)
 }
+
+// --- pan & zoom ---
+const SCALE_EXTENT: [number, number] = [0.1, 3]
+const ZOOM_STEP = 1.25
+const FIT_PADDING = 40
+const ZOOM_MS = 200
+
+const viewport = ref<HTMLDivElement | null>(null)
+// the transform of the canvas: translate(x, y) scale(k)
+const view = reactive({ x: 0, y: 0, k: 1 })
+let zoomer: ZoomBehavior<HTMLDivElement, unknown> | null = null
+// cards and links handle their own pointer events (drag, select); the rest of the canvas pans
+const onItem = (target: EventTarget | null) => target instanceof Element && !!target.closest('.onto_card, .onto_link')
+
+// a click on the background clears the selection (d3-zoom swallows the click that ends a pan)
+const clickBackground = (evt: MouseEvent) => {
+    if (!onItem(evt.target)) {
+        selected.value = null
+    }
+}
+
+const zoomBy = (factor: number) => {
+    if (viewport.value && zoomer) {
+        d3select(viewport.value).transition().duration(ZOOM_MS).call(zoomer.scaleBy, factor)
+    }
+}
+
+// fit the whole ontology (cards and link labels) into the view, never enlarged beyond 1:1;
+// false if there is nothing to fit or the view has no size yet
+const fit = (animate: boolean = false) => {
+    const el = viewport.value
+    if (!el || !zoomer || !(el.clientWidth > 0) || !(el.clientHeight > 0)) {
+        return false
+    }
+    const box = nodesBox([
+        ...ontology.value.classes.map(rect).map((r) => ({ x: r.x, y: r.y, width: r.w, height: r.h })),
+        ...link_geometry.value.map((g) => g.label),
+    ])
+    if (!box) {
+        return false
+    }
+    const size = { width: el.clientWidth, height: el.clientHeight }
+    const k = Math.max(SCALE_EXTENT[0], centerTransform(box, size, FIT_PADDING).scale)
+    const t = zoomIdentity.translate(size.width / 2 - (box.x + box.width / 2) * k,
+        size.height / 2 - (box.y + box.height / 2) * k).scale(k)
+    const sel = d3select(el)
+    if (animate) {
+        sel.transition().duration(ZOOM_MS).call(zoomer.transform, t)
+    } else {
+        sel.call(zoomer.transform, t)
+    }
+    return true
+}
+
+// fit once there is something to show (on load, or when the ontology goes from empty to non-empty);
+// later edits (e.g. by the agent) keep the user's viewport. Waits for the panel to get a size.
+let fit_pending = true
+const tryFit = async () => {
+    await nextTick()
+    if (fit_pending && ontology.value.classes.length > 0 && fit()) {
+        fit_pending = false
+    }
+}
+watch(() => ontology.value.classes.length > 0, (has) => {
+    fit_pending = has
+    tryFit()
+})
+const resize = new ResizeObserver(() => tryFit())
+
+onMounted(() => {
+    const el = viewport.value!
+    zoomer = d3zoom<HTMLDivElement, unknown>()
+        .scaleExtent(SCALE_EXTENT)
+        // the wheel zooms everywhere; drags (mouse, touch) and double clicks start only on the background
+        .filter((evt: MouseEvent | TouchEvent) => evt.type == 'wheel'
+            || (!evt.ctrlKey && !(evt as MouseEvent).button && !onItem(evt.target)))
+        .on('zoom', (evt: D3ZoomEvent<HTMLDivElement, unknown>) => {
+            view.x = evt.transform.x
+            view.y = evt.transform.y
+            view.k = evt.transform.k
+        })
+    d3select(el).call(zoomer)
+    resize.observe(el)
+    tryFit()
+})
+onBeforeUnmount(() => {
+    resize.disconnect()
+    if (viewport.value) {
+        d3select(viewport.value).interrupt().on('.zoom', null)
+    }
+})
 </script>
 <style scoped>
 .onto_editor {
@@ -264,16 +367,21 @@ const dragStart = (evt: PointerEvent, cls: OntoClass) => {
     outline: none;
 }
 
-.onto_scroll {
+.onto_viewport {
     position: absolute;
     inset: 0;
-    overflow: auto;
+    overflow: hidden;
+    touch-action: none;
+    cursor: grab;
+}
+
+.onto_viewport:active {
+    cursor: grabbing;
 }
 
 .onto_canvas {
     position: relative;
-    min-width: 100%;
-    min-height: 100%;
+    transform-origin: 0 0;
 }
 
 .onto_links {
@@ -313,6 +421,7 @@ const dragStart = (evt: PointerEvent, cls: OntoClass) => {
     padding-bottom: 4px;
     box-sizing: border-box;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+    cursor: default;
 }
 
 .onto_card_selected {
@@ -380,6 +489,11 @@ const dragStart = (evt: PointerEvent, cls: OntoClass) => {
     border: 1px solid var(--c-border);
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
     padding: var(--space-1);
+}
+
+.onto_zoom {
+    bottom: var(--space-1);
+    right: var(--space-1);
 }
 
 .onto_add {
