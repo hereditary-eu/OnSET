@@ -54,7 +54,15 @@ Every change is sent to the backend. A change to the schema (names, types, links
 - The prefixes `onto:`, `rdfs:`, `rdf:`, `xsd:` and `prov:` are predefined.
 - Results refresh while the build runs, and the table switches between labels and IRIs.
 
-In this shot, 74 of 300 abstracts have been read. The results already show the extractor's mistakes, such as *Obesity* extracted as a `Bacterium`, so you can see early whether a class description needs to be sharper.
+In visual mode, a query from `Bacterium` along *associated with* to `Disease` lists each matching pair as a miniature:
+
+![Visual query with a link](figures/builder/13-visual-query-link.png)
+
+Adding the `genus` field to `Bacterium` plots its values:
+
+![Plot of a field](figures/builder/14-results-plot.png)
+
+In the SPARQL screenshot at the top of this section, 74 of 300 abstracts have been read. The results already show the extractor's mistakes, such as *Obesity* extracted as a `Bacterium`, so you can see early whether a class description needs to be sharper.
 
 Every instance carries:
 
