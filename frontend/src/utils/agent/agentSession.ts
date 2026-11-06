@@ -11,6 +11,10 @@
 // Other chats over the same protocol (the ontology builder) pass a ChatEndpoint: their own
 // URL and session id, a hook for extra messages, and no graph binding (no graph_sync).
 //
+// Chats that keep their history on the server (the ontology builder) send it after connecting
+// (`history`), which replaces the local entries; a clear is sent again after a reconnect
+// until the server confirmed it, so the history only goes away when the user clears it.
+//
 // Echo loops are avoided by comparing graphKey()s: after a `graph_state` is applied the
 // editor graph equals the server graph, so the editor's change does not sync back.
 import { reactive, watch, onBeforeUnmount, type Ref } from 'vue'
@@ -18,7 +22,7 @@ import { configWebSocketUrl } from '@/utils/api'
 import { diffAgentGraphs, graphKey, isEmptyChange } from './graph_sync'
 import {
     emptyGraph,
-    type AgentQueryGraph, type ClientMessage, type GraphChange, type GraphDetails,
+    type AgentQueryGraph, type ChatHistoryEntry, type ClientMessage, type GraphChange, type GraphDetails,
     type ServerMessage, type ToolCallMessage,
 } from './protocol'
 
@@ -86,6 +90,8 @@ export class AgentSession {
     private reconnect_timer: ReturnType<typeof setTimeout> | null = null
     private reconnect_attempt = 0
     private clearing = false
+    // whether the server picked up an existing session on (re)connecting
+    private resumed = false
     // chats of other configurations, restored when switching back
     private config_sessions = new Map<string, ConfigSession>()
 
@@ -120,6 +126,8 @@ export class AgentSession {
         const saved = this.config_sessions.get(config_id)
         this.state.session_id = saved?.session_id ?? this.endpoint.session_id?.(config_id) ?? newSessionId()
         this.state.entries = saved?.entries ?? []
+        // a clear not confirmed yet was for the previous chat
+        this.clearing = false
         this.reconnect_attempt = 0
         this.open()
     }
@@ -156,6 +164,10 @@ export class AgentSession {
         socket.onopen = () => {
             this.reconnect_attempt = 0
             this.state.status = 'open'
+            if (this.clearing) {
+                // the clear did not reach the server (or was not confirmed): send it again
+                this.sendRaw({ type: 'clear' })
+            }
             // the server may have lost or never had the graph: always sync after connecting
             this.syncNow(true)
         }
@@ -246,12 +258,12 @@ export class AgentSession {
         this.sendRaw({ type: 'cancel' })
     }
 
-    /** Reset the chat and the server session (the editor graph is kept and synced again). */
+    /** Reset the chat and the server session (the editor graph is kept and synced again);
+     * sent when (re)connected if the socket is not open. */
     clear() {
         this.state.entries = []
-        if (this.sendRaw({ type: 'clear' })) {
-            this.clearing = true
-        }
+        this.clearing = true
+        this.sendRaw({ type: 'clear' })
     }
 
     private notice(content: string, level: 'info' | 'error' = 'info') {
@@ -262,19 +274,51 @@ export class AgentSession {
         return this.state.entries.find((e) => e.kind == kind && e.id == id) as Extract<ChatEntry, { kind: K }> | undefined
     }
 
+    /** The local entries of the server's chat history. */
+    private replay(history: ChatHistoryEntry[]): ChatEntry[] {
+        const entries: ChatEntry[] = []
+        for (const item of history) {
+            switch (item.type) {
+                case 'user_message':
+                    entries.push({ kind: 'user', id: nextEntryId('user'), content: item.content })
+                    break
+                case 'thinking':
+                    entries.push({ kind: 'thinking', id: nextEntryId('thinking'), content: item.content ?? item.delta, streaming: false, expanded: false, toggled: false })
+                    break
+                case 'assistant_message':
+                    entries.push({ kind: 'assistant', id: nextEntryId('assistant'), content: item.content ?? item.delta, streaming: false })
+                    break
+                case 'tool_call':
+                    entries.push({ kind: 'tool', id: nextEntryId('tool'), call: item })
+                    break
+                case 'error':
+                    entries.push({ kind: 'notice', id: nextEntryId('notice'), content: item.message, level: 'error' })
+                    break
+                case 'done':
+                    if (item.reason == 'cancelled') {
+                        entries.push({ kind: 'notice', id: nextEntryId('notice'), content: 'Stopped.', level: 'info' })
+                    }
+                    break
+            }
+        }
+        return entries
+    }
+
     private handle(message: ServerMessage) {
         this.endpoint.onMessage?.(message)
         switch (message.type) {
             case 'session':
                 this.state.session_id = message.session_id
-                if (this.clearing) {
-                    this.clearing = false
-                    // the server graph was reset: sync the editor graph again
-                    this.server_graph = emptyGraph()
-                    this.server_key = graphKey(this.server_graph)
-                    this.syncNow(true)
-                } else if (!message.resumed && this.state.entries.length > 0) {
+                this.resumed = message.resumed
+                if (!this.clearing && !message.resumed && this.state.entries.length > 0) {
                     this.notice('The server started a new session; the agent does not remember the earlier messages.')
+                }
+                break
+            case 'history':
+                // the server's history is the chat; unless it has none and the local one is
+                // all that is left of a lost session, or a clear is on its way
+                if (!this.clearing && (this.resumed || message.entries.length > 0)) {
+                    this.state.entries = this.replay(message.entries)
                 }
                 break
             case 'thinking': {
@@ -336,6 +380,11 @@ export class AgentSession {
                 break
             case 'done':
                 if (message.reason == 'cleared') {
+                    this.clearing = false
+                    // the server graph was reset: sync the editor graph again
+                    this.server_graph = emptyGraph()
+                    this.server_key = graphKey(this.server_graph)
+                    this.syncNow(true)
                     break
                 }
                 this.state.busy = false

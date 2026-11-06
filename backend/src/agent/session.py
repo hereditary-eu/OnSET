@@ -84,13 +84,34 @@ class AgentSession:
             self._busy = True
             self._cancel.clear()
         try:
-            yield from self.agent.run_turn(content, cancelled=self._cancel.is_set)
-        except Exception as e:
-            yield ErrorMessage(message=f"Agent failed: {type(e).__name__}: {e}")
-            yield Done(reason="error")
+            self.on_turn_start(content)
+            try:
+                for message in self.agent.run_turn(content, cancelled=self._cancel.is_set):
+                    self.on_message(message)
+                    yield message
+            except Exception as e:
+                for message in (
+                    ErrorMessage(message=f"Agent failed: {type(e).__name__}: {e}"),
+                    Done(reason="error"),
+                ):
+                    self.on_message(message)
+                    yield message
+            finally:
+                self.on_turn_end()
         finally:
             with self._lock:
                 self._busy = False
+
+    # --- hooks of a turn (sessions that keep a transcript, builder/agent.py) ---
+
+    def on_turn_start(self, content: str):
+        pass
+
+    def on_message(self, message: ServerMessage):
+        pass
+
+    def on_turn_end(self):
+        pass
 
 
 class AgentSessionStore:

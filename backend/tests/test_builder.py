@@ -246,6 +246,85 @@ def test_agent_edits_ontology(builder):
     assert "Current ontology" in llm.calls[0][-1]["content"]
 
 
+def test_chat_history_persists_until_cleared(builder, client, monkeypatch):
+    """The agent chat is part of the session: replayed on every connection, kept across
+    ontology changes and restarts (saved with the session), deleted only by a clear."""
+    import api.router.builder as router
+
+    monkeypatch.setitem(router._builders, "test", builder)
+    monkeypatch.setattr(router.CONFIG_FILE, "builders", {"test": {}})
+    builder.agent_llm = ScriptedLLM([
+        [ResponseDone(output=[function_call("c1", "add_class", name="Person", description="a human")])],
+        final_answer("Added Person."),
+    ], fallback=final_answer("Still here."))
+    ws_url = "/onto-builder/test/agent/ws?session_id=chat"
+
+    def turn(ws, content):
+        ws.send_json({"type": "user_message", "content": content})
+        frames = []
+        while (frame := ws.receive_json())["type"] != "done":
+            frames.append(frame)
+        return frames
+
+    with client.websocket_connect(ws_url) as ws:
+        assert ws.receive_json() == {"type": "session", "session_id": "chat", "resumed": False}
+        assert ws.receive_json() == {"type": "history", "entries": []}
+        turn(ws, "add people")
+    # a reconnect (e.g. a page reload) gets the chat as the UI shows it
+    with client.websocket_connect(ws_url) as ws:
+        assert ws.receive_json()["resumed"] is True
+        entries = ws.receive_json()["entries"]
+    assert [e["type"] for e in entries] == ["user_message", "tool_call", "assistant_message", "done"]
+    assert entries[0]["content"] == "add people" and entries[1]["status"] == "success"
+    assert entries[2]["content"] == "Added Person."
+
+    # ontology and query changes keep it; a restarted backend restores it from the save
+    session = builder.session("chat")
+    session.set_ontology(ontology())
+    session.set_query("SELECT * WHERE { ?s ?p ?o }")
+    restarted = Builder("test", builder.config)
+    restarted.extractor = FakeExtractor()
+    restarted.agent_llm = llm = ScriptedLLM([], fallback=final_answer("Still here."))
+    monkeypatch.setitem(router._builders, "test", restarted)
+    with client.websocket_connect(ws_url) as ws:
+        assert ws.receive_json()["resumed"] is True
+        assert ws.receive_json()["entries"] == entries
+        turn(ws, "and now?")
+    # the model got the earlier turn as context
+    assert [m.get("content") for m in llm.calls[0] if m.get("role") == "user"][0].startswith("add people")
+    assert sum(m.get("type") == "function_call" for m in llm.calls[0]) == 1
+
+    # an evicted session is restored with its chat too
+    restarted.sessions.clear()
+    with client.websocket_connect(ws_url) as ws:
+        ws.receive_json()
+        assert [e.get("content") for e in ws.receive_json()["entries"] if e["type"] == "user_message"] == [
+            "add people", "and now?"]
+        ws.send_json({"type": "clear"})
+        assert ws.receive_json()["type"] == "session"
+        assert ws.receive_json() == {"type": "done", "reason": "cleared"}
+    saved = json.loads(restarted.state_file("chat").read_text())
+    assert saved["chat"] == {"history": [], "log": []}
+    assert saved["query"] == "SELECT * WHERE { ?s ?p ?o }"
+    with client.websocket_connect(ws_url) as ws:
+        assert ws.receive_json()["resumed"] is False
+        assert ws.receive_json() == {"type": "history", "entries": []}
+    restarted.sessions.clear()
+    assert restarted.session("chat").chat_history == []
+    wait_built(restarted.session("chat"))
+
+
+def test_session_restored_without_chat(builder):
+    """Saves from before the chat history was kept still load."""
+    path = builder.state_file("old")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps({"ontology": ontology().model_dump(), "query": "SELECT * WHERE { ?s ?p ?o }"}))
+    session = builder.session("old", create=False)
+    assert session.chat_history == [] and session.chat_log == []
+    assert session.query == "SELECT * WHERE { ?s ?p ?o }"
+    wait_built(session)
+
+
 def test_session_restored_after_restart(builder):
     """Every change is saved, a fresh Builder (a restarted backend) restores the session by its id."""
     session = builder.session("keep")

@@ -6,7 +6,9 @@ restart, restored from its save; ``?create=false`` answers 404 instead of creati
 an unknown session); its ontology and query are changed with PUT (and saved), its state is polled (``version``
 changes with every ontology/query change, ``status`` reports the build), and
 the agent chat runs over the WebSocket ``/{builder_id}/agent/ws`` with the
-protocol of agent/protocol.py plus ``builder_state`` messages.
+protocol of agent/protocol.py plus ``builder_state`` messages. The chat history is part
+of the session (saved with it): a connection gets it as ``history`` after ``session``,
+and only ``clear`` deletes it.
 """
 
 import asyncio
@@ -17,7 +19,8 @@ from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import Response
 from pydantic import BaseModel, ValidationError
 
-from agent.protocol import CLIENT_MESSAGE, Cancel, Clear, Done, ErrorMessage, SessionInfo, UserMessage
+from agent.protocol import CLIENT_MESSAGE, Cancel, ChatHistory, Clear, Done, ErrorMessage, SessionInfo, UserMessage
+from agent.session import SessionBusy
 from api.router.agent import _Connection, _run_turn
 from builder.agent import BuilderChat
 from builder.corpus import Snippet
@@ -179,14 +182,21 @@ async def builder_agent_ws(websocket: WebSocket, builder_id: str = Path(...), se
         await websocket.close()
         return
 
-    def attach_chat() -> tuple[bool, BuilderChat]:
+    def attach_chat() -> tuple[bool, BuilderChat, list[dict]]:
         with _lock:
-            resumed = session.chat is not None
-            session.chat = session.chat or BuilderChat(session)
-            return resumed, session.chat
+            chat = session.chat
+        if chat is None:
+            # outside the global lock: reads the session's history under the session's lock
+            new = BuilderChat(session)
+            with _lock:
+                chat = session.chat = session.chat or new
+        transcript = session.chat_transcript()
+        # resumed: the agent remembers earlier messages (also after a restart, from the save)
+        return bool(transcript or len(chat.agent.history) > 1), chat, transcript
 
-    resumed, chat = await run_in_threadpool(attach_chat)
+    resumed, chat, transcript = await run_in_threadpool(attach_chat)
     await connection.send(SessionInfo(session_id=session_id, resumed=resumed))
+    await connection.send(ChatHistory(entries=transcript))
 
     turn: asyncio.Task | None = None
     try:
@@ -208,7 +218,13 @@ async def builder_agent_ws(websocket: WebSocket, builder_id: str = Path(...), se
                 if busy:
                     chat.cancel()
                     await turn
-                chat.clear()
+                try:
+                    await run_in_threadpool(chat.clear)
+                except SessionBusy as e:
+                    # a turn of another connection to the session is still running
+                    await connection.send(ErrorMessage(message=str(e)))
+                    await connection.send(Done(reason="error"))
+                    continue
                 await connection.send(SessionInfo(session_id=session_id))
                 await connection.send(Done(reason="cleared"))
             # graph_sync does not apply: the ontology is synced through PUT .../ontology

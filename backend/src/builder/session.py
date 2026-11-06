@@ -130,6 +130,11 @@ class BuilderSession:
         self.last_access = time.monotonic()
         # the agent chat (builder.agent.BuilderChat), created by the first connection
         self.chat = None
+        # the chat's history, saved with the session and only reset by the user (clear_chat):
+        # the model's input items after the system prompt, and the chat as the UI shows it
+        # (``user_message`` frames and the final protocol frames, agent.protocol.ChatHistory)
+        self.chat_history: list[dict] = []
+        self.chat_log: list[dict] = []
         self.restore()
 
     # --- state ---
@@ -159,6 +164,28 @@ class BuilderSession:
             self.query = query
             self.visual_query = visual_query
             self.version += 1
+            self.persist()
+
+    # --- agent chat history ---
+
+    def chat_transcript(self) -> list[dict]:
+        with self._lock:
+            return list(self.chat_log)
+
+    def log_chat(self, entry: dict):
+        """Add an entry to the chat as the UI shows it (saved with the next persist)."""
+        with self._lock:
+            self.chat_log.append(entry)
+
+    def save_chat(self, history: list[dict]):
+        """Keep the model's chat history (after a turn) and save the session."""
+        with self._lock:
+            self.chat_history = list(history)
+            self.persist()
+
+    def clear_chat(self):
+        with self._lock:
+            self.chat_history, self.chat_log = [], []
             self.persist()
 
     @cached_property
@@ -350,11 +377,14 @@ class BuilderSession:
         return self.save_path.with_name(f"{self.session_id}.imported.ttl")
 
     def persist(self, imported: bool = False):
-        """Write the session's state (ontology with layout, query, visual query) to the save
-        dir, and with ``imported`` its imported instance triples; called on every change,
+        """Write the session's state (ontology with layout, query, visual query, agent chat) to
+        the save dir, and with ``imported`` its imported instance triples; called on every change,
         so the session can be restored by its id after a restart (``restore``)."""
         with self._lock:
-            state = {"ontology": self.ontology.model_dump(), "query": self.query, "visual_query": self.visual_query}
+            state = {
+                "ontology": self.ontology.model_dump(), "query": self.query, "visual_query": self.visual_query,
+                "chat": {"history": self.chat_history, "log": self.chat_log},
+            }
             files = {self.state_path: json.dumps(state, indent=2)}
             if imported:
                 files[self.imported_path] = self.imported.serialize(format="turtle")
@@ -379,6 +409,10 @@ class BuilderSession:
         self.ontology = Ontology(**state["ontology"])
         self.query = state.get("query", "")
         self.visual_query = state.get("visual_query")
+        # saves from before the chat was kept have none
+        chat = state.get("chat") or {}
+        self.chat_history = list(chat.get("history") or [])
+        self.chat_log = list(chat.get("log") or [])
         if self.imported_path.exists():
             self.imported = Graph().parse(self.imported_path, format="turtle")
         self.rebuild()

@@ -11,6 +11,7 @@ from typing import Literal
 from pydantic import BaseModel
 
 from agent.agent import GraphAgent
+from agent.protocol import AssistantMessage, Done, ErrorMessage, Thinking, ToolCall
 from agent.session import AgentSession, SessionBusy
 from agent.tools import ToolCollection, ToolError, ToolResult, tool
 from builder.ontology import FieldType, OntoClass, OntoField, OntoLink, local_name
@@ -239,18 +240,54 @@ class BuilderAgent(GraphAgent):
         return self.tools.call(name, arguments), {}
 
 
+def chat_log_entry(message) -> dict | None:
+    """The frame of a turn as the chat transcript keeps it (final frames only), or None."""
+    if isinstance(message, (Thinking, AssistantMessage)):
+        return message.model_dump(mode="json") if message.final and message.content else None
+    if isinstance(message, ToolCall):
+        return message.model_dump(mode="json") if message.status != "running" else None
+    if isinstance(message, (ErrorMessage, Done)):
+        return message.model_dump(mode="json")
+    return None
+
+
 class BuilderChat(AgentSession):
-    """The busy/cancel handling of an agent chat session, around a BuilderAgent."""
+    """The busy/cancel handling of an agent chat session, around a BuilderAgent.
+
+    The chat is kept in the BuilderSession (``chat_history`` for the model, ``chat_log``
+    for the UI) and saved with it after every turn, so it survives reconnects, reloads,
+    restarts and evictions; only ``clear`` resets it."""
 
     def __init__(self, session: BuilderSession):
         self.session_id = session.session_id
+        self.session = session
         self.agent = BuilderAgent(session.builder.agent_llm, session)
+        with session._lock:
+            self.agent.history.extend(session.chat_history)
         self._lock = threading.Lock()
         self._busy = False
         self._cancel = threading.Event()
 
+    def on_turn_start(self, content: str):
+        self.session.log_chat({"type": "user_message", "content": content})
+
+    def on_message(self, message):
+        if (entry := chat_log_entry(message)) is not None:
+            self.session.log_chat(entry)
+
+    def on_turn_end(self):
+        # writes the session file: called in the turn's worker thread
+        self.session.save_chat(self.agent.history[1:])
+
     def clear(self):
+        """Reset the chat and its saved history (blocking: file I/O)."""
         with self._lock:
             if self._busy:
                 raise SessionBusy("Cancel the running turn before clearing.")
+            self._busy = True
+        try:
             self.agent.reset()
+            self.session.clear_chat()
+        finally:
+            with self._lock:
+                self._busy = False

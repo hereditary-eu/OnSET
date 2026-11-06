@@ -20,6 +20,11 @@ Client -> server
 
 Server -> client (per turn, in order of occurrence)
     session          {session_id, resumed}  after connecting and after ``clear``
+    history          {entries}          after ``session`` on connecting, by chats
+                                        that keep their history (the ontology
+                                        builder): the chat so far as ``user_message``
+                                        and final thinking/assistant_message/
+                                        tool_call/error/done frames, in order
     thinking         {id, delta, content, final}
                                         reasoning of the model; streamed as
                                         deltas, ``final`` carries the full text
@@ -131,6 +136,12 @@ class SessionInfo(BaseModel):
     resumed: bool = False
 
 
+class ChatHistory(BaseModel):
+    type: Literal["history"] = "history"
+    # user_message frames and the final server frames of the earlier turns, as JSON
+    entries: list[dict[str, Any]] = Field([])
+
+
 class StreamedText(BaseModel):
     # id of the text block, deltas with the same id belong together
     id: str
@@ -182,6 +193,7 @@ class Done(BaseModel):
 
 ServerMessage = Annotated[
     SessionInfo
+    | ChatHistory
     | Thinking
     | AssistantMessage
     | ToolCall
@@ -272,6 +284,7 @@ __all__ = [
     "ClientMessage",
     "CLIENT_MESSAGE",
     "SessionInfo",
+    "ChatHistory",
     "Thinking",
     "AssistantMessage",
     "ToolCall",

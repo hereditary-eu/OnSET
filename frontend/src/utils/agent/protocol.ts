@@ -59,6 +59,20 @@ export interface SessionInfoMessage {
     resumed: boolean
 }
 
+/** The chat so far, sent after `session` by chats that keep their history (the ontology builder). */
+export interface ChatHistoryMessage {
+    type: 'history'
+    entries: ChatHistoryEntry[]
+}
+
+export type ChatHistoryEntry =
+    | { type: 'user_message', content: string }
+    | ThinkingMessage
+    | AssistantTextMessage
+    | ToolCallMessage
+    | ErrorMessage
+    | DoneMessage
+
 interface StreamedText {
     id: string
     delta: string
@@ -115,6 +129,7 @@ export interface DoneMessage {
 
 export type ServerMessage =
     | SessionInfoMessage
+    | ChatHistoryMessage
     | ThinkingMessage
     | AssistantTextMessage
     | ToolCallMessage
