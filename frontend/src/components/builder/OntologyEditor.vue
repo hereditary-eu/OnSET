@@ -73,7 +73,10 @@
                     <OnsetBtn size="small" :toggleable="false" icon="mdi-close" title="Remove the field"
                         @click="selected_class.fields.splice(selected_class.fields.indexOf(f), 1)" />
                 </div>
-                <input class="text_input" v-model="f.description" placeholder="description" />
+                <label class="text_input onto_field_desc">
+                    <span>Description</span>
+                    <input v-model="f.description" placeholder="what the field holds" />
+                </label>
             </div>
             <form class="toolbar" @submit.prevent="addField(selected_class)">
                 <input class="text_input" v-model="new_field.name" placeholder="New field, e.g. birth date" />
@@ -454,13 +457,41 @@ const dragStart = (evt: PointerEvent, cls: OntoClass) => {
     border-bottom: 1px solid var(--c-hover);
 }
 
-.onto_field .text_input,
+.onto_field .toolbar .text_input,
 .onto_inspector form .text_input {
     flex: 1 1 auto;
     width: 0;
 }
 
-.onto_field select,
+/* description box of a field: the label sits inside the box, above the input */
+.onto_inspector label.onto_field_desc {
+    height: auto;
+    gap: 0;
+    padding: 2px var(--space-2);
+    cursor: text;
+}
+
+.onto_field_desc span {
+    font-size: 0.7rem;
+    opacity: 0.75;
+}
+
+.onto_field_desc input {
+    width: 100%;
+    border: none;
+    outline: none;
+    padding: 0;
+    font: inherit;
+    font-size: var(--fs-sm);
+    background: transparent;
+    color: inherit;
+}
+
+.onto_field_desc:focus-within {
+    outline: 1px solid var(--c-accent);
+}
+
+.onto_field .toolbar select,
 .onto_inspector form select {
     flex: 0 0 5rem;
 }

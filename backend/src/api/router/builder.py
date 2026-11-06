@@ -1,8 +1,9 @@
 """Ontology builder API (/onto-builder), see builder/.
 
 Builders are configured in the ``builders`` section of config.json. A session
-(``/{builder_id}/sessions/{session_id}``) is created on first access; its
-ontology and query are changed with PUT, its state is polled (``version``
+(``/{builder_id}/sessions/{session_id}``) is created on first access (or, after a
+restart, restored from its save; ``?create=false`` answers 404 instead of creating
+an unknown session); its ontology and query are changed with PUT (and saved), its state is polled (``version``
 changes with every ontology/query change, ``status`` reports the build), and
 the agent chat runs over the WebSocket ``/{builder_id}/agent/ws`` with the
 protocol of agent/protocol.py plus ``builder_state`` messages.
@@ -38,8 +39,14 @@ def get_builder(builder_id: str) -> Builder:
         return _builders[builder_id]
 
 
-def get_session(builder_id: str, session_id: str) -> BuilderSession:
-    return get_builder(builder_id).session(session_id)
+def get_session(builder_id: str, session_id: str, create: bool = True) -> BuilderSession:
+    builder = get_builder(builder_id)
+    try:
+        return builder.session(session_id, create=create)
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+    except KeyError:
+        raise HTTPException(404, f"No session '{session_id}' in '{builder_id}'")
 
 
 class BuilderSummary(BaseModel):
@@ -78,8 +85,11 @@ def get_document(builder_id: str, doc_id: str) -> DocumentOut:
 
 
 @builder_router.get("/{builder_id}/sessions/{session_id}")
-def get_state(builder_id: str, session_id: str) -> SessionState:
-    return get_session(builder_id, session_id).state()
+def get_state(
+    builder_id: str, session_id: str,
+    create: bool = Query(True, description="create an unknown session (else 404)"),
+) -> SessionState:
+    return get_session(builder_id, session_id, create).state()
 
 
 @builder_router.put("/{builder_id}/sessions/{session_id}/ontology")

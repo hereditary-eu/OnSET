@@ -11,7 +11,9 @@ import email.policy
 import json
 import re
 from dataclasses import dataclass
+from collections.abc import Iterator
 from functools import cached_property
+from itertools import islice
 from pathlib import Path
 
 from pydantic import BaseModel
@@ -47,28 +49,35 @@ def _read_mail(path: Path) -> tuple[str, str]:
     return str(message.get("Subject") or path.name), text
 
 
-def load_documents(config: TextSetConfig) -> list[Document]:
+def _json_documents(
+    path: Path, config: TextSetConfig, id_prefix: str = ""
+) -> Iterator[Document]:
+    records = json.loads(path.read_text())
+    items = records.items() if isinstance(records, dict) else enumerate(records)
+    for key, record in items:
+        text = "\n\n".join(str(record[f]) for f in config.text_fields if record.get(f))
+        title = str(record.get(config.title_field, key))
+        yield Document(f"{id_prefix}{key}", title, text)
+
+
+def _iter_documents(config: TextSetConfig) -> Iterator[Document]:
     root = Path(config.path)
-    limit = config.max_documents
-    if config.format == "json":
-        records = json.loads(root.read_text())
-        items = records.items() if isinstance(records, dict) else enumerate(records)
-        docs = []
-        for key, record in items:
-            text = "\n\n".join(
-                str(record[f]) for f in config.text_fields if record.get(f)
-            )
-            docs.append(Document(str(key), str(record.get(config.title_field, key)), text))
-            if limit and len(docs) >= limit:
-                break
-        return docs
-    docs = []
-    for path in sorted(p for p in root.glob(config.glob) if p.is_file()):
-        title, text = _read_mail(path)
-        docs.append(Document(str(path.relative_to(root)), title, text))
-        if limit and len(docs) >= limit:
-            break
-    return docs
+    if config.format == "json" and root.is_file():
+        yield from _json_documents(root, config)
+        return
+    pattern = config.glob or ("**/*.json" if config.format == "json" else "**/*")
+    for path in sorted(p for p in root.glob(pattern) if p.is_file()):
+        rel = str(path.relative_to(root))
+        if config.format == "json":
+            # ids are prefixed with the file so equal keys in different files stay apart
+            yield from _json_documents(path, config, f"{rel}#")
+        else:
+            title, text = _read_mail(path)
+            yield Document(rel, title, text)
+
+
+def load_documents(config: TextSetConfig) -> list[Document]:
+    return list(islice(_iter_documents(config), config.max_documents))
 
 
 class Corpus:

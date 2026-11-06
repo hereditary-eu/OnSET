@@ -3,16 +3,19 @@ build, TTL import/export, the REST API and the agent's tools, all with a fake
 extractor instead of the llama.cpp model."""
 
 import json
+import threading
 import time
+from collections import Counter
 
 import pytest
 from fakes import ScriptedLLM, final_answer
 from agent.llm import ResponseDone
 from rdflib import RDFS, Graph
 
+from builder.corpus import load_documents
 from builder.agent import BuilderAgent, BuilderStateMessage
 from builder.ontology import Ontology, OntoClass, OntoField, OntoLink, extraction_schema, extraction_triples
-from builder.session import Builder, class_query
+from builder.session import IDLE_PAUSE_SECONDS, Builder, class_query
 from eval_config import BuilderConfig, TextSetConfig
 
 def function_call(call_id: str, tool: str, **arguments) -> dict:
@@ -73,6 +76,17 @@ def wait_built(session, timeout=5):
 def test_corpus_search(builder):
     hits = builder.corpus.search("merger announced", 3)
     assert hits[0].doc_id == "d2" and "merger" in hits[0].text
+
+
+def test_json_text_set_glob(tmp_path):
+    (tmp_path / "a").mkdir()
+    (tmp_path / "a" / "train.json").write_text(json.dumps(DOCS))
+    (tmp_path / "dev.json").write_text(json.dumps([{"title": "Dev", "text": "dev text"}]))
+    (tmp_path / "notes.txt").write_text("not json")
+    config = TextSetConfig(format="json", path=str(tmp_path), text_fields=["text"])
+    assert [d.id for d in load_documents(config)] == ["a/train.json#d1", "a/train.json#d2", "dev.json#0"]
+    config.glob, config.max_documents = "a/*.json", 1
+    assert [d.title for d in load_documents(config)] == ["Hiring"]
 
 
 def test_extraction_schema_and_triples():
@@ -230,3 +244,147 @@ def test_agent_edits_ontology(builder):
     assert session.query.startswith("SELECT ?instance ?label ?age ?worksFor")
     # the model saw the ontology with the request
     assert "Current ontology" in llm.calls[0][-1]["content"]
+
+
+def test_session_restored_after_restart(builder):
+    """Every change is saved, a fresh Builder (a restarted backend) restores the session by its id."""
+    session = builder.session("keep")
+    session.set_ontology(ontology())
+    session.set_query("SELECT * WHERE { ?s ?p ?o }", visual_query='{"nodes":[]}')
+    wait_built(session)
+    other = builder.session("imp")
+    other.import_ttl(session.export("all"))
+    wait_built(other)
+
+    restarted = Builder("test", builder.config)
+    restarted.extractor = FakeExtractor()
+    restored = restarted.session("keep", create=False)
+    assert restored.ontology == session.ontology
+    assert restored.query == "SELECT * WHERE { ?s ?p ?o }" and restored.visual_query == '{"nodes":[]}'
+    # the build restarts
+    wait_built(restored)
+    assert restored.status.processed == 2
+    rows = restored.run_query(class_query(restored.ontology, "Person")).rows
+    assert {r[1].value for r in rows} == {"Alice Smith", "Bob Jones"}
+    # imported instance triples are restored too
+    imported = restarted.session("imp", create=False)
+    assert len(imported.imported) == len(other.imported) > 0
+    wait_built(imported)
+
+
+def test_unknown_and_invalid_session_ids(builder, client, monkeypatch):
+    import api.router.builder as router
+
+    with pytest.raises(KeyError):
+        builder.session("missing", create=False)
+    assert "missing" not in builder.sessions
+    for bad in ("../x", "..", "a.b", "a/b", "x" * 65):
+        with pytest.raises(ValueError):
+            builder.session(bad)
+    monkeypatch.setitem(router._builders, "test", builder)
+    monkeypatch.setattr(router.CONFIG_FILE, "builders", {"test": {}})
+    assert client.get("/onto-builder/test/sessions/missing", params={"create": False}).status_code == 404
+    assert client.get("/onto-builder/test/sessions/..", params={"create": False}).status_code in (400, 404)
+    assert client.get("/onto-builder/test/sessions/a.json").status_code == 400
+    # a loaded (not yet saved) session is found, and so is a saved one
+    client.get("/onto-builder/test/sessions/fresh")
+    assert client.get("/onto-builder/test/sessions/fresh", params={"create": False}).status_code == 200
+    builder.session("fresh").set_query("SELECT * WHERE { ?s ?p ?o }")
+    builder.sessions.clear()
+    state = client.get("/onto-builder/test/sessions/fresh", params={"create": False}).json()
+    assert state["query"] == "SELECT * WHERE { ?s ?p ?o }"
+
+
+class SlowExtractor:
+    """The person (and company) of a "<person> works for <company>" document, after a delay;
+    counts the calls per text and how many run at once."""
+
+    def __init__(self, delay: float):
+        self.delay = delay
+        self.calls = Counter()
+        self.running = self.max_running = 0
+        self._lock = threading.Lock()
+
+    def extract(self, onto, text):
+        with self._lock:
+            self.calls[text] += 1
+            self.running += 1
+            self.max_running = max(self.max_running, self.running)
+        time.sleep(self.delay)
+        with self._lock:
+            self.running -= 1
+        person, company = text.split(" works for ")
+        out = {"Person": [{"name": person, "worksFor": [company]}], "Company": [{"name": company}]}
+        return {k: v for k, v in out.items() if onto.get_class(k)}
+
+
+def slow_builder(tmp_path, instances: int, docs: int, delay: float) -> Builder:
+    path = tmp_path / f"docs-{instances}.json"
+    path.write_text(json.dumps({
+        f"d{i}": {"title": f"Doc {i}", "text": f"Person {i} works for Company {i % 5}"} for i in range(docs)
+    }))
+    config = BuilderConfig(
+        name="Test", save_dir=str(tmp_path / f"saves-{instances}"), extract_instances=instances,
+        text_set=TextSetConfig(format="json", path=str(path), text_fields=["text"]),
+    )
+    b = Builder("test", config)
+    b.extractor = SlowExtractor(delay)
+    return b
+
+
+def test_parallel_build_matches_serial(tmp_path):
+    graphs = {}
+    for instances in (1, 4):
+        b = slow_builder(tmp_path, instances, docs=30, delay=0.005)
+        session = b.session("s")
+        session.set_ontology(ontology())
+        wait_built(session, timeout=10)
+        assert session.status.processed == 30 and session.status.errors == 0
+        # every document extracted once, by up to ``instances`` threads at once
+        assert len(b.extractor.calls) == 30 and set(b.extractor.calls.values()) == {1}
+        assert b.extractor.max_running == 1 if instances == 1 else 1 < b.extractor.max_running <= instances
+        graphs[instances] = set(session.graph)
+    assert graphs[1] == graphs[4]
+
+
+def test_parallel_build_stops_and_pauses(tmp_path):
+    b = slow_builder(tmp_path, 4, docs=60, delay=0.05)
+    session = b.session("s")
+    session.set_ontology(ontology())
+
+    def settled() -> int:
+        """Extraction calls, once no more are started."""
+        calls = -1
+        while calls != (calls := b.extractor.calls.total()):
+            time.sleep(0.2)
+        return calls
+
+    # stop: queued documents are dropped, the ones in progress don't count
+    while session.status.processed < 4:
+        time.sleep(0.01)
+    session.stop()
+    processed = session.status.processed
+    assert settled() < 60 and not session.status.running
+    assert session.status.processed == processed
+
+    # pause while nobody looks at the session, resume on the next access
+    session.set_ontology(ontology().model_copy(update={"links": []}))
+    while session.status.processed < 4:
+        time.sleep(0.01)
+    session.last_access = time.monotonic() - IDLE_PAUSE_SECONDS - 1
+    calls = settled()
+    assert session.status.running and session.status.processed < 60
+    session.state()
+    wait_built(session, timeout=10)
+    assert session.status.processed == 60 and b.extractor.calls.total() > calls
+
+    # a schema change restarts the build, results of the old one don't leak into the new KG
+    session.set_ontology(ontology())
+    while session.status.processed < 4:
+        time.sleep(0.01)
+    session.set_ontology(Ontology(prefix="http://ex.org/o/", classes=[OntoClass(id="Company")]))
+    wait_built(session, timeout=10)
+    assert session.status.processed == 60
+    labels = {str(o) for _, p, o in session.graph if p == RDFS.label}
+    assert not any(label.startswith("Person") for label in labels)
+    assert {f"Company {i}" for i in range(5)} <= labels

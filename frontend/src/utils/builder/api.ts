@@ -29,14 +29,15 @@ export const searchText = (bid: string, q: string, k = 20) => get<Snippet[]>(`/$
 export const getDocument = (bid: string, doc_id: string) =>
     get<BuilderDocument>(`/${bid}/documents/${doc_id.split('/').map(encodeURIComponent).join('/')}`)
 
-/** Calls of one builder session (created by the backend on first access). */
+/** Calls of one builder session (created by the backend on first access, restored from its save after a restart). */
 export function builderSession(bid: string, sid: string) {
     const base = `/${encodeURIComponent(bid)}/sessions/${encodeURIComponent(sid)}`
     const put = (path: string, body: unknown) => axios.put<SessionState>(`${BUILDER_URL}${base}${path}`, body).then((r) => r.data)
     const post = <T>(path: string, params?: object, body?: unknown) =>
         axios.post<T>(`${BUILDER_URL}${base}${path}`, body, { params }).then((r) => r.data)
     return {
-        state: () => get<SessionState>(base),
+        /** ``create: false``: fails with 404 instead of creating an unknown session */
+        state: (create = true) => get<SessionState>(base, create ? undefined : { create }),
         setOntology: (ontology: Ontology) => put('/ontology', ontology),
         /** ``visual_query``: the serialized visual query (NodeLinkRepository) that generated ``query`` */
         setQuery: (query: string, visual_query: string | null = null) => put('/query', { query, visual_query }),
@@ -59,6 +60,9 @@ export function builderSession(bid: string, sid: string) {
     }
 }
 export type BuilderSessionApi = ReturnType<typeof builderSession>
+
+/** Session ids the backend accepts (they name its save files). */
+export const SESSION_ID_PATTERN = /^[A-Za-z0-9_-]{1,64}$/
 
 /** An IRI-safe camel-case id from what the user typed, e.g. "birth date" -> "birthDate" (upper: "BirthDate"). */
 export function toId(text: string, upper = false): string {

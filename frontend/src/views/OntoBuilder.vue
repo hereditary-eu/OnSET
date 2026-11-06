@@ -17,6 +17,8 @@
                     <span class="toolbar_spacer"></span>
                     <OnsetBtn v-model="io.open" size="small" icon="mdi-swap-vertical" title="Import or export Turtle"
                         :active="!!state" @click="io.prefix = state?.ontology.prefix ?? ''">Import / Export</OnsetBtn>
+                    <OnsetBtn v-model="sess.open" size="small" icon="mdi-identifier"
+                        :title="`Session ${sessionId}: copy its id or open another session`">Session</OnsetBtn>
                     <OnsetBtn size="small" :toggleable="false" icon="mdi-plus-box-outline"
                         :title="`Start a new, empty session (current: ${sessionId})`" @click="newSession" />
                 </header>
@@ -24,6 +26,29 @@
                     <p v-if="error" class="message builder_error builder_banner">{{ error }}</p>
                     <OntologyEditor v-if="state" v-model="state.ontology" @query="cardQuery" />
                     <p v-else-if="!error" class="message">Loading the session…</p>
+
+                    <div v-if="sess.open" class="builder_io">
+                        <div class="toolbar"><b>Session</b><span class="toolbar_spacer"></span>
+                            <OnsetBtn size="small" :toggleable="false" icon="mdi-close" @click="sess.open = false" />
+                        </div>
+                        <label>Current session (changes are saved on the server)
+                            <span class="toolbar">
+                                <input :value="sessionId" class="text_input builder_session_id" readonly
+                                    @focus="($event.target as HTMLInputElement).select()" />
+                                <OnsetBtn size="small" :toggleable="false" icon="mdi-content-copy" title="Copy the session id"
+                                    @click="copySessionId" />
+                            </span>
+                        </label>
+                        <label>Open a session by its id
+                            <span class="toolbar">
+                                <input v-model="sess.input" class="text_input builder_session_id" placeholder="Paste a session id…"
+                                    spellcheck="false" @keydown.enter="openInput" />
+                                <OnsetBtn size="small" :toggleable="false" icon="mdi-folder-open-outline"
+                                    :active="!!sess.input.trim() && !sess.busy" @click="openInput">Open</OnsetBtn>
+                            </span>
+                        </label>
+                        <p v-if="sess.message" class="message" :class="{ builder_error: sess.failed }">{{ sess.message }}</p>
+                    </div>
 
                     <div v-if="io.open && state" class="builder_io">
                         <div class="toolbar"><b>Import / Export</b><span class="toolbar_spacer"></span>
@@ -79,7 +104,7 @@ import { AgentSession } from '@/utils/agent/agentSession'
 import { setActiveConfig } from '@/utils/api'
 import { OntoConfig } from '@/utils/sparql/ontoconfig'
 import {
-    builderSession, listBuilders,
+    builderSession, listBuilders, SESSION_ID_PATTERN,
     type BuilderSummary, type ExportContent, type Ontology, type QueryResult, type SessionState,
 } from '@/utils/builder/api'
 
@@ -101,17 +126,17 @@ const side_tab = ref('chat')
 const side_collapsed = ref(false)
 const results_collapsed = ref(false)
 
-// --- session: its id is kept per builder in the browser, the backend creates it on first access ---
+// --- session: the backend creates it on first access and saves every change, so it can be
+// reopened by its id (also after a restart); the last id is kept per builder in the browser.
+// Empty until the stored session is checked (initSession), so nothing creates it before.
 const storage_key = `onset:builder:${builderId}:session`
-const createSession = () => {
-    const id = crypto.randomUUID()
-    localStorage.setItem(storage_key, id)
-    return id
-}
-const sessionId = ref(localStorage.getItem(storage_key) ?? createSession())
+const sessionId = ref('')
 const api = computed(() => builderSession(builderId, sessionId.value))
 // the visual query editor talks to the session as the configuration builder:<builder>:<session>
 watch(sessionId, (sid) => {
+    if (!sid) {
+        return
+    }
     setActiveConfig(`builder:${builderId}:${sid}`)
     OntoConfig.ensureConfig().catch((e) => console.error('Loading the session config failed', e))
 }, { immediate: true })
@@ -175,7 +200,7 @@ let was_running = false
 const results_refresh = ref(0)
 let refreshed = { triples: -1, at: 0 }
 const poll = async () => {
-    if (polling) {
+    if (polling || !sessionId.value) {
         return
     }
     polling = true
@@ -202,7 +227,6 @@ const poll = async () => {
         polling = false
     }
 }
-poll()
 const poll_timer = setInterval(poll, POLL_MS)
 
 const run = async (action: () => Promise<unknown>) => {
@@ -230,13 +254,87 @@ const cardQuery = (class_id: string) => run(async () => {
 })
 const rebuild = () => run(async () => adopt(await api.value.rebuild()))
 
-const newSession = () => {
-    sessionId.value = createSession()
+const sess = reactive({ open: false, input: '', message: '', failed: false, busy: false })
+const status_code = (e: unknown) => (e as { response?: { status?: number } }).response?.status
+
+const switchSession = async (sid: string) => {
+    // unsent edits belong to the current session
+    if (put_timer && sessionId.value) {
+        await putOntology()
+    }
+    localStorage.setItem(storage_key, sid)
+    sessionId.value = sid
     state.value = null
     result.value = null
     sent_key = ''
-    poll()
+    was_running = false
+    refreshed = { triples: -1, at: 0 }
+    await poll()
 }
+const newSession = () => {
+    sess.message = ''
+    return switchSession(crypto.randomUUID())
+}
+/** Opens the session ``sid`` if the backend has it (loaded or saved); stays on the current one otherwise. */
+const openSession = async (sid: string): Promise<boolean> => {
+    if (!SESSION_ID_PATTERN.test(sid)) {
+        Object.assign(sess, { message: `'${sid}' is no session id (letters, digits, - and _).`, failed: true })
+        return false
+    }
+    try {
+        await builderSession(builderId, sid).state(false)
+    } catch (e) {
+        const message = status_code(e) == 404 ? `No session '${sid}' found.` : `Opening '${sid}' failed: ${describe(e)}`
+        Object.assign(sess, { message, failed: true })
+        return false
+    }
+    if (sid != sessionId.value) {
+        await switchSession(sid)
+    }
+    Object.assign(sess, { message: `Opened session ${sid}.`, failed: false })
+    return true
+}
+const openInput = async () => {
+    const sid = sess.input.trim()
+    if (!sid || sess.busy) {
+        return
+    }
+    sess.busy = true
+    try {
+        if (await openSession(sid)) {
+            sess.input = ''
+        }
+    } finally {
+        sess.busy = false
+    }
+}
+const copySessionId = async () => {
+    try {
+        await navigator.clipboard.writeText(sessionId.value)
+        Object.assign(sess, { message: 'Copied the session id.', failed: false })
+    } catch {
+        Object.assign(sess, { message: 'Copying failed: select the id and copy it.', failed: true })
+    }
+}
+// reopen the last session of this builder, or start a new one if the backend no longer has it
+const initSession = async () => {
+    const stored = localStorage.getItem(storage_key)
+    if (stored && SESSION_ID_PATTERN.test(stored)) {
+        try {
+            await builderSession(builderId, stored).state(false)
+            return switchSession(stored)
+        } catch (e) {
+            const code = status_code(e)
+            if (code != 404 && code != 400) {
+                // backend not reachable: keep the session, polling retries
+                return switchSession(stored)
+            }
+            Object.assign(sess, { open: true, failed: true, message: `Session ${stored} no longer exists, started a new one.` })
+        }
+    }
+    await switchSession(crypto.randomUUID())
+}
+initSession()
 
 // --- import / export ---
 const io = reactive({ open: false, prefix: '', content: 'all' as ExportContent, message: '', failed: false })
@@ -250,6 +348,9 @@ const ioRun = async (action: () => Promise<string>) => {
         io.failed = true
     }
 }
+// the session and import/export popups take the same place
+watch(() => sess.open, (open) => open && (io.open = false))
+watch(() => io.open, (open) => open && (sess.open = false))
 const save = () => ioRun(async () => `Saved to ${(await api.value.save(io.content, io.prefix)).path}`)
 const importFile = () => {
     const file = import_file.value?.files?.[0]
@@ -282,7 +383,7 @@ const agent = new AgentSession({
         }
     },
 })
-watch(sessionId, (sid) => agent.connect(sid), { immediate: true })
+watch(sessionId, (sid) => sid && agent.connect(sid), { immediate: true })
 provide('builderExportUrl', (content: ExportContent, prefix: string) => api.value.exportUrl(content, prefix))
 
 onBeforeUnmount(() => {
@@ -360,6 +461,12 @@ onBeforeUnmount(() => {
     display: flex;
     flex-direction: column;
     gap: 2px;
+}
+
+.builder_session_id {
+    flex: 1 1 auto;
+    min-width: 0;
+    font-family: monospace;
 }
 
 .builder_io a.onset_btn {

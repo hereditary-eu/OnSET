@@ -263,21 +263,24 @@
         "path": "${ONSET_TEXT_SETS:-../data/text-sets}/enron/maildir",
         "glob": "*/_sent_mail/*",
         "max_documents": "${ONSET_BUILDER_MAX_DOCUMENTS:-2000}"
-      }
+      },
+      "extract_instances": "${ONSET_BUILDER_EXTRACT_INSTANCES:-4}"
     },
     "gutbrainie": {
       "name": "GutBrainIE",
-      "description": "PubMed abstracts on the gut-brain axis (GutBrainIE gold training articles).",
+      "description": "PubMed abstracts on the gut-brain axis (all GutBrainIE articles: train gold/silver/bronze, dev and test).",
       "text_set": {
         "format": "json",
-        "path": "${ONSET_TEXT_SETS:-../data/text-sets}/gutbrainie/Articles/json_format/articles_train_gold.json",
+        "path": "${ONSET_TEXT_SETS:-../data/text-sets}/gutbrainie/Articles/json_format",
+        "glob": "articles_*.json",
         "title_field": "title",
         "text_fields": [
           "title",
           "abstract"
         ],
         "max_documents": "${ONSET_BUILDER_MAX_DOCUMENTS:-2000}"
-      }
+      },
+      "extract_instances": "${ONSET_BUILDER_EXTRACT_INSTANCES:-4}"
     }
   }
 }

@@ -16,7 +16,7 @@ cd frontend && npm run dev     # then open http://localhost:5174/onto-builder
 The `builders` section of `backend/config.json` configures the builders:
 
 - **Enron:** the sent mails in `data/text-sets/enron/maildir`, one document per mail.
-- **GutBrainIE:** the gold training articles in `data/text-sets/gutbrainie`.
+- **GutBrainIE:** all articles (train gold/silver/bronze, dev, test) in `data/text-sets/gutbrainie/Articles/json_format`, one document per abstract.
 
 `ONSET_TEXT_SETS` moves the data directory, and `ONSET_BUILDER_MAX_DOCUMENTS` limits the number of documents per builder (default 2000).
 

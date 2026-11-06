@@ -2,18 +2,22 @@
 
 Every schema change of the ontology restarts the build: a fresh triple store
 is filled document by document (in a fixed shuffled order, so early results are
-representative) by the extraction model in a background thread, while queries
+representative) by ``extract_instances`` extraction threads, while queries
 already run against the partial KG. The store is Tentris (embedded, native
 Linux x86_64 only) and an in-memory rdflib store elsewhere.
 """
 
 import json
+import os
 import random
+import re
 import threading
 import time
 import uuid
 from collections import OrderedDict
+from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
 from functools import cached_property
+from itertools import islice
 from pathlib import Path
 from typing import Literal as TLiteral
 
@@ -35,6 +39,15 @@ from eval_config import BuilderConfig
 ExportContent = TLiteral["ontology", "kg", "all"]
 # builds of sessions nobody looked at for this long pause (they share the extraction model)
 IDLE_PAUSE_SECONDS = 60
+# session ids are file names in the save dir: no dots or slashes (path traversal, suffixes)
+SESSION_ID_PATTERN = re.compile(r"[A-Za-z0-9_-]{1,64}")
+
+
+def check_session_id(session_id: str) -> str:
+    """``session_id`` if it is a valid session id (ValueError otherwise)."""
+    if not SESSION_ID_PATTERN.fullmatch(session_id):
+        raise ValueError(f"Invalid session id '{session_id}' (letters, digits, '-' and '_' only, at most 64)")
+    return session_id
 
 
 def new_store() -> Graph:
@@ -96,7 +109,7 @@ def class_query(onto: Ontology, class_id: str, limit: int = 200) -> str:
 
 class BuilderSession:
     def __init__(self, session_id: str, builder: "Builder"):
-        self.session_id = session_id
+        self.session_id = check_session_id(session_id)
         self.builder = builder
         self.ontology = Ontology(prefix=builder.config.prefix)
         self.query = ""
@@ -139,12 +152,14 @@ class BuilderSession:
                 self.rebuild()
             else:
                 self._write_schema()
+            self.persist()
 
     def set_query(self, query: str, visual_query: str | None = None):
         with self._lock:
             self.query = query
             self.visual_query = visual_query
             self.version += 1
+            self.persist()
 
     @cached_property
     def kg(self):
@@ -183,37 +198,61 @@ class BuilderSession:
                     daemon=True,
                 ).start()
 
+    def _paused(self) -> bool:
+        return time.monotonic() - self.last_access > IDLE_PAUSE_SECONDS
+
     def _build(self, generation: int, onto: Ontology, docs):
-        max_chars = self.builder.config.text_set.max_chars
-        for doc in docs:
-            while time.monotonic() - self.last_access > IDLE_PAUSE_SECONDS:
-                if generation != self._generation:
-                    return
-                time.sleep(1)
-            if generation != self._generation:
-                return
-            doc_iri = URIRef(f"{onto.prefix}doc/{doc.id}".replace(" ", "_"))
-            try:
-                data = self.builder.extractor.extract(onto, doc.text[:max_chars])
-                triples = extraction_triples(onto, data, doc_iri)
-                error = None
-            except Exception as e:
-                triples, error = [], f"{type(e).__name__}: {e}"
-            with self._lock:
-                if generation != self._generation:
-                    return
-                if triples:
-                    self.graph.add((doc_iri, RDFS.label, Literal(doc.title)))
-                for triple in triples:
-                    self.graph.add(triple)
-                self.status.processed += 1
-                self.status.triples = len(self.graph) - len(self.schema)
-                if error:
-                    self.status.errors += 1
-                    self.status.last_error = error
+        """Extract ``docs`` with ``extract_instances`` threads and add each result as it
+        arrives, until done or ``generation`` is outdated (schema change or stop).
+
+        Only a few documents per thread are queued at a time, so a stop or an idle pause
+        takes effect after the extractions in progress; their results are dropped on a stop."""
+        workers = self.builder.config.extract_instances
+        todo = iter(docs)
+        pending = set()
+        pool = ThreadPoolExecutor(max_workers=workers, thread_name_prefix=f"extract-{self.session_id}")
+        try:
+            while generation == self._generation:
+                if not self._paused():
+                    for doc in islice(todo, 2 * workers - len(pending)):
+                        pending.add(pool.submit(self._extract, onto, doc))
+                elif not pending:
+                    time.sleep(1)
+                    continue
+                if not pending:
+                    break
+                # with a timeout, to notice a stop while documents are being extracted
+                done, pending = wait(pending, timeout=1, return_when=FIRST_COMPLETED)
+                for future in done:
+                    self._add_extraction(generation, *future.result())
+        finally:
+            pool.shutdown(wait=False, cancel_futures=True)
         with self._lock:
             if generation == self._generation:
                 self.status.running = False
+
+    def _extract(self, onto: Ontology, doc) -> tuple:
+        """The triples of one document (and its IRI and title), or an error message."""
+        doc_iri = URIRef(f"{onto.prefix}doc/{doc.id}".replace(" ", "_"))
+        try:
+            data = self.builder.extractor.extract(onto, doc.text[: self.builder.config.text_set.max_chars])
+            return doc_iri, doc.title, extraction_triples(onto, data, doc_iri), None
+        except Exception as e:
+            return doc_iri, doc.title, [], f"{type(e).__name__}: {e}"
+
+    def _add_extraction(self, generation: int, doc_iri: URIRef, title: str, triples: list, error: str | None):
+        with self._lock:
+            if generation != self._generation:
+                return
+            if triples:
+                self.graph.add((doc_iri, RDFS.label, Literal(title)))
+            for triple in triples:
+                self.graph.add(triple)
+            self.status.processed += 1
+            self.status.triples = len(self.graph) - len(self.schema)
+            if error:
+                self.status.errors += 1
+                self.status.last_error = error
 
     def stop(self):
         with self._lock:
@@ -294,31 +333,56 @@ class BuilderSession:
             self.ontology = onto
             self.version += 1
             self.rebuild()
+            self.persist(imported=True)
         return onto
 
     @property
     def save_path(self) -> Path:
+        """``<save_dir>/<builder>/<session>``, the saved files add a suffix."""
         return Path(self.builder.config.save_dir) / self.builder.builder_id / self.session_id
 
-    def save(self, content: ExportContent = "all", prefix: str | None = None) -> str:
-        """Write the session (ontology with layout, query) and a TTL export to the save dir."""
-        path = self.save_path
-        path.parent.mkdir(parents=True, exist_ok=True)
+    @property
+    def state_path(self) -> Path:
+        return self.builder.state_file(self.session_id)
+
+    @property
+    def imported_path(self) -> Path:
+        return self.save_path.with_name(f"{self.session_id}.imported.ttl")
+
+    def persist(self, imported: bool = False):
+        """Write the session's state (ontology with layout, query, visual query) to the save
+        dir, and with ``imported`` its imported instance triples; called on every change,
+        so the session can be restored by its id after a restart (``restore``)."""
         with self._lock:
             state = {"ontology": self.ontology.model_dump(), "query": self.query, "visual_query": self.visual_query}
-        path.with_suffix(".json").write_text(json.dumps(state, indent=2))
-        ttl = path.with_suffix(".ttl")
+            files = {self.state_path: json.dumps(state, indent=2)}
+            if imported:
+                files[self.imported_path] = self.imported.serialize(format="turtle")
+            self.state_path.parent.mkdir(parents=True, exist_ok=True)
+            for path, text in files.items():
+                tmp = path.with_name(path.name + ".tmp")
+                tmp.write_text(text)
+                os.replace(tmp, path)
+
+    def save(self, content: ExportContent = "all", prefix: str | None = None) -> str:
+        """Write the session's state and a TTL export to the save dir."""
+        self.persist(imported=True)
+        ttl = self.save_path.with_suffix(".ttl")
         ttl.write_text(self.export(content, prefix))
         return str(ttl)
 
-    def restore(self):
-        path = self.save_path.with_suffix(".json")
-        if path.exists():
-            state = json.loads(path.read_text())
-            self.ontology = Ontology(**state["ontology"])
-            self.query = state.get("query", "")
-            self.visual_query = state.get("visual_query")
-            self.rebuild()
+    def restore(self) -> bool:
+        """Load the saved state, if there is one, and restart the build."""
+        if not self.state_path.exists():
+            return False
+        state = json.loads(self.state_path.read_text())
+        self.ontology = Ontology(**state["ontology"])
+        self.query = state.get("query", "")
+        self.visual_query = state.get("visual_query")
+        if self.imported_path.exists():
+            self.imported = Graph().parse(self.imported_path, format="turtle")
+        self.rebuild()
+        return True
 
 
 class Builder:
@@ -345,12 +409,21 @@ class Builder:
 
         return AgentLLM(self.config.agent)
 
-    def session(self, session_id: str | None = None) -> BuilderSession:
+    def state_file(self, session_id: str) -> Path:
+        """Where the state of a session is saved (BuilderSession.persist)."""
+        return Path(self.config.save_dir) / self.builder_id / f"{check_session_id(session_id)}.json"
+
+    def session(self, session_id: str | None = None, create: bool = True) -> BuilderSession:
+        """The session ``session_id``: loaded, else restored from its save, else (``create``)
+        a new one; KeyError if it does not exist and ``create`` is off, ValueError for an
+        invalid id."""
         with self._lock:
-            session_id = session_id or uuid.uuid4().hex
+            session_id = check_session_id(session_id or uuid.uuid4().hex)
             if session_id in self.sessions:
                 self.sessions.move_to_end(session_id)
                 return self.sessions[session_id]
+            if not create and not self.state_file(session_id).exists():
+                raise KeyError(f"No session '{session_id}'")
             session = self.sessions[session_id] = BuilderSession(session_id, self)
             while len(self.sessions) > self.max_sessions:
                 self.sessions.popitem(last=False)[1].stop()

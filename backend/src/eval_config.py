@@ -182,13 +182,15 @@ class TextSetConfig(BaseModel):
 
     ``files``: every file matching ``glob`` below ``path`` is one document (e-mails are
     parsed: subject as title, plain text body). ``json``: ``path`` is a JSON object
-    (or list) of records, ``title_field`` and ``text_fields`` select the text.
+    (or list) of records, or a directory whose files matching ``glob`` are each such
+    a JSON file; ``title_field`` and ``text_fields`` select the text.
     Relative paths are resolved against the config file's directory.
     """
 
     format: Literal["files", "json"] = "files"
     path: str
-    glob: str = "**/*"
+    # files below a directory ``path``; None: "**/*" (files) or "**/*.json" (json)
+    glob: str | None = None
     title_field: str = "title"
     text_fields: list[str] = Field(default_factory=lambda: ["text"])
     # documents loaded (in sorted path/key order), None for all
@@ -207,6 +209,8 @@ class BuilderConfig(BaseModel):
     extract_model_id: str = "LiquidAI/LFM2-350M-Extract-GGUF"
     extract_model_quant: str = "*Q8_0.gguf"
     extract_n_ctx: int = 8192
+    # model instances in the extraction pool, i.e. documents extracted at once (~1 GB VRAM each)
+    extract_instances: int = Field(4, ge=1)
     # default IRI prefix of new ontologies
     prefix: str = "http://example.org/onto/"
     # snippets returned by a text search

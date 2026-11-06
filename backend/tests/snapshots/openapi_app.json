@@ -745,6 +745,18 @@
        "title": "Session Id",
        "type": "string"
       }
+     },
+     {
+      "description": "create an unknown session (else 404)",
+      "in": "query",
+      "name": "create",
+      "required": false,
+      "schema": {
+       "default": true,
+       "description": "create an unknown session (else 404)",
+       "title": "Create",
+       "type": "boolean"
+      }
      }
     ],
     "responses": {
