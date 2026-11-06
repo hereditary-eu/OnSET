@@ -16,6 +16,9 @@ export interface OntoLink { id: string, label: string, source: string, target: s
 export interface Ontology { prefix: string, classes: OntoClass[], links: OntoLink[] }
 export interface BuildStatus { running: boolean, processed: number, total: number, triples: number, errors: number, last_error: string | null, store: string }
 export interface SessionState { session_id: string, version: number, ontology: Ontology, query: string, visual_query: string | null, status: BuildStatus }
+/** Triples of an ontology link (``to_id`` null: of a field) in the KG, ids prefixed (``onto:Person``). */
+export interface LinkCount { from_id: string, property_id: string, to_id: string | null, count: number }
+export interface LinkCounts { triples: number, links: LinkCount[] }
 export interface Cell { value: string, kind: 'uri' | 'literal' | 'bnode', label: string | null }
 export interface QueryResult { columns: string[], rows: (Cell | null)[][], error: string | null, status: BuildStatus }
 
@@ -43,6 +46,8 @@ export function builderSession(bid: string, sid: string) {
         setQuery: (query: string, visual_query: string | null = null) => put('/query', { query, visual_query }),
         classQuery: (class_id: string) => get<{ query: string }>(`${base}/class-query/${encodeURIComponent(class_id)}`),
         results: (limit = 500) => get<QueryResult>(`${base}/results`, { limit }),
+        /** cached on the server until the KG changes: refetch when ``status.triples`` changes */
+        linkCounts: () => get<LinkCounts>(`${base}/link-counts`),
         rebuild: () => post<SessionState>('/rebuild'),
         save: (content: ExportContent, prefix: string) => post<{ path: string }>('/save', { content, prefix }),
         import: (file: File, prefix?: string) => {

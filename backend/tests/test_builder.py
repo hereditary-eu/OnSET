@@ -10,7 +10,7 @@ from collections import Counter
 import pytest
 from fakes import ScriptedLLM, final_answer
 from agent.llm import ResponseDone
-from rdflib import RDFS, Graph
+from rdflib import RDF, RDFS, Graph
 
 from builder.corpus import load_documents
 from builder.agent import BuilderAgent, BuilderStateMessage
@@ -179,6 +179,40 @@ def test_api(builder, client, monkeypatch):
     assert client.get("/onto-builder/test/search", params={"q": "Globex"}).json()[0]["doc_id"] == "d2"
     assert client.get("/onto-builder/test/documents/d1").json()["title"] == "Hiring"
     assert client.get("/onto-builder/nope/search", params={"q": "x"}).status_code == 404
+
+
+def test_link_counts(builder, client, monkeypatch):
+    """Triples per link/field between the instances of its classes, cached until the KG changes,
+    served by the builder API and as the instance counts of the editor's link search."""
+    import api.router.builder as router
+
+    monkeypatch.setitem(router._builders, "test", builder)
+    monkeypatch.setattr(router.CONFIG_FILE, "builders", {"test": {}})
+    session = builder.session("c")
+    onto = ontology()
+    onto.classes.append(OntoClass(id="City"))
+    onto.links.append(OntoLink(id="livesIn", source="Person", target="City"))
+    session.set_ontology(onto)
+    wait_built(session)
+    counts = {(c.from_id, c.property_id, c.to_id): c.count for c in session.link_counts().links}
+    assert counts == {
+        ("onto:Person", "onto:worksFor", "onto:Company"): 2,
+        ("onto:Person", "onto:livesIn", "onto:City"): 0,
+        ("onto:Person", "onto:age", None): 1,
+    }
+    assert session.link_counts() is session.link_counts()
+    # a new triple invalidates the cache
+    p = onto.term("Person/carol")
+    session._add_extraction(session._generation, onto.term("doc/x"), "x", [
+        (p, RDF.type, onto.term("Person")), (p, onto.term("worksFor"), onto.term("Company/globex")),
+    ], None)
+    out = client.get("/onto-builder/test/sessions/c/link-counts").json()
+    assert out["triples"] == session.status.triples
+    by_link = {(c["property_id"], c["to_id"]): c["count"] for c in out["links"]}
+    assert by_link[("onto:worksFor", "onto:Company")] == 3 and by_link[("onto:livesIn", "onto:City")] == 0
+    # the editor's link search carries them as instance counts
+    links = session.kg.guidance_man.search_links(from_id="onto:Person")
+    assert {l.property_id: l.instance_count for l in links} == {"onto:worksFor": 3, "onto:livesIn": 0, "onto:age": 1}
 
 
 def test_session_as_config(builder, app, monkeypatch):

@@ -5,15 +5,19 @@
         <rect :x="extent.x" :y="extent.y - LABEL_HOVER_PAD" :width="extent.width"
             :height="extent.height + LABEL_HOVER_PAD" fill="transparent" />
         <defs>
-            <marker :id="marker_id" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8"
+            <marker :id="marker_id" viewBox="0 0 10 10" refX="9" refY="5" :markerWidth="marker_size" :markerHeight="marker_size"
                 markerUnits="userSpaceOnUse" orient="auto-start-reverse">
                 <path d="M 0 0 L 10 5 L 0 10 z" class="link_arrow" :class="link_statestyle" />
             </marker>
         </defs>
-        <path :d="geometry.d" class="link_path" :class="link_statestyle" :style="{ strokeWidth: link_width }"
-            :marker-end="`url(#${marker_id})`" />
+        <path :d="geometry.d" class="link_path" :class="[link_statestyle, { link_empty: strength.empty }]"
+            :style="{ strokeWidth: strength.width }" :marker-end="`url(#${marker_id})`">
+            <title v-if="count_title">{{ count_title }}</title>
+        </path>
         <g :transform="`translate(${text_attach_pt.x},${text_attach_pt.y})`">
-            <text :y="-4" class="link_text">{{ label }}</text>
+            <text :y="-4" class="link_text" :class="{ link_text_empty: strength.empty }"
+                :style="{ fontWeight: strength.weight > 0.66 ? 600 : undefined }">{{ label }}<title
+                    v-if="count_title">{{ count_title }}</title></text>
             <g v-if="mode == DisplayMode.EDIT" v-show="editor_data.show_editpoints">
                 <circle :cx="0" :cy="EDITPOINT_R + 2" :r="EDITPOINT_R" class="edit_point"
                     @click="emit('linkEditClicked', { side: OpenEventType.LINK, link: link, evt: $event })" />
@@ -32,7 +36,8 @@ import { DisplayMode, EDITPOINT_R, extentNodes, OpenEventType, type SelectorOpen
 import type { InstanceLink } from '@/utils/sparql/querymapper';
 import { NodeState, type Link } from '@/utils/sparql/representation';
 import type { NodeLinkRepository } from '@/utils/sparql/store';
-import { watch, reactive, computed, onMounted, useId } from 'vue'
+import { LINK_COUNTS_KEY, linkStrength } from '@/utils/sparql/link-strength';
+import { watch, reactive, computed, onMounted, useId, inject } from 'vue'
 
 // extra hover area above the link for its label and edit handles
 const LABEL_HOVER_PAD = 30
@@ -143,9 +148,21 @@ onMounted(() => {
     // console.log('Link', link)
     updateLinkState()
 })
-const link_width = computed(() => {
-    return Math.log10(link.instance_count + 1) + 1
+// live triple counts of the view (the ontology builder's KG), else the link's stored instance count
+const link_counts = inject(LINK_COUNTS_KEY, null)
+const live_count = computed(() => {
+    if (!link_counts?.value || link.allow_arbitrary || mode == DisplayMode.RESULTS || mode == DisplayMode.RESULT_INTERACTIVE) {
+        return undefined
+    }
+    return link_counts.value.count(from.value?.subject_id ?? link.from_id, link.property_id, to.value?.subject_id ?? link.to_id)
 })
+const strength = computed(() => live_count.value !== undefined
+    ? linkStrength(live_count.value, link_counts!.value!.max)
+    : linkStrength(link.instance_count))
+const count_title = computed(() => live_count.value !== undefined
+    ? `${live_count.value} triple${live_count.value == 1 ? '' : 's'} in the knowledge graph` : '')
+// the arrowhead grows with the stroke (userSpaceOnUse: 8 at the thinnest)
+const marker_size = computed(() => 6.5 + 1.5 * strength.value.width)
 
 const updateLinkState = () => {
     if (diff) {

@@ -25,7 +25,9 @@ from api.router.agent import _Connection, _run_turn
 from builder.agent import BuilderChat
 from builder.corpus import Snippet
 from builder.ontology import Ontology
-from builder.session import Builder, BuilderSession, ExportContent, QueryResult, SessionState, class_query
+from builder.session import (
+    Builder, BuilderSession, ExportContent, LinkCounts, QueryResult, SessionState, class_query,
+)
 from eval_config import CONFIG_FILE
 
 builder_router = APIRouter(prefix="/onto-builder", tags=["onto-builder"])
@@ -127,6 +129,13 @@ def get_class_query(builder_id: str, session_id: str, class_id: str) -> QueryIn:
 @builder_router.get("/{builder_id}/sessions/{session_id}/results")
 def get_results(builder_id: str, session_id: str, limit: int = Query(500, ge=1, le=5000)) -> QueryResult:
     return get_session(builder_id, session_id).run_query(limit=limit)
+
+
+@builder_router.get("/{builder_id}/sessions/{session_id}/link-counts")
+def get_link_counts(builder_id: str, session_id: str) -> LinkCounts:
+    """Triples of every link and field of the ontology in the KG (the query editor's link widths);
+    refetch when the build status' triple count changes."""
+    return get_session(builder_id, session_id).link_counts()
 
 
 @builder_router.post("/{builder_id}/sessions/{session_id}/rebuild")

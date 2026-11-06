@@ -103,6 +103,7 @@ import TextSearch from '@/components/builder/TextSearch.vue'
 import { AgentSession } from '@/utils/agent/agentSession'
 import { setActiveConfig } from '@/utils/api'
 import { OntoConfig } from '@/utils/sparql/ontoconfig'
+import { LINK_COUNTS_KEY, linkCountLookup, type LinkCountLookup } from '@/utils/sparql/link-strength'
 import {
     builderSession, listBuilders, SESSION_ID_PATTERN,
     type BuilderSummary, type ExportContent, type Ontology, type QueryResult, type SessionState,
@@ -210,6 +211,27 @@ let polling = false
 let was_running = false
 const results_refresh = ref(0)
 let refreshed = { triples: -1, at: 0 }
+// triple counts of the ontology's links, the link widths of the visual query editor; refetched when
+// the KG's triple count or the ontology (version) changes, not on every poll
+const link_counts = ref<LinkCountLookup | null>(null)
+provide(LINK_COUNTS_KEY, link_counts)
+let counted = ''
+const loadLinkCounts = async (s: SessionState) => {
+    const key = `${s.session_id}:${s.version}:${s.status.triples}`
+    if (key == counted) {
+        return
+    }
+    counted = key
+    try {
+        const counts = await api.value.linkCounts()
+        if (counted == key) {
+            link_counts.value = linkCountLookup(counts.links)
+        }
+    } catch (e) {
+        counted = '' // retried on the next poll
+        console.warn('Loading the link counts failed', e)
+    }
+}
 const poll = async () => {
     if (polling || !sessionId.value) {
         return
@@ -227,6 +249,7 @@ const poll = async () => {
             await loadResults()
         }
         was_running = s.status.running
+        loadLinkCounts(s)
         if (s.status.triples != refreshed.triples && (!s.status.running || Date.now() - refreshed.at > RESULTS_REFRESH_MS)) {
             refreshed = { triples: s.status.triples, at: Date.now() }
             results_refresh.value++
@@ -280,6 +303,8 @@ const switchSession = async (sid: string) => {
     sent_key = ''
     was_running = false
     refreshed = { triples: -1, at: 0 }
+    counted = ''
+    link_counts.value = null
     await poll()
 }
 const newSession = () => {

@@ -38,6 +38,10 @@ svg text {
 .link_added { stroke: var(--c-link-added); stroke-dasharray: 10, 2, 10, 2; }
 .link_removed { stroke: var(--c-link-removed); stroke-dasharray: 10, 4, 10, 4; }
 
+/* a link without triples in the KG (live counts, e.g. the ontology builder) */
+.link_path.link_empty { stroke-dasharray: 4, 3; opacity: 0.7; }
+.link_text_empty { opacity: 0.6; }
+
 /* arrowhead at the object end of a link, in the link's state colour */
 .link_arrow { fill: var(--c-link-normal); stroke: none; }
 .link_arrow.link_added { fill: var(--c-link-added); stroke: none; }

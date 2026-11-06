@@ -52,9 +52,11 @@ class SessionGuidance:
     Ids are prefixed (``onto:Person``) as OntologyManager renders them. There is no class
     hierarchy, so a class's subclasses are the class itself and its links are its own."""
 
-    def __init__(self, onto: Ontology, oman: OntologyManager):
+    def __init__(self, onto: Ontology, oman: OntologyManager, counts=None):
         self.onto = onto
         self.oman = oman
+        # () -> LinkCounts of the session (BuilderSession.link_counts), the links' instance counts
+        self._counts = counts
 
     def _local(self, uri: str | None) -> str | None:
         if uri is None:
@@ -86,6 +88,10 @@ class SessionGuidance:
         return links
 
     def _enrich(self, link: SubjectLink) -> SubjectLink:
+        # the link's triples in the KG, as the stored schema has them for a configured KG
+        if self._counts is not None:
+            counts = {(c.from_id, c.property_id, c.to_id): c.count for c in self._counts().links}
+            link.instance_count = counts.get((link.from_id, link.property_id, link.to_id), 0)
         link.from_subject = self.oman.enrich_subject(link.from_id)
         link.to_subject = self.oman.enrich_subject(link.to_id) if link.to_id else None
         return link
@@ -161,4 +167,4 @@ class SessionKG:
 
     @property
     def guidance_man(self) -> SessionGuidance:
-        return SessionGuidance(self.session.ontology, self.ontology_manager)
+        return SessionGuidance(self.session.ontology, self.ontology_manager, self.session.link_counts)

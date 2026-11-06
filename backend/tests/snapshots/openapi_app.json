@@ -193,6 +193,62 @@
     "title": "HTTPValidationError",
     "type": "object"
    },
+   "LinkCount": {
+    "description": "Triples of a link (or field) of the ontology between instances of its classes in the KG.",
+    "properties": {
+     "count": {
+      "title": "Count",
+      "type": "integer"
+     },
+     "from_id": {
+      "title": "From Id",
+      "type": "string"
+     },
+     "property_id": {
+      "title": "Property Id",
+      "type": "string"
+     },
+     "to_id": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "To Id"
+     }
+    },
+    "required": [
+     "from_id",
+     "property_id",
+     "count"
+    ],
+    "title": "LinkCount",
+    "type": "object"
+   },
+   "LinkCounts": {
+    "properties": {
+     "links": {
+      "default": [],
+      "items": {
+       "$ref": "#/components/schemas/LinkCount"
+      },
+      "title": "Links",
+      "type": "array"
+     },
+     "triples": {
+      "title": "Triples",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "triples"
+    ],
+    "title": "LinkCounts",
+    "type": "object"
+   },
    "OntoClass": {
     "properties": {
      "description": {
@@ -999,6 +1055,58 @@
      }
     },
     "summary": "Import Ttl",
+    "tags": [
+     "onto-builder"
+    ]
+   }
+  },
+  "/onto-builder/{builder_id}/sessions/{session_id}/link-counts": {
+   "get": {
+    "description": "Triples of every link and field of the ontology in the KG (the query editor's link widths);\nrefetch when the build status' triple count changes.",
+    "operationId": "get_link_counts_onto_builder__builder_id__sessions__session_id__link_counts_get",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "builder_id",
+      "required": true,
+      "schema": {
+       "title": "Builder Id",
+       "type": "string"
+      }
+     },
+     {
+      "in": "path",
+      "name": "session_id",
+      "required": true,
+      "schema": {
+       "title": "Session Id",
+       "type": "string"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/LinkCounts"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Get Link Counts",
     "tags": [
      "onto-builder"
     ]

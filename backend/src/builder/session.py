@@ -85,6 +85,22 @@ class QueryResult(BaseModel):
     status: BuildStatus = BuildStatus()
 
 
+class LinkCount(BaseModel):
+    """Triples of a link (or field) of the ontology between instances of its classes in the KG."""
+    # prefixed as the query editor's ids (``onto:Person``)
+    from_id: str
+    property_id: str
+    # None for a field (a datatype property)
+    to_id: str | None = None
+    count: int
+
+
+class LinkCounts(BaseModel):
+    # the build status' triple count the counts are of (clients refetch when it changes)
+    triples: int
+    links: list[LinkCount] = []
+
+
 class SessionState(BaseModel):
     session_id: str
     version: int
@@ -127,6 +143,8 @@ class BuilderSession:
         self.status = BuildStatus(store=type(self.graph.store).__name__)
         self._generation = 0
         self._lock = threading.RLock()
+        # (key, LinkCounts) of the last link_counts, see there
+        self._link_counts: tuple | None = None
         self.last_access = time.monotonic()
         # the agent chat (builder.agent.BuilderChat), created by the first connection
         self.chat = None
@@ -320,6 +338,43 @@ class BuilderSession:
                 return QueryResult(columns=columns, rows=rows, status=status)
             except Exception as e:
                 return QueryResult(error=f"{type(e).__name__}: {e}", status=status)
+
+    def link_counts(self) -> LinkCounts:
+        """The triple count of every link (subject class, predicate, object class) and field
+        (class, predicate) of the ontology in the KG, e.g. for the link widths of the query editor.
+
+        One COUNT per link/field, each under the session lock on its own (so extraction goes on
+        in between); cached until the KG (its triple count or build) or the schema changes."""
+        with self._lock:
+            onto, graph = self.ontology, self.graph
+            key = (self._generation, self.status.triples, onto.schema_key())
+            if self._link_counts is not None and self._link_counts[0] == key:
+                return self._link_counts[1]
+        a = "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>"
+        patterns = [
+            (l.source, l.id, l.target, f"?s <{onto.term(l.id)}> ?o . ?s {a} <{onto.term(l.source)}> . "
+                                       f"?o {a} <{onto.term(l.target)}> .")
+            for l in onto.links
+        ] + [
+            (c.id, f.name, None, f"?s <{onto.term(f.name)}> ?o . ?s {a} <{onto.term(c.id)}> .")
+            for c in onto.classes for f in c.fields
+        ]
+        links = []
+        for source, prop, target, pattern in patterns:
+            with self._lock:
+                try:
+                    rows = list(graph.query(f"SELECT (COUNT(*) AS ?n) WHERE {{ {pattern} }}"))
+                    count = int(rows[0][0]) if rows and rows[0][0] is not None else 0
+                except Exception:
+                    count = 0
+            links.append(LinkCount(
+                from_id=f"onto:{source}", property_id=f"onto:{prop}",
+                to_id=f"onto:{target}" if target else None, count=count,
+            ))
+        counts = LinkCounts(triples=key[1], links=links)
+        with self._lock:
+            self._link_counts = (key, counts)
+        return counts
 
     def _cell(self, value) -> Cell | None:
         if value is None:
