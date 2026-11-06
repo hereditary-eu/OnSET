@@ -155,6 +155,15 @@ def extraction_triples(onto: Ontology, data: dict, doc: URIRef | None = None) ->
     classes = {c.id: c for c in onto.classes}
     links = {l.id: l for l in onto.links}
 
+    # the extraction prompt's own texts, names copied from them are no entities
+    prompt_text = " ".join(
+        [c.label + " " + c.description for c in onto.classes] + [l.label + " " + l.description for l in onto.links]
+    ).lower()
+
+    def name_of(value) -> str | None:
+        name = clean_name(value)
+        return name if name and name.lower() not in prompt_text else None
+
     def entity(class_id: str, name: str) -> URIRef:
         iri = onto.instance(class_id, name)
         triples.append((iri, RDF.type, onto.term(class_id)))
@@ -169,14 +178,14 @@ def extraction_triples(onto: Ontology, data: dict, doc: URIRef | None = None) ->
             continue
         fields = {f.name: f for f in cls.fields}
         for item in instances:
-            if not isinstance(item, dict) or not (name := clean_name(item.get("name"))):
+            if not isinstance(item, dict) or not (name := name_of(item.get("name"))):
                 continue
             iri = entity(class_id, name)
             for key, value in item.items():
                 if key in fields and (lit := _literal(value, fields[key].type)) is not None:
                     triples.append((iri, onto.term(key), lit))
                 elif key in links and links[key].source == class_id and isinstance(value, list):
-                    for target in filter(None, map(clean_name, value)):
+                    for target in filter(None, map(name_of, value)):
                         triples.append((iri, onto.term(key), entity(links[key].target, target)))
     return triples
 

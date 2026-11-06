@@ -90,7 +90,9 @@ def test_extraction_schema_and_triples():
     # unknown keys are ignored
     assert not any("bogus" in str(p) for _, p, _ in g)
     # leaked markup is no name, trailing punctuation is dropped
-    junk = extraction_triples(onto, {"Person": [{"name": "Prevotella</name>], {"}, {"name": "Eve."}]})
+    onto.classes[0].description = "a human, e.g. a scientist"
+    junk = extraction_triples(onto, {"Person": [
+        {"name": "Prevotella</name>], {"}, {"name": "Eve."}, {"name": "E.g. a scientist"}]})
     assert {str(o) for _, p, o in junk if p == RDFS.label} == {"Eve"}
 
 
