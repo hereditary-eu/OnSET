@@ -26,6 +26,8 @@ base_path = "../../data"
 
 # Name of the URL path parameter selecting the configuration, e.g. /{config_id}/classes/roots
 CONFIG_PATH_PARAM = "config_id"
+# config ids of ontology builder sessions, see get_manman
+BUILDER_CONFIG_PREFIX = "builder:"
 
 
 class ManMan:
@@ -176,6 +178,13 @@ def get_manman(connection: HTTPConnection) -> ManMan:
     Works for HTTP requests and WebSockets alike (both are HTTPConnections).
     """
     config_id = connection.path_params.get(CONFIG_PATH_PARAM)
+    if config_id is not None and config_id.startswith(BUILDER_CONFIG_PREFIX):
+        # a builder session (builder/kg.py): builder:<builder_id>:<session_id>
+        from api.router.builder import get_session
+
+        builder_id, _, session_id = config_id[len(BUILDER_CONFIG_PREFIX):].partition(":")
+        if session_id:
+            return get_session(builder_id, session_id).kg
     if config_id is None or config_id not in REGISTRY:
         reason = f"Unknown configuration '{config_id}'"
         if connection.scope["type"] == "websocket":

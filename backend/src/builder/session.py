@@ -104,6 +104,9 @@ class BuilderSession:
         # instance triples of an imported TTL, kept across rebuilds
         self.imported = Graph()
         self.graph = new_store()
+        # the ontology's own triples (ontology_graph), kept in the store so queries can join
+        # classes and properties with the instances; refreshed on every ontology change
+        self.schema = Graph()
         self.status = BuildStatus(store=type(self.graph.store).__name__)
         self._generation = 0
         self._lock = threading.RLock()
@@ -130,11 +133,28 @@ class BuilderSession:
             self.version += 1
             if rebuild:
                 self.rebuild()
+            else:
+                self._write_schema()
 
     def set_query(self, query: str):
         with self._lock:
             self.query = query
             self.version += 1
+
+    @cached_property
+    def kg(self):
+        """This session as a configuration of the config-scoped API (builder/kg.py)."""
+        from builder.kg import SessionKG
+
+        return SessionKG(self)
+
+    def _write_schema(self):
+        with self._lock:
+            for triple in self.schema:
+                self.graph.remove(triple)
+            self.schema = ontology_graph(self.ontology)
+            for triple in self.schema:
+                self.graph.add(triple)
 
     # --- progressive build ---
 
@@ -144,6 +164,8 @@ class BuilderSession:
             self.graph = new_store()
             for triple in self.imported:
                 self.graph.add(triple)
+            self.schema = Graph()
+            self._write_schema()
             docs = list(self.builder.corpus.documents)
             random.Random(0).shuffle(docs)
             self.status = BuildStatus(
@@ -180,7 +202,7 @@ class BuilderSession:
                 for triple in triples:
                     self.graph.add(triple)
                 self.status.processed += 1
-                self.status.triples = len(self.graph)
+                self.status.triples = len(self.graph) - len(self.schema)
                 if error:
                     self.status.errors += 1
                     self.status.last_error = error
@@ -247,7 +269,8 @@ class BuilderSession:
                 g += ontology_graph(self.ontology)
             if content in ("kg", "all"):
                 for triple in self.graph:
-                    g.add(triple)
+                    if triple not in self.schema:
+                        g.add(triple)
             g.bind("onto", self.ontology.prefix)
             g.bind("prov", PROV)
             old = self.ontology.prefix

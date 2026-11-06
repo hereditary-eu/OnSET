@@ -162,6 +162,43 @@ def test_api(builder, client, monkeypatch):
     assert client.get("/onto-builder/nope/search", params={"q": "x"}).status_code == 404
 
 
+def test_session_as_config(builder, app, monkeypatch):
+    """A session serves the config-scoped routes of the query editor at /builder:<builder>:<session>."""
+    from fastapi.testclient import TestClient
+    import api.router.builder as router
+
+    monkeypatch.setitem(router._builders, "test", builder)
+    monkeypatch.setattr(router.CONFIG_FILE, "builders", {"test": {}})
+    session = builder.session("v")
+    session.set_ontology(ontology())
+    wait_built(session)
+    client = TestClient(app)
+    base = "/builder:test:v"
+    assert client.get(f"{base}/ontology/config").json()["id"] == "builder:test:v"
+    classes = client.post(f"{base}/classes/search", json={"q": "pers", "type": "subject"}).json()["results"]
+    assert [(r["subject"]["subject_id"], r["subject"]["instance_count"]) for r in classes] == [("onto:Person", 2)]
+    links = client.post(f"{base}/classes/search", json={"from_id": "onto:Person", "type": "link"}).json()["results"]
+    assert [(l["link"]["property_id"], l["link"]["to_subject"]["label"]) for l in links] == [("onto:worksFor", "Company")]
+    props = client.post(f"{base}/classes/search", json={
+        "from_id": "onto:Person", "type": "link", "relation_type": "property"}).json()["results"]
+    assert [(l["link"]["property_id"], l["link"]["to_proptype"]) for l in props] == [("onto:age", "xsd:integer")]
+    assert client.post(f"{base}/classes/search", json={"to_id": "onto:Person", "type": "link"}).json()["results"] == []
+    sub = client.post(f"{base}/classes/subclasses/search", json={"from_id": "onto:Company"}).json()["results"]
+    assert [r["subject"]["label"] for r in sub] == ["Company"]
+    instances = client.get(f"{base}/classes/instances/search", params={"cls": "onto:Person", "q": "ali"}).json()
+    assert [i["label"] for i in instances] == ["Alice Smith"]
+    rows = client.post(f"{base}/sparql", json={"query": (
+        "SELECT ?p ?l ?c WHERE { ?p a onto:Person ; rdfs:label ?l ; onto:worksFor ?c } ORDER BY ?l")}).json()
+    assert [(r["l"], r["c"]) for r in rows] == [
+        ("Alice Smith", "<http://ex.org/o/Company/acme-corp>"), ("Bob Jones", "<http://ex.org/o/Company/globex>")]
+    # renamed labels show without a rebuild, the KG export keeps out the ontology
+    onto = session.ontology.model_copy(deep=True)
+    onto.classes[0].label = "Human"
+    session.set_ontology(onto)
+    assert client.get(f"{base}/classes/subjects", params={"subject_id": "onto:Person"}).json()["label"] == "Human"
+    assert "owl:Class" not in session.export("kg") and session.status.triples == len(session.graph) - len(session.schema)
+
+
 def test_agent_edits_ontology(builder):
     session = builder.session("s1")
     llm = ScriptedLLM([
