@@ -246,6 +246,10 @@ export enum NumberConstraintType {
         'xsd:duration',
         'xsd:yearMonthDuration',
         'xsd:dayTimeDuration',
+        "<http://dbpedia.org/datatype/millimetre>",
+        "<http://dbpedia.org/datatype/centimetre>",
+        "<http://dbpedia.org/datatype/metre>",
+        "<http://dbpedia.org/datatype/kilometre>",
     ]
 )
 export class NumberConstraint extends SubQuery {

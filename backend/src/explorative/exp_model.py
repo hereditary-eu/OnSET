@@ -258,7 +258,7 @@ class FuzzyQuery(BaseModel):
     relation_type: RELATION_TYPE | None = RELATION_TYPE.INSTANCE
 
     order: FUZZY_QUERY_ORDER = Field(FUZZY_QUERY_ORDER.SCORE)
-    include_thing: bool = Field(False)
+    include_thing: bool = Field(True)
 
     entity_type: str | None = Field("class")
 
