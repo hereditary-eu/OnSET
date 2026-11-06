@@ -3,8 +3,12 @@ import { jsonClone, registerClass } from "../parsing";
 import { OpenEventType } from "./helpers";
 import { Link, LinkTriplet, LinkType, QueryProp, QuerySet, SubjectConstraint, SubjectNode, SubQuery, type QuerySetGenerator } from "./representation";
 import type { Diffable } from "./diff";
+import { linkGeometry, parallelIndex, type Box, type LinkGeometry } from "../graph-layout";
 import { el } from "vuetify/locale";
 
+
+// the box of a query node that its links attach to (without its constraints)
+export const nodeBox = (node: SubjectNode): Box => ({ x: node.x, y: node.y, w: node.width, h: node.height })
 
 @registerClass
 export class MixedResponse<N extends Subject = Subject> implements FuzzyQueryResult {
@@ -185,25 +189,26 @@ export class NodeLinkRepository<N extends SubjectNode = SubjectNode, L extends L
     }
 
 
-    textAttachPoint(link: L, circular: boolean = false): { x: number, y: number } {
-        let from = this.from(link)
-        let to = this.to(link)
+    // index of the link among the links between the same two nodes (either direction), so parallel links bend apart
+    parallelIndex(link: Link): number {
+        return parallelIndex<Link>(this.links, this.link(link) ?? link, (l) => [l.from_internal_id, l.to_internal_id])
+    }
+    // directed path of the link from its subject to its object node (see graph-layout.ts)
+    linkGeometry(link: Link, circular: boolean = false, from: SubjectNode | null = this.from(link),
+        to: SubjectNode | null = this.to(link)): LinkGeometry | null {
         if (!from || !to) {
-            console.warn("Link has no from or to node", link, from, to)
+            return null
+        }
+        return linkGeometry(nodeBox(from), nodeBox(to), this.parallelIndex(link),
+            circular || from.internal_id === to.internal_id)
+    }
+    textAttachPoint(link: L, circular: boolean = false): { x: number, y: number } {
+        const geometry = this.linkGeometry(link, circular)
+        if (!geometry) {
+            console.warn("Link has no from or to node", link)
             return { x: 0, y: 0 }
         }
-        //circular
-        if (this.circularLink(link) || circular) {
-            return { x: from.x + from.width / 2, y: from.y - from.height * 2 }
-        } else {
-            let from_pt = { x: from.x + from.width, y: from.y + from.height / 2 }
-            let to_pt = { x: to.x, y: to.y + to.height / 2 }
-            return {
-                x: (from_pt.x + to_pt.x) / 2,
-                y: (from_pt.y + to_pt.y) / 2
-            }
-        }
-
+        return geometry.label
     }
 
     generateQuery(limit: number | null = 100, skip: number | null = null, distinct: boolean = true): string {

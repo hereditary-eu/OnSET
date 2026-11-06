@@ -111,6 +111,7 @@ import { computed, reactive, ref } from 'vue'
 import OnsetBtn from '@/components/ui/OnsetBtn.vue'
 import OnsetIcon from '@/components/ui/OnsetIcon.vue'
 import { FIELD_TYPES, toId, uniqueId, type FieldType, type OntoClass, type OntoField, type OntoLink, type Ontology } from '@/utils/builder/api'
+import { linkGeometry, parallelIndex, pointerDrag } from '@/utils/graph-layout'
 
 const CARD_W = 190
 // must match the card CSS below (header, rows, padding)
@@ -152,45 +153,16 @@ const rect = (cls: OntoClass) => ({ ...pos(cls), w: CARD_W, h: HEADER_H + Math.m
 const extent = computed(() => ontology.value.classes.map(rect).reduce(
     (e, r) => ({ x: Math.max(e.x, r.x + r.w + 60), y: Math.max(e.y, r.y + r.h + 60) }), { x: 0, y: 0 }))
 
-// cubic bezier between the facing sides of the two cards; parallel links bend apart
+// links between the facing sides of the two cards; parallel links bend apart
 const link_geometry = computed(() => {
-    const seen = new Map<string, number>()
+    const ends = (l: OntoLink): [string, string] => [l.source, l.target]
     return ontology.value.links.flatMap((link) => {
         const s = classOf(link.source), t = classOf(link.target)
         if (!s || !t) {
             return []
         }
-        const pair = [link.source, link.target].sort().join(' ')
-        const k = seen.get(pair) ?? 0
-        seen.set(pair, k + 1)
-        const a = rect(s), b = rect(t)
-        const bend = k * 28
-        let p0, p3, c1, c2
-        if (s == t) {
-            p0 = { x: a.x + a.w, y: a.y + 8 }
-            p3 = { x: a.x + a.w, y: a.y + a.h - 4 }
-            c1 = { x: p0.x + 70 + bend, y: p0.y - 30 }
-            c2 = { x: p3.x + 70 + bend, y: p3.y + 30 }
-        } else if (b.x >= a.x + a.w + 20 || a.x >= b.x + b.w + 20) {
-            const dir = b.x > a.x ? 1 : -1
-            p0 = { x: dir > 0 ? a.x + a.w : a.x, y: a.y + a.h / 2 }
-            p3 = { x: dir > 0 ? b.x : b.x + b.w, y: b.y + b.h / 2 }
-            const dx = Math.max(40, Math.abs(p3.x - p0.x) / 2) * dir
-            c1 = { x: p0.x + dx, y: p0.y + bend }
-            c2 = { x: p3.x - dx, y: p3.y + bend }
-        } else {
-            const dir = b.y > a.y ? 1 : -1
-            p0 = { x: a.x + a.w / 2, y: dir > 0 ? a.y + a.h : a.y }
-            p3 = { x: b.x + b.w / 2, y: dir > 0 ? b.y : b.y + b.h }
-            const dy = Math.max(40, Math.abs(p3.y - p0.y) / 2) * dir
-            c1 = { x: p0.x + bend, y: p0.y + dy }
-            c2 = { x: p3.x + bend, y: p3.y - dy }
-        }
-        return [{
-            link,
-            d: `M ${p0.x},${p0.y} C ${c1.x},${c1.y} ${c2.x},${c2.y} ${p3.x},${p3.y}`,
-            label: { x: (p0.x + 3 * c1.x + 3 * c2.x + p3.x) / 8, y: (p0.y + 3 * c1.y + 3 * c2.y + p3.y) / 8 },
-        }]
+        const k = parallelIndex(ontology.value.links, link, ends)
+        return [{ link, ...linkGeometry(rect(s), rect(t), k, s == t) }]
     })
 })
 
@@ -277,17 +249,10 @@ const dragStart = (evt: PointerEvent, cls: OntoClass) => {
     if (linking.value) {
         return
     }
-    const el = evt.currentTarget as HTMLElement
-    const start = pos(cls)
-    const x0 = evt.clientX, y0 = evt.clientY
-    el.setPointerCapture(evt.pointerId)
-    el.onpointermove = (e) => {
-        cls.x = Math.max(0, Math.round(start.x + e.clientX - x0))
-        cls.y = Math.max(0, Math.round(start.y + e.clientY - y0))
-    }
-    el.onpointerup = () => {
-        el.onpointermove = el.onpointerup = null
-    }
+    pointerDrag(evt, pos(cls), (x, y) => {
+        cls.x = Math.max(0, Math.round(x))
+        cls.y = Math.max(0, Math.round(y))
+    })
 }
 </script>
 <style scoped>

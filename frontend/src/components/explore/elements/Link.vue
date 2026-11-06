@@ -4,20 +4,14 @@
         <!-- invisible hover area around the link and its label -->
         <rect :x="extent.x" :y="extent.y - LABEL_HOVER_PAD" :width="extent.width"
             :height="extent.height + LABEL_HOVER_PAD" fill="transparent" />
-        <path v-if="circular_detected" :d="`M ${from.x + from.width},${from.y + from.height / 2}
-                C ${to.x + to.width * 2},${to.y + to.height / 2}
-                ${to.x + to.width * 2},${to.y - to.height * 2}
-                ${to.x + to.width},${to.y - to.height * 2}
-                L ${to.x},${to.y - to.height * 2}
-                C ${from.x - from.width},${to.y - from.height * 2}
-                ${from.x - from.width},${to.y + from.height / 2}
-                ${from.x},${to.y + from.height / 2}`" class="link_path" :class="link_statestyle"
-            :style="{ strokeWidth: link_width }" />
-        <path v-else :d="`M ${from.x + from.width},${from.y + from.height / 2}
-                C ${to.x},${from.y + from.height / 2}
-                ${from.x + from.width},${to.y + to.height / 2}
-                ${to.x},${to.y + to.height / 2}`" class="link_path" :class="link_statestyle"
-            :style="{ strokeWidth: link_width }" />
+        <defs>
+            <marker :id="marker_id" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8"
+                markerUnits="userSpaceOnUse" orient="auto-start-reverse">
+                <path d="M 0 0 L 10 5 L 0 10 z" class="link_arrow" :class="link_statestyle" />
+            </marker>
+        </defs>
+        <path :d="geometry.d" class="link_path" :class="link_statestyle" :style="{ strokeWidth: link_width }"
+            :marker-end="`url(#${marker_id})`" />
         <g :transform="`translate(${text_attach_pt.x},${text_attach_pt.y})`">
             <text :y="-4" class="link_text">{{ label }}</text>
             <g v-if="mode == DisplayMode.EDIT" v-show="editor_data.show_editpoints">
@@ -38,7 +32,7 @@ import { DisplayMode, EDITPOINT_R, extentNodes, OpenEventType, type SelectorOpen
 import type { InstanceLink } from '@/utils/sparql/querymapper';
 import { NodeState, type Link } from '@/utils/sparql/representation';
 import type { NodeLinkRepository } from '@/utils/sparql/store';
-import { watch, reactive, computed, onMounted } from 'vue'
+import { watch, reactive, computed, onMounted, useId } from 'vue'
 
 // extra hover area above the link for its label and edit handles
 const LABEL_HOVER_PAD = 30
@@ -77,11 +71,13 @@ let editor_data = reactive({
 })
 let extent = computed(() => {
     if (circular_detected.value) {
+        // the loop on the right side of the node
+        const k = store.parallelIndex(link)
         return {
-            x: from.value.x - from.value.width,
-            y: from.value.y - from.value.height * 2,
-            width: from.value.width * 3,
-            height: from.value.height * 2,
+            x: from.value.x + from.value.width,
+            y: from.value.y - 30,
+            width: 70 + k * 28,
+            height: from.value.height + 60,
         }
     }
     return extentNodes([from.value, to.value])
@@ -123,9 +119,12 @@ let same_links = computed(() => {
 let circular_detected = computed(() => {
     return from.value.internal_id == to.value.internal_id || circular
 })
-let text_attach_pt = computed(() => {
-    return store.textAttachPoint(link, circular)
-})
+// directed bezier from the subject to the object node, ending on the object's border at the arrow
+// (the nodes may come from the diff, so they are passed explicitly)
+let geometry = computed(() => store.linkGeometry(link, circular, from.value, to.value)!)
+let text_attach_pt = computed(() => geometry.value.label)
+// one arrow marker per link, so it takes the link's state colour (ids must be unique in the page)
+const marker_id = `link_arrow_${useId()}`
 
 const editPointHover = (event: MouseEvent, state: boolean) => {
     editor_data.show_editpoints = state

@@ -5,7 +5,7 @@
         <rect :x="-EDITPOINT_R" :y="-EDITPOINT_R" :width="hover_extent.width" :height="hover_extent.height"
             fill-opacity="0" />
         <rect :width="subject.width" :height="subject.height" class="node" :class="node_statestyle"
-            @mousedown="mouseDownNode" @mousemove="mouseMoveNode" @mouseup="mouseUpNode" @mouseleave="mouseUpNode" />
+            @pointerdown="dragStart" />
         <text :x="subject.width / 2" :y="subject.height / 2" class="node_text">{{ display_label }}</text>
 
         <g v-for="constr_info in constraint_list_mapped" :transform="`translate(${subject.width / 2},${constr_info.y})`">
@@ -49,6 +49,7 @@ import { InstanceNode, SubjectNode as NodeRepr, NodeState, SubQuery } from '@/ut
 import { CONSTRAINT_PADDING, DisplayMode, EDITPOINT_R, fitNode, InstanceSelectorOpenEvent, NODE_PADDING_X, OpenEventType, SelectorOpenEvent } from '@/utils/sparql/helpers';
 import { truncateText } from '@/utils/sparql/measure';
 import Sublink from './Subquery.vue';
+import { pointerDrag } from '@/utils/graph-layout';
 import type { PropertiesOpenEvent } from '@/utils/sparql/querymapper';
 import type { NodeLinkRepository } from '@/utils/sparql/store';
 import type { NodeLinkRepositoryDiff } from '@/utils/sparql/diff';
@@ -83,30 +84,20 @@ const { subject, mode, store, diff, scale } = defineProps({
     }
 })
 const editor_data = reactive({
-    mouse_down: false,
-    mouse_x: 0,
-    mouse_y: 0,
     show_editpoints: false,
     hover_deletion: false,
     state: NodeState.NORMAL
 })
-const mouseDownNode = (event: MouseEvent) => {
-    if (mode == DisplayMode.EDIT || mode == DisplayMode.RESULT_INTERACTIVE || mode == DisplayMode.EDIT_NO_ADD) {
-        editor_data.mouse_down = true
-        editor_data.mouse_x = event.clientX
-        editor_data.mouse_y = event.clientY
+// drag the node like the builder's cards: pointer capture, position relative to the drag start,
+// screen pixels divided by the zoom of the view; the position is stored in the node
+const dragStart = (evt: PointerEvent) => {
+    if (mode != DisplayMode.EDIT && mode != DisplayMode.RESULT_INTERACTIVE && mode != DisplayMode.EDIT_NO_ADD) {
+        return
     }
-}
-const mouseUpNode = (event: MouseEvent) => {
-    editor_data.mouse_down = false
-}
-const mouseMoveNode = (event: MouseEvent) => {
-    if (editor_data.mouse_down) {
-        subject.x += (event.clientX - editor_data.mouse_x) / scale
-        subject.y += (event.clientY - editor_data.mouse_y) / scale
-        editor_data.mouse_x = event.clientX
-        editor_data.mouse_y = event.clientY
-    }
+    pointerDrag(evt, { x: subject.x, y: subject.y }, (x, y) => {
+        subject.x = x
+        subject.y = y
+    }, scale)
 }
 class SubQueryDisplay {
     subquery: SubQuery | null = null
