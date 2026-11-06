@@ -14,22 +14,12 @@
                 <span><template v-for="(p, j) in highlight(hit.text)" :key="j"><mark v-if="p.hit">{{ p.text }}</mark><template v-else>{{ p.text }}</template></template></span>
             </button>
         </div>
-        <div v-if="doc" class="text_search_backdrop" @click.self="doc = null">
-            <article class="panel text_search_doc">
-                <header class="panel_header">
-                    <span class="panel_title text_search_doc_title">{{ doc.title }}</span>
-                    <span class="toolbar_spacer"></span>
-                    <OnsetBtn size="small" :toggleable="false" icon="mdi-close" @click="doc = null" />
-                </header>
-                <div class="panel_body text_search_doc_body">
-                    <template v-for="(p, j) in highlight(doc.text)" :key="j"><mark v-if="p.hit">{{ p.text }}</mark><template v-else>{{ p.text }}</template></template>
-                </div>
-            </article>
-        </div>
+        <DocumentViewer v-if="doc" :doc="doc" :terms="searched_words" @close="doc = null" />
     </div>
 </template>
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
+import DocumentViewer from '@/components/builder/DocumentViewer.vue'
 import OnsetBtn from '@/components/ui/OnsetBtn.vue'
 import OnsetIcon from '@/components/ui/OnsetIcon.vue'
 import { getDocument, searchText, type BuilderDocument, type Snippet } from '@/utils/builder/api'
@@ -69,9 +59,11 @@ const open = async (doc_id: string) => {
     }
 }
 
+const searched_words = computed(() => searched_q.value.split(/\s+/).filter((w) => w.length > 2))
+
 // split text into parts, marking the (case-insensitive) occurrences of the searched words
 const highlight = (text: string) => {
-    const words = searched_q.value.split(/\s+/).filter((w) => w.length > 2).map((w) => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+    const words = searched_words.value.map((w) => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
     if (!words.length) {
         return [{ text, hit: false }]
     }
@@ -130,32 +122,5 @@ const highlight = (text: string) => {
 
 mark {
     background: var(--c-accent-soft);
-}
-
-.text_search_backdrop {
-    position: fixed;
-    inset: 0;
-    z-index: 100;
-    background: rgba(0, 0, 0, 0.25);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.text_search_doc {
-    width: min(48rem, 90vw);
-    max-height: 80vh;
-}
-
-.text_search_doc_title {
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.text_search_doc_body {
-    padding: var(--space-2) var(--space-3);
-    font-size: var(--fs-md);
-    line-height: 1.5;
-    white-space: pre-wrap;
 }
 </style>

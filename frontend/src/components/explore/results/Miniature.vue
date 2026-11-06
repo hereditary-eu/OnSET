@@ -2,6 +2,12 @@
     <Expandable v-model="expanded">
         <template v-slot:header>
             {{ store.nodes[0].instance_label }}
+            <!-- in the ontology builder: the source documents of the result's instances -->
+            <span v-if="inspect" class="miniature_sources">
+                <OnsetBtn v-for="node in instanceNodes" :key="node.instance_id" size="small" :toggleable="false"
+                    icon="mdi-file-document-outline" :title="`Source documents of ${node.instance_label}`"
+                    @click="inspect(node.instance_id)">{{ node.instance_label }}</OnsetBtn>
+            </span>
         </template>
         <template v-slot:content>
             <svg class="fill_svg">
@@ -25,7 +31,9 @@
     </Expandable>
 </template>
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted, watch, type Ref } from 'vue'
+import { ref, reactive, computed, inject, onMounted, watch, type Ref } from 'vue'
+import OnsetBtn from '../../ui/OnsetBtn.vue';
+import { INSPECT_INSTANCE } from '@/utils/builder/api';
 import Propview from '../elements/panels/Propview.vue';
 import { PropertiesOpenEvent, scalingFactors, type InstanceNodeLinkRepository } from '@/utils/sparql/querymapper';
 import { type Vector2Like } from 'three';
@@ -57,6 +65,12 @@ const { store, diff, miniatureType } = defineProps({
     }
 })
 const expanded = ref(false)
+// provided by the ontology builder only
+const inspect = inject(INSPECT_INSTANCE, null)
+const instanceNodes = computed(() => {
+    const seen = new Set<string>()
+    return store.nodes.filter((n) => n.instance_id && !seen.has(n.instance_id) && seen.add(n.instance_id))
+})
 const ui_state = reactive({
     prop_open: false,
     prop_open_event: null as PropertiesOpenEvent | null,
@@ -105,3 +119,12 @@ onMounted(() => {
 })
 
 </script>
+<style scoped>
+.miniature_sources {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: var(--space-1);
+    margin-left: var(--space-2);
+    cursor: default;
+}
+</style>

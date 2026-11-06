@@ -38,7 +38,7 @@
                     placeholder="SELECT ?s ?label WHERE { ?s a onto:Person ; rdfs:label ?label }"
                     @keydown.enter.ctrl.prevent="emit('apply', draft)" @keydown.enter.meta.prevent="emit('apply', draft)" />
                 <div class="toolbar">
-                    <span class="message">Prefixes onto:, rdfs:, rdf:, xsd:, prov: are predefined.</span>
+                    <span class="message">Prefixes onto:, rdfs:, rdf:, xsd:, prov:, skos:, dcterms: are predefined. Click an IRI for its source documents.</span>
                     <span class="toolbar_spacer"></span>
                     <OnsetBtn size="small" :toggleable="false" icon="mdi-play" title="Run the query (Ctrl+Enter)"
                         :active="draft != query" @click="emit('apply', draft)">Apply</OnsetBtn>
@@ -56,7 +56,9 @@
                     </thead>
                     <tbody>
                         <tr v-for="(row, i) in result.rows" :key="i">
-                            <td v-for="(cell, j) in row" :key="j" :title="cell?.value">{{ cellText(cell, display == 'raw') }}</td>
+                            <td v-for="(cell, j) in row" :key="j" :title="cell?.kind == 'uri' && inspect ? `${cell.value}\nClick for its source documents` : cell?.value"
+                                :class="{ builder_results_instance: cell?.kind == 'uri' && inspect }"
+                                @click="cell?.kind == 'uri' && inspect?.(cell.value)">{{ cellText(cell, display == 'raw') }}</td>
                         </tr>
                     </tbody>
                 </table>
@@ -65,7 +67,7 @@
     </section>
 </template>
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { inject, ref, watch } from 'vue'
 import QueryBuilder from '@/components/explore/QueryBuilder.vue'
 import ResultsView from '@/components/explore/ResultsView.vue'
 import { api } from '@/utils/api'
@@ -76,7 +78,7 @@ import OnsetBtn from '@/components/ui/OnsetBtn.vue'
 import OnsetIcon from '@/components/ui/OnsetIcon.vue'
 import SelectorGroup from '@/components/ui/SelectorGroup.vue'
 import { parseJSON, stringifyJSON } from '@/utils/parsing'
-import { cellText, type OntoClass, type QueryResult } from '@/utils/builder/api'
+import { cellText, INSPECT_INSTANCE, type OntoClass, type QueryResult } from '@/utils/builder/api'
 
 const { query, visualQuery = null, result, classes, refresh = 0 } = defineProps<{
     query: string
@@ -91,6 +93,8 @@ const emit = defineEmits<{ apply: [query: string, visual_query?: string | null],
 const collapsed = defineModel<boolean>('collapsed', { default: false })
 
 const display = ref('labels')
+// shows the source documents of an instance (provided by the builder page)
+const inspect = inject(INSPECT_INSTANCE, null)
 // the edited query; follows the session's query whenever that changes
 const draft = ref(query)
 watch(() => query, (q) => draft.value = q)
@@ -257,6 +261,15 @@ const pickClass = (evt: Event) => {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+}
+
+.builder_results_instance {
+    cursor: pointer;
+}
+
+.builder_results_instance:hover {
+    color: var(--c-accent);
+    text-decoration: underline;
 }
 
 .builder_results_table tr:nth-child(even) td {

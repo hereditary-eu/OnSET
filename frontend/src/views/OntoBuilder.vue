@@ -115,6 +115,8 @@
             <BuilderResults v-if="state" ref="results_panel" :key="sessionId" :query="state.query" :visual-query="state.visual_query" :result="result"
                 :classes="state.ontology.classes" :refresh="results_refresh" v-model:collapsed="results_collapsed"
                 @apply="applyQuery" @query-class="queryClass" />
+            <InstanceSources v-if="sessionId" :key="`sources-${sessionId}`" v-model:iri="inspected_iri"
+                :builder-id="builderId" :session-api="api" />
 
             <SidePanel :tabs="side_tabs" v-model:active="side_tab" v-model:collapsed="side_collapsed">
                 <template #chat>
@@ -142,12 +144,13 @@ import AgentChat from '@/components/explore/chat/AgentChat.vue'
 import OntologyEditor from '@/components/builder/OntologyEditor.vue'
 import BuilderResults from '@/components/builder/BuilderResults.vue'
 import TextSearch from '@/components/builder/TextSearch.vue'
+import InstanceSources from '@/components/builder/InstanceSources.vue'
 import { AgentSession } from '@/utils/agent/agentSession'
 import { setActiveConfig } from '@/utils/api'
 import { OntoConfig } from '@/utils/sparql/ontoconfig'
 import { LINK_COUNTS_KEY, linkCountLookup, type LinkCountLookup } from '@/utils/sparql/link-strength'
 import {
-    builderSession, DISAMBIGUATION_MODES, listBuilders, SESSION_ID_PATTERN,
+    builderSession, DISAMBIGUATION_MODES, INSPECT_INSTANCE, listBuilders, SESSION_ID_PATTERN,
     type BuilderSummary, type DisambiguationMode, type DisambiguationSettings, type DisambiguationState,
     type ExportContent, type Ontology, type QueryResult, type SessionState,
 } from '@/utils/builder/api'
@@ -176,6 +179,10 @@ const results_collapsed = ref(false)
 const storage_key = `onset:builder:${builderId}:session`
 const sessionId = ref('')
 const api = computed(() => builderSession(builderId, sessionId.value))
+// the instance whose source documents are shown (a result row's or miniature's instance)
+const inspected_iri = ref<string | null>(null)
+provide(INSPECT_INSTANCE, (iri: string) => inspected_iri.value = iri)
+watch(sessionId, () => inspected_iri.value = null)
 // the visual query editor talks to the session as the configuration builder:<builder>:<session>
 watch(sessionId, (sid) => {
     if (!sid) {

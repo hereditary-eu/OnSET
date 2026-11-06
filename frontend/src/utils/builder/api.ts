@@ -1,6 +1,7 @@
 // Client of the ontology builder API (`${BACKEND_URL}/onto-builder`, backend api/router/builder.py).
 // Hand-typed: these routes are on the main app, not in the generated per-config client.
 import axios from 'axios'
+import type { InjectionKey } from 'vue'
 import { BACKEND_URL } from '@/utils/config'
 
 export const FIELD_TYPES = ['string', 'integer', 'float', 'date', 'boolean', 'vector'] as const
@@ -9,7 +10,12 @@ export type ExportContent = 'all' | 'ontology' | 'kg'
 
 export interface BuilderSummary { id: string, name: string, description: string, prefix: string }
 export interface Snippet { doc_id: string, title: string, text: string, score: number }
-export interface BuilderDocument { id: string, title: string, text: string }
+/** ``path``: its file, relative to the text set (the records of a JSON file share it) */
+export interface BuilderDocument { id: string, title: string, path: string, text: string }
+/** A document an instance was extracted from; ``doc_id`` null if it is not in the corpus (e.g. an imported KG's). */
+export interface SourceDocument { iri: string, doc_id: string | null, title: string }
+/** The source documents of an instance (all of them for a merged one), with its names to find it in their text. */
+export interface InstanceProvenance { iri: string, label: string | null, aliases: string[], documents: SourceDocument[] }
 export interface OntoField { name: string, type: FieldType, description: string }
 export interface OntoClass { id: string, label: string, description: string, fields: OntoField[], x: number | null, y: number | null }
 export interface OntoLink { id: string, label: string, source: string, target: string, description: string }
@@ -47,7 +53,7 @@ const get = <T>(path: string, params?: object) => axios.get<T>(`${BUILDER_URL}${
 export const listBuilders = () => get<BuilderSummary[]>('/configs')
 export const searchText = (bid: string, q: string, k = 20) => get<Snippet[]>(`/${bid}/search`, { q, k })
 // doc ids may contain slashes (e.g. Enron paths): encode each segment
-export const getDocument = (bid: string, doc_id: string) =>
+export const getDocument = (bid: string, doc_id: string): Promise<BuilderDocument> =>
     get<BuilderDocument>(`/${bid}/documents/${doc_id.split('/').map(encodeURIComponent).join('/')}`)
 
 /** Calls of one builder session (created by the backend on first access, restored from its save after a restart). */
@@ -66,6 +72,7 @@ export function builderSession(bid: string, sid: string) {
         results: (limit = 500) => get<QueryResult>(`${base}/results`, { limit }),
         /** cached on the server until the KG changes: refetch when ``status.triples`` changes */
         linkCounts: () => get<LinkCounts>(`${base}/link-counts`),
+        provenance: (iri: string) => get<InstanceProvenance>(`${base}/provenance`, { iri }),
         rebuild: () => post<SessionState>('/rebuild'),
         disambiguation: () => get<DisambiguationState>(`${base}/disambiguation`),
         /** a change rebuilds the KG from scratch */
@@ -87,6 +94,9 @@ export function builderSession(bid: string, sid: string) {
     }
 }
 export type BuilderSessionApi = ReturnType<typeof builderSession>
+
+/** Provided by the builder page: show where an instance (its IRI) was extracted from. */
+export const INSPECT_INSTANCE: InjectionKey<(iri: string) => void> = Symbol('inspectInstance')
 
 /** Session ids the backend accepts (they name its save files). */
 export const SESSION_ID_PATTERN = /^[A-Za-z0-9_-]{1,64}$/
