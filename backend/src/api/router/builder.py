@@ -13,6 +13,7 @@ import asyncio
 import threading
 
 from fastapi import APIRouter, Body, HTTPException, Path, Query, UploadFile, WebSocket, WebSocketDisconnect
+from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import Response
 from pydantic import BaseModel, ValidationError
 
@@ -170,15 +171,21 @@ def save_session(
 async def builder_agent_ws(websocket: WebSocket, builder_id: str = Path(...), session_id: str = Query(...)):
     await websocket.accept()
     connection = _Connection(websocket)
+    # restoring the session and creating the chat block: not on the event loop
     try:
-        session = get_session(builder_id, session_id)
+        session = await run_in_threadpool(get_session, builder_id, session_id)
     except HTTPException as e:
         await connection.send(ErrorMessage(message=e.detail, fatal=True))
         await websocket.close()
         return
-    with _lock:
-        resumed = session.chat is not None
-        chat = session.chat = session.chat or BuilderChat(session)
+
+    def attach_chat() -> tuple[bool, BuilderChat]:
+        with _lock:
+            resumed = session.chat is not None
+            session.chat = session.chat or BuilderChat(session)
+            return resumed, session.chat
+
+    resumed, chat = await run_in_threadpool(attach_chat)
     await connection.send(SessionInfo(session_id=session_id, resumed=resumed))
 
     turn: asyncio.Task | None = None

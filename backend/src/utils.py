@@ -1,3 +1,4 @@
+import threading
 from typing import Any
 
 import json_repair
@@ -20,9 +21,20 @@ def grammar_for(model: type[BaseModel], root_name: str) -> LlamaGrammar:
     )
 
 
+_llm_locks_guard = threading.Lock()
+_llm_locks: dict[int, threading.Lock] = {}
+
+
+def llm_lock(llm: Any) -> threading.Lock:
+    """Lock serialising the use of one llama.cpp model, whose context is not thread-safe."""
+    with _llm_locks_guard:
+        return _llm_locks.setdefault(id(llm), threading.Lock())
+
+
 def chat_content(llm: Any, messages: list[dict], **kwargs) -> str:
     """Run a llama.cpp chat completion and return the message content."""
-    response = llm.create_chat_completion(messages=messages, **kwargs)
+    with llm_lock(llm):
+        response = llm.create_chat_completion(messages=messages, **kwargs)
     return response["choices"][0]["message"]["content"]
 
 

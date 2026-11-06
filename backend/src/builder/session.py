@@ -16,7 +16,7 @@ import time
 import uuid
 from collections import OrderedDict
 from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
-from functools import cached_property
+from functools import cached_property, wraps
 from itertools import islice
 from pathlib import Path
 from typing import Literal as TLiteral
@@ -385,6 +385,30 @@ class BuilderSession:
         return True
 
 
+def _locked_cached_property(fn):
+    """cached_property computed once under the instance's ``_init_lock`` (functools'
+    cached_property has no lock, so concurrent first uses would e.g. load the models twice)."""
+    name = fn.__name__
+
+    @property
+    @wraps(fn)
+    def prop(self):
+        try:
+            return self.__dict__[name]
+        except KeyError:
+            pass
+        with self._init_lock:
+            if name not in self.__dict__:
+                self.__dict__[name] = fn(self)
+            return self.__dict__[name]
+
+    @prop.setter
+    def prop(self, value):
+        self.__dict__[name] = value
+
+    return prop
+
+
 class Builder:
     """Corpus, extraction model, agent LLM and sessions of one builder config."""
 
@@ -394,16 +418,18 @@ class Builder:
         self.max_sessions = max_sessions
         self.sessions: OrderedDict[str, BuilderSession] = OrderedDict()
         self._lock = threading.Lock()
+        self._session_locks: dict[str, threading.Lock] = {}
+        self._init_lock = threading.RLock()
 
-    @cached_property
+    @_locked_cached_property
     def corpus(self) -> Corpus:
         return Corpus.load(self.config.text_set)
 
-    @cached_property
+    @_locked_cached_property
     def extractor(self) -> Extractor:
         return LlamaExtractor(self.config)
 
-    @cached_property
+    @_locked_cached_property
     def agent_llm(self):
         from agent.llm import AgentLLM
 
@@ -417,14 +443,28 @@ class Builder:
         """The session ``session_id``: loaded, else restored from its save, else (``create``)
         a new one; KeyError if it does not exist and ``create`` is off, ValueError for an
         invalid id."""
+        session_id = check_session_id(session_id or uuid.uuid4().hex)
         with self._lock:
-            session_id = check_session_id(session_id or uuid.uuid4().hex)
             if session_id in self.sessions:
                 self.sessions.move_to_end(session_id)
                 return self.sessions[session_id]
             if not create and not self.state_file(session_id).exists():
                 raise KeyError(f"No session '{session_id}'")
-            session = self.sessions[session_id] = BuilderSession(session_id, self)
-            while len(self.sessions) > self.max_sessions:
-                self.sessions.popitem(last=False)[1].stop()
-            return session
+            session_lock = self._session_locks.setdefault(session_id, threading.Lock())
+        # restoring a session (corpus load, imported KG) is slow: done outside the builder's
+        # lock so other sessions stay responsive, once per id
+        with session_lock:
+            with self._lock:
+                if session_id in self.sessions:
+                    return self.sessions[session_id]
+            session = BuilderSession(session_id, self)
+            evicted = []
+            with self._lock:
+                self.sessions[session_id] = session
+                self._session_locks.pop(session_id, None)
+                while len(self.sessions) > self.max_sessions:
+                    evicted.append(self.sessions.popitem(last=False)[1])
+        # stopping waits for the session's lock (a running query), so not under the builder's
+        for old in evicted:
+            old.stop()
+        return session

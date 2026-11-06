@@ -16,7 +16,10 @@ class RedisCache(Generic[T]):
     ):
         os.environ["REDIS_OM_URL"] = redis_url
         self.model = model
-        self.redis = redis.Redis.from_url(redis_url)
+        # timeouts: an unreachable Redis must not block request threads forever
+        self.redis = redis.Redis.from_url(
+            redis_url, socket_timeout=10, socket_connect_timeout=5
+        )
         Migrator().run()
 
     def get(self, key: str) -> T | None:

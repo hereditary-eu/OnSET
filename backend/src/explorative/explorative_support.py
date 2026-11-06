@@ -88,36 +88,49 @@ class GuidanceManager:
         self.__embedding_model = None
         self._schema_index: SchemaIndex | None = None
         self._schema_index_lock = threading.Lock()
+        # the lazy model loads run once, also with concurrent first requests
+        self._llama_load_lock = threading.Lock()
+        self._embedding_load_lock = threading.Lock()
 
     @property
     def llama_model(self) -> Llama:
         if self.__lama_model is not None:
             return self.__lama_model
+        with self._llama_load_lock:
+            if self.__lama_model is None:
+                self.__lama_model = self._load_llama_model()
+        return self.__lama_model
+
+    def _load_llama_model(self):
         print("Loading LLM model", self.llm_model_id, self.langchain_model)
         if self.llm_model_id is None and self.langchain_model is None:
             raise ValueError("No LLM model id specified")
 
         if self.langchain_model is not None:
-            self.__lama_model = self.langchain_model
-        elif self.llm_model_id is not None:
-            self.__lama_model = Llama.from_pretrained(
-                repo_id=self.llm_model_id,
-                filename=self.llm_quant_model,
-                n_batch=2048,
-                n_ubatch=512,
-                n_ctx=self.ctx_size,
-                n_gpu_layers=-1,
-                n_threads=6,
-                embedding=False,
-                temperature=0.6,
-            )
-        return self.__lama_model
+            return self.langchain_model
+        return Llama.from_pretrained(
+            repo_id=self.llm_model_id,
+            filename=self.llm_quant_model,
+            n_batch=2048,
+            n_ubatch=512,
+            n_ctx=self.ctx_size,
+            n_gpu_layers=-1,
+            n_threads=6,
+            embedding=False,
+            temperature=0.6,
+        )
 
     @property
     def embedding_model(self):
         if self.__embedding_model is not None:
             return self.__embedding_model
-        self.__embedding_model = SentenceTransformer(
+        with self._embedding_load_lock:
+            if self.__embedding_model is None:
+                self.__embedding_model = self._load_embedding_model()
+        return self.__embedding_model
+
+    def _load_embedding_model(self):
+        return SentenceTransformer(
             "dunzhang/stella_en_400M_v5",
             trust_remote_code=True,
             config_kwargs={
@@ -129,7 +142,6 @@ class GuidanceManager:
         # self.embedding_model = SentenceTransformer(
         #     "paraphrase-MiniLM-L6-v2",
         # ).to(device)
-        return self.__embedding_model
 
     def schema_index(self) -> SchemaIndex:
         """The stored classes and properties of this ontology, loaded once (see

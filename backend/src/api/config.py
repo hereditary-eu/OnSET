@@ -1,7 +1,8 @@
 import os
 import threading
+import urllib.request
 from collections import OrderedDict
-from functools import cached_property
+from functools import cached_property, partial
 from typing import Annotated
 
 from fastapi import Depends, HTTPException, WebSocketException, status
@@ -20,7 +21,13 @@ from initiator import InitatorManager
 from ontology import Graph, OntologyConfig, OntologyManager
 from redis_cache import RedisCache
 
+import rdflib.plugins.stores.sparqlconnector as sparqlconnector
 from rdflib.plugins.stores.sparqlstore import SPARQLStore
+
+# rdflib's SPARQLConnector ignores its ``timeout`` argument and calls urlopen without one, so a
+# stalled endpoint blocks request threads forever (until the whole threadpool hangs)
+SPARQL_TIMEOUT = float(os.getenv("ONSET_SPARQL_TIMEOUT", "300"))
+sparqlconnector.urlopen = partial(urllib.request.urlopen, timeout=SPARQL_TIMEOUT)
 
 base_path = "../../data"
 
@@ -52,7 +59,6 @@ class ManMan:
             db_config.sparql_endpoint,
             method="POST_FORM",
             params={"infer": False, "sameAs": False},
-            timeout=300,
         )
         self.graph = Graph(store=self.store)
 
