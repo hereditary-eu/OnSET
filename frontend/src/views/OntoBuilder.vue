@@ -245,13 +245,19 @@ const poll = async () => {
         } else {
             adopt(s)
         }
-        if (changed || s.status.running || was_running) {
+        // while the KG grows, the results are queried again at most every RESULTS_REFRESH_MS
+        // (not on every poll: each query holds the session's lock, which extraction needs too)
+        const refresh = s.status.triples != refreshed.triples
+            && (!s.status.running || Date.now() - refreshed.at > RESULTS_REFRESH_MS)
+        if (refresh) {
+            refreshed = { triples: s.status.triples, at: Date.now() }
+        }
+        if (changed || refresh || (was_running && !s.status.running)) {
             await loadResults()
         }
         was_running = s.status.running
         loadLinkCounts(s)
-        if (s.status.triples != refreshed.triples && (!s.status.running || Date.now() - refreshed.at > RESULTS_REFRESH_MS)) {
-            refreshed = { triples: s.status.triples, at: Date.now() }
+        if (refresh) {
             results_refresh.value++
         }
         error.value = ''

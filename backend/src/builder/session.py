@@ -50,6 +50,20 @@ def check_session_id(session_id: str) -> str:
     return session_id
 
 
+def add_all(graph: Graph, triples, chunk: int = 10_000):
+    """Add ``triples`` in a few batched updates: Tentris runs every ``Graph.add`` as an update
+    of its own whose cost grows with the store (5 ms per triple at 160k triples, a batch of
+    300 takes 20 ms), which kept the session lock busy during long builds."""
+    batch = []
+    for s, p, o in triples:
+        batch.append((s, p, o, graph))
+        if len(batch) >= chunk:
+            graph.addN(batch)
+            batch = []
+    if batch:
+        graph.addN(batch)
+
+
 def new_store() -> Graph:
     try:
         from tentris import TentrisStore
@@ -218,8 +232,7 @@ class BuilderSession:
             for triple in self.schema:
                 self.graph.remove(triple)
             self.schema = ontology_graph(self.ontology)
-            for triple in self.schema:
-                self.graph.add(triple)
+            add_all(self.graph, self.schema)
 
     # --- progressive build ---
 
@@ -227,8 +240,7 @@ class BuilderSession:
         with self._lock:
             self._generation += 1
             self.graph = new_store()
-            for triple in self.imported:
-                self.graph.add(triple)
+            add_all(self.graph, self.imported)
             self.schema = Graph()
             self._write_schema()
             docs = list(self.builder.corpus.documents)
@@ -290,9 +302,7 @@ class BuilderSession:
             if generation != self._generation:
                 return
             if triples:
-                self.graph.add((doc_iri, RDFS.label, Literal(title)))
-            for triple in triples:
-                self.graph.add(triple)
+                add_all(self.graph, [(doc_iri, RDFS.label, Literal(title)), *triples])
             self.status.processed += 1
             self.status.triples = len(self.graph) - len(self.schema)
             if error:
