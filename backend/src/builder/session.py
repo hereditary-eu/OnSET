@@ -1,6 +1,7 @@
 """Ontology builder sessions: the ontology, its progressively built KG and a query.
 
-Every schema change of the ontology restarts the build: a fresh triple store
+Every schema change of the ontology (and every change of the session's disambiguation
+settings, builder/disambiguate.py) restarts the build: a fresh triple store
 is filled document by document (in a fixed shuffled order, so early results are
 representative) by ``extract_instances`` extraction threads, while queries
 already run against the partial KG. The store is Tentris (embedded, native
@@ -22,9 +23,10 @@ from pathlib import Path
 from typing import Literal as TLiteral
 
 from pydantic import BaseModel
-from rdflib import RDFS, Graph, Literal, URIRef
+from rdflib import RDF, RDFS, SKOS, Graph, Literal, URIRef
 
 from builder.corpus import Corpus
+from builder.disambiguate import Disambiguator, Judge, LlamaJudge, Merge
 from builder.extract import Extractor, LlamaExtractor
 from builder.ontology import (
     PROV,
@@ -34,7 +36,7 @@ from builder.ontology import (
     ontology_graph,
     rebase,
 )
-from eval_config import BuilderConfig
+from eval_config import BuilderConfig, DisambiguationSettings
 
 ExportContent = TLiteral["ontology", "kg", "all"]
 # builds of sessions nobody looked at for this long pause (they share the extraction model)
@@ -82,6 +84,8 @@ class BuildStatus(BaseModel):
     errors: int = 0
     last_error: str | None = None
     store: str = ""
+    # extracted names merged into an instance with another name (disambiguation)
+    merged: int = 0
 
 
 class Cell(BaseModel):
@@ -122,6 +126,15 @@ class SessionState(BaseModel):
     query: str
     visual_query: str | None = None
     status: BuildStatus
+    disambiguation: DisambiguationSettings = DisambiguationSettings()
+
+
+class DisambiguationState(BaseModel):
+    settings: DisambiguationSettings
+    # names merged in the current build, judge calls, and the latest merges (newest first)
+    merged: int = 0
+    judged: int = 0
+    merges: list[Merge] = []
 
 
 def class_query(onto: Ontology, class_id: str, limit: int = 200) -> str:
@@ -155,6 +168,11 @@ class BuilderSession:
         # classes and properties with the instances; refreshed on every ontology change
         self.schema = Graph()
         self.status = BuildStatus(store=type(self.graph.store).__name__)
+        # how extracted names are merged into instances (saved with the session)
+        self.disambiguation = builder.config.disambiguation.model_copy()
+        # the current build's disambiguator, and the judge's verdicts (kept across builds)
+        self.disambiguator: Disambiguator | None = None
+        self._judgments: OrderedDict = OrderedDict()
         self._generation = 0
         self._lock = threading.RLock()
         # (key, LinkCounts) of the last link_counts, see there
@@ -177,7 +195,7 @@ class BuilderSession:
             return SessionState(
                 session_id=self.session_id, version=self.version,
                 ontology=self.ontology.model_copy(deep=True), query=self.query, visual_query=self.visual_query,
-                status=self.status.model_copy(),
+                status=self.status.model_copy(), disambiguation=self.disambiguation.model_copy(),
             )
 
     def set_ontology(self, onto: Ontology):
@@ -190,6 +208,26 @@ class BuilderSession:
             else:
                 self._write_schema()
             self.persist()
+
+    def set_disambiguation(self, settings: DisambiguationSettings):
+        """Change how names are merged: a different setting rebuilds the KG from scratch."""
+        with self._lock:
+            if settings == self.disambiguation:
+                return
+            self.disambiguation = settings.model_copy()
+            self.version += 1
+            self.rebuild()
+            self.persist()
+
+    def disambiguation_state(self) -> DisambiguationState:
+        self.last_access = time.monotonic()
+        with self._lock:
+            dis = self.disambiguator
+            return DisambiguationState(
+                settings=self.disambiguation.model_copy(),
+                merged=dis.merged if dis else 0, judged=dis.judged if dis else 0,
+                merges=list(dis.merges)[::-1] if dis else [],
+            )
 
     def set_query(self, query: str, visual_query: str | None = None):
         with self._lock:
@@ -249,16 +287,30 @@ class BuilderSession:
                 running=bool(self.ontology.classes), total=len(docs),
                 triples=len(self.imported), store=type(self.graph.store).__name__,
             )
+            onto = self.ontology.model_copy(deep=True)
+            self.disambiguator = self._disambiguator(onto)
             if self.ontology.classes:
                 threading.Thread(
-                    target=self._build, args=(self._generation, self.ontology.model_copy(deep=True), docs),
+                    target=self._build, args=(self._generation, onto, docs, self.disambiguator),
                     daemon=True,
                 ).start()
+
+    def _disambiguator(self, onto: Ontology) -> Disambiguator:
+        """The disambiguator of a new build, knowing the imported instances (and their aliases)."""
+        dis = Disambiguator(onto, self.disambiguation.model_copy(), lambda: self.builder.judge, self._judgments)
+        if dis.active:
+            classes = {onto.term(c.id): c.id for c in onto.classes}
+            for s, _, cls in self.imported.triples((None, RDF.type, None)):
+                label = self.imported.value(s, RDFS.label)
+                if cls in classes and isinstance(s, URIRef) and label is not None:
+                    aliases = [str(a) for a in self.imported.objects(s, SKOS.altLabel)]
+                    dis.register(classes[cls], str(label), s, aliases)
+        return dis
 
     def _paused(self) -> bool:
         return time.monotonic() - self.last_access > IDLE_PAUSE_SECONDS
 
-    def _build(self, generation: int, onto: Ontology, docs):
+    def _build(self, generation: int, onto: Ontology, docs, dis: Disambiguator | None = None):
         """Extract ``docs`` with ``extract_instances`` threads and add each result as it
         arrives, until done or ``generation`` is outdated (schema change or stop).
 
@@ -272,7 +324,7 @@ class BuilderSession:
             while generation == self._generation:
                 if not self._paused():
                     for doc in islice(todo, 2 * workers - len(pending)):
-                        pending.add(pool.submit(self._extract, onto, doc))
+                        pending.add(pool.submit(self._extract, onto, doc, dis))
                 elif not pending:
                     time.sleep(1)
                     continue
@@ -288,12 +340,15 @@ class BuilderSession:
             if generation == self._generation:
                 self.status.running = False
 
-    def _extract(self, onto: Ontology, doc) -> tuple:
-        """The triples of one document (and its IRI and title), or an error message."""
+    def _extract(self, onto: Ontology, doc, dis: Disambiguator | None = None) -> tuple:
+        """The triples of one document (and its IRI and title), or an error message; names
+        are resolved to their instances by ``dis`` (in this extraction thread)."""
         doc_iri = URIRef(f"{onto.prefix}doc/{doc.id}".replace(" ", "_"))
         try:
-            data = self.builder.extractor.extract(onto, doc.text[: self.builder.config.text_set.max_chars])
-            return doc_iri, doc.title, extraction_triples(onto, data, doc_iri), None
+            text = doc.text[: self.builder.config.text_set.max_chars]
+            data = self.builder.extractor.extract(onto, text)
+            resolve = dis.resolver(text) if dis is not None else None
+            return doc_iri, doc.title, extraction_triples(onto, data, doc_iri, resolve), None
         except Exception as e:
             return doc_iri, doc.title, [], f"{type(e).__name__}: {e}"
 
@@ -305,6 +360,8 @@ class BuilderSession:
                 add_all(self.graph, [(doc_iri, RDFS.label, Literal(title)), *triples])
             self.status.processed += 1
             self.status.triples = len(self.graph) - len(self.schema)
+            if self.disambiguator is not None:
+                self.status.merged = self.disambiguator.merged
             if error:
                 self.status.errors += 1
                 self.status.last_error = error
@@ -323,6 +380,7 @@ class BuilderSession:
             "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
             "xsd": "http://www.w3.org/2001/XMLSchema#",
             "prov": str(PROV),
+            "skos": str(SKOS),
         }
         lowered = query.lower()
         declared = "".join(
@@ -442,13 +500,15 @@ class BuilderSession:
         return self.save_path.with_name(f"{self.session_id}.imported.ttl")
 
     def persist(self, imported: bool = False):
-        """Write the session's state (ontology with layout, query, visual query, agent chat) to
+        """Write the session's state (ontology with layout, query, visual query, agent chat,
+        disambiguation settings) to
         the save dir, and with ``imported`` its imported instance triples; called on every change,
         so the session can be restored by its id after a restart (``restore``)."""
         with self._lock:
             state = {
                 "ontology": self.ontology.model_dump(), "query": self.query, "visual_query": self.visual_query,
                 "chat": {"history": self.chat_history, "log": self.chat_log},
+                "disambiguation": self.disambiguation.model_dump(),
             }
             files = {self.state_path: json.dumps(state, indent=2)}
             if imported:
@@ -478,6 +538,9 @@ class BuilderSession:
         chat = state.get("chat") or {}
         self.chat_history = list(chat.get("history") or [])
         self.chat_log = list(chat.get("log") or [])
+        # saves from before disambiguation keep the builder's default
+        if state.get("disambiguation"):
+            self.disambiguation = DisambiguationSettings(**state["disambiguation"])
         if self.imported_path.exists():
             self.imported = Graph().parse(self.imported_path, format="turtle")
         self.rebuild()
@@ -527,6 +590,11 @@ class Builder:
     @_locked_cached_property
     def extractor(self) -> Extractor:
         return LlamaExtractor(self.config)
+
+    @_locked_cached_property
+    def judge(self) -> Judge:
+        """The llm_judge disambiguation's judge (its model loads on the first judgment)."""
+        return LlamaJudge(self.config)
 
     @_locked_cached_property
     def agent_llm(self):

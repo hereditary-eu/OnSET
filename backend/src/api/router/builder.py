@@ -26,9 +26,9 @@ from builder.agent import BuilderChat
 from builder.corpus import Snippet
 from builder.ontology import Ontology
 from builder.session import (
-    Builder, BuilderSession, ExportContent, LinkCounts, QueryResult, SessionState, class_query,
+    Builder, BuilderSession, DisambiguationState, ExportContent, LinkCounts, QueryResult, SessionState, class_query,
 )
-from eval_config import CONFIG_FILE
+from eval_config import CONFIG_FILE, DisambiguationSettings
 
 builder_router = APIRouter(prefix="/onto-builder", tags=["onto-builder"])
 
@@ -136,6 +136,22 @@ def get_link_counts(builder_id: str, session_id: str) -> LinkCounts:
     """Triples of every link and field of the ontology in the KG (the query editor's link widths);
     refetch when the build status' triple count changes."""
     return get_session(builder_id, session_id).link_counts()
+
+
+@builder_router.get("/{builder_id}/sessions/{session_id}/disambiguation")
+def get_disambiguation(builder_id: str, session_id: str) -> DisambiguationState:
+    """How extracted names are merged into instances, and the merges of the current build."""
+    return get_session(builder_id, session_id).disambiguation_state()
+
+
+@builder_router.put("/{builder_id}/sessions/{session_id}/disambiguation")
+def put_disambiguation(
+    builder_id: str, session_id: str, settings: DisambiguationSettings = Body(...),
+) -> DisambiguationState:
+    """Change the disambiguation settings (saved with the session); a change rebuilds the KG from scratch."""
+    session = get_session(builder_id, session_id)
+    session.set_disambiguation(settings)
+    return session.disambiguation_state()
 
 
 @builder_router.post("/{builder_id}/sessions/{session_id}/rebuild")

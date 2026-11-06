@@ -205,6 +205,31 @@ class TextSetConfig(BaseModel):
         return None if value == "" else value
 
 
+DisambiguationMode = Literal["off", "normalized", "levenshtein", "llm_judge"]
+
+
+class DisambiguationSettings(BaseModel):
+    """How a builder session merges extracted instances of a class that name the same entity
+    (builder/disambiguate.py). The modes form a chain, each adds a step to the previous ones:
+
+    - ``off``: an instance per IRI slug (so case and punctuation variants still meet),
+    - ``normalized``: names equal after case folding and whitespace/punctuation normalization,
+    - ``levenshtein``: also names within ``max_distance`` edits (and ``max_ratio`` of the longer name),
+    - ``llm_judge``: also the ``judge_candidates`` closest names (char n-gram TF-IDF, cosine at
+      least ``judge_min_similarity``) that the judge model says are the same entity (its
+      P(yes) of a yes/no answer at least ``judge_threshold``).
+    """
+
+    mode: DisambiguationMode = "normalized"
+    max_distance: int = Field(2, ge=0, le=20)
+    # edits relative to the longer normalized name, so short names ("Bob"/"Rob") stay apart
+    max_ratio: float = Field(0.2, ge=0.0, le=1.0)
+    judge_min_similarity: float = Field(0.4, ge=0.0, le=1.0)
+    judge_candidates: int = Field(1, ge=1, le=5)
+    # LFM2.5-350M gave same-entity pairs P(yes) ~0.8, different ones ~0.4-0.55
+    judge_threshold: float = Field(0.65, ge=0.0, le=1.0)
+
+
 class BuilderConfig(BaseModel):
     """One ontology builder (``builders`` in config.json, served under /onto-builder)."""
 
@@ -224,6 +249,14 @@ class BuilderConfig(BaseModel):
     # where saved sessions (TTL) are kept
     save_dir: str = "builder-saves"
     agent: AgentConfig = Field(default_factory=AgentConfig)
+    # disambiguation settings of new sessions (each session keeps and saves its own)
+    disambiguation: DisambiguationSettings = Field(default_factory=DisambiguationSettings)
+    # yes/no "same entity?" judge of the llm_judge disambiguation, loaded on its first use
+    judge_model_id: str = "LiquidAI/LFM2.5-350M-GGUF"
+    judge_model_quant: str = "*Q8_0.gguf"
+    judge_n_ctx: int = 2048
+    # judge models in the pool shared by the extraction threads (1: one model behind a lock)
+    judge_instances: int = Field(1, ge=1)
 
 
 CONFIG_PATH_ENV = "ONSET_CONFIG"

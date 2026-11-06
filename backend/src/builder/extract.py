@@ -56,16 +56,16 @@ def template(onto: Ontology) -> dict:
     return out
 
 
-class LlamaExtractor:
-    """A pool of ``config.extract_instances`` llama.cpp models shared by all sessions of a
-    builder: every extract() call borrows a free instance (loaded on first use), so that
-    many threads extract at once (a llama.cpp context is not thread safe on its own)."""
+class ModelPool:
+    """``size`` llama.cpp models (GGUF ``model_id``/``quant`` from the Hugging Face Hub), each
+    loaded on first use: ``instance()`` borrows a free one, waiting if all are busy (a llama.cpp
+    context is not thread safe on its own). A pool of size 1 is a lock around one model."""
 
-    def __init__(self, config: BuilderConfig):
-        self.config = config
+    def __init__(self, model_id: str, quant: str, n_ctx: int, size: int = 1):
+        self.model_id, self.quant, self.n_ctx = model_id, quant, n_ctx
         # free instances, None for one not loaded yet
         self._free: queue.Queue = queue.Queue()
-        for _ in range(config.extract_instances):
+        for _ in range(size):
             self._free.put(None)
 
     def _load(self):
@@ -73,15 +73,11 @@ class LlamaExtractor:
 
         with _load_lock:
             return LazyGrammarLlama.from_pretrained(
-                self.config.extract_model_id,
-                filename=self.config.extract_model_quant,
-                n_ctx=self.config.extract_n_ctx,
-                n_gpu_layers=-1,
-                verbose=False,
+                self.model_id, filename=self.quant, n_ctx=self.n_ctx, n_gpu_layers=-1, verbose=False,
             )
 
     @contextmanager
-    def _instance(self):
+    def instance(self):
         """Borrow a free instance (waiting for one if all are busy)."""
         llm = self._free.get()
         try:
@@ -91,10 +87,21 @@ class LlamaExtractor:
         finally:
             self._free.put(llm)
 
+
+class LlamaExtractor:
+    """A pool of ``config.extract_instances`` extraction models shared by all sessions of a
+    builder: every extract() call borrows a free instance, so that many threads extract at once."""
+
+    def __init__(self, config: BuilderConfig):
+        self.config = config
+        self.pool = ModelPool(
+            config.extract_model_id, config.extract_model_quant, config.extract_n_ctx, config.extract_instances,
+        )
+
     def extract(self, onto: Ontology, text: str) -> dict:
         schema = extraction_schema(onto)
 
-        with self._instance() as llm:
+        with self.pool.instance() as llm:
             start_time = datetime.datetime.now()
             response = llm.create_chat_completion(
                 messages=[

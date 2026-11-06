@@ -33,6 +33,11 @@
       ],
       "title": "Last Error"
      },
+     "merged": {
+      "default": 0,
+      "title": "Merged",
+      "type": "integer"
+     },
      "processed": {
       "default": 0,
       "title": "Processed",
@@ -157,6 +162,89 @@
     "title": "ConfigSummary",
     "type": "object"
    },
+   "DisambiguationSettings": {
+    "description": "How a builder session merges extracted instances of a class that name the same entity\n(builder/disambiguate.py). The modes form a chain, each adds a step to the previous ones:\n\n- ``off``: an instance per IRI slug (so case and punctuation variants still meet),\n- ``normalized``: names equal after case folding and whitespace/punctuation normalization,\n- ``levenshtein``: also names within ``max_distance`` edits (and ``max_ratio`` of the longer name),\n- ``llm_judge``: also the ``judge_candidates`` closest names (char n-gram TF-IDF, cosine at\n  least ``judge_min_similarity``) that the judge model says are the same entity (its\n  P(yes) of a yes/no answer at least ``judge_threshold``).",
+    "properties": {
+     "judge_candidates": {
+      "default": 1,
+      "maximum": 5.0,
+      "minimum": 1.0,
+      "title": "Judge Candidates",
+      "type": "integer"
+     },
+     "judge_min_similarity": {
+      "default": 0.4,
+      "maximum": 1.0,
+      "minimum": 0.0,
+      "title": "Judge Min Similarity",
+      "type": "number"
+     },
+     "judge_threshold": {
+      "default": 0.65,
+      "maximum": 1.0,
+      "minimum": 0.0,
+      "title": "Judge Threshold",
+      "type": "number"
+     },
+     "max_distance": {
+      "default": 2,
+      "maximum": 20.0,
+      "minimum": 0.0,
+      "title": "Max Distance",
+      "type": "integer"
+     },
+     "max_ratio": {
+      "default": 0.2,
+      "maximum": 1.0,
+      "minimum": 0.0,
+      "title": "Max Ratio",
+      "type": "number"
+     },
+     "mode": {
+      "default": "normalized",
+      "enum": [
+       "off",
+       "normalized",
+       "levenshtein",
+       "llm_judge"
+      ],
+      "title": "Mode",
+      "type": "string"
+     }
+    },
+    "title": "DisambiguationSettings",
+    "type": "object"
+   },
+   "DisambiguationState": {
+    "properties": {
+     "judged": {
+      "default": 0,
+      "title": "Judged",
+      "type": "integer"
+     },
+     "merged": {
+      "default": 0,
+      "title": "Merged",
+      "type": "integer"
+     },
+     "merges": {
+      "default": [],
+      "items": {
+       "$ref": "#/components/schemas/Merge"
+      },
+      "title": "Merges",
+      "type": "array"
+     },
+     "settings": {
+      "$ref": "#/components/schemas/DisambiguationSettings"
+     }
+    },
+    "required": [
+     "settings"
+    ],
+    "title": "DisambiguationState",
+    "type": "object"
+   },
    "DocumentOut": {
     "properties": {
      "id": {
@@ -247,6 +335,44 @@
      "triples"
     ],
     "title": "LinkCounts",
+    "type": "object"
+   },
+   "Merge": {
+    "properties": {
+     "alias": {
+      "title": "Alias",
+      "type": "string"
+     },
+     "canonical": {
+      "title": "Canonical",
+      "type": "string"
+     },
+     "class_id": {
+      "title": "Class Id",
+      "type": "string"
+     },
+     "iri": {
+      "title": "Iri",
+      "type": "string"
+     },
+     "method": {
+      "enum": [
+       "normalized",
+       "levenshtein",
+       "llm_judge"
+      ],
+      "title": "Method",
+      "type": "string"
+     }
+    },
+    "required": [
+     "class_id",
+     "alias",
+     "canonical",
+     "iri",
+     "method"
+    ],
+    "title": "Merge",
     "type": "object"
    },
    "OntoClass": {
@@ -457,6 +583,7 @@
       "$ref": "#/components/schemas/BuildStatus",
       "default": {
        "errors": 0,
+       "merged": 0,
        "processed": 0,
        "running": false,
        "store": "",
@@ -483,6 +610,17 @@
    },
    "SessionState": {
     "properties": {
+     "disambiguation": {
+      "$ref": "#/components/schemas/DisambiguationSettings",
+      "default": {
+       "judge_candidates": 1,
+       "judge_min_similarity": 0.4,
+       "judge_threshold": 0.65,
+       "max_distance": 2,
+       "max_ratio": 0.2,
+       "mode": "normalized"
+      }
+     },
      "ontology": {
       "$ref": "#/components/schemas/Ontology"
      },
@@ -898,6 +1036,118 @@
      }
     },
     "summary": "Get Class Query",
+    "tags": [
+     "onto-builder"
+    ]
+   }
+  },
+  "/onto-builder/{builder_id}/sessions/{session_id}/disambiguation": {
+   "get": {
+    "description": "How extracted names are merged into instances, and the merges of the current build.",
+    "operationId": "get_disambiguation_onto_builder__builder_id__sessions__session_id__disambiguation_get",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "builder_id",
+      "required": true,
+      "schema": {
+       "title": "Builder Id",
+       "type": "string"
+      }
+     },
+     {
+      "in": "path",
+      "name": "session_id",
+      "required": true,
+      "schema": {
+       "title": "Session Id",
+       "type": "string"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/DisambiguationState"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Get Disambiguation",
+    "tags": [
+     "onto-builder"
+    ]
+   },
+   "put": {
+    "description": "Change the disambiguation settings (saved with the session); a change rebuilds the KG from scratch.",
+    "operationId": "put_disambiguation_onto_builder__builder_id__sessions__session_id__disambiguation_put",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "builder_id",
+      "required": true,
+      "schema": {
+       "title": "Builder Id",
+       "type": "string"
+      }
+     },
+     {
+      "in": "path",
+      "name": "session_id",
+      "required": true,
+      "schema": {
+       "title": "Session Id",
+       "type": "string"
+      }
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/DisambiguationSettings"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/DisambiguationState"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Put Disambiguation",
     "tags": [
      "onto-builder"
     ]

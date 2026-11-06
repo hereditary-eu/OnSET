@@ -13,10 +13,11 @@ mentions of the same name in different documents become the same instance.
 
 import json
 import re
+from collections.abc import Callable
 from typing import Any, Literal as TLiteral
 
 from pydantic import BaseModel, Field
-from rdflib import OWL, RDF, RDFS, XSD, Graph, Literal, Namespace, URIRef
+from rdflib import OWL, RDF, RDFS, SKOS, XSD, Graph, Literal, Namespace, URIRef
 
 FieldType = TLiteral["string", "integer", "float", "date", "boolean", "vector"]
 
@@ -149,8 +150,15 @@ def _literal(value: Any, field_type: str) -> Literal | None:
     return Literal(value, datatype=FIELD_RANGES[field_type])
 
 
-def extraction_triples(onto: Ontology, data: dict, doc: URIRef | None = None) -> list[tuple]:
-    """Triples of one document's extraction output (``extraction_schema`` shaped)."""
+def extraction_triples(
+    onto: Ontology, data: dict, doc: URIRef | None = None,
+    resolve: Callable[[str, str], tuple[URIRef, str]] | None = None,
+) -> list[tuple]:
+    """Triples of one document's extraction output (``extraction_schema`` shaped).
+
+    ``resolve(class_id, name)``: the IRI and canonical label of the instance a name refers to
+    (builder/disambiguate.py); a name other than the canonical label becomes its ``skos:altLabel``.
+    Without it an instance is its IRI slug (``Ontology.instance``) labelled with every name."""
     triples: list[tuple] = []
     classes = {c.id: c for c in onto.classes}
     links = {l.id: l for l in onto.links}
@@ -165,9 +173,11 @@ def extraction_triples(onto: Ontology, data: dict, doc: URIRef | None = None) ->
         return name if name and name.lower() not in prompt_text else None
 
     def entity(class_id: str, name: str) -> URIRef:
-        iri = onto.instance(class_id, name)
+        iri, label = resolve(class_id, name) if resolve is not None else (onto.instance(class_id, name), name)
         triples.append((iri, RDF.type, onto.term(class_id)))
-        triples.append((iri, RDFS.label, Literal(name)))
+        triples.append((iri, RDFS.label, Literal(label)))
+        if label != name:
+            triples.append((iri, SKOS.altLabel, Literal(name)))
         if doc is not None:
             triples.append((iri, PROV.wasDerivedFrom, doc))
         return iri
