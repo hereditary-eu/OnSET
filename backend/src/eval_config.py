@@ -193,10 +193,16 @@ class TextSetConfig(BaseModel):
     glob: str | None = None
     title_field: str = "title"
     text_fields: list[str] = Field(default_factory=lambda: ["text"])
-    # documents loaded (in sorted path/key order), None for all
-    max_documents: int | None = Field(1000, ge=1)
+    # documents loaded (in sorted path/key order), None (the default; an empty string,
+    # e.g. an unset ``${VAR:-}``) for all
+    max_documents: int | None = Field(None, ge=1)
     # characters of a document given to the extraction model
     max_chars: int = Field(4000, ge=100)
+
+    @field_validator("max_documents", mode="before")
+    @classmethod
+    def _empty_is_all(cls, value: Any) -> Any:
+        return None if value == "" else value
 
 
 class BuilderConfig(BaseModel):

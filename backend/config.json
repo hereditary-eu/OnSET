@@ -262,7 +262,7 @@
         "format": "files",
         "path": "${ONSET_TEXT_SETS:-../data/text-sets}/enron/maildir",
         "glob": "*/_sent_mail/*",
-        "max_documents": "${ONSET_BUILDER_MAX_DOCUMENTS:-2000}"
+        "max_documents": "${ONSET_BUILDER_MAX_DOCUMENTS:-}"
       },
       "extract_instances": "${ONSET_BUILDER_EXTRACT_INSTANCES:-4}"
     },
@@ -278,7 +278,7 @@
           "title",
           "abstract"
         ],
-        "max_documents": "${ONSET_BUILDER_MAX_DOCUMENTS:-2000}"
+        "max_documents": "${ONSET_BUILDER_MAX_DOCUMENTS:-}"
       },
       "extract_instances": "${ONSET_BUILDER_EXTRACT_INSTANCES:-4}"
     }
