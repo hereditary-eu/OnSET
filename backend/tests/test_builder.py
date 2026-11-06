@@ -8,7 +8,7 @@ import time
 import pytest
 from fakes import ScriptedLLM, final_answer
 from agent.llm import ResponseDone
-from rdflib import Graph
+from rdflib import RDFS, Graph
 
 from builder.agent import BuilderAgent, BuilderStateMessage
 from builder.ontology import Ontology, OntoClass, OntoField, OntoLink, extraction_schema, extraction_triples
@@ -89,6 +89,9 @@ def test_extraction_schema_and_triples():
     assert g.value(alice, onto.term("worksFor")) == onto.instance("Company", "Acme Corp")
     # unknown keys are ignored
     assert not any("bogus" in str(p) for _, p, _ in g)
+    # leaked markup is no name, trailing punctuation is dropped
+    junk = extraction_triples(onto, {"Person": [{"name": "Prevotella</name>], {"}, {"name": "Eve."}]})
+    assert {str(o) for _, p, o in junk if p == RDFS.label} == {"Eve"}
 
 
 def test_progressive_build_and_query(builder):

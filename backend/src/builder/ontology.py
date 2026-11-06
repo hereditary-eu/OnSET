@@ -105,6 +105,14 @@ def local_name(text: str, upper: bool = False) -> str:
     return name if not name[0].isdigit() else "_" + name
 
 
+def clean_name(name) -> str | None:
+    """An extracted entity name, None if it is no name (markup the model leaked, sentences)."""
+    name = str(name or "").strip().strip(".,;:").strip()
+    if not 0 < len(name) <= MAX_NAME or re.search(r"[<>{}\[\]\"]", name):
+        return None
+    return name
+
+
 def slug(name: str) -> str:
     return re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-") or "x"
 
@@ -150,7 +158,7 @@ def extraction_triples(onto: Ontology, data: dict, doc: URIRef | None = None) ->
     def entity(class_id: str, name: str) -> URIRef:
         iri = onto.instance(class_id, name)
         triples.append((iri, RDF.type, onto.term(class_id)))
-        triples.append((iri, RDFS.label, Literal(name.strip())))
+        triples.append((iri, RDFS.label, Literal(name)))
         if doc is not None:
             triples.append((iri, PROV.wasDerivedFrom, doc))
         return iri
@@ -161,18 +169,15 @@ def extraction_triples(onto: Ontology, data: dict, doc: URIRef | None = None) ->
             continue
         fields = {f.name: f for f in cls.fields}
         for item in instances:
-            if not isinstance(item, dict) or not 0 < len(str(item.get("name") or "").strip()) <= MAX_NAME:
+            if not isinstance(item, dict) or not (name := clean_name(item.get("name"))):
                 continue
-            iri = entity(class_id, str(item["name"]))
+            iri = entity(class_id, name)
             for key, value in item.items():
                 if key in fields and (lit := _literal(value, fields[key].type)) is not None:
                     triples.append((iri, onto.term(key), lit))
                 elif key in links and links[key].source == class_id and isinstance(value, list):
-                    for target in value:
-                        if isinstance(target, str) and 0 < len(target.strip()) <= MAX_NAME:
-                            triples.append(
-                                (iri, onto.term(key), entity(links[key].target, target))
-                            )
+                    for target in filter(None, map(clean_name, value)):
+                        triples.append((iri, onto.term(key), entity(links[key].target, target)))
     return triples
 
 

@@ -10,6 +10,7 @@ Linux x86_64 only) and an in-memory rdflib store elsewhere.
 import json
 import random
 import threading
+import time
 import uuid
 from collections import OrderedDict
 from functools import cached_property
@@ -32,6 +33,8 @@ from builder.ontology import (
 from eval_config import BuilderConfig
 
 ExportContent = TLiteral["ontology", "kg", "all"]
+# builds of sessions nobody looked at for this long pause (they share the extraction model)
+IDLE_PAUSE_SECONDS = 60
 
 
 def new_store() -> Graph:
@@ -104,6 +107,7 @@ class BuilderSession:
         self.status = BuildStatus(store=type(self.graph.store).__name__)
         self._generation = 0
         self._lock = threading.RLock()
+        self.last_access = time.monotonic()
         # the agent chat (builder.agent.BuilderChat), created by the first connection
         self.chat = None
         self.restore()
@@ -111,6 +115,7 @@ class BuilderSession:
     # --- state ---
 
     def state(self) -> SessionState:
+        self.last_access = time.monotonic()
         with self._lock:
             return SessionState(
                 session_id=self.session_id, version=self.version,
@@ -154,6 +159,10 @@ class BuilderSession:
     def _build(self, generation: int, onto: Ontology, docs):
         max_chars = self.builder.config.text_set.max_chars
         for doc in docs:
+            while time.monotonic() - self.last_access > IDLE_PAUSE_SECONDS:
+                if generation != self._generation:
+                    return
+                time.sleep(1)
             if generation != self._generation:
                 return
             doc_iri = URIRef(f"{onto.prefix}doc/{doc.id}".replace(" ", "_"))
@@ -202,6 +211,7 @@ class BuilderSession:
 
     def run_query(self, query: str | None = None, limit: int = 500) -> QueryResult:
         query = query if query is not None else self.query
+        self.last_access = time.monotonic()
         with self._lock:
             status = self.status.model_copy()
             if not query.strip():
