@@ -881,7 +881,7 @@
       "title": "From Id"
      },
      "include_thing": {
-      "default": false,
+      "default": true,
       "title": "Include Thing",
       "type": "boolean"
      },
@@ -3508,7 +3508,7 @@
         "$ref": "#/components/schemas/FuzzyQuery",
         "default": {
          "entity_type": "class",
-         "include_thing": false,
+         "include_thing": true,
          "limit": 25,
          "mix_topic_factor": 0.5,
          "order": "score",
@@ -3757,7 +3757,7 @@
         "$ref": "#/components/schemas/FuzzyQuery",
         "default": {
          "entity_type": "class",
-         "include_thing": false,
+         "include_thing": true,
          "limit": 25,
          "mix_topic_factor": 0.5,
          "order": "score",
