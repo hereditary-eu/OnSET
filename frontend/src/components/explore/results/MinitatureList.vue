@@ -1,13 +1,13 @@
 <template>
     <div class="result_list">
         <template v-if="combined_stores.instances.length > 0">
-            <div class="result_instance_element" v-for="s of combined_stores.instances">
+            <div class="result_instance_element" v-for="(s, i) of combined_stores.instances" :key="combined_keys[i]">
                 <Result :store="jsonClone(s)" :expanded="false" :miniature-type="miniatureType(s)" :diff="diff">
                 </Result>
             </div>
         </template>
         <template v-else>
-            <div class="result_instance_element" v-for="s of mapped_stores.instances">
+            <div class="result_instance_element" v-for="(s, i) of mapped_stores.instances" :key="mapped_keys[i]">
                 <Result :store="jsonClone(s)" :expanded="false"></Result>
             </div>
         </template>
@@ -20,7 +20,7 @@
     </div>
 </template>
 <script setup lang="ts">
-import { ref, watch, reactive, onMounted } from 'vue'
+import { computed, ref, watch, reactive, onMounted } from 'vue'
 import { InstanceNodeLinkRepository, PropertiesOpenEvent, QueryMapper, ResultList } from '@/utils/sparql/querymapper';
 import { Vector2 } from 'three';
 import Loading from '../../ui/Loading.vue';
@@ -68,6 +68,20 @@ const ui_state = reactive({
     paging_offset: 0,
     paging_end: false,
 })
+let replace_results = false
+// a miniature per instance (its component and expanded state follow it when the results change);
+// repeated instances are numbered
+const instanceKeys = (instances: InstanceNodeLinkRepository[]) => {
+    const seen = new Map<string, number>()
+    return instances.map((s) => {
+        const id = String(s.id)
+        const n = seen.get(id) ?? 0
+        seen.set(id, n + 1)
+        return `${id}#${n}`
+    })
+}
+const mapped_keys = computed(() => instanceKeys(mapped_stores.value.instances))
+const combined_keys = computed(() => instanceKeys(combined_stores.value.instances))
 const startLoading = () => {
     if (!store) {
         return
@@ -76,7 +90,9 @@ const startLoading = () => {
     mapper.value.target_size = ui_state.computed_size
     ui_state.paging_offset = 0
     ui_state.paging_end = false
-    mapped_stores.value = new ResultList()
+    // the shown results stay until the new ones replace them (re-runs while the KG grows), so an
+    // expanded result stays open
+    replace_results = true
     loadMore().catch((err) => {
         console.error('Error while mapping query!', err)
         ui_state.loading = false
@@ -123,7 +139,12 @@ const loadMore = async () => {
         ui_state.computed_size = new Vector2(scalings.size.x, scalings.size.y)
 
         ui_state.paging_offset += retrieved_stores.instances.length
-        mapped_stores.value.instances = mapped_stores.value.instances.concat(retrieved_stores.instances)
+        if (replace_results) {
+            replace_results = false
+            mapped_stores.value = retrieved_stores
+        } else {
+            mapped_stores.value.instances = mapped_stores.value.instances.concat(retrieved_stores.instances)
+        }
         let current_query_string = store.generateQuery()
         store_cache.value.set(current_query_string, retrieved_stores)
         if (diff) {
