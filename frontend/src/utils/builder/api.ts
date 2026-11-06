@@ -14,8 +14,26 @@ export interface OntoField { name: string, type: FieldType, description: string 
 export interface OntoClass { id: string, label: string, description: string, fields: OntoField[], x: number | null, y: number | null }
 export interface OntoLink { id: string, label: string, source: string, target: string, description: string }
 export interface Ontology { prefix: string, classes: OntoClass[], links: OntoLink[] }
-export interface BuildStatus { running: boolean, processed: number, total: number, triples: number, errors: number, last_error: string | null, store: string }
-export interface SessionState { session_id: string, version: number, ontology: Ontology, query: string, visual_query: string | null, status: BuildStatus }
+/** ``merged``: extracted names merged into an instance with another name (disambiguation) */
+export interface BuildStatus { running: boolean, processed: number, total: number, triples: number, errors: number, last_error: string | null, store: string, merged: number }
+/** How extracted names are merged into one instance per class (backend builder/disambiguate.py); each mode adds a step to the previous ones. */
+export const DISAMBIGUATION_MODES = ['off', 'normalized', 'levenshtein', 'llm_judge'] as const
+export type DisambiguationMode = typeof DISAMBIGUATION_MODES[number]
+export interface DisambiguationSettings {
+    mode: DisambiguationMode
+    /** at most this many edits, and at most ``max_ratio`` of the longer name */
+    max_distance: number
+    max_ratio: number
+    /** TF-IDF cosine a name needs to be put to the judge, and how many of the closest are */
+    judge_min_similarity: number
+    judge_candidates: number
+    /** the judge's P(yes) a merge needs */
+    judge_threshold: number
+}
+export interface Merge { class_id: string, alias: string, canonical: string, iri: string, method: 'normalized' | 'levenshtein' | 'llm_judge' }
+/** ``merges``: the latest merges of the current build, newest first */
+export interface DisambiguationState { settings: DisambiguationSettings, merged: number, judged: number, merges: Merge[] }
+export interface SessionState { session_id: string, version: number, ontology: Ontology, query: string, visual_query: string | null, status: BuildStatus, disambiguation: DisambiguationSettings }
 /** Triples of an ontology link (``to_id`` null: of a field) in the KG, ids prefixed (``onto:Person``). */
 export interface LinkCount { from_id: string, property_id: string, to_id: string | null, count: number }
 export interface LinkCounts { triples: number, links: LinkCount[] }
@@ -49,6 +67,10 @@ export function builderSession(bid: string, sid: string) {
         /** cached on the server until the KG changes: refetch when ``status.triples`` changes */
         linkCounts: () => get<LinkCounts>(`${base}/link-counts`),
         rebuild: () => post<SessionState>('/rebuild'),
+        disambiguation: () => get<DisambiguationState>(`${base}/disambiguation`),
+        /** a change rebuilds the KG from scratch */
+        setDisambiguation: (settings: DisambiguationSettings) =>
+            axios.put<DisambiguationState>(`${BUILDER_URL}${base}/disambiguation`, settings).then((r) => r.data),
         save: (content: ExportContent, prefix: string) => post<{ path: string }>('/save', { content, prefix }),
         import: (file: File, prefix?: string) => {
             const form = new FormData()

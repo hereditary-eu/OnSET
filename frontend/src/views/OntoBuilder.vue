@@ -10,11 +10,14 @@
                         <OnsetIcon v-else icon="mdi-check" />
                         {{ status.processed }}/{{ status.total }} docs · {{ status.triples }} triples
                         <span v-if="status.errors" class="builder_error">· {{ status.errors }} errors</span>
+                        <span v-if="status.merged" title="Extracted names merged into an instance with another name">· {{ status.merged }} merged</span>
                         · {{ status.store }}
                     </span>
                     <OnsetBtn size="small" :toggleable="false" icon="mdi-refresh" title="Extract the knowledge graph again"
                         :active="!!state" @click="rebuild">Rebuild</OnsetBtn>
                     <span class="toolbar_spacer"></span>
+                    <OnsetBtn v-model="dis.open" size="small" icon="mdi-merge" :active="!!state"
+                        title="How extracted names of the same entity are merged (disambiguation)">Merging</OnsetBtn>
                     <OnsetBtn v-model="io.open" size="small" icon="mdi-swap-vertical" title="Import or export Turtle"
                         :active="!!state" @click="io.prefix = state?.ontology.prefix ?? ''">Import / Export</OnsetBtn>
                     <OnsetBtn v-model="sess.open" size="small" icon="mdi-identifier"
@@ -48,6 +51,45 @@
                             </span>
                         </label>
                         <p v-if="sess.message" class="message" :class="{ builder_error: sess.failed }">{{ sess.message }}</p>
+                    </div>
+
+                    <div v-if="dis.open && state" class="builder_io">
+                        <div class="toolbar"><b>Merging names</b><span class="toolbar_spacer"></span>
+                            <OnsetBtn size="small" :toggleable="false" icon="mdi-close" @click="dis.open = false" />
+                        </div>
+                        <SelectorGroup v-model="dis.settings.mode" :options="DISAMBIGUATION_MODES.map((m) => ({ value: m, label: MODE_LABELS[m] }))" />
+                        <p class="message">{{ MODE_HELP[dis.settings.mode] }}</p>
+                        <template v-if="dis.settings.mode == 'levenshtein' || dis.settings.mode == 'llm_judge'">
+                            <label>Max. edit distance
+                                <input v-model.number="dis.settings.max_distance" type="number" min="0" max="20" class="text_input" />
+                            </label>
+                            <label>Max. edits relative to the name length (0–1)
+                                <input v-model.number="dis.settings.max_ratio" type="number" min="0" max="1" step="0.05" class="text_input" />
+                            </label>
+                        </template>
+                        <template v-if="dis.settings.mode == 'llm_judge'">
+                            <label>Min. similarity of a name to be judged (TF-IDF, 0–1)
+                                <input v-model.number="dis.settings.judge_min_similarity" type="number" min="0" max="1" step="0.05" class="text_input" />
+                            </label>
+                            <label>Judge's min. probability of “same entity” to merge (0–1)
+                                <input v-model.number="dis.settings.judge_threshold" type="number" min="0" max="1" step="0.05" class="text_input" />
+                            </label>
+                            <label>Closest names judged per new name
+                                <input v-model.number="dis.settings.judge_candidates" type="number" min="1" max="5" class="text_input" />
+                            </label>
+                        </template>
+                        <div class="toolbar">
+                            <OnsetBtn size="small" :toggleable="false" icon="mdi-check" :active="dis_changed && !dis.busy"
+                                title="Apply the settings: extracts the knowledge graph again" @click="applyDisambiguation">Apply &amp; rebuild</OnsetBtn>
+                            <span class="toolbar_spacer"></span>
+                            <span v-if="dis.state">{{ dis.state.merged }} merged<template v-if="dis.state.judged"> · {{ dis.state.judged }} judged</template></span>
+                        </div>
+                        <p v-if="dis.message" class="message" :class="{ builder_error: dis.failed }">{{ dis.message }}</p>
+                        <ul v-if="dis.state?.merges.length" class="builder_merges">
+                            <li v-for="(m, i) in dis.state.merges" :key="i" :title="`${m.iri} (${m.method})`">
+                                {{ m.class_id }}: “{{ m.alias }}” → “{{ m.canonical }}” <i>{{ MODE_LABELS[m.method] }}</i>
+                            </li>
+                        </ul>
                     </div>
 
                     <div v-if="io.open && state" class="builder_io">
@@ -105,8 +147,9 @@ import { setActiveConfig } from '@/utils/api'
 import { OntoConfig } from '@/utils/sparql/ontoconfig'
 import { LINK_COUNTS_KEY, linkCountLookup, type LinkCountLookup } from '@/utils/sparql/link-strength'
 import {
-    builderSession, listBuilders, SESSION_ID_PATTERN,
-    type BuilderSummary, type ExportContent, type Ontology, type QueryResult, type SessionState,
+    builderSession, DISAMBIGUATION_MODES, listBuilders, SESSION_ID_PATTERN,
+    type BuilderSummary, type DisambiguationMode, type DisambiguationSettings, type DisambiguationState,
+    type ExportContent, type Ontology, type QueryResult, type SessionState,
 } from '@/utils/builder/api'
 
 const POLL_MS = 1500
@@ -390,9 +433,56 @@ const ioRun = async (action: () => Promise<string>) => {
         io.failed = true
     }
 }
-// the session and import/export popups take the same place
-watch(() => sess.open, (open) => open && (io.open = false))
-watch(() => io.open, (open) => open && (sess.open = false))
+// --- disambiguation: how extracted names of the same entity are merged ---
+const MODE_LABELS: Record<DisambiguationMode, string> = {
+    off: 'Off', normalized: 'Normalized', levenshtein: 'Edit distance', llm_judge: 'LLM judge',
+}
+const MODE_HELP: Record<DisambiguationMode, string> = {
+    off: 'Names only meet if their IRI slugs are equal.',
+    normalized: 'Names equal up to case, punctuation and whitespace are one instance.',
+    levenshtein: 'Also merges names within a few edits of a known name of the class.',
+    llm_judge: 'Also asks a small LLM whether a new name and the most similar known name (TF-IDF) are the same entity.',
+}
+const dis = reactive({
+    open: false, busy: false, message: '', failed: false,
+    settings: { mode: 'normalized', max_distance: 2, max_ratio: 0.2, judge_min_similarity: 0.4, judge_candidates: 1, judge_threshold: 0.65 } as DisambiguationSettings,
+    state: null as DisambiguationState | null,
+})
+const dis_changed = computed(() => !!dis.state && JSON.stringify(dis.settings) != JSON.stringify(dis.state.settings))
+/** ``keep_edits``: only refresh the merges, not the settings being edited */
+const loadDisambiguation = async (keep_edits = false) => {
+    try {
+        dis.state = await api.value.disambiguation()
+        if (!keep_edits) {
+            dis.settings = { ...dis.state.settings }
+        }
+    } catch (e) {
+        Object.assign(dis, { message: describe(e), failed: true })
+    }
+}
+const applyDisambiguation = async () => {
+    dis.busy = true
+    try {
+        dis.state = await api.value.setDisambiguation({ ...dis.settings })
+        dis.settings = { ...dis.state.settings }
+        Object.assign(dis, { message: 'Applied: the knowledge graph is extracted again.', failed: false })
+        await poll()
+    } catch (e) {
+        Object.assign(dis, { message: describe(e), failed: true })
+    } finally {
+        dis.busy = false
+    }
+}
+watch(() => dis.open, (open) => open && loadDisambiguation())
+// the merges of the running build while the popup is open
+watch(() => status.value?.merged, () => dis.open && loadDisambiguation(true))
+watch(sessionId, () => Object.assign(dis, { open: false, state: null, message: '' }))
+
+// the session, merging and import/export popups take the same place
+const popups = [() => sess, () => io, () => dis]
+for (const popup of popups) {
+    watch(() => popup().open, (open) => open && popups.forEach((other) => other != popup && (other().open = false)))
+}
 const save = () => ioRun(async () => `Saved to ${(await api.value.save(io.content, io.prefix)).path}`)
 const importFile = () => {
     const file = import_file.value?.files?.[0]
@@ -509,6 +599,13 @@ onBeforeUnmount(() => {
     flex: 1 1 auto;
     min-width: 0;
     font-family: monospace;
+}
+
+.builder_merges {
+    max-height: 12rem;
+    overflow-y: auto;
+    margin: 0;
+    padding-left: 1rem;
 }
 
 .builder_io a.onset_btn {
