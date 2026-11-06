@@ -154,13 +154,24 @@ let sent_key = ''
 let put_timer: ReturnType<typeof setTimeout> | null = null
 let pending = 0
 
+// keeps the local ontology object when the server's is identical: replacing it on every poll
+// re-renders the editor and resets inputs that are being typed into
 const adopt = (s: SessionState) => {
-    if (!state.value || ontoKey(state.value.ontology) == sent_key) {
+    if (!state.value) {
         state.value = s
         sent_key = ontoKey(s.ontology)
-    } else {
-        Object.assign(state.value, { version: s.version, query: s.query, status: s.status })
+        return
     }
+    const { ontology, ...rest } = s
+    const local = ontoKey(state.value.ontology)
+    if (local == sent_key) {
+        const remote = ontoKey(ontology)
+        if (remote != local) {
+            state.value.ontology = ontology
+        }
+        sent_key = remote
+    }
+    Object.assign(state.value, rest)
 }
 
 const putOntology = async () => {

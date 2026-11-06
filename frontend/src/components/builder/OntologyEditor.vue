@@ -59,14 +59,16 @@
         <!-- inspector of the selected class or link -->
         <div v-if="selected_class" class="onto_overlay onto_inspector">
             <div class="onto_inspector_title">Class <code>{{ selected_class.id }}</code></div>
-            <label>Name<input class="text_input" :value="selected_class.label"
-                    @change="renameClass(selected_class, ($event.target as HTMLInputElement).value)" /></label>
+            <label>Name<input class="text_input" :value="drafts[`class:${selected_class.id}`] ?? selected_class.label"
+                    @input="draft(`class:${selected_class.id}`, $event)"
+                    @change="commit(`class:${selected_class.id}`, $event, (v) => renameClass(selected_class!, v))" /></label>
             <label>Description<textarea class="text_input" rows="2" v-model="selected_class.description" /></label>
             <div class="onto_inspector_title">Fields</div>
             <div v-for="f in selected_class.fields" :key="f.name" class="onto_field">
                 <div class="toolbar">
-                    <input class="text_input" :value="f.name"
-                        @change="renameField(selected_class, f, ($event.target as HTMLInputElement).value)" />
+                    <input class="text_input" :value="drafts[`field:${selected_class.id}:${f.name}`] ?? f.name"
+                        @input="draft(`field:${selected_class.id}:${f.name}`, $event)"
+                        @change="commit(`field:${selected_class.id}:${f.name}`, $event, (v) => renameField(selected_class!, f, v))" />
                     <select class="text_input" v-model="f.type">
                         <option v-for="t in FIELD_TYPES" :key="t" :value="t">{{ t }}</option>
                     </select>
@@ -89,8 +91,9 @@
         </div>
         <div v-else-if="selected_link" class="onto_overlay onto_inspector">
             <div class="onto_inspector_title">Link <code>{{ selected_link.id }}</code></div>
-            <label>Name<input class="text_input" :value="selected_link.label"
-                    @change="renameLink(selected_link, ($event.target as HTMLInputElement).value)" /></label>
+            <label>Name<input class="text_input" :value="drafts[`link:${selected_link.id}`] ?? selected_link.label"
+                    @input="draft(`link:${selected_link.id}`, $event)"
+                    @change="commit(`link:${selected_link.id}`, $event, (v) => renameLink(selected_link!, v))" /></label>
             <label>From<select class="text_input" v-model="selected_link.source">
                     <option v-for="c in ontology.classes" :key="c.id" :value="c.id">{{ c.label }}</option>
                 </select></label>
@@ -122,6 +125,16 @@ const selected = ref(null as { kind: 'class' | 'link', id: string } | null)
 const linking = ref(null as string | null)
 const new_class = ref('')
 const new_field = reactive({ name: '', type: 'string' as FieldType })
+
+// uncommitted text of the rename inputs (committed on change); kept here so a re-render from a
+// server update does not reset what is being typed
+const drafts = reactive<Record<string, string>>({})
+const inputValue = (e: Event) => (e.target as HTMLInputElement).value
+const draft = (key: string, e: Event) => drafts[key] = inputValue(e)
+const commit = (key: string, e: Event, apply: (value: string) => void) => {
+    delete drafts[key]
+    apply(inputValue(e))
+}
 
 const classOf = (id: string) => ontology.value.classes.find((c) => c.id == id)
 const isSelected = (kind: 'class' | 'link', id: string) => selected.value?.kind == kind && selected.value.id == id
