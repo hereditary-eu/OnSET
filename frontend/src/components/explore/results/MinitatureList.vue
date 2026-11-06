@@ -30,7 +30,7 @@ import type { NodeLinkRepository } from '@/utils/sparql/store';
 import { ResultListDiff, type NodeLinkRepositoryDiff } from '@/utils/sparql/diff';
 import { MiniatureType } from '@/utils/result-plot/plot-types';
 import { jsonClone } from '@/utils/parsing';
-const { store, query_string, diff } = defineProps({
+const { store, query_string, diff, refresh } = defineProps({
     store: {
         type: Object as () => NodeLinkRepository,
         required: true
@@ -42,6 +42,10 @@ const { store, query_string, diff } = defineProps({
     diff: {
         type: Object as () => NodeLinkRepositoryDiff | null,
         default: null
+    },
+    refresh: {
+        type: Number,
+        default: 0
     }
 })
 const mapper = ref(null as QueryMapper | null)
@@ -78,7 +82,7 @@ const startLoading = () => {
         ui_state.loading = false
     })
 }
-watch(() => query_string, () => {
+watch(() => [query_string, refresh], () => {
     startLoading()
 }, { deep: true })
 const updateSize = () => {

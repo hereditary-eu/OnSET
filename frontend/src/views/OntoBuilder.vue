@@ -22,7 +22,7 @@
                 </header>
                 <div class="panel_body builder_editor_body">
                     <p v-if="error" class="message builder_error builder_banner">{{ error }}</p>
-                    <OntologyEditor v-if="state" v-model="state.ontology" @query="queryClass" />
+                    <OntologyEditor v-if="state" v-model="state.ontology" @query="cardQuery" />
                     <p v-else-if="!error" class="message">Loading the session…</p>
 
                     <div v-if="io.open && state" class="builder_io">
@@ -45,8 +45,9 @@
                 </div>
             </section>
 
-            <BuilderResults v-if="state" :query="state.query" :result="result" :classes="state.ontology.classes"
-                v-model:collapsed="results_collapsed" @apply="applyQuery" @query-class="queryClass" />
+            <BuilderResults v-if="state" ref="results_panel" :key="sessionId" :query="state.query" :result="result"
+                :classes="state.ontology.classes" :refresh="results_refresh" v-model:collapsed="results_collapsed"
+                @apply="applyQuery" @query-class="queryClass" />
 
             <SidePanel :tabs="side_tabs" v-model:active="side_tab" v-model:collapsed="side_collapsed">
                 <template #chat>
@@ -75,12 +76,16 @@ import OntologyEditor from '@/components/builder/OntologyEditor.vue'
 import BuilderResults from '@/components/builder/BuilderResults.vue'
 import TextSearch from '@/components/builder/TextSearch.vue'
 import { AgentSession } from '@/utils/agent/agentSession'
+import { setActiveConfig } from '@/utils/api'
+import { OntoConfig } from '@/utils/sparql/ontoconfig'
 import {
     builderSession, listBuilders,
     type BuilderSummary, type ExportContent, type Ontology, type QueryResult, type SessionState,
 } from '@/utils/builder/api'
 
 const POLL_MS = 1500
+// the visual query's results re-run at most this often while the KG grows
+const RESULTS_REFRESH_MS = 5000
 const PUT_DEBOUNCE_MS = 300
 
 const route = useRoute()
@@ -105,6 +110,11 @@ const createSession = () => {
 }
 const sessionId = ref(localStorage.getItem(storage_key) ?? createSession())
 const api = computed(() => builderSession(builderId, sessionId.value))
+// the visual query editor talks to the session as the configuration builder:<builder>:<session>
+watch(sessionId, (sid) => {
+    setActiveConfig(`builder:${builderId}:${sid}`)
+    OntoConfig.ensureConfig().catch((e) => console.error('Loading the session config failed', e))
+}, { immediate: true })
 
 const state = ref<SessionState | null>(null)
 const result = ref<QueryResult | null>(null)
@@ -162,6 +172,8 @@ const loadResults = async () => {
 }
 let polling = false
 let was_running = false
+const results_refresh = ref(0)
+let refreshed = { triples: -1, at: 0 }
 const poll = async () => {
     if (polling) {
         return
@@ -179,6 +191,10 @@ const poll = async () => {
             await loadResults()
         }
         was_running = s.status.running
+        if (s.status.triples != refreshed.triples && (!s.status.running || Date.now() - refreshed.at > RESULTS_REFRESH_MS)) {
+            refreshed = { triples: s.status.triples, at: Date.now() }
+            results_refresh.value++
+        }
         error.value = ''
     } catch (e) {
         error.value = `The builder backend is not reachable: ${describe(e)}`
@@ -204,6 +220,13 @@ const queryClass = (class_id: string) => run(async () => {
     await putOntology()
     results_collapsed.value = false
     await applyQuery((await api.value.classQuery(class_id)).query)
+})
+// the query button of a class card: its instances, in the panel's current mode
+const results_panel = ref<InstanceType<typeof BuilderResults> | null>(null)
+const cardQuery = (class_id: string) => run(async () => {
+    await putOntology()
+    results_collapsed.value = false
+    await results_panel.value?.queryClass(class_id)
 })
 const rebuild = () => run(async () => adopt(await api.value.rebuild()))
 
@@ -265,6 +288,7 @@ provide('builderExportUrl', (content: ExportContent, prefix: string) => api.valu
 onBeforeUnmount(() => {
     clearInterval(poll_timer)
     agent.disconnect()
+    setActiveConfig(null)
 })
 </script>
 <style scoped>

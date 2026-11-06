@@ -28,7 +28,7 @@ import { jsonClone } from '@/utils/parsing';
 import OnsetBtn from '@/components/ui/OnsetBtn.vue';
 import { api } from '@/utils/api'
 
-const { store, query_string, diff } = defineProps({
+const { store, query_string, diff, refresh } = defineProps({
     store: {
         type: Object as () => NodeLinkRepository,
         required: true
@@ -40,6 +40,10 @@ const { store, query_string, diff } = defineProps({
     diff: {
         type: Object as () => NodeLinkRepositoryDiff | null,
         default: null
+    },
+    refresh: {
+        type: Number,
+        default: 0
     }
 })
 const plot_container = ref<HTMLDivElement | null>(null)
@@ -188,7 +192,7 @@ onMounted(() => {
         ui_data.loading = false
     })
 })
-watch(() => query_string, () => {
+watch(() => [query_string, refresh], () => {
     loadData().catch((e) => {
         console.error(e)
         ui_data.message = "Error loading data: " + e.message

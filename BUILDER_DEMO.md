@@ -47,9 +47,10 @@ Every change is sent to the backend. A change to the schema (names, types, links
 
 **The header** shows the build progress: documents read, triples extracted, errors and the triple store in use. The store is Tentris on x86_64 Linux and rdflib's in-memory store elsewhere.
 
-**The middle panel** holds the SPARQL query and its results, and collapses to a narrow strip:
+**The middle panel** holds the query and its results, and collapses to a narrow strip. It has two modes:
 
-- "Instances of…" and the table button on each card generate a query for a class, with its label, fields and links.
+- **Visual:** the query editor of the explore view. "Instances of…" and the table button on each card start a query with that class; add links and fields from the points around a class. The instances (or, for fields, a plot) show below.
+- **SPARQL:** the query as text with a result table. Here "Instances of…" and the table button generate a query for a class, with its label, fields and links. A query the agent sets is shown in this mode.
 - The prefixes `onto:`, `rdfs:`, `rdf:`, `xsd:` and `prov:` are predefined.
 - Results refresh while the build runs, and the table switches between labels and IRIs.
 
