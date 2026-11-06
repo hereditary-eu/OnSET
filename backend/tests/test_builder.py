@@ -203,7 +203,7 @@ def test_link_counts(builder, client, monkeypatch):
     assert session.link_counts() is session.link_counts()
     # a new triple invalidates the cache
     p = onto.term("Person/carol")
-    session._add_extraction(session._generation, onto.term("doc/x"), "x", [
+    session._add_extraction(session._generation, [
         (p, RDF.type, onto.term("Person")), (p, onto.term("worksFor"), onto.term("Company/globex")),
     ], None)
     out = client.get("/onto-builder/test/sessions/c/link-counts").json()

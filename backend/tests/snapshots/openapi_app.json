@@ -251,6 +251,10 @@
       "title": "Id",
       "type": "string"
      },
+     "path": {
+      "title": "Path",
+      "type": "string"
+     },
      "text": {
       "title": "Text",
       "type": "string"
@@ -263,6 +267,7 @@
     "required": [
      "id",
      "title",
+     "path",
      "text"
     ],
     "title": "DocumentOut",
@@ -279,6 +284,46 @@
      }
     },
     "title": "HTTPValidationError",
+    "type": "object"
+   },
+   "InstanceProvenance": {
+    "properties": {
+     "aliases": {
+      "default": [],
+      "items": {
+       "type": "string"
+      },
+      "title": "Aliases",
+      "type": "array"
+     },
+     "documents": {
+      "default": [],
+      "items": {
+       "$ref": "#/components/schemas/SourceDocument"
+      },
+      "title": "Documents",
+      "type": "array"
+     },
+     "iri": {
+      "title": "Iri",
+      "type": "string"
+     },
+     "label": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Label"
+     }
+    },
+    "required": [
+     "iri"
+    ],
+    "title": "InstanceProvenance",
     "type": "object"
    },
    "LinkCount": {
@@ -689,6 +734,36 @@
     "title": "Snippet",
     "type": "object"
    },
+   "SourceDocument": {
+    "description": "A corpus document an instance was extracted from.",
+    "properties": {
+     "doc_id": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Doc Id"
+     },
+     "iri": {
+      "title": "Iri",
+      "type": "string"
+     },
+     "title": {
+      "default": "",
+      "title": "Title",
+      "type": "string"
+     }
+    },
+    "required": [
+     "iri"
+    ],
+    "title": "SourceDocument",
+    "type": "object"
+   },
    "ValidationError": {
     "properties": {
      "ctx": {
@@ -802,6 +877,7 @@
   },
   "/onto-builder/{builder_id}/documents/{doc_id}": {
    "get": {
+    "description": "A document of the corpus by its id (a ``Snippet``'s ``doc_id``, a ``SourceDocument``'s\n``doc_id``); only ids of the loaded corpus, so no other file can be read.",
     "operationId": "get_document_onto_builder__builder_id__documents__doc_id__get",
     "parameters": [
      {
@@ -1418,6 +1494,69 @@
      }
     },
     "summary": "Put Ontology",
+    "tags": [
+     "onto-builder"
+    ]
+   }
+  },
+  "/onto-builder/{builder_id}/sessions/{session_id}/provenance": {
+   "get": {
+    "description": "The corpus documents an instance was extracted from (all of them for a merged instance),\nopen them with ``/{builder_id}/documents/{doc_id}``.",
+    "operationId": "get_provenance_onto_builder__builder_id__sessions__session_id__provenance_get",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "builder_id",
+      "required": true,
+      "schema": {
+       "title": "Builder Id",
+       "type": "string"
+      }
+     },
+     {
+      "in": "path",
+      "name": "session_id",
+      "required": true,
+      "schema": {
+       "title": "Session Id",
+       "type": "string"
+      }
+     },
+     {
+      "description": "an instance of the KG",
+      "in": "query",
+      "name": "iri",
+      "required": true,
+      "schema": {
+       "description": "an instance of the KG",
+       "title": "Iri",
+       "type": "string"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/InstanceProvenance"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Get Provenance",
     "tags": [
      "onto-builder"
     ]

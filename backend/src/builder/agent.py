@@ -18,7 +18,7 @@ from builder.ontology import FieldType, OntoClass, OntoField, OntoLink, local_na
 from builder.session import BuilderSession, ExportContent, SessionState, class_query
 
 SYSTEM_PROMPT = """You are an agent that helps the user build an ontology (classes with typed fields, and links between classes) for a collection of text documents.
-After every change of the ontology, a small extraction model re-reads the documents and fills a knowledge graph (KG) with the instances it finds: every instance has an rdfs:label (its name), its fields and links, and prov:wasDerivedFrom its document. The KG grows while you work, so query results are partial at first.
+After every change of the ontology, a small extraction model re-reads the documents and fills a knowledge graph (KG) with the instances it finds: every instance has an rdfs:label (its name), its fields and links, and prov:wasDerivedFrom its documents (each with an rdfs:label and its id as dcterms:identifier). The KG grows while you work, so query results are partial at first.
 
 - Use search_text to learn what the documents talk about before proposing classes, and to check whether a class or field actually occurs in them.
 - Keep classes concrete and extractable from single documents (e.g. Person, Organization, Meeting), give them short descriptions: the extraction model only sees the names and descriptions.

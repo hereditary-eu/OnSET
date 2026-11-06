@@ -5,6 +5,9 @@ class ``Person`` is ``<prefix>Person``, its field ``age`` the datatype property
 ``<prefix>age`` and link ``worksFor`` the object property ``<prefix>worksFor``.
 Instances extracted from a document are ``<prefix><Class>/<slug of name>``, so
 mentions of the same name in different documents become the same instance.
+Every instance is ``prov:wasDerivedFrom`` each document it was extracted from
+(``document_iri``), which has its title as ``rdfs:label`` and its corpus id
+(builder/corpus.py) as ``dcterms:identifier``.
 
 - ``extraction_schema``: the JSON schema the extraction model is constrained to,
 - ``extraction_triples``: its output as triples,
@@ -15,9 +18,10 @@ import json
 import re
 from collections.abc import Callable
 from typing import Any, Literal as TLiteral
+from urllib.parse import quote
 
 from pydantic import BaseModel, Field
-from rdflib import OWL, RDF, RDFS, SKOS, XSD, Graph, Literal, Namespace, URIRef
+from rdflib import DCTERMS, OWL, RDF, RDFS, SKOS, XSD, Graph, Literal, Namespace, URIRef
 
 FieldType = TLiteral["string", "integer", "float", "date", "boolean", "vector"]
 
@@ -112,6 +116,18 @@ def clean_name(name) -> str | None:
     if not 0 < len(name) <= MAX_NAME or re.search(r"[<>{}\[\]\"]", name):
         return None
     return name
+
+
+def document_iri(prefix: str, doc_id: str) -> URIRef:
+    """The IRI of a corpus document, ``<prefix>doc/<percent-encoded id>`` (ids are paths,
+    ``file#key`` or record keys, so they may contain characters an IRI cannot)."""
+    return URIRef(f"{prefix}doc/{quote(doc_id, safe='/')}")
+
+
+def document_triples(prefix: str, doc_id: str, title: str) -> list[tuple]:
+    """The triples describing a document the instances are derived from."""
+    iri = document_iri(prefix, doc_id)
+    return [(iri, RDFS.label, Literal(title)), (iri, DCTERMS.identifier, Literal(doc_id))]
 
 
 def slug(name: str) -> str:

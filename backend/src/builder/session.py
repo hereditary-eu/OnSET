@@ -23,7 +23,7 @@ from pathlib import Path
 from typing import Literal as TLiteral
 
 from pydantic import BaseModel
-from rdflib import RDF, RDFS, SKOS, Graph, Literal, URIRef
+from rdflib import DCTERMS, RDF, RDFS, SKOS, Graph, Literal, URIRef
 
 from builder.corpus import Corpus
 from builder.disambiguate import Disambiguator, Judge, LlamaJudge, Merge
@@ -31,6 +31,8 @@ from builder.extract import Extractor, LlamaExtractor
 from builder.ontology import (
     PROV,
     Ontology,
+    document_iri,
+    document_triples,
     extraction_triples,
     ontology_from_graph,
     ontology_graph,
@@ -117,6 +119,23 @@ class LinkCounts(BaseModel):
     # the build status' triple count the counts are of (clients refetch when it changes)
     triples: int
     links: list[LinkCount] = []
+
+
+class SourceDocument(BaseModel):
+    """A corpus document an instance was extracted from."""
+    iri: str
+    # its corpus id (the documents route's ``doc_id``), None if the KG names no document
+    # of the corpus (e.g. imported from another corpus)
+    doc_id: str | None = None
+    title: str = ""
+
+
+class InstanceProvenance(BaseModel):
+    iri: str
+    label: str | None = None
+    # the other names it was extracted as (merged by disambiguation)
+    aliases: list[str] = []
+    documents: list[SourceDocument] = []
 
 
 class SessionState(BaseModel):
@@ -341,23 +360,27 @@ class BuilderSession:
                 self.status.running = False
 
     def _extract(self, onto: Ontology, doc, dis: Disambiguator | None = None) -> tuple:
-        """The triples of one document (and its IRI and title), or an error message; names
-        are resolved to their instances by ``dis`` (in this extraction thread)."""
-        doc_iri = URIRef(f"{onto.prefix}doc/{doc.id}".replace(" ", "_"))
+        """The triples of one document (its instances' plus, if it has any, the document's
+        own: provenance), or an error message; names are resolved to their instances by ``dis``
+        (in this extraction thread)."""
+        doc_iri = document_iri(onto.prefix, doc.id)
         try:
             text = doc.text[: self.builder.config.text_set.max_chars]
             data = self.builder.extractor.extract(onto, text)
             resolve = dis.resolver(text) if dis is not None else None
-            return doc_iri, doc.title, extraction_triples(onto, data, doc_iri, resolve), None
+            triples = extraction_triples(onto, data, doc_iri, resolve)
+            if triples:
+                triples = document_triples(onto.prefix, doc.id, doc.title) + triples
+            return triples, None
         except Exception as e:
-            return doc_iri, doc.title, [], f"{type(e).__name__}: {e}"
+            return [], f"{type(e).__name__}: {e}"
 
-    def _add_extraction(self, generation: int, doc_iri: URIRef, title: str, triples: list, error: str | None):
+    def _add_extraction(self, generation: int, triples: list, error: str | None):
         with self._lock:
             if generation != self._generation:
                 return
             if triples:
-                add_all(self.graph, [(doc_iri, RDFS.label, Literal(title)), *triples])
+                add_all(self.graph, triples)
             self.status.processed += 1
             self.status.triples = len(self.graph) - len(self.schema)
             if self.disambiguator is not None:
@@ -381,6 +404,7 @@ class BuilderSession:
             "xsd": "http://www.w3.org/2001/XMLSchema#",
             "prov": str(PROV),
             "skos": str(SKOS),
+            "dcterms": str(DCTERMS),
         }
         lowered = query.lower()
         declared = "".join(
@@ -444,6 +468,30 @@ class BuilderSession:
             self._link_counts = (key, counts)
         return counts
 
+    def provenance(self, iri: str) -> InstanceProvenance:
+        """The documents the instance ``iri`` was extracted from (``prov:wasDerivedFrom``), with
+        its label and aliases (to find it in their text)."""
+        self.last_access = time.monotonic()
+        corpus = self.builder.corpus.by_id
+        node = URIRef(iri)
+        with self._lock:
+            graph = self.graph
+            label = graph.value(node, RDFS.label)
+            # without disambiguation an instance has every name as a label
+            names = [*graph.objects(node, RDFS.label), *graph.objects(node, SKOS.altLabel)]
+            aliases = sorted({str(a) for a in names} - {str(label)})
+            documents = []
+            for doc in sorted(set(graph.objects(node, PROV.wasDerivedFrom)), key=str):
+                doc_id = graph.value(doc, DCTERMS.identifier)
+                title = graph.value(doc, RDFS.label)
+                documents.append(SourceDocument(
+                    iri=str(doc), doc_id=str(doc_id) if doc_id is not None and str(doc_id) in corpus else None,
+                    title=str(title) if title is not None else str(doc),
+                ))
+        return InstanceProvenance(
+            iri=iri, label=str(label) if label is not None else None, aliases=aliases, documents=documents,
+        )
+
     def _cell(self, value) -> Cell | None:
         if value is None:
             return None
@@ -467,6 +515,7 @@ class BuilderSession:
                         g.add(triple)
             g.bind("onto", self.ontology.prefix)
             g.bind("prov", PROV)
+            g.bind("dcterms", DCTERMS)
             old = self.ontology.prefix
         return rebase(g, old, prefix or old).serialize(format="turtle")
 

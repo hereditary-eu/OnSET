@@ -29,6 +29,8 @@ class Document:
     id: str
     title: str
     text: str
+    # its file, relative to the text set's path (a JSON file's records share it)
+    path: str = ""
 
 
 class Snippet(BaseModel):
@@ -50,14 +52,14 @@ def _read_mail(path: Path) -> tuple[str, str]:
 
 
 def _json_documents(
-    path: Path, config: TextSetConfig, id_prefix: str = ""
+    path: Path, config: TextSetConfig, id_prefix: str = "", rel: str = ""
 ) -> Iterator[Document]:
     records = json.loads(path.read_text())
     items = records.items() if isinstance(records, dict) else enumerate(records)
     for key, record in items:
         text = "\n\n".join(str(record[f]) for f in config.text_fields if record.get(f))
         title = str(record.get(config.title_field, key))
-        yield Document(f"{id_prefix}{key}", title, text)
+        yield Document(f"{id_prefix}{key}", title, text, rel or path.name)
 
 
 def _iter_documents(config: TextSetConfig) -> Iterator[Document]:
@@ -70,10 +72,10 @@ def _iter_documents(config: TextSetConfig) -> Iterator[Document]:
         rel = str(path.relative_to(root))
         if config.format == "json":
             # ids are prefixed with the file so equal keys in different files stay apart
-            yield from _json_documents(path, config, f"{rel}#")
+            yield from _json_documents(path, config, f"{rel}#", rel)
         else:
             title, text = _read_mail(path)
-            yield Document(rel, title, text)
+            yield Document(rel, title, text, rel)
 
 
 def load_documents(config: TextSetConfig) -> list[Document]:

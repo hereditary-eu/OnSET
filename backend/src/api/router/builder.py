@@ -26,7 +26,8 @@ from builder.agent import BuilderChat
 from builder.corpus import Snippet
 from builder.ontology import Ontology
 from builder.session import (
-    Builder, BuilderSession, DisambiguationState, ExportContent, LinkCounts, QueryResult, SessionState, class_query,
+    Builder, BuilderSession, DisambiguationState, ExportContent, InstanceProvenance, LinkCounts, QueryResult,
+    SessionState, class_query,
 )
 from eval_config import CONFIG_FILE, DisambiguationSettings
 
@@ -65,6 +66,8 @@ class BuilderSummary(BaseModel):
 class DocumentOut(BaseModel):
     id: str
     title: str
+    # its file, relative to the text set's path
+    path: str
     text: str
 
 
@@ -84,10 +87,12 @@ def search_text(builder_id: str, q: str = Query(...), k: int = Query(20, ge=1, l
 
 @builder_router.get("/{builder_id}/documents/{doc_id:path}")
 def get_document(builder_id: str, doc_id: str) -> DocumentOut:
+    """A document of the corpus by its id (a ``Snippet``'s ``doc_id``, a ``SourceDocument``'s
+    ``doc_id``); only ids of the loaded corpus, so no other file can be read."""
     doc = get_builder(builder_id).corpus.by_id.get(doc_id)
     if doc is None:
         raise HTTPException(404, f"No document '{doc_id}'")
-    return DocumentOut(id=doc.id, title=doc.title, text=doc.text)
+    return DocumentOut(id=doc.id, title=doc.title, path=doc.path, text=doc.text)
 
 
 @builder_router.get("/{builder_id}/sessions/{session_id}")
@@ -129,6 +134,15 @@ def get_class_query(builder_id: str, session_id: str, class_id: str) -> QueryIn:
 @builder_router.get("/{builder_id}/sessions/{session_id}/results")
 def get_results(builder_id: str, session_id: str, limit: int = Query(500, ge=1, le=5000)) -> QueryResult:
     return get_session(builder_id, session_id).run_query(limit=limit)
+
+
+@builder_router.get("/{builder_id}/sessions/{session_id}/provenance")
+def get_provenance(
+    builder_id: str, session_id: str, iri: str = Query(..., description="an instance of the KG"),
+) -> InstanceProvenance:
+    """The corpus documents an instance was extracted from (all of them for a merged instance),
+    open them with ``/{builder_id}/documents/{doc_id}``."""
+    return get_session(builder_id, session_id).provenance(iri)
 
 
 @builder_router.get("/{builder_id}/sessions/{session_id}/link-counts")
