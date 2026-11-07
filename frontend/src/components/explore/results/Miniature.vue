@@ -6,7 +6,7 @@
             <span v-if="inspect" class="miniature_sources">
                 <OnsetBtn v-for="node in instanceNodes" :key="node.instance_id" size="small" :toggleable="false"
                     icon="mdi-file-document-outline" :title="`Source documents of ${node.instance_label}`"
-                    @click="inspect(node.instance_id)">{{ node.instance_label }}</OnsetBtn>
+                    @click="inspect(bareIri(node.instance_id))">{{ node.instance_label }}</OnsetBtn>
             </span>
         </template>
         <template v-slot:content>
@@ -73,6 +73,8 @@ const { store, diff, miniatureType } = defineProps({
 const expanded = ref(false)
 // provided by the ontology builder only
 const inspect = inject(INSPECT_INSTANCE, null)
+// result instance ids are SPARQL terms (<http://…>), the sources panel takes the plain IRI
+const bareIri = (id: string) => id.replace(/^<(.*)>$/, '$1')
 const instanceNodes = computed(() => {
     const seen = new Set<string>()
     return store.nodes.filter((n) => n.instance_id && !seen.has(n.instance_id) && seen.add(n.instance_id))
