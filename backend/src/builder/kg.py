@@ -9,6 +9,7 @@ Routes needing other services (topics, embeddings, LLM search, agent) fail.
 """
 
 from rdflib import Graph
+from rdflib.namespace import DCTERMS, FOAF, PROV, SKOS
 
 from builder.ontology import FIELD_RANGES, Ontology
 from eval_config import EvalConfig, MultimodalConfig
@@ -161,7 +162,12 @@ class SessionKG:
             config = OntologyConfig(
                 multimodal_config=MultimodalConfig(image_vector_properties=[], image_properties=[], image_types=[]),
             )
-            config.additional_namespaces["onto"] = self.session.ontology.prefix
+            # declared in every query: the Tentris store keeps no namespace bindings (rdflib's memory
+            # store has foaf etc. bound by default), and the visual query's labels use foaf:name
+            config.additional_namespaces.update({
+                "onto": self.session.ontology.prefix,
+                "foaf": str(FOAF), "prov": str(PROV), "skos": str(SKOS), "dcterms": str(DCTERMS),
+            })
             self._oman = OntologyManager(config, LockedGraph(self._graph, self.session._lock))
         return self._oman
 
