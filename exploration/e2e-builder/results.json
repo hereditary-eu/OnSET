@@ -1,0 +1,345 @@
+{
+  "session": "8245ccef-7e1e-4393-b5fa-42fd5a014f50",
+  "results": [
+    {
+      "step": "1 builder list shows the e2e builder",
+      "pass": true,
+      "cards": [
+        "E2E Enron miniEight short mails with variant names of the same people and companies (end-to-end test)."
+      ]
+    },
+    {
+      "step": "2 new session opened",
+      "pass": true,
+      "sid": "8245ccef-7e1e-4393-b5fa-42fd5a014f50"
+    },
+    {
+      "step": "3 ontology defined (UI classes + link, API field)",
+      "pass": true,
+      "card_titles": [
+        "Person",
+        "Company"
+      ],
+      "link_labels": [
+        "works for"
+      ],
+      "status": "0/8 docs · 0 triples · TentrisStore"
+    },
+    {
+      "step": "4 pan/zoom/fit",
+      "pass": true,
+      "initial": {
+        "x": 192.5,
+        "y": 378,
+        "k": 1
+      },
+      "zoomed": {
+        "x": 118.4,
+        "y": 264.7,
+        "k": 1.647
+      },
+      "panned": {
+        "x": 238.4,
+        "y": 184.7,
+        "k": 1.647
+      },
+      "fit": {
+        "x": 37.5,
+        "y": 378,
+        "k": 1
+      },
+      "cards_inside_after_fit": true
+    },
+    {
+      "step": "5 initial build (default mode normalized)",
+      "pass": true,
+      "running_status": "0/8 docs · 0 triples · TentrisStore",
+      "final_status": "8/8 docs · 106 triples · TentrisStore",
+      "running": false,
+      "processed": 8,
+      "total": 8,
+      "triples": 106,
+      "errors": 0,
+      "last_error": null,
+      "store": "TentrisStore",
+      "merged": 0,
+      "seconds": 24
+    },
+    {
+      "step": "6 merging off",
+      "pass": true,
+      "restarted_status": "0/8 docs · 0 triples · TentrisStore",
+      "processed_right_after_apply": 0,
+      "running_right_after_apply": true,
+      "build_seconds": 24,
+      "triples": 106,
+      "merged": 0,
+      "judged": 0,
+      "ui_counter": "0 merged",
+      "ui_merges": [],
+      "server_mode": "off"
+    },
+    {
+      "step": "6 merging normalized",
+      "pass": true,
+      "restarted_status": "0/8 docs · 0 triples · TentrisStore",
+      "processed_right_after_apply": 0,
+      "running_right_after_apply": true,
+      "build_seconds": 24,
+      "triples": 106,
+      "merged": 0,
+      "judged": 0,
+      "ui_counter": "0 merged",
+      "ui_merges": [],
+      "server_mode": "normalized"
+    },
+    {
+      "step": "6 merging levenshtein",
+      "pass": true,
+      "restarted_status": "0/8 docs · 0 triples · TentrisStore",
+      "processed_right_after_apply": 0,
+      "running_right_after_apply": true,
+      "build_seconds": 22,
+      "triples": 104,
+      "merged": 2,
+      "judged": 0,
+      "ui_counter": "2 merged",
+      "ui_merges": [
+        "Person: “Andrew S. Fastow” → “Andrew Fastow” Edit distance",
+        "Person: “Jeffrey K. Skilling” → “Jeffrey Skilling” Edit distance"
+      ],
+      "server_mode": "levenshtein"
+    },
+    {
+      "step": "6 merging llm_judge",
+      "pass": true,
+      "restarted_status": "0/8 docs · 0 triples · TentrisStore",
+      "processed_right_after_apply": 0,
+      "running_right_after_apply": true,
+      "build_seconds": 36,
+      "triples": 98,
+      "merged": 8,
+      "judged": 6,
+      "ui_counter": "8 merged · 6 judged",
+      "ui_merges": [
+        "Person: “Andrew S. Fastow” → “Andy Fastow” Edit distance",
+        "Person: “Arthur Andersen LLP” → “Arthur Andersen” LLM judge",
+        "Person: “Andrew Fastow” → “Andy Fastow” LLM judge",
+        "Person: “Kennet Lay” → “Kenneth L. Lay” LLM judge",
+        "Company: “Enron Corp” → “Enron Corporation” LLM judge",
+        "Person: “Jeffrey K. Skilling” → “Jeff Skilling” Edit distance",
+        "Person: “Ken Lay” → “Kenneth L. Lay” LLM judge",
+        "Person: “Jeffrey Skilling” → “Jeff Skilling” LLM judge"
+      ],
+      "server_mode": "llm_judge"
+    },
+    {
+      "step": "7a miniature centred on expand",
+      "pass": true,
+      "n_minis": 10,
+      "on_expand": {
+        "svg_centre": [
+          800,
+          513
+        ],
+        "node_centre": [
+          800,
+          513
+        ],
+        "offset": [
+          0,
+          0
+        ],
+        "graph_bbox_offset": [
+          0,
+          0
+        ],
+        "n_nodes": 1
+      }
+    },
+    {
+      "step": "7b expanded miniature stays open (and centred) across the growing-KG refreshes",
+      "pass": true,
+      "expanded_at": "3/8 docs, 43 triples",
+      "header_on_open": "Chuck Watson Chuck Watson",
+      "header_after": "Chuck Watson Chuck Watson",
+      "sparql_queries_while_open": 3,
+      "final_triples": 98,
+      "on_open": {
+        "svg_centre": [
+          800,
+          513
+        ],
+        "node_centre": [
+          800,
+          513
+        ],
+        "offset": [
+          0,
+          0
+        ],
+        "graph_bbox_offset": [
+          0,
+          0
+        ],
+        "n_nodes": 1
+      },
+      "after_refreshes": {
+        "svg_centre": [
+          800,
+          513
+        ],
+        "node_centre": [
+          800,
+          513
+        ],
+        "offset": [
+          0,
+          0
+        ],
+        "graph_bbox_offset": [
+          0,
+          0
+        ],
+        "n_nodes": 1
+      }
+    },
+    {
+      "step": "8a sources panel from the miniature source button",
+      "pass": true,
+      "src_buttons": [
+        "Chuck Watson"
+      ],
+      "sources": {
+        "title": "Chuck Watson",
+        "text": "Extracted from 1 document:Merger talks05.txt",
+        "docs": [
+          "Merger talks05.txt"
+        ]
+      }
+    },
+    {
+      "step": "9a sources panel from an IRI cell",
+      "pass": true,
+      "iri": "http://example.org/onto/Person/andy-fastow",
+      "label": "Andy Fastow",
+      "aliases": [
+        "Andrew Fastow",
+        "Andrew S. Fastow"
+      ],
+      "sources": {
+        "title": "Andy Fastow",
+        "text": "Also extracted as Andrew Fastow, Andrew S. FastowExtracted from 3 documents:LJM partnership03.txtAccounting concerns04.txtResearch group08.txt",
+        "docs": [
+          "LJM partnership03.txt",
+          "Accounting concerns04.txt",
+          "Research group08.txt"
+        ]
+      }
+    },
+    {
+      "step": "9b document viewer with highlights",
+      "pass": true,
+      "title": "LJM partnership",
+      "path": "03.txt",
+      "marks": [
+        "Andy Fastow"
+      ],
+      "header": "LJM partnership1 match"
+    },
+    {
+      "step": "10 settings persist across reload",
+      "pass": true,
+      "sid2": "8245ccef-7e1e-4393-b5fa-42fd5a014f50",
+      "selected_buttons": [
+        "LLM judge"
+      ],
+      "settings": {
+        "mode": "llm_judge",
+        "max_distance": 2,
+        "max_ratio": 0.2,
+        "judge_min_similarity": 0.4,
+        "judge_candidates": 1,
+        "judge_threshold": 0.65
+      },
+      "ui_counter": "8 merged",
+      "n_merges": 8
+    }
+  ],
+  "mode_results": {
+    "off": {
+      "restarted_status": "0/8 docs · 0 triples · TentrisStore",
+      "processed_right_after_apply": 0,
+      "running_right_after_apply": true,
+      "build_seconds": 24,
+      "triples": 106,
+      "merged": 0,
+      "judged": 0,
+      "ui_counter": "0 merged",
+      "ui_merges": [],
+      "server_mode": "off"
+    },
+    "normalized": {
+      "restarted_status": "0/8 docs · 0 triples · TentrisStore",
+      "processed_right_after_apply": 0,
+      "running_right_after_apply": true,
+      "build_seconds": 24,
+      "triples": 106,
+      "merged": 0,
+      "judged": 0,
+      "ui_counter": "0 merged",
+      "ui_merges": [],
+      "server_mode": "normalized"
+    },
+    "levenshtein": {
+      "restarted_status": "0/8 docs · 0 triples · TentrisStore",
+      "processed_right_after_apply": 0,
+      "running_right_after_apply": true,
+      "build_seconds": 22,
+      "triples": 104,
+      "merged": 2,
+      "judged": 0,
+      "ui_counter": "2 merged",
+      "ui_merges": [
+        "Person: “Andrew S. Fastow” → “Andrew Fastow” Edit distance",
+        "Person: “Jeffrey K. Skilling” → “Jeffrey Skilling” Edit distance"
+      ],
+      "server_mode": "levenshtein"
+    },
+    "llm_judge": {
+      "restarted_status": "0/8 docs · 0 triples · TentrisStore",
+      "processed_right_after_apply": 0,
+      "running_right_after_apply": true,
+      "build_seconds": 36,
+      "triples": 98,
+      "merged": 8,
+      "judged": 6,
+      "ui_counter": "8 merged · 6 judged",
+      "ui_merges": [
+        "Person: “Andrew S. Fastow” → “Andy Fastow” Edit distance",
+        "Person: “Arthur Andersen LLP” → “Arthur Andersen” LLM judge",
+        "Person: “Andrew Fastow” → “Andy Fastow” LLM judge",
+        "Person: “Kennet Lay” → “Kenneth L. Lay” LLM judge",
+        "Company: “Enron Corp” → “Enron Corporation” LLM judge",
+        "Person: “Jeffrey K. Skilling” → “Jeff Skilling” Edit distance",
+        "Person: “Ken Lay” → “Kenneth L. Lay” LLM judge",
+        "Person: “Jeffrey Skilling” → “Jeff Skilling” LLM judge"
+      ],
+      "server_mode": "llm_judge"
+    }
+  },
+  "console_errors": [
+    "HTTP 403 GET http://localhost:5199/@fs/home/bkantz/cgv/hereditary/onset/frontend/node_modules/@mdi/font/fonts/materialdesignicons-webfont.woff2?v=7.4.47",
+    "Failed to load resource: the server responded with a status of 403 (Forbidden) http://localhost:5199/@fs/home/bkantz/cgv/hereditary/onset/frontend/node_modules/@mdi/font/fonts/materialdesignicons-webfont.woff2?v=7.4.47",
+    "HTTP 403 GET http://localhost:5199/@fs/home/bkantz/cgv/hereditary/onset/frontend/node_modules/@mdi/font/fonts/materialdesignicons-webfont.woff?v=7.4.47",
+    "Failed to load resource: the server responded with a status of 403 (Forbidden) http://localhost:5199/@fs/home/bkantz/cgv/hereditary/onset/frontend/node_modules/@mdi/font/fonts/materialdesignicons-webfont.woff?v=7.4.47",
+    "HTTP 403 GET http://localhost:5199/@fs/home/bkantz/cgv/hereditary/onset/frontend/node_modules/@mdi/font/fonts/materialdesignicons-webfont.ttf?v=7.4.47",
+    "Failed to load resource: the server responded with a status of 403 (Forbidden) http://localhost:5199/@fs/home/bkantz/cgv/hereditary/onset/frontend/node_modules/@mdi/font/fonts/materialdesignicons-webfont.ttf?v=7.4.47",
+    "HTTP 403 GET http://localhost:5199/@fs/home/bkantz/cgv/hereditary/onset/frontend/node_modules/@mdi/font/fonts/materialdesignicons-webfont.woff2?v=7.4.47",
+    "Failed to load resource: the server responded with a status of 403 (Forbidden) http://localhost:5199/@fs/home/bkantz/cgv/hereditary/onset/frontend/node_modules/@mdi/font/fonts/materialdesignicons-webfont.woff2?v=7.4.47",
+    "HTTP 403 GET http://localhost:5199/@fs/home/bkantz/cgv/hereditary/onset/frontend/node_modules/@mdi/font/fonts/materialdesignicons-webfont.woff?v=7.4.47",
+    "Failed to load resource: the server responded with a status of 403 (Forbidden) http://localhost:5199/@fs/home/bkantz/cgv/hereditary/onset/frontend/node_modules/@mdi/font/fonts/materialdesignicons-webfont.woff?v=7.4.47",
+    "HTTP 403 GET http://localhost:5199/@fs/home/bkantz/cgv/hereditary/onset/frontend/node_modules/@mdi/font/fonts/materialdesignicons-webfont.ttf?v=7.4.47",
+    "Failed to load resource: the server responded with a status of 403 (Forbidden) http://localhost:5199/@fs/home/bkantz/cgv/hereditary/onset/frontend/node_modules/@mdi/font/fonts/materialdesignicons-webfont.ttf?v=7.4.47"
+  ]
+}
