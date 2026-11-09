@@ -199,6 +199,11 @@ def test_link_counts(builder, client, monkeypatch):
         ("onto:Person", "onto:worksFor", "onto:Company"): 2,
         ("onto:Person", "onto:livesIn", "onto:City"): 0,
         ("onto:Person", "onto:age", None): 1,
+        # provenance: the documents the instances were extracted from, and their ids
+        ("onto:Person", "prov:wasDerivedFrom", "foaf:Document"): 2,
+        ("onto:Company", "prov:wasDerivedFrom", "foaf:Document"): 2,
+        ("onto:City", "prov:wasDerivedFrom", "foaf:Document"): 0,
+        ("foaf:Document", "dcterms:identifier", None): 2,
     }
     assert session.link_counts() is session.link_counts()
     # a new triple invalidates the cache
@@ -212,7 +217,9 @@ def test_link_counts(builder, client, monkeypatch):
     assert by_link[("onto:worksFor", "onto:Company")] == 3 and by_link[("onto:livesIn", "onto:City")] == 0
     # the editor's link search carries them as instance counts
     links = session.kg.guidance_man.search_links(from_id="onto:Person")
-    assert {l.property_id: l.instance_count for l in links} == {"onto:worksFor": 3, "onto:livesIn": 0, "onto:age": 1}
+    assert {l.property_id: l.instance_count for l in links} == {
+        "onto:worksFor": 3, "onto:livesIn": 0, "onto:age": 1, "prov:wasDerivedFrom": 2,
+    }
 
 
 def test_session_as_config(builder, app, monkeypatch):
@@ -231,7 +238,9 @@ def test_session_as_config(builder, app, monkeypatch):
     classes = client.post(f"{base}/classes/search", json={"q": "pers", "type": "subject"}).json()["results"]
     assert [(r["subject"]["subject_id"], r["subject"]["instance_count"]) for r in classes] == [("onto:Person", 2)]
     links = client.post(f"{base}/classes/search", json={"from_id": "onto:Person", "type": "link"}).json()["results"]
-    assert [(l["link"]["property_id"], l["link"]["to_subject"]["label"]) for l in links] == [("onto:worksFor", "Company")]
+    assert [(l["link"]["property_id"], l["link"]["to_subject"]["label"]) for l in links] == [
+        ("onto:worksFor", "Company"), ("prov:wasDerivedFrom", "Document"),
+    ]
     props = client.post(f"{base}/classes/search", json={
         "from_id": "onto:Person", "type": "link", "relation_type": "property"}).json()["results"]
     assert [(l["link"]["property_id"], l["link"]["to_proptype"]) for l in props] == [("onto:age", "xsd:integer")]

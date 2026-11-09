@@ -9,7 +9,7 @@ Routes needing other services (topics, embeddings, LLM search, agent) fail.
 """
 
 from rdflib import Graph
-from rdflib.namespace import DCTERMS, FOAF, PROV, SKOS
+from rdflib.namespace import DCTERMS, FOAF, PROV, SKOS, NamespaceManager
 
 from builder.ontology import FIELD_RANGES, Ontology
 from eval_config import EvalConfig, MultimodalConfig
@@ -20,11 +20,16 @@ from ontology import OntologyConfig, OntologyManager
 
 class LockedGraph(Graph):
     """A Graph on the session graph's store and context whose queries run (and are read) under the session
-    lock, as the build thread adds triples concurrently."""
+    lock, as the build thread adds triples concurrently.
+
+    Its prefixes live in a graph of their own: the Tentris store keeps no namespace bindings,
+    so ``n3()`` would render full IRIs (``<...rdf-schema#label>``) and the editor would miss
+    labels, showing prefixed ids instead."""
 
     def __init__(self, graph: Graph, lock):
         super().__init__(store=graph.store, identifier=graph.identifier)
         self._session_lock = lock
+        self.namespace_manager = NamespaceManager(Graph(), bind_namespaces="core")
 
     def query(self, *args, **kwargs):
         with self._session_lock:
@@ -47,8 +52,16 @@ def score(q: str, *texts: str | None) -> float | None:
     return None
 
 
+# the provenance of the extracted instances (builder/ontology.py ``document_triples``): every
+# class links to the documents its instances were extracted from, which have their corpus id
+DOCUMENT = "foaf:Document"
+DERIVED_FROM = "prov:wasDerivedFrom"
+IDENTIFIER = "dcterms:identifier"
+
+
 class SessionGuidance:
-    """``GuidanceManager``'s search over the classes, links and fields of a session's ontology.
+    """``GuidanceManager``'s search over the classes, links and fields of a session's ontology,
+    plus the source documents of the instances (``DOCUMENT``).
 
     Ids are prefixed (``onto:Person``) as OntologyManager renders them. There is no class
     hierarchy, so a class's subclasses are the class itself and its links are its own."""
@@ -63,6 +76,8 @@ class SessionGuidance:
         if uri is None:
             return None
         uri = uri.strip().strip("<>")
+        if uri == str(FOAF.Document):
+            return DOCUMENT
         for ns in ("onto:", self.onto.prefix):
             if uri.startswith(ns):
                 return uri[len(ns):]
@@ -78,6 +93,11 @@ class SessionGuidance:
                     to_id=f"onto:{l.target}", to_proptype=None, property_id=f"onto:{l.id}",
                     from_subject=None, to_subject=None,
                 ))
+            for c in self.onto.classes:
+                links.append(SubjectLink(
+                    link_id=-1, label="extracted from", from_id=f"onto:{c.id}", link_type="owl:ObjectProperty",
+                    to_id=DOCUMENT, to_proptype=None, property_id=DERIVED_FROM, from_subject=None, to_subject=None,
+                ))
         if relation_type in (RELATION_TYPE.PROPERTY, None):
             for c in self.onto.classes:
                 for f in c.fields:
@@ -86,6 +106,10 @@ class SessionGuidance:
                         to_id=None, to_proptype=self.oman.to_prefix(str(FIELD_RANGES[f.type])),
                         property_id=f"onto:{f.name}", from_subject=None, to_subject=None,
                     ))
+            links.append(SubjectLink(
+                link_id=-1, label="identifier", from_id=DOCUMENT, link_type="owl:DatatypeProperty", to_id=None,
+                to_proptype="xsd:string", property_id=IDENTIFIER, from_subject=None, to_subject=None,
+            ))
         return links
 
     def _enrich(self, link: SubjectLink) -> SubjectLink:
@@ -104,6 +128,9 @@ class SessionGuidance:
                 s = score(query.q, c.label, c.id, c.description)
                 if s is not None:
                     results.append(FuzzyQueryResult(subject=self.oman.enrich_subject(f"onto:{c.id}"), score=s))
+            s = score(query.q, "Document", "source document text")
+            if s is not None:
+                results.append(FuzzyQueryResult(subject=self.oman.enrich_subject(DOCUMENT), score=s))
         if query.type in (RETURN_TYPE.LINK, RETURN_TYPE.BOTH):
             from_ids = query.from_id if isinstance(query.from_id, list) else [query.from_id] if query.from_id else None
             from_ids = {self._local(f) for f in from_ids} if from_ids else None
@@ -124,7 +151,10 @@ class SessionGuidance:
         return FuzzyQueryResults(results=results)
 
     def search_subclasses(self, query: FuzzyQuery) -> FuzzyQueryResults:
-        cls = self.onto.get_class(self._local(query.from_id) or "")
+        local = self._local(query.from_id) or ""
+        if local == DOCUMENT:
+            return FuzzyQueryResults(results=[FuzzyQueryResult(subject=self.oman.enrich_subject(DOCUMENT))])
+        cls = self.onto.get_class(local)
         if cls is None:
             return FuzzyQueryResults(results=[])
         return FuzzyQueryResults(results=[FuzzyQueryResult(subject=self.oman.enrich_subject(f"onto:{cls.id}"))])

@@ -6,8 +6,9 @@ class ``Person`` is ``<prefix>Person``, its field ``age`` the datatype property
 Instances extracted from a document are ``<prefix><Class>/<slug of name>``, so
 mentions of the same name in different documents become the same instance.
 Every instance is ``prov:wasDerivedFrom`` each document it was extracted from
-(``document_iri``), which has its title as ``rdfs:label`` and its corpus id
-(builder/corpus.py) as ``dcterms:identifier``.
+(``document_iri``), a ``foaf:Document`` with its title as ``rdfs:label`` and its corpus
+id (builder/corpus.py) as ``dcterms:identifier``. ``provenance_graph`` labels these terms,
+so the query editor can show the documents as a class of their own.
 
 - ``extraction_schema``: the JSON schema the extraction model is constrained to,
 - ``extraction_triples``: its output as triples,
@@ -21,7 +22,7 @@ from typing import Any, Literal as TLiteral
 from urllib.parse import quote
 
 from pydantic import BaseModel, Field
-from rdflib import DCTERMS, OWL, RDF, RDFS, SKOS, XSD, Graph, Literal, Namespace, URIRef
+from rdflib import DCTERMS, FOAF, OWL, RDF, RDFS, SKOS, XSD, Graph, Literal, Namespace, URIRef
 
 FieldType = TLiteral["string", "integer", "float", "date", "boolean", "vector"]
 
@@ -127,7 +128,18 @@ def document_iri(prefix: str, doc_id: str) -> URIRef:
 def document_triples(prefix: str, doc_id: str, title: str) -> list[tuple]:
     """The triples describing a document the instances are derived from."""
     iri = document_iri(prefix, doc_id)
-    return [(iri, RDFS.label, Literal(title)), (iri, DCTERMS.identifier, Literal(doc_id))]
+    return [
+        (iri, RDF.type, FOAF.Document), (iri, RDFS.label, Literal(title)), (iri, DCTERMS.identifier, Literal(doc_id)),
+    ]
+
+
+def provenance_graph() -> Graph:
+    """Labels of the provenance terms (``document_triples``), for the query editor."""
+    g = Graph()
+    g.add((FOAF.Document, RDFS.label, Literal("Document")))
+    g.add((PROV.wasDerivedFrom, RDFS.label, Literal("extracted from")))
+    g.add((DCTERMS.identifier, RDFS.label, Literal("identifier")))
+    return g
 
 
 def slug(name: str) -> str:

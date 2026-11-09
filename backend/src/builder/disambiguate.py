@@ -65,7 +65,7 @@ def context(text: str, name: str, chars: int = CONTEXT_CHARS) -> str:
     if at < 0:
         return ""
     start = max(0, at - (chars - len(name)) // 2)
-    return " ".join(text[start:start + max(chars, len(name))].split())
+    return " ".join(text[start : start + max(chars, len(name))].split())
 
 
 class NgramIndex:
@@ -82,7 +82,11 @@ class NgramIndex:
     def _grams(self, text: str) -> Counter:
         padded = f" {text} "
         lo, hi = self.ngram_range
-        return Counter(padded[i:i + n] for n in range(lo, hi + 1) for i in range(len(padded) - n + 1))
+        return Counter(
+            padded[i : i + n]
+            for n in range(lo, hi + 1)
+            for i in range(len(padded) - n + 1)
+        )
 
     def __len__(self):
         return len(self.grams)
@@ -96,11 +100,16 @@ class NgramIndex:
             self.postings[g].add(name)
 
     def _vector(self, grams: Counter, n: int) -> dict[str, float]:
-        vec = {g: (1 + math.log(tf)) * (math.log((1 + n) / (1 + self.df[g])) + 1) for g, tf in grams.items()}
+        vec = {
+            g: (1 + math.log(tf)) * (math.log((1 + n) / (1 + self.df[g])) + 1)
+            for g, tf in grams.items()
+        }
         norm = math.sqrt(sum(w * w for w in vec.values())) or 1.0
         return {g: w / norm for g, w in vec.items()}
 
-    def search(self, name: str, k: int = 1, min_similarity: float = 0.0) -> list[tuple[str, float]]:
+    def search(
+        self, name: str, k: int = 1, min_similarity: float = 0.0
+    ) -> list[tuple[str, float]]:
         n = len(self.grams)
         if not n:
             return []
@@ -122,7 +131,9 @@ class NgramIndex:
 
 
 class Judge(Protocol):
-    def p_same(self, cls: OntoClass, a: str, a_context: str, b: str, b_context: str) -> float:
+    def p_same(
+        self, cls: OntoClass, a: str, a_context: str, b: str, b_context: str
+    ) -> float:
         """The probability that names ``a`` and ``b`` (mentioned in these contexts) are one instance of ``cls``."""
         ...
 
@@ -167,13 +178,22 @@ class LlamaJudge:
     greedy answer of the small model leans to yes, its P(yes) separates far better."""
 
     def __init__(self, config: BuilderConfig):
-        self.pool = ModelPool(config.judge_model_id, config.judge_model_quant, config.judge_n_ctx, config.judge_instances)
+        self.pool = ModelPool(
+            config.judge_model_id,
+            config.judge_model_quant,
+            config.judge_n_ctx,
+            config.judge_instances,
+        )
         self._ids: tuple[list[int], list[int]] | None = None
 
     def _answer_ids(self, llm) -> tuple[list[int], list[int]]:
         if self._ids is None:
+
             def ids(words):
-                tokens = [llm.tokenize(w.encode(), add_bos=False, special=False) for w in words]
+                tokens = [
+                    llm.tokenize(w.encode(), add_bos=False, special=False)
+                    for w in words
+                ]
                 return sorted({t[0] for t in tokens if len(t) == 1})
 
             self._ids = ids(YES_TOKENS), ids(NO_TOKENS)
@@ -194,11 +214,19 @@ class LlamaJudge:
             llm.create_chat_completion(
                 messages=[
                     {"role": "system", "content": JUDGE_SYSTEM},
-                    {"role": "user", "content": judge_prompt(cls, a, a_context, b, b_context)},
+                    {
+                        "role": "user",
+                        "content": judge_prompt(cls, a, a_context, b, b_context),
+                    },
                 ],
-                temperature=0.0, max_tokens=1, logits_processor=LogitsProcessorList([capture]),
+                temperature=0.0,
+                max_tokens=1,
+                logits_processor=LogitsProcessorList([capture]),
             )
         return answer_probability(first[0], yes_ids, no_ids)
+
+
+MergeMethod = TLiteral["normalized", "levenshtein", "llm_judge"]
 
 
 class Merge(BaseModel):
@@ -206,32 +234,54 @@ class Merge(BaseModel):
     alias: str
     canonical: str
     iri: str
-    method: TLiteral["normalized", "levenshtein", "llm_judge"]
+    method: MergeMethod
 
 
 @dataclass
 class _Entity:
+    """One instance of a class: its IRI, canonical label and the text around its first
+    mention (shown to the judge)."""
+
     iri: URIRef
     label: str
     context: str = ""
 
 
 @dataclass
+class _Match:
+    entity: _Entity
+    method: MergeMethod
+
+
+@dataclass
 class _ClassIndex:
-    keys: dict[str, _Entity] = field(default_factory=dict)
-    names: list[str] = field(default_factory=list)
+    """What is known about the instances of one class."""
+
+    # normalized name -> the entity it refers to (several names may share one entity)
+    entity_by_key: dict[str, _Entity] = field(default_factory=dict)
+    # the normalized names in insertion order, searched for Levenshtein matches
+    keys: list[str] = field(default_factory=list)
+    # IRIs in use, so a new entity whose slug collides with another gets a suffix
     iris: set[URIRef] = field(default_factory=set)
-    seen: set[str] = field(default_factory=set)
+    # names as extracted that were already resolved, so each merge is recorded once
+    seen_names: set[str] = field(default_factory=set)
+    # char n-gram TF-IDF over the normalized names, for the judge's candidates
     tfidf: NgramIndex = field(default_factory=NgramIndex)
 
 
 class Disambiguator:
-    def __init__(self, onto: Ontology, settings: DisambiguationSettings,
-                 judge: Callable[[], Judge] | None = None, cache: "OrderedDict | None" = None):
+    def __init__(
+        self,
+        onto: Ontology,
+        settings: DisambiguationSettings,
+        judge: Callable[[], Judge] | None = None,
+        cache: "OrderedDict | None" = None,
+    ):
         self.onto = onto
         self.settings = settings
         self._level = MODES.index(settings.mode)
         self._judge = judge
+        # (class id, name, name) -> P(same), shared between the builds of a session
         self._cache = cache if cache is not None else OrderedDict()
         self._classes: dict[str, _ClassIndex] = defaultdict(_ClassIndex)
         self._lock = threading.Lock()
@@ -243,103 +293,195 @@ class Disambiguator:
     def active(self) -> bool:
         return self._level > 0
 
+    def _uses(self, mode: str) -> bool:
+        """Whether ``mode`` is part of the configured chain of modes."""
+        return self._level >= MODES.index(mode)
+
     def resolver(self, text: str = "") -> Resolver | None:
         if not self.active:
             return None
         return lambda class_id, name: self.resolve(class_id, name, text)
 
     def register(self, class_id: str, label: str, iri: URIRef, aliases=()):
+        """Adds an existing instance (e.g. from the previous build) with its label and aliases."""
         key = normalize(label)
         if not self.active or not key:
             return
         with self._lock:
             index = self._classes[class_id]
-            entity = index.keys.get(key) or _Entity(iri, label)
+            entity = index.entity_by_key.get(key) or _Entity(iri, label)
             index.iris.add(iri)
             for name in (label, *aliases):
-                index.seen.add(name)
+                index.seen_names.add(name)
                 self._add_key(index, normalize(name), entity)
 
-    def _add_key(self, index, key, entity):
-        if key and key not in index.keys:
-            index.keys[key] = entity
-            index.names.append(key)
-            if self._level >= MODES.index("llm_judge"):
-                index.tfidf.add(key)
-
-    def _new_entity(self, index, class_id, name, text) -> _Entity:
-        iri = self.onto.instance(class_id, name)
-        n = 2
-        while iri in index.iris:
-            iri, n = URIRef(f"{self.onto.instance(class_id, name)}-{n}"), n + 1
-        index.iris.add(iri)
-        return _Entity(iri, name, context(text, name))
-
-    def _close(self, index, key) -> _Entity | None:
-        s = self.settings
-        for other, distance, _ in process.extract(
-            key, index.names, scorer=Levenshtein.distance, score_cutoff=s.max_distance, limit=5,
-        ):
-            if distance <= s.max_ratio * max(len(key), len(other)):
-                return index.keys[other]
-        return None
-
-    def _same(self, class_id, name, key, text, other: _Entity) -> bool:
-        """Whether the judge's P(same) of ``name`` and ``other`` reaches the threshold; the
-        probability is cached per (class, names), from the contexts of its first judgment."""
-        cache_key = (class_id, *sorted((key, normalize(other.label))))
-        with self._lock:
-            p = self._cache.get(cache_key)
-            if p is not None:
-                self._cache.move_to_end(cache_key)
-        if p is None:
-            cls = self.onto.get_class(class_id) or OntoClass(id=class_id)
-            try:
-                p = float(self._judge().p_same(cls, name, context(text, name), other.label, other.context))
-            except Exception:
-                # not cached: asked again on the next mention
-                logger.warning("Disambiguation judge failed on %r / %r", name, other.label, exc_info=True)
-                return False
-            with self._lock:
-                self.judged += 1
-                self._cache[cache_key] = p
-                while len(self._cache) > JUDGMENT_CACHE:
-                    self._cache.popitem(last=False)
-        return p >= self.settings.judge_threshold
+    # -- resolving ---------------------------------------------------------------------
 
     def resolve(self, class_id: str, name: str, text: str = "") -> tuple[URIRef, str]:
+        """The (IRI, canonical label) of the instance of ``class_id`` that ``name``
+        (extracted from ``text``) refers to, a new instance if it matches none."""
         key = normalize(name)
         if not self.active or not key:
             return self.onto.instance(class_id, name), name
-        method = None
-        candidates: list[_Entity] = []
+
+        # 1. the cheap matches, and the judge's candidates if there is none
         with self._lock:
             index = self._classes[class_id]
-            entity = index.keys.get(key)
-            if entity is not None:
-                method = "normalized"
-            elif self._level >= MODES.index("levenshtein") and (entity := self._close(index, key)) is not None:
-                method = "levenshtein"
-            elif self._level >= MODES.index("llm_judge") and self._judge is not None:
-                for other, _ in index.tfidf.search(key, k=4 * self.settings.judge_candidates,
-                                                   min_similarity=self.settings.judge_min_similarity):
-                    if index.keys[other] not in candidates:
-                        candidates.append(index.keys[other])
-                candidates = candidates[: self.settings.judge_candidates]
-        if entity is None:
-            entity = next((c for c in candidates if self._same(class_id, name, key, text, c)), None)
-            method = "llm_judge" if entity is not None else None
+            match = self._match_known(index, key)
+            candidates = self._judge_candidates(index, key) if match is None else []
+
+        # 2. the judge is slow, so it runs without the lock
+        if match is None:
+            match = self._match_by_judge(class_id, name, key, text, candidates)
+
+        # 3. record the name under its entity (or a new one)
         with self._lock:
-            index = self._classes[class_id]
-            if (raced := index.keys.get(key)) is not None:
-                entity, method = raced, "normalized"
-            elif entity is None:
-                entity = self._new_entity(index, class_id, name, text)
-            self._add_key(index, key, entity)
-            if name not in index.seen:
-                index.seen.add(name)
-                if name != entity.label:
-                    self.merged += 1
-                    self.merges.append(Merge(class_id=class_id, alias=name, canonical=entity.label,
-                                             iri=str(entity.iri), method=method))
+            entity = self._commit(
+                self._classes[class_id], class_id, name, key, text, match
+            )
         return entity.iri, entity.label
+
+    def _match_known(self, index: _ClassIndex, key: str) -> _Match | None:
+        """The entity of a known name equal to ``key`` or, in levenshtein mode and up, close to it."""
+        if (entity := index.entity_by_key.get(key)) is not None:
+            return _Match(entity, "normalized")
+        if (
+            self._uses("levenshtein")
+            and (entity := self._levenshtein_match(index, key)) is not None
+        ):
+            return _Match(entity, "levenshtein")
+        return None
+
+    def _levenshtein_match(self, index: _ClassIndex, key: str) -> _Entity | None:
+        """The entity of the closest known name within ``max_distance`` edits that also
+        differs in at most ``max_ratio`` of the longer name's characters."""
+        s = self.settings
+        closest = process.extract(
+            key,
+            index.keys,
+            scorer=Levenshtein.distance,
+            score_cutoff=s.max_distance,
+            limit=5,
+        )
+        for other, distance, _ in closest:
+            if distance <= s.max_ratio * max(len(key), len(other)):
+                return index.entity_by_key[other]
+        return None
+
+    def _judge_candidates(self, index: _ClassIndex, key: str) -> list[_Entity]:
+        """Up to ``judge_candidates`` distinct entities whose names are the most similar to
+        ``key``, empty below the llm_judge mode. Several names may refer to one entity, so
+        more names than entities are searched."""
+        if not self._uses("llm_judge") or self._judge is None:
+            return []
+        s = self.settings
+        similar = index.tfidf.search(
+            key, k=4 * s.judge_candidates, min_similarity=s.judge_min_similarity
+        )
+        candidates: list[_Entity] = []
+        for similar_key, _ in similar:
+            entity = index.entity_by_key[similar_key]
+            if entity not in candidates:
+                candidates.append(entity)
+        return candidates[: s.judge_candidates]
+
+    def _match_by_judge(
+        self, class_id, name, key, text, candidates: list[_Entity]
+    ) -> _Match | None:
+        """The first candidate (the most similar first) that the judge finds to be ``name``."""
+        for candidate in candidates:
+            if self._judged_same(class_id, name, key, text, candidate):
+                return _Match(candidate, "llm_judge")
+        return None
+
+    def _judged_same(self, class_id, name, key, text, other: _Entity) -> bool:
+        """Whether the judge's P(same) of ``name`` and ``other`` reaches the threshold; the
+        probability is cached per (class, names), from the contexts of its first judgment."""
+        pair = (class_id, *sorted((key, normalize(other.label))))
+        p = self._cached_judgment(pair)
+        if p is None:
+            p = self._ask_judge(class_id, name, text, other)
+            if p is None:
+                # not cached: asked again on the next mention
+                return False
+            self._cache_judgment(pair, p)
+        return p >= self.settings.judge_threshold
+
+    def _ask_judge(self, class_id, name, text, other: _Entity) -> float | None:
+        cls = self.onto.get_class(class_id) or OntoClass(id=class_id)
+        try:
+            return float(
+                self._judge().p_same(
+                    cls, name, context(text, name), other.label, other.context
+                )
+            )
+        except Exception:
+            logger.warning(
+                "Disambiguation judge failed on %r / %r",
+                name,
+                other.label,
+                exc_info=True,
+            )
+            return None
+
+    def _cached_judgment(self, pair) -> float | None:
+        with self._lock:
+            p = self._cache.get(pair)
+            if p is not None:
+                self._cache.move_to_end(pair)
+            return p
+
+    def _cache_judgment(self, pair, p: float):
+        with self._lock:
+            self.judged += 1
+            self._cache[pair] = p
+            while len(self._cache) > JUDGMENT_CACHE:
+                self._cache.popitem(last=False)
+
+    def _commit(
+        self, index: _ClassIndex, class_id, name, key, text, match: _Match | None
+    ) -> _Entity:
+        """Adds ``key`` to the index under the matched entity (a new one without a match)
+        and records a merge if ``name`` is not the entity's label. Called with the lock held."""
+        if (raced := index.entity_by_key.get(key)) is not None:
+            # another thread added this name while the judge ran: its entity wins
+            match = _Match(raced, "normalized")
+        entity = (
+            match.entity
+            if match is not None
+            else self._new_entity(index, class_id, name, text)
+        )
+        self._add_key(index, key, entity)
+
+        if name in index.seen_names:
+            return entity
+        index.seen_names.add(name)
+        if name != entity.label:
+            # a new entity is labelled with ``name``, so ``match`` is set here
+            self.merged += 1
+            self.merges.append(
+                Merge(
+                    class_id=class_id,
+                    alias=name,
+                    canonical=entity.label,
+                    iri=str(entity.iri),
+                    method=match.method,
+                )
+            )
+        return entity
+
+    def _add_key(self, index: _ClassIndex, key: str, entity: _Entity):
+        if key and key not in index.entity_by_key:
+            index.entity_by_key[key] = entity
+            index.keys.append(key)
+            if self._uses("llm_judge"):
+                index.tfidf.add(key)
+
+    def _new_entity(self, index: _ClassIndex, class_id, name, text) -> _Entity:
+        """A new entity labelled ``name``, its IRI suffixed with -2, -3, ... if taken."""
+        base = self.onto.instance(class_id, name)
+        iri, n = base, 2
+        while iri in index.iris:
+            iri, n = URIRef(f"{base}-{n}"), n + 1
+        index.iris.add(iri)
+        return _Entity(iri, name, context(text, name))

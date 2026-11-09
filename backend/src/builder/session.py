@@ -23,7 +23,7 @@ from pathlib import Path
 from typing import Literal as TLiteral
 
 from pydantic import BaseModel
-from rdflib import DCTERMS, RDF, RDFS, SKOS, Graph, Literal, URIRef
+from rdflib import DCTERMS, FOAF, RDF, RDFS, SKOS, Graph, Literal, URIRef
 
 from builder.corpus import Corpus
 from builder.disambiguate import Disambiguator, Judge, LlamaJudge, Merge
@@ -36,6 +36,7 @@ from builder.ontology import (
     extraction_triples,
     ontology_from_graph,
     ontology_graph,
+    provenance_graph,
     rebase,
 )
 from eval_config import BuilderConfig, DisambiguationSettings
@@ -288,7 +289,7 @@ class BuilderSession:
         with self._lock:
             for triple in self.schema:
                 self.graph.remove(triple)
-            self.schema = ontology_graph(self.ontology)
+            self.schema = ontology_graph(self.ontology) + provenance_graph()
             add_all(self.graph, self.schema)
 
     # --- progressive build ---
@@ -405,6 +406,7 @@ class BuilderSession:
             "prov": str(PROV),
             "skos": str(SKOS),
             "dcterms": str(DCTERMS),
+            "foaf": str(FOAF),
         }
         lowered = query.lower()
         declared = "".join(
@@ -433,7 +435,8 @@ class BuilderSession:
 
     def link_counts(self) -> LinkCounts:
         """The triple count of every link (subject class, predicate, object class) and field
-        (class, predicate) of the ontology in the KG, e.g. for the link widths of the query editor.
+        (class, predicate) of the ontology in the KG, e.g. for the link widths of the query editor,
+        including the provenance links of every class to its documents and the documents' ids.
 
         One COUNT per link/field, each under the session lock on its own (so extraction goes on
         in between); cached until the KG (its triple count or build) or the schema changes."""
@@ -443,14 +446,20 @@ class BuilderSession:
             if self._link_counts is not None and self._link_counts[0] == key:
                 return self._link_counts[1]
         a = "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>"
-        patterns = [
-            (l.source, l.id, l.target, f"?s <{onto.term(l.id)}> ?o . ?s {a} <{onto.term(l.source)}> . "
-                                       f"?o {a} <{onto.term(l.target)}> .")
-            for l in onto.links
-        ] + [
-            (c.id, f.name, None, f"?s <{onto.term(f.name)}> ?o . ?s {a} <{onto.term(c.id)}> .")
-            for c in onto.classes for f in c.fields
-        ]
+
+        def link(source: str, prop: str, target: str) -> tuple:
+            return (source, prop, target, f"?s {prop} ?o . ?s {a} {source} . ?o {a} {target} .")
+
+        def field(source: str, prop: str) -> tuple:
+            return (source, prop, None, f"?s {prop} ?o . ?s {a} {source} .")
+
+        # (editor ids, pattern with full IRIs)
+        term = lambda local: f"<{onto.term(local)}>"
+        doc, derived, identifier = f"<{FOAF.Document}>", f"<{PROV.wasDerivedFrom}>", f"<{DCTERMS.identifier}>"
+        patterns = [link(term(l.source), term(l.id), term(l.target)) for l in onto.links]
+        patterns += [field(term(c.id), term(f.name)) for c in onto.classes for f in c.fields]
+        patterns += [link(term(c.id), derived, doc) for c in onto.classes]
+        patterns += [field(doc, identifier)]
         links = []
         for source, prop, target, pattern in patterns:
             with self._lock:
@@ -460,13 +469,22 @@ class BuilderSession:
                 except Exception:
                     count = 0
             links.append(LinkCount(
-                from_id=f"onto:{source}", property_id=f"onto:{prop}",
-                to_id=f"onto:{target}" if target else None, count=count,
+                from_id=self._editor_id(source), property_id=self._editor_id(prop),
+                to_id=self._editor_id(target) if target else None, count=count,
             ))
         counts = LinkCounts(triples=key[1], links=links)
         with self._lock:
             self._link_counts = (key, counts)
         return counts
+
+    def _editor_id(self, iri: str) -> str:
+        """``<...onto/Person>`` -> ``onto:Person``, ``<...foaf/0.1/Document>`` -> ``foaf:Document``."""
+        iri = iri.strip("<>")
+        for prefix, ns in (("onto", self.ontology.prefix), ("foaf", str(FOAF)), ("prov", str(PROV)),
+                           ("dcterms", str(DCTERMS))):
+            if iri.startswith(ns):
+                return f"{prefix}:{iri[len(ns):]}"
+        return iri
 
     def provenance(self, iri: str) -> InstanceProvenance:
         """The documents the instance ``iri`` was extracted from (``prov:wasDerivedFrom``), with

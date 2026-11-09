@@ -38,7 +38,7 @@
                     placeholder="SELECT ?s ?label WHERE { ?s a onto:Person ; rdfs:label ?label }"
                     @keydown.enter.ctrl.prevent="emit('apply', draft)" @keydown.enter.meta.prevent="emit('apply', draft)" />
                 <div class="toolbar">
-                    <span class="message">Prefixes onto:, rdfs:, rdf:, xsd:, prov:, skos:, dcterms: are predefined. Click an IRI for its source documents.</span>
+                    <span class="message">Prefixes onto:, rdfs:, rdf:, xsd:, prov:, skos:, dcterms:, foaf: are predefined. Click an IRI for its source documents.</span>
                     <span class="toolbar_spacer"></span>
                     <OnsetBtn size="small" :toggleable="false" icon="mdi-play" title="Run the query (Ctrl+Enter)"
                         :active="draft != query" @click="emit('apply', draft)">Apply</OnsetBtn>

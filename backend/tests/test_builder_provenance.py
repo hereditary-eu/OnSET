@@ -84,6 +84,33 @@ def test_instances_derive_from_their_documents(tmp_path):
     assert session.provenance("http://ex.org/o/Person/nobody").documents == []
 
 
+def test_documents_in_query_editor(tmp_path):
+    """The editor offers the source documents as a class, linked from every class with their id."""
+    from explorative.exp_model import FuzzyQuery, RETURN_TYPE
+
+    session = make_builder(tmp_path, {
+        "d1": {"title": "Hiring", "text": "Alice Smith joined Acme Corp."},
+        "d2": {"title": "Merger", "text": "Bob Jones and Acme Corp."},
+    }, FakeExtractor()).session("e")
+    session.set_ontology(ontology())
+    wait_built(session)
+    guidance = session.kg.guidance_man
+    subjects = guidance.search_fuzzy(FuzzyQuery(q="doc", type=RETURN_TYPE.SUBJECT)).results
+    assert [(r.subject.subject_id, r.subject.label, r.subject.instance_count) for r in subjects] == [
+        ("foaf:Document", "Document", 2)]
+    derived = {l.property_id: l for l in guidance.search_links(from_id="onto:Person")}["prov:wasDerivedFrom"]
+    assert (derived.label, derived.to_id, derived.to_subject.label, derived.instance_count) == (
+        "extracted from", "foaf:Document", "Document", 2)
+    fields = guidance.search_links(from_id="foaf:Document")
+    assert [(l.property_id, l.to_proptype, l.instance_count) for l in fields] == [("dcterms:identifier", "xsd:string", 2)]
+    # the editor's query: documents are typed and foaf: is predefined
+    rows = session.run_query(
+        "SELECT ?id WHERE { ?p a onto:Person ; prov:wasDerivedFrom ?d . ?d a foaf:Document ; dcterms:identifier ?id ."
+        " OPTIONAL { ?d foaf:name ?n } }"
+    ).rows
+    assert sorted(r[0].value for r in rows) == ["d1", "d2"]
+
+
 def test_merged_instance_accumulates_documents(tmp_path):
     builder = make_builder(tmp_path, VARIANT_DOCS, VariantExtractor(), mode="normalized")
     session = builder.session("m")
