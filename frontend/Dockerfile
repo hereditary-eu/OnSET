@@ -1,4 +1,4 @@
-FROM node:26-alpine AS build-stage
+FROM node:26-bookworm AS build-stage
 # dependencies are pinned by bun.lock (there is no package-lock.json)
 RUN npm install -g bun@1.4.3
 WORKDIR /app
