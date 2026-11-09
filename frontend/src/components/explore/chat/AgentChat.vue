@@ -20,7 +20,8 @@
             <template v-for="entry in session.state.entries" :key="entry.id">
                 <div v-if="entry.kind == 'user'" class="agent_chat_msg agent_chat_user">{{ entry.content }}</div>
                 <div v-else-if="entry.kind == 'assistant'" class="agent_chat_msg agent_chat_assistant">
-                    {{ entry.content }}<span v-if="entry.streaming" class="agent_chat_caret">▍</span>
+                    <ChatMarkdown :content="entry.content" />
+                    <Loading v-if="entry.streaming" class="agent_chat_loading" height="1.5rem" />
                 </div>
                 <ChatThinking v-else-if="entry.kind == 'thinking'" :entry="entry"></ChatThinking>
                 <ChatToolCall v-else-if="entry.kind == 'tool'" :call="entry.call"></ChatToolCall>
@@ -39,7 +40,9 @@
 import { computed, nextTick, ref, watch } from 'vue'
 import OnsetBtn from '@/components/ui/OnsetBtn.vue'
 import OnsetIcon from '@/components/ui/OnsetIcon.vue'
+import Loading from '@/components/ui/Loading.vue'
 import ChatInput from './ChatInput.vue'
+import ChatMarkdown from './ChatMarkdown.vue'
 import ChatThinking from './ChatThinking.vue'
 import ChatToolCall from './ChatToolCall.vue'
 import type { AgentSession } from '@/utils/agent/agentSession'
@@ -167,14 +170,10 @@ watch(() => session.state.entries.length, () => nextTick(() => list.value?.scrol
     padding-right: 0;
 }
 
-.agent_chat_caret {
-    animation: agent_chat_blink 1s steps(2) infinite;
-}
-
-@keyframes agent_chat_blink {
-    50% {
-        opacity: 0;
-    }
+/* the streaming indicator, below the text so far */
+.agent_chat_loading {
+    justify-content: flex-start;
+    margin: var(--space-1) 0 0;
 }
 
 .agent_chat_notice {
