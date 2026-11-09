@@ -16,7 +16,7 @@
     "progressive": {
       "timeout": "${ONSET_PROGRESSIVE_TIMEOUT:-10}",
       "parallelism": "${ONSET_PROGRESSIVE_PARALLELISM:-4}",
-      "default_sample_size": "${ONSET_PROGRESSIVE_DEFAULT_SAMPLE_SIZE:-2048}",
+      "default_sample_size": "${ONSET_PROGRESSIVE_DEFAULT_SAMPLE_SIZE:-}",
       "count_limit": "${ONSET_PROGRESSIVE_COUNT_LIMIT:-1000000}",
       "server_timeout": "${ONSET_PROGRESSIVE_SERVER_TIMEOUT:-true}",
       "sample_constraints": "${ONSET_PROGRESSIVE_SAMPLE_CONSTRAINTS:-false}",

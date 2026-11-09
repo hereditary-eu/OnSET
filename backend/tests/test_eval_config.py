@@ -52,7 +52,11 @@ def test_resolution_order(tmp_path):
             tmp_path,
             {
                 "default": "kg",
-                "defaults": {"model_id": "default/model", "conn_str": "pg://default", "name": "Default"},
+                "defaults": {
+                    "model_id": "default/model",
+                    "conn_str": "pg://default",
+                    "name": "Default",
+                },
                 "configs": {
                     "kg": {
                         "name": "KG",
@@ -69,9 +73,17 @@ def test_resolution_order(tmp_path):
     )
     variant, other, base = config.resolve("kg")
     # defaults <- config <- variant
-    assert (variant.name, variant.model_id, variant.conn_str) == ("KG variant", "variant/model", "pg://kg")
+    assert (variant.name, variant.model_id, variant.conn_str) == (
+        "KG variant",
+        "variant/model",
+        "pg://kg",
+    )
     assert (other.name, other.model_id) == ("KG other", "default/model")
-    assert (base.name, base.model_id, base.conn_str) == ("KG", "default/model", "pg://kg")
+    assert (base.name, base.model_id, base.conn_str) == (
+        "KG",
+        "default/model",
+        "pg://kg",
+    )
     assert config.base("kg") == base
     # only defaults (and the EvalConfig defaults)
     plain = config.base("plain")
@@ -85,7 +97,9 @@ def test_load_is_cached_per_path(tmp_path):
 
 
 def test_env_path(tmp_path, monkeypatch):
-    path = write_config(tmp_path, {"default": "a", "configs": {"a": {"name": "From env"}}}, "env.json")
+    path = write_config(
+        tmp_path, {"default": "a", "configs": {"a": {"name": "From env"}}}, "env.json"
+    )
     monkeypatch.setenv(eval_config.CONFIG_PATH_ENV, str(path))
     # the path-less call is cached as well
     load_config_file.cache_clear()
@@ -124,8 +138,17 @@ def test_eval_config_fields():
 def test_agent_config_defaults():
     agent = EvalConfig().agent
     assert agent == AgentConfig()
-    assert (agent.base_url, agent.api_key, agent.model) == ("http://localhost:8998/v1", "none", None)
-    assert (agent.stream, agent.max_steps, agent.retrieve_k, agent.temperature) == (True, 12, 5, None)
+    assert (agent.base_url, agent.api_key, agent.model) == (
+        "http://localhost:8998/v1",
+        "none",
+        None,
+    )
+    assert (agent.stream, agent.max_steps, agent.retrieve_k, agent.temperature) == (
+        True,
+        12,
+        5,
+        None,
+    )
     # an empty (interpolated) model id means "first served model"
     assert AgentConfig(model="").model is None
     assert AgentConfig(model="m").model == "m"
@@ -134,19 +157,46 @@ def test_agent_config_defaults():
 def test_progressive_config_defaults():
     progressive = EvalConfig().progressive
     assert progressive == ProgressiveConfig()
-    assert (progressive.timeout, progressive.parallelism, progressive.server_timeout) == (10.0, 4, True)
+    assert (
+        progressive.timeout,
+        progressive.parallelism,
+        progressive.server_timeout,
+    ) == (10.0, 4, True)
     # every candidate is counted unless a sample size is configured
-    assert (progressive.default_sample_size, progressive.count_limit) == (None, 1_000_000)
-    assert (progressive.constraint_sample_size, progressive.categorical_samples) == (None, None)
-    assert (progressive.child_sample_size, progressive.child_constraint_sample_size) == (None, None)
+    assert (progressive.default_sample_size, progressive.count_limit) == (
+        None,
+        1_000_000,
+    )
+    assert (progressive.constraint_sample_size, progressive.categorical_samples) == (
+        None,
+        None,
+    )
+    assert (
+        progressive.child_sample_size,
+        progressive.child_constraint_sample_size,
+    ) == (None, None)
     # an empty interpolated size (${VAR:-}) is None, a number samples that many
-    assert ProgressiveConfig(default_sample_size="", categorical_samples=" ").default_sample_size is None
-    assert ProgressiveConfig(default_sample_size="12", child_constraint_sample_size="0").default_sample_size == 12
+    assert (
+        ProgressiveConfig(
+            default_sample_size="", categorical_samples=" "
+        ).default_sample_size
+        is None
+    )
+    assert (
+        ProgressiveConfig(
+            default_sample_size="12", child_constraint_sample_size="0"
+        ).default_sample_size
+        == 12
+    )
     with pytest.raises(ValidationError):
         ProgressiveConfig(default_sample_size=0)
     # interpolated values are strings
     parsed = ProgressiveConfig(timeout="2.5", parallelism="8", server_timeout="false")
-    assert (parsed.timeout, parsed.parallelism, parsed.server_timeout) == (2.5, 8, False)
+    assert (parsed.timeout, parsed.parallelism, parsed.server_timeout) == (
+        2.5,
+        8,
+        False,
+    )
     with pytest.raises(ValidationError):
         ProgressiveConfig(parallelism=0)
 
@@ -159,13 +209,18 @@ def test_nested_objects_are_merged(tmp_path, monkeypatch):
             {
                 "default": "kg",
                 "defaults": {
-                    "progressive": {"timeout": "${ONSET_TEST_TIMEOUT:-10}", "child_sample_size": 64},
+                    "progressive": {
+                        "timeout": "${ONSET_TEST_TIMEOUT:-10}",
+                        "child_sample_size": 64,
+                    },
                     "agent": {"base_url": "http://default/v1", "max_steps": 3},
                 },
                 "configs": {
                     "kg": {
                         "progressive": {"child_sample_size": 32},
-                        "variants": [{"name": "KG variant", "progressive": {"count_limit": 5}}],
+                        "variants": [
+                            {"name": "KG variant", "progressive": {"count_limit": 5}}
+                        ],
                     },
                     "plain": {},
                 },
@@ -174,8 +229,16 @@ def test_nested_objects_are_merged(tmp_path, monkeypatch):
     )
     variant, base = config.resolve("kg")
     # defaults <- config <- variant, field by field
-    assert (base.progressive.timeout, base.progressive.child_sample_size, base.progressive.count_limit) == (3, 32, 1_000_000)
-    assert (variant.progressive.timeout, variant.progressive.child_sample_size, variant.progressive.count_limit) == (3, 32, 5)
+    assert (
+        base.progressive.timeout,
+        base.progressive.child_sample_size,
+        base.progressive.count_limit,
+    ) == (3, 32, 1_000_000)
+    assert (
+        variant.progressive.timeout,
+        variant.progressive.child_sample_size,
+        variant.progressive.count_limit,
+    ) == (3, 32, 5)
     assert config.base("plain").progressive.child_sample_size == 64
     assert (base.agent.base_url, base.agent.max_steps) == ("http://default/v1", 3)
 
@@ -184,24 +247,51 @@ def test_test_config_file_is_loaded():
     # tests/conftest.py points ONSET_CONFIG at tests/data/config.json
     assert eval_config.CONFIG_FILE.keys() == ["dbpedia", "oma"]
     assert eval_config.CONFIG_FILE.default == "dbpedia"
-    assert [c.name for c in eval_config.ALL_CONFIG_MAP["dbpedia"]] == ["DBpedia Variant", "DBpedia"]
+    assert [c.name for c in eval_config.ALL_CONFIG_MAP["dbpedia"]] == [
+        "DBpedia Variant",
+        "DBpedia",
+    ]
     assert eval_config.get_config().name == "DBpedia"
     assert eval_config.get_config("dbpedia", 0).model_id == "test/Variant-GGUF"
-    assert eval_config.get_configs("oma")[-1].selection_distribution == SelectionDistribution.UNIFORM
+    assert (
+        eval_config.get_configs("oma")[-1].selection_distribution
+        == SelectionDistribution.UNIFORM
+    )
     dbpedia = eval_config.get_config("dbpedia")
     assert dbpedia.sparql_endpoint == "http://sparql.invalid:7012"
-    assert dbpedia.agent.base_url == "http://llm.invalid/v1" and dbpedia.agent.model is None
+    assert (
+        dbpedia.agent.base_url == "http://llm.invalid/v1"
+        and dbpedia.agent.model is None
+    )
     assert "thumbnail_embedding" in dbpedia.ontology_extension
     # progressive: defaults (with an interpolated timeout) <- dbpedia
-    assert (dbpedia.progressive.timeout, dbpedia.progressive.default_sample_size) == (5, 32)
-    assert dbpedia.progressive.child_sample_size == 4 and eval_config.get_config("oma").progressive.child_sample_size == 8
+    assert (dbpedia.progressive.timeout, dbpedia.progressive.default_sample_size) == (
+        5,
+        32,
+    )
+    assert (
+        dbpedia.progressive.child_sample_size == 4
+        and eval_config.get_config("oma").progressive.child_sample_size == 8
+    )
 
 
 def test_repository_config_is_valid(monkeypatch):
     """backend/config.json resolves with only the fallbacks of its ${VAR:-...}."""
-    for name in ["ONSET_DEFAULT_CONFIG", "ONSET_DB_HOST", "ONSET_SPARQL_HOST", "REDIS_CACHE_URL",
-                 "LLM_MODEL_ID", "LLM_MODEL_QUANT", "AGENT_LLM_BASE_URL", "AGENT_LLM_API_KEY", "AGENT_LLM_MODEL",
-                 *(f"ONSET_PROGRESSIVE_{name.upper()}" for name in ProgressiveConfig.model_fields)]:
+    for name in [
+        "ONSET_DEFAULT_CONFIG",
+        "ONSET_DB_HOST",
+        "ONSET_SPARQL_HOST",
+        "REDIS_CACHE_URL",
+        "LLM_MODEL_ID",
+        "LLM_MODEL_QUANT",
+        "AGENT_LLM_BASE_URL",
+        "AGENT_LLM_API_KEY",
+        "AGENT_LLM_MODEL",
+        *(
+            f"ONSET_PROGRESSIVE_{name.upper()}"
+            for name in ProgressiveConfig.model_fields
+        ),
+    ]:
         monkeypatch.delenv(name, raising=False)
     config = load_config_file(str(eval_config.DEFAULT_CONFIG_PATH))
     assert config.default in config.keys()
@@ -209,5 +299,5 @@ def test_repository_config_is_valid(monkeypatch):
         resolved = config.resolve(key)
         assert resolved[-1].name
         assert all(isinstance(c, EvalConfig) for c in resolved)
-        # the fallbacks are the model defaults
+        # the fallbacks are the model defaults, except the served sample cap
         assert resolved[-1].progressive == ProgressiveConfig()
