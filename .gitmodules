@@ -1,3 +1,0 @@
-[submodule "llama-cpp-agent"]
-	path = llama-cpp-agent
-	url = git@github.com:Dakantz/llama-cpp-agent.git

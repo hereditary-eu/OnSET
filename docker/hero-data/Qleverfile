@@ -1,0 +1,24 @@
+
+[data]
+NAME         = hero-local
+GET_DATA_CMD = riot --merge --output=NT  rdf-input/*.ttl > rdf-input/hero-local.nt
+DESCRIPTION  = RDF data via RIOT
+
+[index]
+INPUT_FILES     = rdf-input/hero-local.nt
+CAT_INPUT_FILES = (cat rdf-input/hero-local.nt)
+SETTINGS_JSON   = { "ascii-prefixes-only": true, "num-triples-per-batch": 1000000, "prefixes-external": [""] }
+WITH_TEXT_INDEX = false
+
+[server]
+PORT               = 9102
+ACCESS_TOKEN       = ${data:NAME}_nxZT9M9Rs7xx
+MEMORY_FOR_QUERIES = 8G
+CACHE_MAX_SIZE     = 2G
+
+[runtime]
+SYSTEM = docker
+IMAGE  = qlever:tensors
+
+[ui]
+UI_CONFIG = hero
