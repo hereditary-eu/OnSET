@@ -28,6 +28,17 @@ Deliberate differences to the editor (known bugs there):
 - dates of xsd:date properties (property_type) compare with xsd:date literals,
   the editor compares every date with an xsd:dateTime
 
+GROUP BY/aggregates, as the editor (NodeLinkRepository.aggregationPlan): as soon as a
+subject or subquery has ``group_by`` or an ``aggregate``, select mode emits an aggregate
+query. Grouped variables are projected and grouped, every other output through its
+aggregate (SAMPLE by default) under its own name, ``(AVG(?sq_len__agg) AS ?sq_len)``,
+with the variable renamed in the WHERE clause (SPARQL forbids an alias bound in the
+pattern), so the columns stay the same. Labels (OPTIONAL joins that would multiply the
+solutions) are only kept for grouped subjects and looked up after the grouping, in an
+outer query that samples them per group; vector sorts order the groups by their best similarity (MAX, MIN if ascending). Unlike the editor,
+filter subqueries are only projected if grouped/aggregated (their values are not outputs
+otherwise). Count mode ignores the grouping.
+
 Beyond the editor: count mode counts the solutions (or a subject's bindings), and
 with ``group_by`` the counts per value of a subject or query prop (the value
 distributions of progressive discovery, assistant/progressive/sampler.py); ``projection``
@@ -47,6 +58,7 @@ from pydantic import BaseModel, Field
 from eval_config import MultimodalConfig
 
 from assistant.assistant_model import (
+    AggregateFunction,
     AssistantLink,
     AssistantNumberConstraintType,
     AssistantStringConstraintType,
@@ -73,6 +85,7 @@ if TYPE_CHECKING:
 TENSOR_INDEX_NS = "https://qlever.cs.uni-freiburg.de/tensorIndex/"
 TENSOR_FUNCTIONS_NS = "https://w3id.org/rdf-tensor/functions#"
 TENSOR_DATATYPE = "<https://w3id.org/rdf-tensor/datatypes#NumericDataTensor>"
+TENSOR_AGGREGATES_NS = "https://w3id.org/rdf-tensor/aggregates#"
 
 # prefixes the generator itself uses (labels, literal types, tensor functions)
 DEFAULT_NAMESPACES: dict[str, str] = {
@@ -82,6 +95,7 @@ DEFAULT_NAMESPACES: dict[str, str] = {
     "xsd": "http://www.w3.org/2001/XMLSchema#",
     "foaf": "http://xmlns.com/foaf/0.1/",
     "dtf": TENSOR_FUNCTIONS_NS,
+    "dta": TENSOR_AGGREGATES_NS,
     "tensorIndex": TENSOR_INDEX_NS,
 }
 LABEL_PROPERTIES = ["rdfs:label", "foaf:name"]
@@ -101,6 +115,92 @@ PROP_TYPES = {
     AssistantSubQueryType.IMAGE_PROP,
     AssistantSubQueryType.INSTANCE_PROP,
 }
+
+# --- GROUP BY / aggregates (the editor's AggregateFunction/AggregateKind) ---
+
+TENSOR_AGGREGATES = {
+    AggregateFunction.TENSOR_SUM: "dta:sum",
+    AggregateFunction.TENSOR_AVG: "dta:avg",
+    AggregateFunction.TENSOR_VAR: "dta:var",
+    AggregateFunction.TENSOR_STD: "dta:std",
+}
+AggregateKind = Literal["number", "date", "tensor", "text", "node"]
+_COMMON = [AggregateFunction.COUNT, AggregateFunction.COUNT_DISTINCT]
+AGGREGATES_OF: dict[str, list[AggregateFunction]] = {
+    "number": _COMMON + [
+        AggregateFunction.SUM, AggregateFunction.AVG, AggregateFunction.MIN, AggregateFunction.MAX,
+        AggregateFunction.SAMPLE, AggregateFunction.GROUP_CONCAT,
+    ],
+    "date": _COMMON + [
+        AggregateFunction.MIN, AggregateFunction.MAX, AggregateFunction.SAMPLE, AggregateFunction.GROUP_CONCAT,
+    ],
+    "tensor": [AggregateFunction.COUNT, AggregateFunction.SAMPLE, *TENSOR_AGGREGATES],
+    "text": _COMMON + [
+        AggregateFunction.MIN, AggregateFunction.MAX, AggregateFunction.SAMPLE, AggregateFunction.GROUP_CONCAT,
+    ],
+    "node": _COMMON + [AggregateFunction.SAMPLE, AggregateFunction.GROUP_CONCAT],
+}
+_DATE_TYPE = re.compile(r"(date|gYear|gMonth|gDay)", re.IGNORECASE)
+_NUMBER_TYPE = re.compile(
+    r"(double|float|decimal|integer|int|long|short|byte|duration|metre|gram|second|minute|hour|year)>?$", re.IGNORECASE
+)
+AGGREGATE_SUFFIX = "__agg"
+# string literals and IRIs, in which variables are not renamed
+_LITERAL_OR_IRI = re.compile(r'"(?:[^"\\]|\\.)*"|<[^<>\s"]*>')
+_VARIABLE = re.compile(r"\?[A-Za-z_][A-Za-z0-9_]*")
+
+
+def aggregate_kind(property_type: str | None) -> AggregateKind:
+    """Value kind of a property type (the editor's aggregateKind), which decides its aggregates."""
+    if not property_type:
+        return "text"
+    if re.search(r"DataTensor>?$", property_type):
+        return "tensor"
+    if _DATE_TYPE.search(property_type):
+        return "date"
+    if _NUMBER_TYPE.search(property_type):
+        return "number"
+    return "text"
+
+
+def aggregate_expression(function: AggregateFunction, var: str) -> str:
+    """The aggregate of a variable (with its ?), as the editor's aggregateExpression."""
+    function = AggregateFunction(function)
+    if function in TENSOR_AGGREGATES:
+        return f"{TENSOR_AGGREGATES[function]}({var})"
+    match function:
+        case AggregateFunction.COUNT:
+            return f"COUNT({var})"
+        case AggregateFunction.COUNT_DISTINCT:
+            return f"COUNT(DISTINCT {var})"
+        case AggregateFunction.GROUP_CONCAT:
+            return f'GROUP_CONCAT(STR({var}); SEPARATOR=", ")'
+    return f"{function.value.upper()}({var})"
+
+
+def rename_variables(text: str, renames: dict[str, str]) -> str:
+    """Renames variables (names without ?) outside of string literals and IRIs."""
+
+    def rename(part: str) -> str:
+        return _VARIABLE.sub(lambda m: "?" + renames.get(m.group(0)[1:], m.group(0)[1:]), part)
+
+    out, last = [], 0
+    for match in _LITERAL_OR_IRI.finditer(text):
+        out.append(rename(text[last : match.start()]))
+        out.append(match.group(0))
+        last = match.end()
+    out.append(rename(text[last:]))
+    return "".join(out)
+
+
+def is_aggregated(element) -> bool:
+    return bool(getattr(element, "group_by", None)) or getattr(element, "aggregate", None) is not None
+
+
+# mode of an output variable in an aggregate query: grouped, the label of a grouped
+# subject (sampled in the outer query), or aggregated
+AggregateMode = Literal["group", "label"] | AggregateFunction
+
 
 PREFIXED_NAME = re.compile(r"^([A-Za-z][A-Za-z0-9_\-.]*)?:(.*)$")
 # simplified PN_LOCAL (no escapes or percent encoding)
@@ -181,6 +281,9 @@ class SparqlOutput:
     # subquery id (or "<subject id>_<index>") / link id
     element_id: str | None = None
     property_id: str | None = None
+    # aggregate queries: the variable is grouped, or its aggregate (else None)
+    grouped: bool = False
+    aggregate: AggregateFunction | None = None
 
 
 @dataclass
@@ -268,6 +371,16 @@ class SparqlGenerator:
         multimodal = self.options.multimodal
         self.image_types = {self.expand(t) for t in (multimodal.image_types if multimodal else [])}
         self.image_properties = {self.expand(p) for p in (multimodal.image_properties if multimodal else [])}
+        # select mode with grouped/aggregated elements: an aggregate query
+        self.aggregating = self.options.mode == "select" and any(
+            is_aggregated(subject)
+            or any(is_aggregated(sq) for sq in subject.subqueries if not isinstance(sq, SubjectSubQuery))
+            for subject in graph.subjects
+        )
+        # output variable -> its mode in the aggregate query (SAMPLE if missing)
+        self.modes: dict[str, AggregateMode] = {}
+        # aggregate queries: label variable -> subject variable of the grouped subjects
+        self.label_lookups: dict[str, str] = {}
 
     # --- terms ---
 
@@ -400,12 +513,20 @@ class SparqlGenerator:
 
         for i, subject in enumerate(self.graph.subjects):
             var = subject_vars[subject.id]
+            self.modes[var] = self.mode_of(subject)
             if subject.uri:
                 patterns.append(f"?{var} a {self.iri(subject.uri, f'subject {subject.id}')} .")
             if labels:
                 label_var = self.vars.get("lbl_", var)
-                outputs.append(SparqlOutput(var=label_var, kind="label", subject_id=subject.id))
-                patterns.extend(self.label_patterns(var, label_var))
+                if not self.aggregating:
+                    outputs.append(SparqlOutput(var=label_var, kind="label", subject_id=subject.id))
+                    patterns.extend(self.label_patterns(var, label_var))
+                elif subject.group_by:
+                    # labels would multiply the solutions: only grouped subjects have one,
+                    # looked up after the grouping (see aggregated)
+                    outputs.append(SparqlOutput(var=label_var, kind="label", subject_id=subject.id))
+                    self.modes[label_var] = "label"
+                    self.label_lookups[label_var] = var
             for j, subquery in enumerate(subject.subqueries):
                 key = subquery.id if subquery.id not in (None, "") else f"{var}_{j}"
                 patterns.extend(self.subquery(subject, var, key, subquery, outputs, values, order, count))
@@ -435,12 +556,15 @@ class SparqlGenerator:
         prop_var = self.vars.get("sq_", key)
         prop = self.iri(subquery.property_id, f"subquery {key}")
         triple = f"?{var} {prop} ?{prop_var} ."
+        self.modes[prop_var] = self.mode_of(subquery)
+        kind = "image" if self.is_image(subquery) else "property"
+        output = SparqlOutput(var=prop_var, kind=kind, subject_id=subject.id, element_id=key, property_id=subquery.property_id)
         if subquery.type in PROP_TYPES:
-            kind = "image" if self.is_image(subquery) else "property"
-            outputs.append(
-                SparqlOutput(var=prop_var, kind=kind, subject_id=subject.id, element_id=key, property_id=subquery.property_id)
-            )
+            outputs.append(output)
             return [triple]
+        if self.aggregating and is_aggregated(subquery):
+            # a grouped/aggregated filter's values are an output as well
+            outputs.append(output)
         return [triple, f"FILTER({self.filter_expression(subquery, f'?{prop_var}')})"]
 
     def filter_expression(self, subquery, var: str) -> str:
@@ -508,6 +632,10 @@ class SparqlGenerator:
         if count:
             # the sort does not change the solutions, but only subjects with an embedding have a distance
             return [triple]
+        if self.aggregating and is_aggregated(subquery):
+            # the (tensor) aggregate of the embeddings
+            self.modes[emb_var] = self.mode_of(subquery)
+            outputs.append(SparqlOutput(var=emb_var, kind="property", subject_id=subject.id, element_id=key, property_id=prop))
         sim_var = self.vars.get("sim_", key)
         tensor = json.dumps(
             {"type": "float32", "shape": [len(subquery.vector)], "data": subquery.vector}, separators=(",", ":")
@@ -518,6 +646,8 @@ class SparqlGenerator:
         outputs.append(SparqlOutput(var=sim_var, kind="similarity", subject_id=subject.id, element_id=key, property_id=prop))
         direction = "ASC" if subquery.direction == VectorSortDirection.ASCENDING else "DESC"
         order.append(f"{direction}(?{sim_var})")
+        # groups are ordered by their best similarity
+        self.modes[sim_var] = AggregateFunction.MIN if direction == "ASC" else AggregateFunction.MAX
         return [triple, f"BIND({function}(?{emb_var}, {literal}) AS ?{sim_var})"]
 
     def similarity_link(self, link: AssistantLink, source: str, target: str, outputs) -> list[str]:
@@ -577,8 +707,17 @@ class SparqlGenerator:
                 return output.var
         raise SparqlGenerationError(f"{element_id} is neither a subject nor a query prop of the graph")
 
+    @staticmethod
+    def mode_of(element) -> AggregateMode:
+        """Mode of a subject's/subquery's variable in an aggregate query."""
+        if element.group_by:
+            return "group"
+        return AggregateFunction(element.aggregate) if element.aggregate is not None else AggregateFunction.SAMPLE
+
     def assemble(self, patterns, values, outputs: list[SparqlOutput], order, labels) -> GeneratedSparql:
         options = self.options
+        if self.aggregating:
+            return self.aggregated(patterns, values, outputs, order)
         if options.group_by is not None and options.group_language:
             group_var = self.element_var(outputs, options.group_by)
             language = escape_literal(options.group_language)
@@ -634,6 +773,78 @@ class SparqlGenerator:
         if modifiers:
             query += "\n" + "\n".join(modifiers)
         return self.result(query, outputs)
+
+    def aggregated(self, patterns, values, outputs: list[SparqlOutput], order) -> GeneratedSparql:
+        """Select mode with grouped/aggregated elements: every projected variable is grouped
+        or aggregated (under its own name, renamed in the WHERE clause)."""
+        options = self.options
+        if options.projection is not None:
+            wanted = [self.element_var(outputs, e) for e in options.projection]
+            by_var = {o.var: o for o in outputs}
+            candidates = [by_var[v] for v in dict.fromkeys(wanted)]
+        else:
+            candidates = outputs
+        projected: list[SparqlOutput] = []
+        select: list[str] = []
+        group: list[str] = []
+        renames: dict[str, str] = {}
+        # with labels: the outer query's projection, inner columns and label lookups
+        outer: list[str] = []
+        lookups: list[str] = []
+        for output in candidates:
+            mode = self.modes.get(output.var, AggregateFunction.SAMPLE)
+            if mode == "label":
+                inner_label = output.var + AGGREGATE_SUFFIX
+                outer.append(f"(SAMPLE(?{inner_label}) AS ?{output.var})")
+                lookups.extend(self.label_patterns(self.label_lookups[output.var], inner_label))
+                projected.append(SparqlOutput(**{**output.__dict__, "aggregate": AggregateFunction.SAMPLE}))
+                continue
+            outer.append(f"?{output.var}")
+            if mode == "group":
+                select.append(f"?{output.var}")
+                group.append(f"?{output.var}")
+                projected.append(SparqlOutput(**{**output.__dict__, "grouped": True}))
+                continue
+            inner = output.var + AGGREGATE_SUFFIX
+            renames[output.var] = inner
+            if mode in TENSOR_AGGREGATES:
+                self.use_prefix("dta")
+            select.append(f"({aggregate_expression(mode, '?' + inner)} AS ?{output.var})")
+            projected.append(SparqlOutput(**{**output.__dict__, "aggregate": mode}))
+        body = "\n".join("    " + rename_variables(line, renames) for line in values + patterns)
+        distinct = "DISTINCT " if options.distinct else ""
+        if lookups:
+            # the labels of the groups, after the grouping (one row per group)
+            inner = f"SELECT {' '.join(select)} WHERE {{\n{body}\n}}"
+            if group:
+                inner += "\nGROUP BY " + " ".join(group)
+            inner = "\n".join("    " + line for line in inner.split("\n"))
+            lookup_body = "\n".join("  " + line for line in lookups)
+            query = f"SELECT {distinct}{' '.join(outer)} WHERE {{\n  {{\n{inner}\n  }}\n{lookup_body}\n}}"
+            query += "\nGROUP BY " + " ".join(term for term in outer if term.startswith("?"))
+        else:
+            query = f"SELECT {distinct}{' '.join(select)} WHERE {{\n{body}\n}}"
+            if group:
+                query += "\nGROUP BY " + " ".join(group)
+        names = {o.var for o in projected}
+        if options.order_by is not None:
+            order_vars = [self.element_var(outputs, e) for e in options.order_by]
+            order_terms = ["?" + v for v in order_vars if v in names]
+        elif options.order:
+            order_terms = [term for term in order if re.search(r"\?(\w+)", term).group(1) in names]
+            if not order_terms:
+                order_vars = [o.var for o in projected if o.kind in ("label", "property", "image", "link")]
+                order_vars = order_vars or [o.var for o in projected if o.kind == "subject"]
+                order_terms = ["?" + v for v in order_vars]
+        else:
+            order_terms = []
+        if order_terms:
+            query += "\nORDER BY " + " ".join(order_terms)
+        if options.limit is not None:
+            query += f"\nLIMIT {options.limit}"
+        if options.offset:
+            query += f"\nOFFSET {options.offset}"
+        return self.result(query, projected)
 
     def grouped(self, where: str, counted: list[str], outputs: list[SparqlOutput], modifiers: list[str]) -> GeneratedSparql:
         """Count mode with group_by: the count of every value of the group variable."""

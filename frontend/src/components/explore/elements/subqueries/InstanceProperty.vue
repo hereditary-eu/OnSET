@@ -2,13 +2,14 @@
     <div class="constraint">
         <img v-if="query.is_image_prop" :src="image_data" alt="Image property" />
         <template v-else>
-            <OnsetIcon icon="mdi-tag" />
+            <OnsetIcon :icon="query.group_by ? 'mdi-group' : 'mdi-tag'" />
+            <span v-if="query.is_aggregate_value" class="constraint_aggregate">{{ AGGREGATE_LABELS[query.aggregate!] }}</span>
             <span class="constraint_label">{{ query.value }}</span>
         </template>
     </div>
 </template>
 <script setup lang="ts">
-import { InstanceQueryProp } from '@/utils/sparql/representation';
+import { AGGREGATE_LABELS, InstanceQueryProp } from '@/utils/sparql/representation';
 import { onMounted, ref, watch } from 'vue'
 import OnsetIcon from '@/components/ui/OnsetIcon.vue';
 import { api } from '@/utils/api'

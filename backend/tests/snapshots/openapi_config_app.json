@@ -1,6 +1,25 @@
 {
  "components": {
   "schemas": {
+   "AggregateFunction": {
+    "description": "Aggregate of a subject's/subquery's variable in an aggregate query (the editor's\nAggregateFunction, frontend/src/utils/sparql/representation/subqueries.ts); the\ntensor_* ones are QLever's elementwise tensor aggregates (dta:sum/avg/var/std).",
+    "enum": [
+     "count",
+     "count_distinct",
+     "sum",
+     "avg",
+     "min",
+     "max",
+     "sample",
+     "group_concat",
+     "tensor_sum",
+     "tensor_avg",
+     "tensor_var",
+     "tensor_std"
+    ],
+    "title": "AggregateFunction",
+    "type": "string"
+   },
    "AssistantLink": {
     "properties": {
      "allow_arbitrary": {
@@ -161,6 +180,27 @@
    },
    "AssistantSubject": {
     "properties": {
+     "aggregate": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/AggregateFunction"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "group_by": {
+      "anyOf": [
+       {
+        "type": "boolean"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Group By"
+     },
      "id": {
       "anyOf": [
        {
@@ -285,6 +325,27 @@
    },
    "BooleanSubQuery": {
     "properties": {
+     "aggregate": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/AggregateFunction"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "group_by": {
+      "anyOf": [
+       {
+        "type": "boolean"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Group By"
+     },
      "id": {
       "anyOf": [
        {
@@ -632,6 +693,27 @@
    },
    "DateSubQuery": {
     "properties": {
+     "aggregate": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/AggregateFunction"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "group_by": {
+      "anyOf": [
+       {
+        "type": "boolean"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Group By"
+     },
      "id": {
       "anyOf": [
        {
@@ -1101,6 +1183,27 @@
    "ImagePropSubQuery": {
     "description": "Query prop whose values are images (property_type in the config's image_types).\n\nThe editor has no own class for it (a QueryProp with an image range), so it\nalways sends query_prop; this is accepted and turned into a QueryProp.",
     "properties": {
+     "aggregate": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/AggregateFunction"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "group_by": {
+      "anyOf": [
+       {
+        "type": "boolean"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Group By"
+     },
      "id": {
       "anyOf": [
        {
@@ -1170,6 +1273,27 @@
    "InstancePropSubQuery": {
     "description": "Query prop of a result instance (InstanceQueryProp), with its value.",
     "properties": {
+     "aggregate": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/AggregateFunction"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "group_by": {
+      "anyOf": [
+       {
+        "type": "boolean"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Group By"
+     },
      "id": {
       "anyOf": [
        {
@@ -1403,6 +1527,27 @@
    },
    "NumberSubQuery": {
     "properties": {
+     "aggregate": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/AggregateFunction"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "group_by": {
+      "anyOf": [
+       {
+        "type": "boolean"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Group By"
+     },
      "id": {
       "anyOf": [
        {
@@ -2306,6 +2451,27 @@
    "QueryPropSubQuery": {
     "description": "Property of the subject that is selected (an output variable), not filtered.",
     "properties": {
+     "aggregate": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/AggregateFunction"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "group_by": {
+      "anyOf": [
+       {
+        "type": "boolean"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Group By"
+     },
      "id": {
       "anyOf": [
        {
@@ -2520,6 +2686,27 @@
    },
    "StringSubQuery": {
     "properties": {
+     "aggregate": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/AggregateFunction"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "group_by": {
+      "anyOf": [
+       {
+        "type": "boolean"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Group By"
+     },
      "id": {
       "anyOf": [
        {
@@ -2758,6 +2945,27 @@
    },
    "SubjectSubQuery": {
     "properties": {
+     "aggregate": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/AggregateFunction"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "group_by": {
+      "anyOf": [
+       {
+        "type": "boolean"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Group By"
+     },
      "id": {
       "anyOf": [
        {
@@ -2988,6 +3196,16 @@
    },
    "VectorSortSubQuery": {
     "properties": {
+     "aggregate": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/AggregateFunction"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
      "direction": {
       "$ref": "#/components/schemas/VectorSortDirection",
       "default": "descending"
@@ -2995,6 +3213,17 @@
      "distance": {
       "$ref": "#/components/schemas/VectorSortDistance",
       "default": "cosine"
+     },
+     "group_by": {
+      "anyOf": [
+       {
+        "type": "boolean"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Group By"
      },
      "id": {
       "anyOf": [

@@ -115,6 +115,27 @@ export enum AssistantNumberConstraintType {
   Greater = "greater",
 }
 
+/**
+ * AggregateFunction
+ * Aggregate of a subject's/subquery's variable in an aggregate query (the editor's
+ * AggregateFunction, frontend/src/utils/sparql/representation/subqueries.ts); the
+ * tensor_* ones are QLever's elementwise tensor aggregates (dta:sum/avg/var/std).
+ */
+export enum AggregateFunction {
+  Count = "count",
+  CountDistinct = "count_distinct",
+  Sum = "sum",
+  Avg = "avg",
+  Min = "min",
+  Max = "max",
+  Sample = "sample",
+  GroupConcat = "group_concat",
+  TensorSum = "tensor_sum",
+  TensorAvg = "tensor_avg",
+  TensorVar = "tensor_var",
+  TensorStd = "tensor_std",
+}
+
 /** AssistantLink */
 export interface AssistantLink {
   /** Uri */
@@ -184,6 +205,10 @@ export interface AssistantSubject {
         type: "vector_sort";
       } & VectorSortSubQuery)
   )[];
+  /** Group By */
+  group_by?: boolean | null;
+  /** Aggregate (see AggregateFunction) */
+  aggregate?: AggregateFunction | null;
 }
 
 /** Body_dim_reduce_search_dim_reduce_post */
@@ -225,6 +250,10 @@ export interface BooleanSubQuery {
   property_label?: string | null;
   /** Property Type */
   property_type?: string | null;
+  /** Group By */
+  group_by?: boolean | null;
+  /** Aggregate (see AggregateFunction) */
+  aggregate?: AggregateFunction | null;
   /**
    * Value
    * @default false
@@ -351,6 +380,10 @@ export interface DateSubQuery {
   property_label?: string | null;
   /** Property Type */
   property_type?: string | null;
+  /** Group By */
+  group_by?: boolean | null;
+  /** Aggregate (see AggregateFunction) */
+  aggregate?: AggregateFunction | null;
   /** Value */
   value: string;
   /** @default "greater" */
@@ -561,6 +594,10 @@ export interface ImagePropSubQuery {
   property_label?: string | null;
   /** Property Type */
   property_type?: string | null;
+  /** Group By */
+  group_by?: boolean | null;
+  /** Aggregate (see AggregateFunction) */
+  aggregate?: AggregateFunction | null;
 }
 
 /** Instance */
@@ -595,6 +632,10 @@ export interface InstancePropSubQuery {
   property_label?: string | null;
   /** Property Type */
   property_type?: string | null;
+  /** Group By */
+  group_by?: boolean | null;
+  /** Aggregate (see AggregateFunction) */
+  aggregate?: AggregateFunction | null;
   /** Value */
   value?: string | null;
 }
@@ -693,6 +734,10 @@ export interface NumberSubQuery {
   property_label?: string | null;
   /** Property Type */
   property_type?: string | null;
+  /** Group By */
+  group_by?: boolean | null;
+  /** Aggregate (see AggregateFunction) */
+  aggregate?: AggregateFunction | null;
   /**
    * Value
    * @default 0
@@ -1022,6 +1067,10 @@ export interface QueryPropSubQuery {
   property_label?: string | null;
   /** Property Type */
   property_type?: string | null;
+  /** Group By */
+  group_by?: boolean | null;
+  /** Aggregate (see AggregateFunction) */
+  aggregate?: AggregateFunction | null;
 }
 
 /** Relation */
@@ -1108,6 +1157,10 @@ export interface StringSubQuery {
   property_label?: string | null;
   /** Property Type */
   property_type?: string | null;
+  /** Group By */
+  group_by?: boolean | null;
+  /** Aggregate (see AggregateFunction) */
+  aggregate?: AggregateFunction | null;
   /**
    * Value
    * @default ""
@@ -1200,6 +1253,10 @@ export interface SubjectSubQuery {
   property_label?: string | null;
   /** Property Type */
   property_type?: string | null;
+  /** Group By */
+  group_by?: boolean | null;
+  /** Aggregate (see AggregateFunction) */
+  aggregate?: AggregateFunction | null;
   /** Instance Id */
   instance_id?: string | null;
   /** Instance Label */
@@ -1261,6 +1318,10 @@ export interface VectorSortSubQuery {
   property_label?: string | null;
   /** Property Type */
   property_type?: string | null;
+  /** Group By */
+  group_by?: boolean | null;
+  /** Aggregate (see AggregateFunction) */
+  aggregate?: AggregateFunction | null;
   /** @default "image" */
   modality?: VectorSortModality;
   /** @default "descending" */

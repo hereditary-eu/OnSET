@@ -41,6 +41,29 @@ class AssistantSubQueryType(str, enum.Enum):
     IMAGE_PROP = "image_prop"
 
 
+def _is_none(value) -> bool:
+    return value is None
+
+
+class AggregateFunction(str, enum.Enum):
+    """Aggregate of a subject's/subquery's variable in an aggregate query (the editor's
+    AggregateFunction, frontend/src/utils/sparql/representation/subqueries.ts); the
+    tensor_* ones are QLever's elementwise tensor aggregates (dta:sum/avg/var/std)."""
+
+    COUNT = "count"
+    COUNT_DISTINCT = "count_distinct"
+    SUM = "sum"
+    AVG = "avg"
+    MIN = "min"
+    MAX = "max"
+    SAMPLE = "sample"
+    GROUP_CONCAT = "group_concat"
+    TENSOR_SUM = "tensor_sum"
+    TENSOR_AVG = "tensor_avg"
+    TENSOR_VAR = "tensor_var"
+    TENSOR_STD = "tensor_std"
+
+
 class AssistantSubQuery(BaseModel):
     type: AssistantSubQueryType
     id: str | None = None
@@ -50,6 +73,11 @@ class AssistantSubQuery(BaseModel):
     # Link.label/to_proptype of the subquery's link in the editor
     property_label: str | None = None
     property_type: str | None = None
+    # GROUP BY the property's variable, or its aggregate if not grouped (see
+    # assistant.sparql_gen); None: not grouped (SAMPLE once the query aggregates).
+    # Left out of dumps while None, so earlier payloads stay byte for byte the same.
+    group_by: bool | None = Field(None, exclude_if=_is_none)
+    aggregate: AggregateFunction | None = Field(None, exclude_if=_is_none)
 
 
 class QueryPropSubQuery(AssistantSubQuery):
@@ -171,6 +199,10 @@ class AssistantSubject(BaseModel):
     label: str
     id: str | None = None
     subqueries: list[AnyAssistantSubQuery] = Field([])
+    # GROUP BY the subject's variable, or its aggregate (e.g. count) if not grouped,
+    # like AssistantSubQuery.group_by/aggregate
+    group_by: bool | None = Field(None, exclude_if=_is_none)
+    aggregate: AggregateFunction | None = Field(None, exclude_if=_is_none)
 
     @staticmethod
     def from_subject(subject: Subject, id: str | None = None) -> "AssistantSubject":

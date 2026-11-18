@@ -30,7 +30,9 @@ GRAPH_TOOLS = {
     "remove_link",
     "get_query_graph",
 }
-CONSTRAINT_TOOL_NAMES = {"search_properties", "add_constraint", "restrict_to_instance", "remove_constraint"}
+CONSTRAINT_TOOL_NAMES = {
+    "search_properties", "add_constraint", "restrict_to_instance", "remove_constraint", "add_property", "set_aggregation",
+}
 
 
 def test_definitions_cover_all_tools(tools, ontology, guidance):

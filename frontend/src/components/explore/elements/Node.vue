@@ -7,6 +7,14 @@
         <rect :width="subject.width" :height="subject.height" class="node" :class="node_statestyle"
             @pointerdown="dragStart" />
         <text :x="subject.width / 2" :y="subject.height / 2" class="node_text">{{ display_label }}</text>
+        <!-- group by/aggregate of the node's variable, left of its subquery connector -->
+        <foreignObject v-if="show_aggregation" :x="subject.width / 2 - SUBQUERY_INDENT - AGGREGATE_BOX_WIDTH"
+            :y="subject.height + 2" :width="AGGREGATE_BOX_WIDTH" height="22">
+            <div class="node_aggregate">
+                <AggregateControls :target="subject" :kind="AggregateKind.NODE" :readonly="!aggregation_editable"
+                    :expanded="editor_data.show_editpoints" collapsible />
+            </div>
+        </foreignObject>
 
         <g v-for="constr_info in constraint_list_mapped" :transform="`translate(${subject.width / 2},${constr_info.y})`">
             <Sublink :subquery="constr_info.subquery" :extend_path="constr_info.extend_path" :diff="diff_node"
@@ -49,6 +57,9 @@ import { InstanceNode, SubjectNode as NodeRepr, NodeState, SubQuery } from '@/ut
 import { CONSTRAINT_PADDING, DisplayMode, EDITPOINT_R, fitNode, InstanceSelectorOpenEvent, NODE_PADDING_X, OpenEventType, SelectorOpenEvent } from '@/utils/sparql/helpers';
 import { truncateText } from '@/utils/sparql/measure';
 import Sublink from './Subquery.vue';
+import AggregateControls from './subqueries/AggregateControls.vue';
+import { AggregateKind, isAggregated } from '@/utils/sparql/representation';
+import { SUBQUERY_INDENT } from '@/utils/sparql/helpers';
 import { pointerDrag } from '@/utils/graph-layout';
 import type { PropertiesOpenEvent } from '@/utils/sparql/querymapper';
 import type { NodeLinkRepository } from '@/utils/sparql/store';
@@ -218,6 +229,10 @@ const deleteConstraint = (constraint) => {
     subject.subqueries = subject.subqueries.filter((constr) => constr != constraint)
 }
 const is_result_mode = computed(() => mode == DisplayMode.RESULTS || mode == DisplayMode.RESULT_INTERACTIVE)
+const AGGREGATE_BOX_WIDTH = 140
+// group by/aggregate of the node: editable while hovered in the editor (or once set), shown in previews if set
+const aggregation_editable = computed(() => mode == DisplayMode.EDIT || mode == DisplayMode.EDIT_NO_ADD)
+const show_aggregation = computed(() => !is_result_mode.value && (aggregation_editable.value || isAggregated(subject)))
 // Query nodes are sized to their class label. Result nodes keep the layout of the query
 // (positions are computed from it), so their instance label is shortened to fit instead.
 const display_label = computed(() => {
@@ -244,3 +259,10 @@ onMounted(() => {
     updateNodeState()
 })
 </script>
+<style>
+.node_aggregate {
+    display: flex;
+    justify-content: flex-end;
+    font-size: var(--fs-xs);
+}
+</style>

@@ -37,7 +37,8 @@ Server -> client (per turn, in order of occurrence)
                                         ``changes`` holds the subjects/links it
                                         added/removed as a mini graph, and the
                                         subqueries (constraints) it added to or
-                                        removed from existing subjects
+                                        removed from existing subjects, and the
+                                        subjects whose grouping/aggregate changed
     graph_state      {graph, details}   full server graph after the agent
                                         changed it; ``details`` carries the
                                         ontology data of agent-added elements
@@ -87,6 +88,8 @@ class GraphChange(BaseModel):
     context: list[AssistantSubject] = Field([])
     # subqueries added to/removed from subjects that are in both graphs
     subqueries: list[SubQueryChange] = Field([])
+    # subjects in both graphs whose grouping/aggregate (group_by, aggregate) changed, as after
+    updated: list[AssistantSubject] = Field([])
 
     @property
     def empty(self) -> bool:
@@ -96,6 +99,7 @@ class GraphChange(BaseModel):
             or self.removed.subjects
             or self.removed.links
             or self.subqueries
+            or self.updated
         )
 
 
@@ -247,10 +251,15 @@ def diff_graphs(before: QueryGraph, after: QueryGraph) -> GraphChange:
     for subject_id, subject in after_subjects.items():
         if subject_id in before_subjects:
             change.subqueries += diff_subqueries(before_subjects[subject_id], subject)
+            before = before_subjects[subject_id]
+            if (bool(before.group_by), before.aggregate) != (bool(subject.group_by), subject.aggregate):
+                change.updated.append(subject)
     changed_ids = {s.id for s in change.added.subjects + change.removed.subjects}
     context: dict[str, AssistantSubject] = {}
     for subquery_change in change.subqueries:
         context[subquery_change.subject_id] = after_subjects[subquery_change.subject_id]
+    for subject in change.updated:
+        context[subject.id] = subject
     for link in change.added.links + change.removed.links:
         for subject_id in (link.from_subject_id, link.to_subject_id):
             subject = after_subjects.get(subject_id) or before_subjects.get(subject_id)
@@ -264,7 +273,7 @@ def describe_graph(graph: QueryGraph) -> str:
     """Compact JSON of a graph for the model's context."""
     return graph.model_dump_json(
         include={
-            "subjects": {"__all__": {"id", "uri", "label", "subqueries"}},
+            "subjects": {"__all__": {"id", "uri", "label", "subqueries", "group_by", "aggregate"}},
             "links": {"__all__": {"id", "uri", "label", "from_subject_id", "to_subject_id"}},
         }
     )
