@@ -16,11 +16,13 @@
             </div>
             <Loading v-if="ui_state.similar_entries.loading"></Loading>
             <HistoryElement v-for="(entry, index) of history_filtered" :key="index" :entry="(entry as HistoryEntry)"
-                @revert="emit('revert', $event)" @compare="emit('compare', $event)">
+                @revert="emit('revert', $event)" @compare="emit('compare', $event)"
+                @show-in-chat="emit('showInChat', $event)">
             </HistoryElement>
         </div>
         <div v-else class="panel_body">
-            <TimeEmbeddingsOverlay :history="(history as QueryHistory)" @show-tooltip='emit("showTooltip", $event)'>
+            <TimeEmbeddingsOverlay :history="(history as QueryHistory)" @show-tooltip='emit("showTooltip", $event)'
+                @show-in-chat="emit('showInChat', $event)">
             </TimeEmbeddingsOverlay>
         </div>
     </section>
@@ -57,6 +59,7 @@ const emit = defineEmits<{
     revert: [HistoryEntry],
     compare: [HistoryEntry],
     showTooltip: [HistoryTooltipEvent],
+    showInChat: [string[]],
 }>()
 
 const history_filtered = computed(() => {

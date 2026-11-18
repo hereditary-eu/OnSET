@@ -14,6 +14,9 @@ import { Vector2 } from 'three';
 import { CatmullRomSplits } from '@/utils/d3-man/CatmullRomSplits';
 import { ManifoldAlg } from '@/api/client.ts/Api';
 import type { HistoryTooltipEvent } from '@/utils/sparql/helpers';
+import {
+    groupedOps, mdiGlyph, MDI_FONT_FAMILY, provenanceSummary, SOURCE_STYLES,
+} from '@/utils/sparql/provenance';
 const svg_ref = ref(null as SVGSVGElement | null)
 const tooltip_div = ref(null as HTMLDivElement | null)
 const history_overview_box = ref(null as SVGGElement | null)
@@ -38,7 +41,16 @@ const ui_state = reactive({
 
 const emit = defineEmits<{
     showTooltip: [HistoryTooltipEvent],
+    showInChat: [string[]],
 }>()
+
+// colours of the op glyphs by direction (the colour-blind mode overrides the variables)
+const OP_COLOURS = {
+    add: 'var(--c-link-added)',
+    remove: 'var(--c-link-removed)',
+    change: 'var(--c-constraint)',
+}
+const MAX_OP_GLYPHS = 4
 
 function updateSvgSize() {
     const rect = history_overview_box.value?.getBoundingClientRect();
@@ -140,6 +152,82 @@ function recomputeEmbeddings() {
                     // ui_state.tooltip.visible = false
                     // ui_state.tooltip.entry = null
                 });
+            circles.append("title").text((d) => provenanceSummary(d.entry.provenance))
+
+            // provenance glyphs (mdi webfont as SVG text): a source badge at the upper right of
+            // non-user entries (robot for the agent) and the op icons of the edit to the right
+            const marked = embeddings_mapped.filter((d) => d.entry.provenance && d.entry.provenance.source != 'user')
+            const glyphs = root_g.selectAll<SVGGElement, typeof marked[0]>("g.history_glyphs")
+                .data(marked)
+                .join("g")
+                .attr("class", (d) => `history_glyphs history_glyphs_${d.entry.provenance.source}`)
+                .attr("transform", (d) => `translate(${xScale(d.v.x)},${yScale(d.v.y)})`)
+            glyphs.append("title").text((d) => provenanceSummary(d.entry.provenance))
+            const BADGE_R = 6
+            const badge = glyphs.append("g")
+                .attr("class", "history_glyph_badge")
+                .attr("transform", (d) => `translate(${d.r * 0.75},${-d.r * 0.75})`)
+                .style("cursor", (d) => d.entry.provenance.chat_entry_ids?.length ? "pointer" : "default")
+                .on("click", (event: MouseEvent, d) => {
+                    const ids = d.entry.provenance.chat_entry_ids
+                    if (ids?.length) {
+                        event.stopPropagation()
+                        emit("showInChat", ids)
+                    }
+                })
+            badge.append("circle")
+                .attr("r", BADGE_R)
+                .attr("stroke", "white")
+                .style("fill", (d) => d.entry.provenance.source == 'agent' ? "var(--c-accent)" : "var(--c-link-normal)")
+            badge.append("text")
+                .attr("text-anchor", "middle")
+                .attr("dominant-baseline", "central")
+                .attr("font-family", MDI_FONT_FAMILY)
+                .attr("font-size", BADGE_R * 1.6)
+                .attr("fill", "white")
+                .text((d) => mdiGlyph((SOURCE_STYLES[d.entry.provenance.source] ?? SOURCE_STYLES.user).icon))
+            // op icons, grouped by kind; a revert shows those of the entry it went back to
+            glyphs.each(function (d) {
+                const prov = d.entry.provenance
+                const groups = groupedOps(prov.source == 'revert' ? prov.reverted_from : prov)
+                const shown = groups.slice(0, MAX_OP_GLYPHS)
+                const row = d3.select(this).append("g")
+                    .attr("class", "history_glyph_ops")
+                    .attr("transform", `translate(${d.r * 0.75 + BADGE_R + 2},${-d.r * 0.75})`)
+                    .attr("opacity", prov.source == 'revert' ? 0.6 : 1)
+                // light backdrop so the icons stay readable over curves
+                row.append("rect")
+                    .attr("x", -1).attr("y", -7)
+                    .attr("width", shown.length * 12 + (groups.length > shown.length ? 12 : 0) + 2)
+                    .attr("height", 14).attr("rx", 3)
+                    .attr("fill", "white").attr("opacity", shown.length ? 0.8 : 0)
+                shown.forEach((group, i) => {
+                    const text = row.append("text")
+                        .attr("x", i * 12)
+                        .attr("dominant-baseline", "central")
+                        .attr("font-family", MDI_FONT_FAMILY)
+                        .attr("font-size", 12)
+                        .style("fill", OP_COLOURS[group.style.direction])
+                        .text(mdiGlyph(group.style.icon))
+                    text.append("title").text(group.ops
+                        .map((op) => `${group.style.label}${op.label ? `: ${op.label}` : ''}`).join("\n"))
+                    if (group.ops.length > 1) {
+                        row.append("text")
+                            .attr("x", i * 12 + 9).attr("y", 6)
+                            .attr("font-size", 7)
+                            .style("fill", OP_COLOURS[group.style.direction])
+                            .text(group.ops.length)
+                    }
+                })
+                if (groups.length > shown.length) {
+                    row.append("text")
+                        .attr("x", shown.length * 12)
+                        .attr("dominant-baseline", "central")
+                        .attr("font-size", 9)
+                        .attr("fill", "dimgrey")
+                        .text(`+${groups.length - shown.length}`)
+                }
+            })
         }
 
 

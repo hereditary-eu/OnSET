@@ -41,12 +41,12 @@
                     </QueryBuilder>
                     <div class="explore_overlay explore_history" v-show="ui_state.show_history">
                         <HistoryView :history='(ui_state.history as QueryHistory)' @compare="compareToCurrent"
-                            @revert="revertToEntry" @show-tooltip="showTooltip"></HistoryView>
+                            @revert="revertToEntry" @show-tooltip="showTooltip" @show-in-chat="showInChat"></HistoryView>
                         <div v-if="ui_state.history_interactive.tooltip.visible" class="history_tooltip"
                             @mouseleave="ui_state.history_interactive.tooltip.visible = false"
                             :style="`top: ${ui_state.history_interactive.tooltip.position.y}px; left: ${ui_state.history_interactive.tooltip.position.x}px;`">
                             <HistoryElement :entry='(ui_state.history_interactive.tooltip.entry as HistoryEntry)'
-                                @compare="compareToCurrent" @revert="revertToEntry">
+                                @compare="compareToCurrent" @revert="revertToEntry" @show-in-chat="showInChat">
                             </HistoryElement>
                         </div>
                     </div>
@@ -67,7 +67,8 @@
                     <AgentChat :session="agent"></AgentChat>
                 </template>
                 <template #progressive>
-                    <ProgressivePanel :store="store" @apply="applyEditorChange"></ProgressivePanel>
+                    <ProgressivePanel :store="store"
+                        @apply="(change, details) => applyEditorChange(change, details, progressiveProvenance(change))"></ProgressivePanel>
                 </template>
                 <template #topics>
                     <div class="explore_topics">
@@ -86,7 +87,7 @@
 <script setup lang="ts">
 import Prism from 'prismjs';
 import 'prismjs/themes/prism.css';
-import { ref, watch, reactive, computed, onMounted } from 'vue'
+import { ref, watch, reactive, computed, onMounted, nextTick } from 'vue'
 import TopicSelector from '@/components/explore/TopicSelector.vue';
 import NodeLinkSelector from '@/components/explore/NodeLinkSelector.vue';
 import QueryBuilder from '@/components/explore/QueryBuilder.vue';
@@ -107,6 +108,7 @@ import { activeConfigId, configStorageKey } from '@/utils/api'
 import { useAgentSession } from '@/utils/agent/agentSession'
 import { applyGraphChange, toAgentGraph } from '@/utils/agent/graph_sync'
 import type { GraphChange, GraphDetails } from '@/utils/agent/protocol'
+import { agentProvenance, progressiveProvenance, type EditProvenance } from '@/utils/sparql/provenance'
 
 
 const graph_view = ref<HTMLElement | null>(null)
@@ -145,6 +147,19 @@ const ui_state = reactive({
 const store = ref(null as NodeLinkRepository | null)
 const old_store = ref(null as NodeLinkRepository | null)
 
+// provenance of the next store change (agent, progressive panel, revert), consumed by the
+// first store watcher run after it, i.e. the one caused by that change; others are the user's
+const PROVENANCE_MAX_AGE_MS = 2000
+let pending_provenance: { provenance: EditProvenance, at: number } | null = null
+const setPendingProvenance = (provenance: EditProvenance) => {
+    pending_provenance = { provenance, at: Date.now() }
+}
+const takePendingProvenance = (): EditProvenance | null => {
+    const pending = pending_provenance
+    pending_provenance = null
+    return pending && Date.now() - pending.at < PROVENANCE_MAX_AGE_MS ? pending.provenance : null
+}
+
 watch(() => selected_topic_ids, () => {
     console.log('selected_topic_ids changed!', selected_topic_ids.value)
 }, { deep: true })
@@ -173,11 +188,12 @@ watch(() => store, () => {
     if (!store.value || store.value.state != RepositoryState.STABLE) {
         return
     }
+    const provenance = takePendingProvenance()
     let new_query_string = store.value.generateQuery()
     if (query_string.value != new_query_string) {
         if (ui_state.history && store.value) {
             console.log('Adding history entry', ui_state.history, store.value)
-            ui_state.history.tryAddEntry(store.value)
+            ui_state.history.tryAddEntry(store.value, provenance)
         }
         updateDiff()
         query_string.value = new_query_string
@@ -237,6 +253,10 @@ const revertToEntry = (entry: HistoryEntry) => {
     }
     ui_state.diff_active = false
     ui_state.simulate = false
+    setPendingProvenance({
+        source: 'revert', ops: [], reverted_to: entry.timestamp,
+        reverted_from: entry.provenance ? jsonClone(entry.provenance) : undefined,
+    })
     store.value = jsonClone(entry.query)
     old_store.value = null
     ui_state.diff = null
@@ -250,7 +270,8 @@ const selected_example = (example: MixedResponse) => {
 
 // agent chat and progressive panel: they edit the editor graph like any other edit, i.e. the
 // change shows up in the change tracking diff and as a history entry (store watcher above)
-const applyEditorChange = (change: GraphChange, details: GraphDetails) => {
+const applyEditorChange = (change: GraphChange, details: GraphDetails, provenance: EditProvenance) => {
+    setPendingProvenance(provenance)
     if (!store.value) {
         store.value = new NodeLinkRepository()
     }
@@ -264,7 +285,7 @@ const applyEditorChange = (change: GraphChange, details: GraphDetails) => {
 }
 const agent = useAgentSession(activeConfigId, {
     read: () => toAgentGraph(store.value),
-    apply: (change, _graph, details) => applyEditorChange(change, details),
+    apply: (change, _graph, details, calls) => applyEditorChange(change, details, agentProvenance(change, calls)),
 }, () => store.value)
 
 const saveState = () => {
@@ -354,6 +375,24 @@ const colour_vars = computed(() => {
         '--c-link-removed': 'rgb(248,212,150)',
     }
 })
+
+// history entry -> the agent's tool calls in the chat (entry ids are only valid in this session)
+function showInChat(chat_entry_ids: string[]) {
+    ui_state.side_tab = 'chat'
+    ui_state.side_collapsed = false
+    nextTick(() => {
+        const elements = chat_entry_ids
+            .map((id) => document.querySelector<HTMLElement>(`[data-chat-entry="${CSS.escape(id)}"]`))
+            .filter((el): el is HTMLElement => !!el)
+        elements[0]?.scrollIntoView({ block: 'center', behavior: 'smooth' })
+        for (const el of elements) {
+            el.classList.remove('chat_entry_flash')
+            void el.offsetWidth
+            el.classList.add('chat_entry_flash')
+            setTimeout(() => el.classList.remove('chat_entry_flash'), 1600)
+        }
+    })
+}
 
 function showTooltip(evt: HistoryTooltipEvent) {
     console.log("Showing History tooltip", evt)

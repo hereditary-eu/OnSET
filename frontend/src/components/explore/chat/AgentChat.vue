@@ -24,7 +24,7 @@
                     <Loading v-if="entry.streaming" class="agent_chat_loading" height="1.5rem" />
                 </div>
                 <ChatThinking v-else-if="entry.kind == 'thinking'" :entry="entry"></ChatThinking>
-                <ChatToolCall v-else-if="entry.kind == 'tool'" :call="entry.call"></ChatToolCall>
+                <ChatToolCall v-else-if="entry.kind == 'tool'" :call="entry.call" :data-chat-entry="entry.id"></ChatToolCall>
                 <div v-else-if="entry.kind == 'notice'" class="agent_chat_notice"
                     :class="{ agent_chat_notice_error: entry.level == 'error' }">
                     <OnsetIcon :icon="entry.level == 'error' ? 'mdi-alert-circle-outline' : 'mdi-information-outline'" />
@@ -179,6 +179,20 @@ watch(() => session.state.entries.length, () => nextTick(() => list.value?.scrol
 .agent_chat_notice {
     font-size: var(--fs-xs);
     opacity: 0.8;
+}
+
+/* a tool call shown from the history (OntologyExplorative showInChat) */
+.chat_entry_flash {
+    animation: chat_entry_flash 1.6s ease-out;
+}
+
+@keyframes chat_entry_flash {
+    0%, 40% {
+        box-shadow: 0 0 0 2px var(--c-accent);
+    }
+    100% {
+        box-shadow: 0 0 0 2px transparent;
+    }
 }
 
 .agent_chat_notice_error {

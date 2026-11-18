@@ -5,6 +5,7 @@ import { scalingFactors } from "./querymapper"
 import { jsonClone, ReconstructableClass, registerClass } from "../parsing"
 import { ManifoldAlg } from "@/api/client.ts/Api"
 import { api } from "@/utils/api"
+import { userProvenance, type EditProvenance } from "./provenance"
 
 
 
@@ -16,6 +17,9 @@ export class HistoryEntry implements ReconstructableClass {
 
     text_representation: string
     embedding: number[] | null
+    /** who made the change (user, agent with its ops, ...); entries saved before it existed are the user's */
+    provenance: EditProvenance
+
 
     offset: Vector2Like = { x: 0, y: 0 }
     scale: number = 1.0
@@ -24,6 +28,7 @@ export class HistoryEntry implements ReconstructableClass {
     constructor(
         query?: NodeLinkRepository,
         previous_diff?: NodeLinkRepositoryDiff | null,
+        provenance?: EditProvenance | null,
     ) {
         if (!query) {
             this.query = new NodeLinkRepository()
@@ -34,12 +39,15 @@ export class HistoryEntry implements ReconstructableClass {
         this.query = jsonClone(query)
         this.previous_diff = jsonClone(previous_diff)
         this.timestamp = Date.now()
+        this.provenance = provenance ? jsonClone(provenance) : userProvenance()
 
         this.embedding = null
         this.fillEmbedding()
     }
     postConstruct(): void {
-        //no-op
+        if (!this.provenance) {
+            this.provenance = userProvenance()
+        }
     }
     private fillEmbedding() {
         if (this.embedding === null) {
@@ -76,8 +84,9 @@ export class QueryHistory implements ReconstructableClass {
     get length(): number { return Object.keys(this.history).length }
     get reverse_entries(): HistoryEntry[] { return Object.values(this.history).reverse() }
     get entries(): HistoryEntry[] { return Object.values(this.history) }
+    /** Adds the query as an entry if it differs from the last one; `provenance` tags who changed it. */
     tryAddEntry(
-        query: NodeLinkRepository): NodeLinkRepositoryDiff | null {
+        query: NodeLinkRepository, provenance?: EditProvenance | null): NodeLinkRepositoryDiff | null {
         let diff: NodeLinkRepositoryDiff | null = null
         let add = false
         if (query.state === RepositoryState.EDITING) {
@@ -103,7 +112,7 @@ export class QueryHistory implements ReconstructableClass {
             }
         }
         if (add) {
-            let new_entry = new HistoryEntry(query, diff)
+            let new_entry = new HistoryEntry(query, diff, provenance)
             this.history[new_entry.timestamp] = new_entry
         }
         return add ? diff : null
