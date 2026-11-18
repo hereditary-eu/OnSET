@@ -287,6 +287,14 @@ export class QueryProp extends SubQuery {
 }
 
 
+/** Geometry literal types, shown as plain properties (e.g. for the results map). */
+export const GEO_PROP_TYPES = [
+    'geo:wktLiteral', 'geo:geoJSONLiteral',
+    'http://www.opengis.net/ont/geosparql#wktLiteral', 'http://www.opengis.net/ont/geosparql#geoJSONLiteral',
+]
+@registerSubquery(GEO_PROP_TYPES, [])
+export class GeoProp extends QueryProp { }
+
 @registerSubquery([])
 export class SubjectConstraint extends SubQuery {
     instance: Instance;
