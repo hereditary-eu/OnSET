@@ -286,7 +286,9 @@ class TopicInitator:
                     onto_hash=self.guidance_man.identifier,
                     # embedding=prop_embedding,
                     label=p.label,
-                    instance_count=self.guidance_man.oman.property_count(p.subject_id),
+                    instance_count=self.guidance_man.oman.property_count(
+                        p.subject_id, cls.subject_id
+                    ),
                 )
             )
         return subject_links

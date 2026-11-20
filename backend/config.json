@@ -289,7 +289,12 @@
       "description": "Embeddings of genes associated with Amyotrophic Lateral Sclerosis (ALS) over the HERO ontology.",
       "conn_str": "postgresql+psycopg://postgres:postgres@${ONSET_DB_ENDPOINT:-localhost:5434}/onset-als-emb",
       "sparql_endpoint": "http://${ALS_EMB_SPARQL_ENDPOINT:-localhost}:7019",
-      "selection_distribution": "uniform"
+      "selection_distribution": "uniform",
+      "multimodal_config": {
+        "image_vector_properties": [
+          "<https://w3id.org/hereditary/ontology/genomics/schema/caseLevelEmbedding>"
+        ]
+      }
     }
   },
   "builders": {

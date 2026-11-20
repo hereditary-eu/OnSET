@@ -578,11 +578,24 @@ OPTIONAL {{?obj rdfs:label ?obj_lbl.}}
             f"SELECT DISTINCT (COUNT(?s) as ?count) WHERE {{?s a {cls}}}"
         )[0][0]
 
-    def property_count(self, cls: str):
+    def property_count(self, cls: str, domain: str | None = None):
         cls = self.wrap_iri(cls)
-        return list(
-            self.__query(f"SELECT DISTINCT (COUNT(?s) as ?count) WHERE {{?s {cls} ?o}}")
-        )[0][0]
+        if domain is not None:
+            domain = self.wrap_iri(domain)
+            return next(
+                iter(
+                    self.__query(
+                        f"SELECT DISTINCT (COUNT(?s) as ?count) WHERE {{?s {cls} ?o. ?s a {domain}}}"
+                    )
+                )
+            )[0]
+        return next(
+            iter(
+                self.__query(
+                    f"SELECT DISTINCT (COUNT(?s) as ?count) WHERE {{?s {cls} ?o}}"
+                )
+            )
+        )[0]
 
     def get_parents(self, cls: str) -> list[str]:
         cls = self.wrap_iri(cls)
