@@ -13,7 +13,7 @@ import numpy as np
 from eval_config import EvalConfig
 from explorative.exp_model import TopicDB, SubjectLinkDB, SubjectInDB, BasePostgres
 from explorative.explorative_support import GuidanceManager
-
+from sqlalchemy.exc import IntegrityError
 from utils import to_readable
 
 # System prompt describes information given to all conversations
@@ -407,22 +407,13 @@ class TopicInitator:
                     for p in cls.properties[prop]:
                         subject_links = self.embed_property(p, cls)
                         for link in subject_links:
-                            existing_link = session.execute(
-                                select(SubjectLinkDB)
-                                .where(
-                                    SubjectLinkDB.property_id == link.property_id,
-                                    SubjectLinkDB.onto_hash
-                                    == self.guidance_man.identifier,
-                                )
-                                .limit(1)
-                            ).first()
-                            if existing_link is not None:
-                                print(
-                                    f"Link for property {link.property_id} already exists, deleting and re-adding"
-                                )
-                                session.delete(existing_link[0])
+                            try:
+                                session.add(link)
                                 session.commit()
-                        session.add_all(subject_links)
+                            except IntegrityError as e:
+                                print(f"Error adding link: {e}")
+                                session.rollback()
+
                         # print(f"Class {to_id} does not exist, skipping")
             all_links = session.query(SubjectLinkDB).yield_per(100).all()
             for i, link in enumerate(tqdm(all_links, desc="Fixing props links")):

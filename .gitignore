@@ -24,3 +24,6 @@ backend/query-sessions/
 exploration/extraction-speed
 *.sql
 *.pdf
+*.jsonl
+*.tsv
+als-gene-embeddings

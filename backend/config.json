@@ -3,7 +3,7 @@
   "defaults": {
     "model_id": "${LLM_MODEL_ID:-NousResearch/Hermes-3-Llama-3.2-3B-GGUF}",
     "model_quant": "${LLM_MODEL_QUANT:-*Q8_0.gguf}",
-    "device": "${LLM_DEVICE:-cuda}",
+    "device": "${LLM_DEVICE:-auto}",
     "conn_str": "postgresql+psycopg://postgres:postgres@${ONSET_DB_ENDPOINT:-localhost:5434}/onset",
     "sparql_endpoint": "${ONSET_SPARQL_ENDPOINT:-http://localhost:7012}",
     "redis_cache_url": "${REDIS_CACHE_URL:-redis://localhost:6379/1}",
@@ -86,6 +86,11 @@
         {
           "name": "DBpedia large",
           "model_id": "NousResearch/Hermes-3-Llama-3.1-8B-GGUF"
+        },
+        {
+          "name": "Dbpedia Qwen3.8 27B",
+          "model_id": "unsloth/Qwen3.8-27B-GGUF",
+          "model_quant": "*-Q4_0.gguf"
         }
       ]
     },
@@ -114,6 +119,11 @@
         {
           "name": "OMA large",
           "model_id": "NousResearch/Hermes-3-Llama-3.1-8B-GGUF"
+        },
+        {
+          "name": "OMA Qwen3.8 27B",
+          "model_id": "unsloth/Qwen3.8-27B-GGUF",
+          "model_quant": "*-Q4_0.gguf"
         }
       ]
     },
@@ -140,8 +150,9 @@
           "model_quant": "*-Q4_K_L.gguf"
         },
         {
-          "name": "UniProt large",
-          "model_id": "NousResearch/Hermes-3-Llama-3.1-8B-GGUF"
+          "name": "UniProt Qwen3.8 27B",
+          "model_id": "unsloth/Qwen3.8-27B-GGUF",
+          "model_quant": "*-Q4_0.gguf"
         }
       ]
     },
@@ -170,6 +181,11 @@
         {
           "name": "DNB large",
           "model_id": "NousResearch/Hermes-3-Llama-3.1-8B-GGUF"
+        },
+        {
+          "name": "DNB Qwen3.8 27B",
+          "model_id": "unsloth/Qwen3.8-27B-GGUF",
+          "model_quant": "*-Q4_0.gguf"
         }
       ]
     },
@@ -197,6 +213,11 @@
         {
           "name": "Yago 8B",
           "model_id": "NousResearch/Hermes-3-Llama-3.1-8B-GGUF"
+        },
+        {
+          "name": "Yago Qwen3.8 27B",
+          "model_id": "unsloth/Qwen3.8-27B-GGUF",
+          "model_quant": "*-Q4_0.gguf"
         }
       ]
     },
@@ -225,6 +246,11 @@
         {
           "name": "BTO large",
           "model_id": "NousResearch/Hermes-3-Llama-3.1-8B-GGUF"
+        },
+        {
+          "name": "BTO Qwen3.8 27B",
+          "model_id": "unsloth/Qwen3.8-27B-GGUF",
+          "model_quant": "*-Q4_0.gguf"
         }
       ]
     },
@@ -243,6 +269,11 @@
         {
           "name": "GutBrainIE 8B",
           "model_id": "NousResearch/Hermes-3-Llama-3.1-8B-GGUF"
+        },
+        {
+          "name": "GutBrainIE Qwen3.8 27B",
+          "model_id": "unsloth/Qwen3.8-27B-GGUF",
+          "model_quant": "*-Q4_0.gguf"
         }
       ]
     },
@@ -251,6 +282,13 @@
       "description": "DBLP computer science bibliography dump.",
       "conn_str": "postgresql+psycopg://postgres:postgres@${ONSET_DB_ENDPOINT:-localhost:5434}/onset-dblp",
       "sparql_endpoint": "http://${DBLP_SPARQL_ENDPOINT:-localhost}:9601",
+      "selection_distribution": "uniform"
+    },
+    "als-emb": {
+      "name": "ALS Gene Embeddings",
+      "description": "Embeddings of genes associated with Amyotrophic Lateral Sclerosis (ALS) over the HERO ontology.",
+      "conn_str": "postgresql+psycopg://postgres:postgres@${ONSET_DB_ENDPOINT:-localhost:5434}/onset-als-emb",
+      "sparql_endpoint": "http://${ALS_EMB_SPARQL_ENDPOINT:-localhost}:7019",
       "selection_distribution": "uniform"
     }
   },

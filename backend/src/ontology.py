@@ -440,7 +440,9 @@ OPTIONAL {{?obj rdfs:label ?obj_lbl.}}
         Like properties_for, but in one query and including inherited properties;
         a property without (or with a blank-node) range has range None.
         """
-        classes = {self.wrap_iri(c) for c in self.get_parents(cls)} | {self.wrap_iri(cls)}
+        classes = {self.wrap_iri(c) for c in self.get_parents(cls)} | {
+            self.wrap_iri(cls)
+        }
         query = f"""
             SELECT DISTINCT ?prop ?range WHERE {{
                 VALUES ?cls {{ {" ".join(sorted(classes))} }}
@@ -461,7 +463,10 @@ OPTIONAL {{?obj rdfs:label ?obj_lbl.}}
         for prop, range_ in rows:
             if not isinstance(prop, URIRef):
                 continue
-            key = (self.to_readable(prop), self.to_readable(range_) if isinstance(range_, URIRef) else None)
+            key = (
+                self.to_readable(prop),
+                self.to_readable(range_) if isinstance(range_, URIRef) else None,
+            )
             properties[key] = None
         return list(properties)
 
@@ -477,6 +482,8 @@ OPTIONAL {{?obj rdfs:label ?obj_lbl.}}
                 }"""
             )
         )
+        if len(open_properties) == 0:
+            return []
         return [prop[0].n3(self.onto.namespace_manager) for prop in open_properties]
 
     def enrich_subject(
@@ -484,7 +491,11 @@ OPTIONAL {{?obj rdfs:label ?obj_lbl.}}
     ):
         if cls is None:
             return None
-        col_ref = cls.n3(self.onto.namespace_manager) if hasattr(cls, "n3") else self.wrap_iri(cls)
+        col_ref = (
+            cls.n3(self.onto.namespace_manager)
+            if hasattr(cls, "n3")
+            else self.wrap_iri(cls)
+        )
 
         # print("Enriching", col_ref)
         outgoing_edges = self.outgoing_edges_for(

@@ -5,24 +5,23 @@ from collections import OrderedDict
 from functools import cached_property, partial
 from typing import Annotated
 
-from fastapi import Depends, HTTPException, WebSocketException, status
-from starlette.requests import HTTPConnection
-
+import rdflib.plugins.stores.sparqlconnector as sparqlconnector
 from agent.llm import AgentLLM
 from agent.session import AgentSession, AgentSessionStore
-from assistant.iterative_assistant import IterativeAssistant
 from assistant.assistant_model import Operations
+from assistant.iterative_assistant import IterativeAssistant
 from assistant.progressive import ProgressiveResult, ProgressiveSampler
 from datasetmatcher import DatasetManager
 from eval_config import CONFIG_FILE, EvalConfig, MultimodalConfig
 from explorative.explorative_support import GuidanceManager
 from explorative.llm_query import LLMQuery
+from fastapi import Depends, HTTPException, WebSocketException, status
 from initiator import InitatorManager
 from ontology import Graph, OntologyConfig, OntologyManager
-from redis_cache import RedisCache
-
-import rdflib.plugins.stores.sparqlconnector as sparqlconnector
 from rdflib.plugins.stores.sparqlstore import SPARQLStore
+from redis_cache import RedisCache
+from starlette.requests import HTTPConnection
+from utils import get_best_device
 
 # rdflib's SPARQLConnector ignores its ``timeout`` argument and calls urlopen without one, so a
 # stalled endpoint blocks request threads forever (until the whole threadpool hangs)
@@ -75,13 +74,13 @@ class ManMan:
         self.ontology_manager = OntologyManager(self.config, self.graph)
         # initialised lazily by GET /classes/outlinks
         self.dataset_manager = DatasetManager(self.ontology_manager)
-
+        device = get_best_device(db_config.device)
         self.guidance_man = GuidanceManager(
             self.ontology_manager,
             conn_str=db_config.conn_str,
             llm_model_id=db_config.model_id,
             llm_quant_model=db_config.model_quant,
-            device=db_config.device,
+            device=device,
         )
 
         self.llm_query = LLMQuery(
@@ -120,7 +119,6 @@ class ManMan:
             lambda session_id: self.build_agent_session(session_id),
         )
 
-
     # --- progressive discovery (api/router/progressive.py), created on first use ---
 
     @cached_property
@@ -134,7 +132,9 @@ class ManMan:
 
     @cached_property
     def progressive_cache(self) -> RedisCache[ProgressiveResult]:
-        return RedisCache(redis_url=self.db_config.redis_cache_url, model=ProgressiveResult)
+        return RedisCache(
+            redis_url=self.db_config.redis_cache_url, model=ProgressiveResult
+        )
 
 
 class ManManRegistry:
@@ -188,7 +188,9 @@ def get_manman(connection: HTTPConnection) -> ManMan:
         # a builder session (builder/kg.py): builder:<builder_id>:<session_id>
         from api.router.builder import get_session
 
-        builder_id, _, session_id = config_id[len(BUILDER_CONFIG_PREFIX):].partition(":")
+        builder_id, _, session_id = config_id[len(BUILDER_CONFIG_PREFIX) :].partition(
+            ":"
+        )
         if session_id:
             return get_session(builder_id, session_id).kg
     if config_id is None or config_id not in REGISTRY:

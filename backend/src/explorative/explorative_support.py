@@ -1,37 +1,39 @@
 from __future__ import annotations
 
+import logging
 import threading
 from contextlib import contextmanager
 from hashlib import sha256
+from logging import getLogger
 from typing import Iterator
 
 import torch
+from explorative.data_tensor import DataTensor
+from explorative.exp_model import (
+    FUZZY_QUERY_ORDER,
+    N_EMBEDDINGS,
+    RELATION_TYPE,
+    RETURN_TYPE,
+    FuzzyQuery,
+    FuzzyQueryResult,
+    FuzzyQueryResults,
+    SubjectInDB,
+    SubjectLinkDB,
+    Topic,
+    TopicDB,
+)
+from explorative.schema_index import SchemaClass, SchemaIndex, SchemaLink
 from langchain_core.language_models import LLM
 from llama_cpp import Llama
+from model import SubjectLink
+from ontology import OntologyManager
 from PIL.Image import Image
 from sentence_transformers import SentenceTransformer
 from sqlalchemy import Engine, create_engine, select, text
 from sqlalchemy.orm import Session
+from utils import get_best_device, wrap_iri
 
-from explorative.data_tensor import DataTensor
-from explorative.schema_index import SchemaClass, SchemaIndex, SchemaLink
-from model import SubjectLink
-from ontology import OntologyManager
-from utils import wrap_iri
-
-from explorative.exp_model import (
-    TopicDB,
-    SubjectLinkDB,
-    SubjectInDB,
-    FuzzyQueryResult,
-    FuzzyQuery,
-    N_EMBEDDINGS,
-    RETURN_TYPE,
-    RELATION_TYPE,
-    FUZZY_QUERY_ORDER,
-    FuzzyQueryResults,
-    Topic,
-)
+log = getLogger(__name__)
 
 
 @contextmanager
@@ -56,12 +58,7 @@ class GuidanceManager:
     ) -> None:
         self.oman = oman
         if device is None:
-            if torch.cuda.is_available():
-                device = "cuda"
-            elif torch.mps.is_available():
-                device = "mps"
-            else:
-                device = "cpu"
+            device = get_best_device(device)
         print("Using device", device)
         self.device = device
         self._encoding_model = None
@@ -130,6 +127,7 @@ class GuidanceManager:
         return self.__embedding_model
 
     def _load_embedding_model(self):
+        log.info("Loading embedding model to device %s", self.device)
         return SentenceTransformer(
             "dunzhang/stella_en_400M_v5",
             trust_remote_code=True,
@@ -151,7 +149,9 @@ class GuidanceManager:
                 if self._schema_index is None:
                     index = self.load_schema_index()
                     if len(index) == 0:
-                        raise RuntimeError(f"no stored schema for the ontology {self.identifier}, initialise it first")
+                        raise RuntimeError(
+                            f"no stored schema for the ontology {self.identifier}, initialise it first"
+                        )
                     self._schema_index = index
         return self._schema_index
 

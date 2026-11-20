@@ -42,6 +42,10 @@ restart() {
     stop
     start
 }
+index() {
+    echo "Indexing data..."
+    docker run -it --rm -u $(id -u):$(id -g) --name $CONTAINER_NAME -v ./dbpedia/index-encoded:/data ./nt -w /data qlever:tensors  bash -c "qlever-indexer -i $INDEX_NAME -p 1 -m 10g -f /data/dbpedia-encoded.nt"
+}
 
 
 case "$2" in
@@ -64,6 +68,9 @@ case "$1" in
     restart)
         restart
         ;;
+    index)
+        index
+        ;;
     *)
-        echo "Usage: $0 {start|start-interactive|stop|restart}"
+        echo "Usage: $0 {start|start-interactive|stop|restart|index} [--force]"
 esac
