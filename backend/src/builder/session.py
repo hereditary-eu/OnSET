@@ -9,9 +9,7 @@ Linux x86_64 only) and an in-memory rdflib store elsewhere.
 """
 
 import json
-import os
 import random
-import re
 import threading
 import time
 import uuid
@@ -40,21 +38,13 @@ from builder.ontology import (
     rebase,
 )
 from eval_config import BuilderConfig, DisambiguationSettings
+from session_history import (
+    EditHistory, HistoryInfo, HistoryRecord, HistoryUpdate, check_session_id, write_atomic,
+)
 
 ExportContent = TLiteral["ontology", "kg", "all"]
 # builds of sessions nobody looked at for this long pause (they share the extraction model)
 IDLE_PAUSE_SECONDS = 60
-# session ids are file names in the save dir: no dots or slashes (path traversal, suffixes)
-SESSION_ID_PATTERN = re.compile(r"[A-Za-z0-9_-]{1,64}")
-
-
-def check_session_id(session_id: str) -> str:
-    """``session_id`` if it is a valid session id (ValueError otherwise)."""
-    if not SESSION_ID_PATTERN.fullmatch(session_id):
-        raise ValueError(f"Invalid session id '{session_id}' (letters, digits, '-' and '_' only, at most 64)")
-    return session_id
-
-
 def add_all(graph: Graph, triples, chunk: int = 10_000):
     """Add ``triples`` in a few batched updates: Tentris runs every ``Graph.add`` as an update
     of its own whose cost grows with the store (5 ms per triple at 160k triples, a batch of
@@ -205,6 +195,9 @@ class BuilderSession:
         # (``user_message`` frames and the final protocol frames, agent.protocol.ChatHistory)
         self.chat_history: list[dict] = []
         self.chat_log: list[dict] = []
+        # the frontend's edit history of the ontology (session_history.py), saved in a file of its
+        # own (history_path) on every change, also before the session's state is first saved
+        self.history = self._load_history()
         self.restore()
 
     # --- state ---
@@ -277,6 +270,25 @@ class BuilderSession:
         with self._lock:
             self.chat_history, self.chat_log = [], []
             self.persist()
+
+    # --- edit history of the ontology ---
+
+    def history_records(self) -> list[HistoryRecord]:
+        self.last_access = time.monotonic()
+        return self.history.records()
+
+    def update_history(self, update: HistoryUpdate) -> HistoryInfo:
+        """Apply the frontend's history changes and save the history if they changed it."""
+        self.last_access = time.monotonic()
+        if self.history.apply(update):
+            with self._lock:
+                write_atomic(self.history_path, self.history.dumps())
+        return self.history.info()
+
+    def _load_history(self) -> EditHistory:
+        if self.history_path.exists():
+            return EditHistory(json.loads(self.history_path.read_text()))
+        return EditHistory()
 
     @cached_property
     def kg(self):
@@ -566,6 +578,10 @@ class BuilderSession:
     def imported_path(self) -> Path:
         return self.save_path.with_name(f"{self.session_id}.imported.ttl")
 
+    @property
+    def history_path(self) -> Path:
+        return self.save_path.with_name(f"{self.session_id}.history.json")
+
     def persist(self, imported: bool = False):
         """Write the session's state (ontology with layout, query, visual query, agent chat,
         disambiguation settings) to
@@ -580,11 +596,8 @@ class BuilderSession:
             files = {self.state_path: json.dumps(state, indent=2)}
             if imported:
                 files[self.imported_path] = self.imported.serialize(format="turtle")
-            self.state_path.parent.mkdir(parents=True, exist_ok=True)
             for path, text in files.items():
-                tmp = path.with_name(path.name + ".tmp")
-                tmp.write_text(text)
-                os.replace(tmp, path)
+                write_atomic(path, text)
 
     def save(self, content: ExportContent = "all", prefix: str | None = None) -> str:
         """Write the session's state and a TTL export to the save dir."""

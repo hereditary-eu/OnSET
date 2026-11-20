@@ -1,10 +1,11 @@
-// Provenance of query history entries: who changed the query graph (the user, the agent, the
-// progressive panel, a revert) and, for the agent, which operations its tool calls made.
-// HistoryEntry (history.ts) keeps one EditProvenance; it is a plain object, so it survives
-// stringifyJSON/parseJSON with the entry. The history views draw the icons below.
+// Provenance of history entries: who changed the query graph or, in the ontology builder, the
+// ontology (the user, the agent, the progressive panel, a revert, an import) and which operations
+// the change made (for the agent, with its tool calls). HistoryEntry (history.ts) and the builder's
+// OntologyHistoryEntry (utils/builder/history.ts) keep one EditProvenance; it is a plain object, so
+// it survives stringifyJSON/parseJSON with the entry. The history views draw the icons below.
 import type { AgentLink, GraphChange, SubQueryChange, ToolCallMessage } from '@/utils/agent/protocol'
 
-export type EditSource = 'user' | 'agent' | 'progressive' | 'revert'
+export type EditSource = 'user' | 'agent' | 'progressive' | 'revert' | 'import'
 
 export type EditOpKind =
     | 'add_subject' | 'remove_subject'
@@ -15,6 +16,10 @@ export type EditOpKind =
     | 'add_sort' | 'remove_sort'
     | 'add_group' | 'remove_group'
     | 'add_aggregate' | 'remove_aggregate'
+    // ontology builder
+    | 'add_class' | 'remove_class' | 'change_class'
+    | 'add_field' | 'remove_field' | 'change_field'
+    | 'change_link'
     | 'other'
 
 /** One operation of an edit, e.g. a subject the agent added. */
@@ -69,6 +74,13 @@ export const OP_STYLES: Record<EditOpKind, OpStyle> = {
     remove_group: { icon: 'mdi-ungroup', label: 'Removed grouping', direction: 'remove' },
     add_aggregate: { icon: 'mdi-sigma', label: 'Added aggregate', direction: 'add' },
     remove_aggregate: { icon: 'mdi-sigma', label: 'Removed aggregate', direction: 'remove' },
+    add_class: { icon: 'mdi-plus-box-outline', label: 'Added class', direction: 'add' },
+    remove_class: { icon: 'mdi-minus-box-outline', label: 'Removed class', direction: 'remove' },
+    change_class: { icon: 'mdi-pencil-box-outline', label: 'Changed class', direction: 'change' },
+    add_field: { icon: 'mdi-table-row-plus-after', label: 'Added field', direction: 'add' },
+    remove_field: { icon: 'mdi-table-row-remove', label: 'Removed field', direction: 'remove' },
+    change_field: { icon: 'mdi-table-edit', label: 'Changed field', direction: 'change' },
+    change_link: { icon: 'mdi-link-variant', label: 'Changed link', direction: 'change' },
     other: { icon: 'mdi-pencil-outline', label: 'Changed query', direction: 'change' },
 }
 
@@ -77,6 +89,7 @@ export const SOURCE_STYLES: Record<EditSource, { icon: string, label: string }> 
     agent: { icon: 'mdi-robot-outline', label: 'Edited by the agent' },
     progressive: { icon: 'mdi-chart-histogram', label: 'Applied from progressive discovery' },
     revert: { icon: 'mdi-backup-restore', label: 'Reverted' },
+    import: { icon: 'mdi-database-import-outline', label: 'Loaded or imported' },
 }
 
 export function userProvenance(): EditProvenance {
@@ -255,3 +268,17 @@ export function mdiGlyph(icon: string): string {
 }
 
 export const MDI_FONT_FAMILY = '"Material Design Icons"'
+
+/** Scrolls to the chat entries (ChatEntry.id, e.g. of a history entry's tool calls) and flashes them. */
+export function flashChatEntries(chat_entry_ids: string[]) {
+    const elements = chat_entry_ids
+        .map((id) => document.querySelector<HTMLElement>(`[data-chat-entry="${CSS.escape(id)}"]`))
+        .filter((el): el is HTMLElement => !!el)
+    elements[0]?.scrollIntoView({ block: 'center', behavior: 'smooth' })
+    for (const el of elements) {
+        el.classList.remove('chat_entry_flash')
+        void el.offsetWidth
+        el.classList.add('chat_entry_flash')
+        setTimeout(() => el.classList.remove('chat_entry_flash'), 1600)
+    }
+}

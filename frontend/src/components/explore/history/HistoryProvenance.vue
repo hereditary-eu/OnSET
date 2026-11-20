@@ -69,7 +69,8 @@ const linkable = computed(() => prov.value.source == 'agent' && !!prov.value.cha
 }
 
 .history_prov_progressive .history_prov_badge,
-.history_prov_revert .history_prov_badge {
+.history_prov_revert .history_prov_badge,
+.history_prov_import .history_prov_badge {
     color: var(--c-surface);
     background: var(--c-link-normal);
 }

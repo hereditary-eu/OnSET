@@ -1,17 +1,20 @@
 <template>
-    <!-- GROUP BY toggle and aggregate of a node or property (see AggregateFunction) -->
-    <span v-if="visible" class="aggregate_controls" @pointerdown.stop @focusin="focused = true"
-        @focusout="focused = false">
+    <!-- GROUP BY toggle and aggregate of a node or property (see AggregateFunction).
+         The controls keep their size while hovered (no popping): the aggregate select is a
+         compact Σ until an aggregate is set; collapsible controls fade instead of (un)mounting. -->
+    <span class="aggregate_controls" :class="{ aggregate_hidden: !visible }" @pointerdown.stop
+        @focusin="focused = true" @focusout="focused = false">
         <OnsetBtn v-if="!readonly" size="small" :model-value="target.group_by" @update:model-value="setGroupBy"
             icon="mdi-group" btn_height="1.25rem" :title="target.group_by ? 'Grouped by (click to ungroup)' : 'Group by'" />
         <OnsetIcon v-else-if="target.group_by" icon="mdi-group" title="Grouped by" />
         <template v-if="!target.group_by">
-            <select v-if="!readonly && (expanded || focused || target.aggregate)" class="aggregate_select" :value="target.aggregate ?? ''"
-                title="Aggregate" @change="setAggregate">
-                <option value="">{{ target.aggregate ? 'none' : 'aggregate…' }}</option>
+            <select v-if="!readonly" class="aggregate_select" :class="{ aggregate_select_empty: !target.aggregate }"
+                :value="target.aggregate ?? ''" :title="target.aggregate ? 'Aggregate' : 'Aggregate…'"
+                @change="setAggregate">
+                <option value="">{{ target.aggregate ? 'none' : 'Σ' }}</option>
                 <option v-for="fn in options" :key="fn" :value="fn">{{ AGGREGATE_LABELS[fn] }}</option>
             </select>
-            <span v-else-if="readonly && target.aggregate" class="constraint_aggregate">{{ AGGREGATE_LABELS[target.aggregate] }}</span>
+            <span v-else-if="target.aggregate" class="constraint_aggregate">{{ AGGREGATE_LABELS[target.aggregate] }}</span>
         </template>
     </span>
 </template>
@@ -31,7 +34,7 @@ const { target, kind, expanded, readonly, collapsible } = defineProps({
         type: String as () => AggregateKind,
         default: AggregateKind.TEXT
     },
-    // show the aggregate dropdown even if no aggregate is set (e.g. while hovered)
+    // show collapsible controls even if nothing is set (e.g. while hovered)
     expanded: {
         type: Boolean,
         default: true
@@ -71,6 +74,12 @@ const setAggregate = (event: Event) => {
     display: inline-flex;
     align-items: center;
     gap: 2px;
+    transition: opacity 120ms ease;
+}
+
+.aggregate_controls.aggregate_hidden {
+    opacity: 0;
+    pointer-events: none;
 }
 
 .aggregate_controls .aggregate_select {
@@ -80,6 +89,16 @@ const setAggregate = (event: Event) => {
     border: 1px solid rgb(105, 132, 99);
     border-radius: 0;
     background: var(--c-surface);
+}
+
+/* no aggregate yet: a fixed-size Σ instead of the widest option's width */
+.aggregate_controls .aggregate_select_empty {
+    width: 1.25rem;
+    padding: 0;
+    text-align: center;
+    text-align-last: center;
+    appearance: none;
+    cursor: pointer;
 }
 
 .constraint_aggregate {

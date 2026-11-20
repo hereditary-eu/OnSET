@@ -99,9 +99,14 @@ export class QueryMapper {
             query: this.store.generateQuery(limit, skip),
         })
         // console.log("Copied node", copied_store, stringifyJSON(this.store))
+        const aggregating = this.store.hasAggregation()
         let mapped_stores = response.data.map((instance_data) => {
             let copied_store: InstanceNodeLinkRepository = parseJSON<InstanceNodeLinkRepository>(stringifyJSON(this.store))
             let mapped_nodes = copied_store.nodes.map((node) => {
+                if (aggregating && !node.group_by) {
+                    // the implicit aggregate (e.g. a count) of the node, so it is shown as such
+                    node.aggregate = this.store.nodeAggregate(node)
+                }
                 return new InstanceNode(node, instance_data as Record<string, string>)
             })
             let mapped_links = copied_store.links.map((link) => {

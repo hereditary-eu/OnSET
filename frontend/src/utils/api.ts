@@ -39,11 +39,15 @@ export function configWebSocketUrl(configId: string, path: string): URL {
 
 /**
  * The single client for all configuration-scoped backend operations.
- * Every request is routed to `${BACKEND_URL}/${activeConfigId}` at the time it is sent.
+ * Every request is routed to `${BACKEND_URL}/${activeConfigId}` at the time it is sent, unless it
+ * names its configuration with `{ baseURL: configBaseUrl(configId) }` (e.g. a delayed save that
+ * belongs to the configuration it was made in).
  */
 export const api = new Api<unknown>({ baseURL: BACKEND_URL })
 api.instance.interceptors.request.use((request) => {
-    request.baseURL = configBaseUrl(requireActiveConfig())
+    if (!request.baseURL || request.baseURL == BACKEND_URL) {
+        request.baseURL = configBaseUrl(requireActiveConfig())
+    }
     return request
 })
 

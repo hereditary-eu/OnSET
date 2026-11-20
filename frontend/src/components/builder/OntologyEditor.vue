@@ -124,12 +124,8 @@ import OnsetIcon from '@/components/ui/OnsetIcon.vue'
 import { FIELD_TYPES, toId, uniqueId, type FieldType, type OntoClass, type OntoField, type OntoLink, type Ontology } from '@/utils/builder/api'
 import { linkGeometry, parallelIndex, pointerDrag } from '@/utils/graph-layout'
 import { centerTransform, nodesBox } from '@/utils/sparql/fit'
-
-const CARD_W = 190
-// must match the card CSS below (header, rows, padding)
-const HEADER_H = 24
-const ROW_H = 18
-const PAD = 4
+// CARD_W, HEADER_H, ROW_H and PAD must match the card CSS below
+import { CARD_W, classPos, classRect, gridPos } from '@/utils/builder/layout'
 
 const ontology = defineModel<Ontology>({ required: true })
 const emit = defineEmits<{ query: [class_id: string] }>()
@@ -157,10 +153,8 @@ const selected_link = computed(() => selected.value?.kind == 'link'
     ? ontology.value.links.find((l) => l.id == selected.value!.id) : undefined)
 
 // classes without a position (e.g. added by the agent) are laid out on a grid
-const gridPos = (i: number) => ({ x: 20 + (i % 3) * (CARD_W + 120), y: 60 + Math.floor(i / 3) * 170 })
-const pos = (cls: OntoClass) => cls.x != null && cls.y != null ? { x: cls.x, y: cls.y }
-    : gridPos(ontology.value.classes.indexOf(cls))
-const rect = (cls: OntoClass) => ({ ...pos(cls), w: CARD_W, h: HEADER_H + Math.max(1, cls.fields.length) * ROW_H + PAD })
+const pos = (cls: OntoClass) => classPos(ontology.value, cls)
+const rect = (cls: OntoClass) => classRect(ontology.value, cls)
 
 const extent = computed(() => ontology.value.classes.map(rect).reduce(
     (e, r) => ({ x: Math.max(e.x, r.x + r.w + 60), y: Math.max(e.y, r.y + r.h + 60) }), { x: 0, y: 0 }))

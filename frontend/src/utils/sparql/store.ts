@@ -261,8 +261,25 @@ export class NodeLinkRepository<N extends SubjectNode = SubjectNode, L extends L
             (node.subqueries || []).some((sq) => sq != null && sq.aggregatable && isAggregated(sq)))
     }
     /**
+     * Aggregate of a node's variable in an aggregate query (null if grouped). A node that is
+     * neither grouped nor aggregated is counted (COUNT DISTINCT, e.g. the ships per homeport),
+     * unless one of its properties is grouped: then the group (nearly) determines it and it is
+     * sampled (e.g. the place of a grouped place label).
+     */
+    nodeAggregate(node: SubjectNode): AggregateFunction | null {
+        if (node.group_by) {
+            return null
+        }
+        if (node.aggregate) {
+            return node.aggregate
+        }
+        const grouped_property = (node.subqueries || []).some((sq) => sq != null && sq.aggregatable && sq.group_by)
+        return grouped_property ? AggregateFunction.SAMPLE : AggregateFunction.COUNT_DISTINCT
+    }
+    /**
      * Projection of the aggregate query of a query set: grouped nodes/properties as they are,
-     * everything not grouped through its aggregate, SAMPLE by default; labels only for grouped
+     * everything not grouped through its aggregate (properties: SAMPLE by default, nodes: see
+     * nodeAggregate); labels only for grouped
      * nodes (see AggregationPlan). Vector sorts order the groups by their best similarity (MAX,
      * MIN if ascending).
      */
@@ -272,7 +289,7 @@ export class NodeLinkRepository<N extends SubjectNode = SubjectNode, L extends L
         const nodes = Object.values(set.nodes)
         const label_of = new Map<string, string>()
         for (const node of nodes) {
-            modes.set(node.outputId(), node.group_by ? "group" : (node.aggregate ?? AggregateFunction.SAMPLE))
+            modes.set(node.outputId(), this.nodeAggregate(node) ?? "group")
             modes.set(node.labelId(), node.group_by ? "label" : "drop")
             label_of.set(node.labelId(), node.outputId())
         }
@@ -327,7 +344,7 @@ export class NodeLinkRepository<N extends SubjectNode = SubjectNode, L extends L
         PREFIX tensorIndex: <https://qlever.cs.uni-freiburg.de/tensorIndex/>
         PREFIX dtf: <https://w3id.org/rdf-tensor/functions#>${plan?.tensor ? `
         PREFIX dta: <${TENSOR_AGGREGATES_NS}>` : ""}
-        SELECT ${distinct ? "DISTINCT" : ""} ${plan ? (plan.labels.length ? plan.outer_select : plan.select).join(" ") : `${output_names.join(" ")} ${set.output_ids.join(" ")}`} WHERE {`
+        SELECT ${distinct && !plan ? "DISTINCT" : ""} ${plan ? (plan.labels.length ? plan.outer_select : plan.select).join(" ") : `${output_names.join(" ")} ${set.output_ids.join(" ")}`} WHERE {`
         if (plan && plan.labels.length) {
             query += `\n{ SELECT ${plan.select.join(" ")} WHERE {`
         }

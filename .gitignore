@@ -20,6 +20,7 @@ Qleverfile-ui.yml
 .env
 .claude/worktrees/
 backend/builder-saves/
+backend/query-sessions/
 exploration/extraction-speed
 *.sql
 *.pdf

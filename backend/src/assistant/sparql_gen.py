@@ -31,7 +31,8 @@ Deliberate differences to the editor (known bugs there):
 GROUP BY/aggregates, as the editor (NodeLinkRepository.aggregationPlan): as soon as a
 subject or subquery has ``group_by`` or an ``aggregate``, select mode emits an aggregate
 query. Grouped variables are projected and grouped, every other output through its
-aggregate (SAMPLE by default) under its own name, ``(AVG(?sq_len__agg) AS ?sq_len)``,
+aggregate (subqueries: SAMPLE by default; subjects: COUNT DISTINCT, SAMPLE if one of their
+subqueries is grouped) under its own name, ``(AVG(?sq_len__agg) AS ?sq_len)``,
 with the variable renamed in the WHERE clause (SPARQL forbids an alias bound in the
 pattern), so the columns stay the same. Labels (OPTIONAL joins that would multiply the
 solutions) are only kept for grouped subjects and looked up after the grouping, in an
@@ -513,7 +514,7 @@ class SparqlGenerator:
 
         for i, subject in enumerate(self.graph.subjects):
             var = subject_vars[subject.id]
-            self.modes[var] = self.mode_of(subject)
+            self.modes[var] = self.subject_mode(subject)
             if subject.uri:
                 patterns.append(f"?{var} a {self.iri(subject.uri, f'subject {subject.id}')} .")
             if labels:
@@ -713,6 +714,17 @@ class SparqlGenerator:
         if element.group_by:
             return "group"
         return AggregateFunction(element.aggregate) if element.aggregate is not None else AggregateFunction.SAMPLE
+
+    @classmethod
+    def subject_mode(cls, subject) -> AggregateMode:
+        """Mode of a subject's variable: as the editor (NodeLinkRepository.nodeAggregate), a
+        subject that is neither grouped nor aggregated is counted (COUNT DISTINCT), unless one
+        of its subqueries is grouped (the group then nearly determines it): sampled."""
+        if subject.group_by or subject.aggregate is not None:
+            return cls.mode_of(subject)
+        if any(getattr(subquery, "group_by", False) for subquery in subject.subqueries):
+            return AggregateFunction.SAMPLE
+        return AggregateFunction.COUNT_DISTINCT
 
     def assemble(self, patterns, values, outputs: list[SparqlOutput], order, labels) -> GeneratedSparql:
         options = self.options

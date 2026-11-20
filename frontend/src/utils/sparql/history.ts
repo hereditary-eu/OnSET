@@ -1,11 +1,13 @@
-import { Vector2, type Vector2Like } from "three"
+import { type Vector2Like } from "three"
 import { NodeLinkRepositoryDiff } from "./diff"
 import { NodeLinkRepository, RepositoryState } from "./store"
 import { scalingFactors } from "./querymapper"
-import { jsonClone, ReconstructableClass, registerClass } from "../parsing"
+import { jsonClone, parseJSON, ReconstructableClass, registerClass, stringifyJSON } from "../parsing"
+import type { StoredHistoryEntry } from "../historySync"
 import { ManifoldAlg } from "@/api/client.ts/Api"
 import { api } from "@/utils/api"
 import { userProvenance, type EditProvenance } from "./provenance"
+import { dimReduceEntries, type TimelineChange, type TimelineHistory } from "./timeline"
 
 
 
@@ -79,7 +81,7 @@ export class HistoryEntry implements ReconstructableClass {
     }
 }
 @registerClass
-export class QueryHistory implements ReconstructableClass {
+export class QueryHistory implements ReconstructableClass, TimelineHistory<HistoryEntry> {
     private history: Record<number, HistoryEntry> = {};
     get length(): number { return Object.keys(this.history).length }
     get reverse_entries(): HistoryEntry[] { return Object.values(this.history).reverse() }
@@ -118,21 +120,21 @@ export class QueryHistory implements ReconstructableClass {
         return add ? diff : null
     }
     async dimReduceEmbeddings(n_out: number = 2, alg: ManifoldAlg = ManifoldAlg.TSNE) {
-        let embeddings: number[][] = []
-        let entries = this.entries
-        for (let entry of entries) {
-            if (entry.embedding !== null) {
-                embeddings.push(entry.embedding)
-            }
+        return dimReduceEntries(this.entries, n_out, alg)
+    }
+    entrySize(entry: HistoryEntry): number {
+        return entry.query?.nodes?.length ?? 0
+    }
+    entryChange(entry: HistoryEntry): TimelineChange | null {
+        const diff = entry.previous_diff
+        if (!diff) {
+            return null
         }
-        const response = await api.nlp.nlpEmbeddingsManifoldNlpEmbeddingsManifoldPost({
-            embeddings: embeddings,
-            n_out: n_out,
-            alg: alg,
-        })
-        return response.data.map((v, i) => {
-            return { v: new Vector2(v[0], v[1]), entry: entries[i] }
-        })
+        return {
+            size: Object.keys(diff.change_set).length || 1,
+            added: diff.diff_nodes.added.length > 0 || diff.diff_links.added.length > 0,
+            changed: diff.diff_nodes.changed.length > 0 || diff.diff_links.changed.length > 0,
+        }
     }
     async searchSimilarEntries(query: string, n_results: number = 5) {
         const response = await api.nlp.nlpEmbeddingsClosestNlpEmbeddingsClosestPost({
@@ -147,5 +149,22 @@ export class QueryHistory implements ReconstructableClass {
     }
     postConstruct(): void {
 
+    }
+    /** The entries to save in the query session (utils/historySync.ts), each serialized on its own. */
+    toStored(): StoredHistoryEntry<string>[] {
+        return Object.entries(this.history).map(([timestamp, entry]) => ({
+            timestamp: Number(timestamp), entry: stringifyJSON(entry),
+        }))
+    }
+    static fromStored(stored: StoredHistoryEntry[]): QueryHistory {
+        const history = new QueryHistory()
+        for (const s of stored) {
+            try {
+                history.history[s.timestamp] = parseJSON<HistoryEntry>(s.entry as string)
+            } catch (e) {
+                console.warn('Ignoring a saved history entry', s.timestamp, e)
+            }
+        }
+        return history
     }
 }

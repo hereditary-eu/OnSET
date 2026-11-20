@@ -88,13 +88,13 @@ def test_labels_language_filter(data):
     assert {r["lbl_port"]: r["ship"] for r in run(data, query)} == {"Portsmouth": 3, "Plymouth": 1}
 
 
-def test_numeric_aggregate_and_default_sample(data):
+def test_numeric_aggregate_and_default_count(data):
     graph = ships_at_ports(port={"group_by": True}, subqueries=[length(aggregate="avg")])
     result = generate_sparql(graph, namespaces=NAMESPACES, language=None)
     query = result.query
-    # the ship is neither grouped nor aggregated: sampled, without a label (labels would
+    # the ship is neither grouped nor aggregated: counted, without a label (labels would
     # multiply the solutions: Bounty has two)
-    assert "(SAMPLE(?ship__agg) AS ?ship)" in query
+    assert "(COUNT(DISTINCT ?ship__agg) AS ?ship)" in query
     assert "lbl_ship" not in query
     assert "(AVG(?sq_len__agg) AS ?sq_len)" in query
     assert result.variables == ["ship", "port", "lbl_port", "sq_len"]
@@ -103,6 +103,22 @@ def test_numeric_aggregate_and_default_sample(data):
     assert len(rows) == 1
     assert float(rows[0]["sq_len"]) == pytest.approx(48.5)
     assert rows[0]["lbl_port"] == "Portsmouth"
+    assert int(rows[0]["ship"]) == 2
+
+
+def test_grouped_property_samples_its_subject():
+    # avg length of the ships per place label: the place is sampled (its label is the group),
+    # the ships are counted
+    graph = ships_at_ports(subqueries=[length(aggregate="avg")])
+    graph.subjects[1].subqueries = [
+        QueryPropSubQuery(id="name", property_id="rdfs:label", property_type="xsd:string", group_by=True)
+    ]
+    query = generate_sparql(graph, namespaces=NAMESPACES, language=None).query
+    assert "(COUNT(DISTINCT ?ship__agg) AS ?ship)" in query
+    assert "(SAMPLE(?port__agg) AS ?port)" in query
+    assert "(AVG(?sq_len__agg) AS ?sq_len)" in query
+    assert "GROUP BY ?sq_name" in query
+    parse(query)
 
 
 def test_grouped_filter_is_projected(data):

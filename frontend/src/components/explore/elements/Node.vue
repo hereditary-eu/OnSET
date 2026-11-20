@@ -1,15 +1,15 @@
 <template>
-    <g :transform="`translate(${subject.x},${subject.y})`" @mouseout.capture="editPointHover($event, false)"
-        @mouseenter.capture="editPointHover($event, true)" @mouseover="editPointHover($event, true)">
-        <!-- invisible hover area covering the node, its handles and its subqueries -->
-        <rect :x="-EDITPOINT_R" :y="-EDITPOINT_R" :width="hover_extent.width" :height="hover_extent.height"
+    <g ref="node_ref" :transform="`translate(${subject.x},${subject.y})`" @mouseout="editPointHover($event, false)"
+        @mouseover="editPointHover($event, true)">
+        <!-- invisible hover area covering the node, its handles, its aggregate popover and its subqueries -->
+        <rect :x="-EDITPOINT_R" :y="hover_extent.y" :width="hover_extent.width" :height="hover_extent.height"
             fill-opacity="0" />
         <rect :width="subject.width" :height="subject.height" class="node" :class="node_statestyle"
             @pointerdown="dragStart" />
         <text :x="subject.width / 2" :y="subject.height / 2" class="node_text">{{ display_label }}</text>
-        <!-- group by/aggregate of the node's variable, left of its subquery connector -->
-        <foreignObject v-if="show_aggregation" :x="subject.width / 2 - SUBQUERY_INDENT - AGGREGATE_BOX_WIDTH"
-            :y="subject.height + 2" :width="AGGREGATE_BOX_WIDTH" height="22">
+        <!-- group by/aggregate of the node's variable: a popover centred above the node (and its "Specify" handle) -->
+        <foreignObject v-if="show_aggregation" :x="subject.width / 2 - AGGREGATE_BOX_WIDTH / 2"
+            :y="AGGREGATE_BOX_Y" :width="AGGREGATE_BOX_WIDTH" :height="AGGREGATE_BOX_HEIGHT">
             <div class="node_aggregate">
                 <AggregateControls :target="subject" :kind="AggregateKind.NODE" :readonly="!aggregation_editable"
                     :expanded="editor_data.show_editpoints" collapsible />
@@ -52,14 +52,13 @@
     </g>
 </template>
 <script setup lang="ts">
-import { watch, reactive, computed, onMounted } from 'vue'
+import { watch, reactive, computed, onMounted, useTemplateRef } from 'vue'
 import { InstanceNode, SubjectNode as NodeRepr, NodeState, SubQuery } from '@/utils/sparql/representation';
 import { CONSTRAINT_PADDING, DisplayMode, EDITPOINT_R, fitNode, InstanceSelectorOpenEvent, NODE_PADDING_X, OpenEventType, SelectorOpenEvent } from '@/utils/sparql/helpers';
 import { truncateText } from '@/utils/sparql/measure';
 import Sublink from './Subquery.vue';
 import AggregateControls from './subqueries/AggregateControls.vue';
 import { AggregateKind, isAggregated } from '@/utils/sparql/representation';
-import { SUBQUERY_INDENT } from '@/utils/sparql/helpers';
 import { pointerDrag } from '@/utils/graph-layout';
 import type { PropertiesOpenEvent } from '@/utils/sparql/querymapper';
 import type { NodeLinkRepository } from '@/utils/sparql/store';
@@ -222,7 +221,13 @@ const hoverDeletion = (state: boolean) => {
 const doDeletion = () => {
     store.removeNode(subject)
 }
+// mouseover/mouseout bubble from every child (also the HTML inside the foreignObjects), so only
+// leaving the whole node hides the handles; otherwise they flicker while moving across children
+const node_ref = useTemplateRef<SVGGElement>('node_ref')
 const editPointHover = (event: MouseEvent, state: boolean) => {
+    if (!state && node_ref.value?.contains(event.relatedTarget as Node | null)) {
+        return
+    }
     editor_data.show_editpoints = state
 }
 const deleteConstraint = (constraint) => {
@@ -230,6 +235,8 @@ const deleteConstraint = (constraint) => {
 }
 const is_result_mode = computed(() => mode == DisplayMode.RESULTS || mode == DisplayMode.RESULT_INTERACTIVE)
 const AGGREGATE_BOX_WIDTH = 140
+const AGGREGATE_BOX_HEIGHT = 22
+const AGGREGATE_BOX_Y = -EDITPOINT_R * 3 - 2 - AGGREGATE_BOX_HEIGHT
 // group by/aggregate of the node: editable while hovered in the editor (or once set), shown in previews if set
 const aggregation_editable = computed(() => mode == DisplayMode.EDIT || mode == DisplayMode.EDIT_NO_ADD)
 const show_aggregation = computed(() => !is_result_mode.value && (aggregation_editable.value || isAggregated(subject)))
@@ -248,9 +255,12 @@ watch(() => subject.label, () => {
 }, { immediate: true })
 const hover_extent = computed(() => {
     const subquery_width = constraint_list_mapped.value.reduce((acc, c) => Math.max(acc, c.subquery.width), 0)
+    // while hovered, reach up to the aggregate popover, so moving to it keeps the node hovered
+    const y = editor_data.show_editpoints && show_aggregation.value && aggregation_editable.value ? AGGREGATE_BOX_Y : -EDITPOINT_R
     return {
+        y,
         width: Math.max(subject.width, subject.width / 2 + subquery_width) + EDITPOINT_R * 2,
-        height: constraints_height.value + subject.height + EDITPOINT_R * 2,
+        height: constraints_height.value + subject.height + EDITPOINT_R - y,
     }
 })
 
@@ -262,7 +272,16 @@ onMounted(() => {
 <style>
 .node_aggregate {
     display: flex;
-    justify-content: flex-end;
+    justify-content: center;
+    align-items: flex-end;
+    height: 100%;
     font-size: var(--fs-xs);
+}
+
+.node_aggregate .aggregate_controls {
+    padding: 1px 2px;
+    background: var(--c-surface);
+    border: 1px solid rgb(105, 132, 99);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 </style>

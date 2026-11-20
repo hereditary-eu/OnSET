@@ -5,42 +5,25 @@
         </svg>
     </div>
 </template>
-<script setup lang="ts">
-import { watch, reactive, defineProps, onMounted, ref } from 'vue'
-import { HistoryEntry, QueryHistory } from '@/utils/sparql/history';
-import HistoryElement from './HistoryElement.vue';
+<script setup lang="ts" generic="E extends TimelineEntry">
+// The time embedding curve of a history (the query builder's or the ontology builder's): its
+// entries in a 2D manifold of their embeddings, connected in time order, with provenance glyphs.
+import { watch, onMounted, ref } from 'vue'
 import * as d3 from 'd3'
-import { Vector2 } from 'three';
+import { Vector2, type Vector2Like } from 'three';
 import { CatmullRomSplits } from '@/utils/d3-man/CatmullRomSplits';
 import { ManifoldAlg } from '@/api/client.ts/Api';
-import type { HistoryTooltipEvent } from '@/utils/sparql/helpers';
+import type { TimelineEntry, TimelineHistory } from '@/utils/sparql/timeline';
 import {
     groupedOps, mdiGlyph, MDI_FONT_FAMILY, provenanceSummary, SOURCE_STYLES,
 } from '@/utils/sparql/provenance';
 const svg_ref = ref(null as SVGSVGElement | null)
 const tooltip_div = ref(null as HTMLDivElement | null)
 const history_overview_box = ref(null as SVGGElement | null)
-enum HistoryMode {
-    OVERVIEW = 'Overview',
-    DETAILED = 'Detailed',
-}
-const { history } = defineProps({
-    history: {
-        type: Object as () => QueryHistory,
-        required: true
-    },
-})
-const ui_state = reactive({
-    history_mode: HistoryMode.DETAILED,
-    tooltip: {
-        visible: false,
-        position: { x: 0, y: 0 },
-        entry: null as HistoryEntry | null,
-    }
-})
+const { history } = defineProps<{ history: TimelineHistory<E> }>()
 
 const emit = defineEmits<{
-    showTooltip: [HistoryTooltipEvent],
+    showTooltip: [{ position: Vector2Like, entry: E, event: MouseEvent }],
     showInChat: [string[]],
 }>()
 
@@ -66,13 +49,12 @@ function recomputeEmbeddings() {
     (async () => {
         const embeddings = await history.dimReduceEmbeddings(2, ManifoldAlg.Smacof)
 
-        const embeddings_mapped = embeddings.map((emb, idx) => {
+        const embeddings_mapped = embeddings.map((emb) => {
             return {
                 ...emb,
-                r: 5 + Math.log(history.entries[idx].query.nodes.length || 0 + 1) * 3 || 5,
+                r: 5 + Math.log(history.entrySize(emb.entry) + 1) * 3,
             }
         })
-        type embeddings_rval = typeof embeddings[0]
         //normalize embeddings to [0,1] and scale to fit in svg
         const xExtent = d3.extent(embeddings, (d) => d.v.x);
         const yExtent = d3.extent(embeddings, (d) => d.v.y);
@@ -98,16 +80,14 @@ function recomputeEmbeddings() {
                 let entry = embeddings[segment.idx + 1].entry;
                 let segment_color = "darkorange"
                 let change_size = 0
-                if (entry.previous_diff) {
-                    const diff = entry.previous_diff
-                    change_size = Object.keys(diff.change_set).length || 1
-                    if (diff.diff_nodes.added.length > 0 || diff.diff_links.added.length > 0) {
+                const change = history.entryChange(entry)
+                if (change) {
+                    change_size = change.size
+                    if (change.added) {
                         segment_color = "darkgreen"
-
-                    } else if (diff.diff_nodes.changed.length > 0 || diff.diff_links.changed.length > 0) {
+                    } else if (change.changed) {
                         segment_color = "darkred"
                     }
-
                 }
                 const segment_path = root_g.append("path")
                     .attr("d", segment.path.toString() || "")

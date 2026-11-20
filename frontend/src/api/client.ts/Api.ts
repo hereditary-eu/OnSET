@@ -573,6 +573,49 @@ export interface HTTPValidationError {
   detail?: ValidationError[];
 }
 
+/** HistoryEntryIn */
+export interface HistoryEntryIn {
+  /** Timestamp */
+  timestamp: number;
+  /** Entry */
+  entry: any;
+}
+
+/** HistoryInfo */
+export interface HistoryInfo {
+  /** Entries */
+  entries: number;
+  /** Version */
+  version: number;
+  /** Updated At */
+  updated_at?: number | null;
+}
+
+/** HistoryRecord */
+export interface HistoryRecord {
+  /** Timestamp */
+  timestamp: number;
+  /** Entry */
+  entry: any;
+  /** Created At */
+  created_at: number;
+  /** Updated At */
+  updated_at: number;
+}
+
+/** HistoryUpdate */
+export interface HistoryUpdate {
+  /**
+   * Clear
+   * @default false
+   */
+  clear?: boolean;
+  /** Remove */
+  remove?: number[];
+  /** Upsert */
+  upsert?: HistoryEntryIn[];
+}
+
 /**
  * ImagePropSubQuery
  * Query prop whose values are images (property_type in the config's image_types).
@@ -1019,6 +1062,14 @@ export interface QueryGraph {
   links?: AssistantLink[];
 }
 
+/** QueryIn */
+export interface QueryIn {
+  /** Query */
+  query: string;
+  /** Visual Query */
+  visual_query?: string | null;
+}
+
 /** QueryProgress */
 export interface QueryProgress {
   /** Id */
@@ -1071,6 +1122,42 @@ export interface QueryPropSubQuery {
   group_by?: boolean | null;
   /** Aggregate (see AggregateFunction) */
   aggregate?: AggregateFunction | null;
+}
+
+/** QuerySessionState */
+export interface QuerySessionState {
+  /** Session Id */
+  session_id: string;
+  /** Config Id */
+  config_id: string;
+  /** Version */
+  version: number;
+  /**
+   * Query
+   * @default ""
+   */
+  query?: string;
+  /** Visual Query */
+  visual_query?: string | null;
+  /** Created At */
+  created_at: number;
+  /** Updated At */
+  updated_at: number;
+  history: HistoryInfo;
+}
+
+/** QuerySessionSummary */
+export interface QuerySessionSummary {
+  /** Session Id */
+  session_id: string;
+  /** Created At */
+  created_at: number;
+  /** Updated At */
+  updated_at: number;
+  /** Query */
+  query: string;
+  /** History Entries */
+  history_entries: number;
 }
 
 /** Relation */
@@ -2152,6 +2239,126 @@ export class Api<
       this.request<ProgressiveResult, HTTPValidationError>({
         path: `/progressive/sample`,
         method: "POST",
+        body: data,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+  };
+  querySessions = {
+    /**
+     * @description The saved sessions of the configuration, most recently changed first.
+     *
+     * @tags query-sessions
+     * @name ListQuerySessionsQuerySessionsGet
+     * @summary List Query Sessions
+     * @request GET:/query-sessions
+     */
+    listQuerySessionsQuerySessionsGet: (
+      query?: {
+        /**
+         * Limit
+         * @min 1
+         * @max 500
+         * @default 50
+         */
+        limit?: number;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<QuerySessionSummary[], HTTPValidationError>({
+        path: `/query-sessions`,
+        method: "GET",
+        query: query,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags query-sessions
+     * @name GetQuerySessionQuerySessionsSessionIdGet
+     * @summary Get Query Session
+     * @request GET:/query-sessions/{session_id}
+     */
+    getQuerySessionQuerySessionsSessionIdGet: (
+      sessionId: string,
+      query?: {
+        /**
+         * Create
+         * create an unknown session (else 404)
+         * @default true
+         */
+        create?: boolean;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<QuerySessionState, HTTPValidationError>({
+        path: `/query-sessions/${sessionId}`,
+        method: "GET",
+        query: query,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags query-sessions
+     * @name PutQuerySessionQueryQuerySessionsSessionIdQueryPut
+     * @summary Put Query Session Query
+     * @request PUT:/query-sessions/{session_id}/query
+     */
+    putQuerySessionQueryQuerySessionsSessionIdQueryPut: (
+      sessionId: string,
+      data: QueryIn,
+      params: RequestParams = {},
+    ) =>
+      this.request<QuerySessionState, HTTPValidationError>({
+        path: `/query-sessions/${sessionId}/query`,
+        method: "PUT",
+        body: data,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * @description The edit history of the query, oldest first, with the server's timestamps.
+     *
+     * @tags query-sessions
+     * @name GetQuerySessionHistoryQuerySessionsSessionIdHistoryGet
+     * @summary Get Query Session History
+     * @request GET:/query-sessions/{session_id}/history
+     */
+    getQuerySessionHistoryQuerySessionsSessionIdHistoryGet: (
+      sessionId: string,
+      params: RequestParams = {},
+    ) =>
+      this.request<HistoryRecord[], HTTPValidationError>({
+        path: `/query-sessions/${sessionId}/history`,
+        method: "GET",
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * @description Add, replace (same ``timestamp``) or remove entries of the edit history (saved with the session).
+     *
+     * @tags query-sessions
+     * @name PatchQuerySessionHistoryQuerySessionsSessionIdHistoryPatch
+     * @summary Patch Query Session History
+     * @request PATCH:/query-sessions/{session_id}/history
+     */
+    patchQuerySessionHistoryQuerySessionsSessionIdHistoryPatch: (
+      sessionId: string,
+      data: HistoryUpdate,
+      params: RequestParams = {},
+    ) =>
+      this.request<HistoryInfo, HTTPValidationError>({
+        path: `/query-sessions/${sessionId}/history`,
+        method: "PATCH",
         body: data,
         type: ContentType.Json,
         format: "json",

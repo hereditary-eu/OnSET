@@ -25,7 +25,7 @@
                 <VectorSubquery v-else-if="(subquery.constraint_type == SubQueryType.VECTOR_SORT)"
                     :constraint="(subquery as VectorSort)" />
                 <AggregateControls v-if="show_aggregation" :target="subquery" :kind="subquery.aggregateKind()"
-                    :expanded="show_editpoints" :readonly="!editable" />
+                    :readonly="!editable" />
             </div>
         </foreignObject>
     </g>

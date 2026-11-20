@@ -1180,6 +1180,104 @@
     "title": "HTTPValidationError",
     "type": "object"
    },
+   "HistoryEntryIn": {
+    "properties": {
+     "entry": {
+      "title": "Entry"
+     },
+     "timestamp": {
+      "title": "Timestamp",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "timestamp",
+     "entry"
+    ],
+    "title": "HistoryEntryIn",
+    "type": "object"
+   },
+   "HistoryInfo": {
+    "properties": {
+     "entries": {
+      "title": "Entries",
+      "type": "integer"
+     },
+     "updated_at": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Updated At"
+     },
+     "version": {
+      "title": "Version",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "entries",
+     "version"
+    ],
+    "title": "HistoryInfo",
+    "type": "object"
+   },
+   "HistoryRecord": {
+    "properties": {
+     "created_at": {
+      "title": "Created At",
+      "type": "integer"
+     },
+     "entry": {
+      "title": "Entry"
+     },
+     "timestamp": {
+      "title": "Timestamp",
+      "type": "integer"
+     },
+     "updated_at": {
+      "title": "Updated At",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "timestamp",
+     "entry",
+     "created_at",
+     "updated_at"
+    ],
+    "title": "HistoryRecord",
+    "type": "object"
+   },
+   "HistoryUpdate": {
+    "properties": {
+     "clear": {
+      "default": false,
+      "title": "Clear",
+      "type": "boolean"
+     },
+     "remove": {
+      "items": {
+       "type": "integer"
+      },
+      "title": "Remove",
+      "type": "array"
+     },
+     "upsert": {
+      "items": {
+       "$ref": "#/components/schemas/HistoryEntryIn"
+      },
+      "title": "Upsert",
+      "type": "array"
+     }
+    },
+    "title": "HistoryUpdate",
+    "type": "object"
+   },
    "ImagePropSubQuery": {
     "description": "Query prop whose values are images (property_type in the config's image_types).\n\nThe editor has no own class for it (a QueryProp with an image range), so it\nalways sends query_prop; this is accepted and turned into a QueryProp.",
     "properties": {
@@ -2387,6 +2485,30 @@
     "title": "QueryGraph",
     "type": "object"
    },
+   "QueryIn": {
+    "properties": {
+     "query": {
+      "title": "Query",
+      "type": "string"
+     },
+     "visual_query": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Visual Query"
+     }
+    },
+    "required": [
+     "query"
+    ],
+    "title": "QueryIn",
+    "type": "object"
+   },
    "QueryProgress": {
     "properties": {
      "enriched_relations": {
@@ -2520,6 +2642,92 @@
      "property_id"
     ],
     "title": "QueryPropSubQuery",
+    "type": "object"
+   },
+   "QuerySessionState": {
+    "properties": {
+     "config_id": {
+      "title": "Config Id",
+      "type": "string"
+     },
+     "created_at": {
+      "title": "Created At",
+      "type": "integer"
+     },
+     "history": {
+      "$ref": "#/components/schemas/HistoryInfo"
+     },
+     "query": {
+      "default": "",
+      "title": "Query",
+      "type": "string"
+     },
+     "session_id": {
+      "title": "Session Id",
+      "type": "string"
+     },
+     "updated_at": {
+      "title": "Updated At",
+      "type": "integer"
+     },
+     "version": {
+      "title": "Version",
+      "type": "integer"
+     },
+     "visual_query": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Visual Query"
+     }
+    },
+    "required": [
+     "session_id",
+     "config_id",
+     "version",
+     "created_at",
+     "updated_at",
+     "history"
+    ],
+    "title": "QuerySessionState",
+    "type": "object"
+   },
+   "QuerySessionSummary": {
+    "properties": {
+     "created_at": {
+      "title": "Created At",
+      "type": "integer"
+     },
+     "history_entries": {
+      "title": "History Entries",
+      "type": "integer"
+     },
+     "query": {
+      "title": "Query",
+      "type": "string"
+     },
+     "session_id": {
+      "title": "Session Id",
+      "type": "string"
+     },
+     "updated_at": {
+      "title": "Updated At",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "session_id",
+     "created_at",
+     "updated_at",
+     "query",
+     "history_entries"
+    ],
+    "title": "QuerySessionSummary",
     "type": "object"
    },
    "RELATION_TYPE": {
@@ -4288,6 +4496,260 @@
      }
     },
     "summary": "Sample Modifications"
+   }
+  },
+  "/query-sessions": {
+   "get": {
+    "description": "The saved sessions of the configuration, most recently changed first.",
+    "operationId": "list_query_sessions_query_sessions_get",
+    "parameters": [
+     {
+      "in": "query",
+      "name": "limit",
+      "required": false,
+      "schema": {
+       "default": 50,
+       "maximum": 500,
+       "minimum": 1,
+       "title": "Limit",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/QuerySessionSummary"
+         },
+         "title": "Response List Query Sessions Query Sessions Get",
+         "type": "array"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "List Query Sessions",
+    "tags": [
+     "query-sessions"
+    ]
+   }
+  },
+  "/query-sessions/{session_id}": {
+   "get": {
+    "operationId": "get_query_session_query_sessions__session_id__get",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "session_id",
+      "required": true,
+      "schema": {
+       "title": "Session Id",
+       "type": "string"
+      }
+     },
+     {
+      "description": "create an unknown session (else 404)",
+      "in": "query",
+      "name": "create",
+      "required": false,
+      "schema": {
+       "default": true,
+       "description": "create an unknown session (else 404)",
+       "title": "Create",
+       "type": "boolean"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/QuerySessionState"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Get Query Session",
+    "tags": [
+     "query-sessions"
+    ]
+   }
+  },
+  "/query-sessions/{session_id}/history": {
+   "get": {
+    "description": "The edit history of the query, oldest first, with the server's timestamps.",
+    "operationId": "get_query_session_history_query_sessions__session_id__history_get",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "session_id",
+      "required": true,
+      "schema": {
+       "title": "Session Id",
+       "type": "string"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/HistoryRecord"
+         },
+         "title": "Response Get Query Session History Query Sessions  Session Id  History Get",
+         "type": "array"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Get Query Session History",
+    "tags": [
+     "query-sessions"
+    ]
+   },
+   "patch": {
+    "description": "Add, replace (same ``timestamp``) or remove entries of the edit history (saved with the session).",
+    "operationId": "patch_query_session_history_query_sessions__session_id__history_patch",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "session_id",
+      "required": true,
+      "schema": {
+       "title": "Session Id",
+       "type": "string"
+      }
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/HistoryUpdate"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HistoryInfo"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Patch Query Session History",
+    "tags": [
+     "query-sessions"
+    ]
+   }
+  },
+  "/query-sessions/{session_id}/query": {
+   "put": {
+    "operationId": "put_query_session_query_query_sessions__session_id__query_put",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "session_id",
+      "required": true,
+      "schema": {
+       "title": "Session Id",
+       "type": "string"
+      }
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/QueryIn"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/QuerySessionState"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Put Query Session Query",
+    "tags": [
+     "query-sessions"
+    ]
    }
   },
   "/search/dim-reduce": {
