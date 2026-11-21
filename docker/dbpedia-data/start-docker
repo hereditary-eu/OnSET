@@ -4,7 +4,7 @@
 # Used to start/stop/restart the docker container for dbpedia data
 CONTAINER_NAME=dbpedia-data-tensors
 FORCE_RESTART=false
-INDEX_DIR=./dbpedia/index-encoded
+INDEX_DIR=./index-encoded
 INDEX_NAME=dbpedia-encoded-tidx
 is_running() {
     docker container ls -a -q -f name=$CONTAINER_NAME | grep -q .
@@ -25,13 +25,13 @@ stop_if_running() {
 start() {
     stop_if_running
     echo "Starting container $CONTAINER_NAME..."
-    docker run -d --name $CONTAINER_NAME -v ./dbpedia/index-encoded:/data -w /data -p 7012:8080 --entrypoint qlever-server qlever:tensors  -p 8080 -i $INDEX_NAME
+    docker run -d --name $CONTAINER_NAME -v $INDEX_DIR:/data -w /data -p 7012:8080 --entrypoint qlever-server qlever:tensors  -p 8080 -i $INDEX_NAME
     docker logs -f $CONTAINER_NAME
 }
 start_interactive() {
     stop_if_running
     echo "Starting container $CONTAINER_NAME in interactive mode..."
-    docker run -it --rm -u $(id -u):$(id -g) --name $CONTAINER_NAME -v ./dbpedia/index-encoded:/data -w /data -p 7012:8080 qlever:tensors  bash
+    docker run -it --rm -u $(id -u):$(id -g) --name $CONTAINER_NAME -v $INDEX_DIR:/data -w /data -p 7012:8080 qlever:tensors  bash
 
 }
 stop() {
@@ -44,7 +44,7 @@ restart() {
 }
 index() {
     echo "Indexing data..."
-    docker run -it --rm -u $(id -u):$(id -g) --name $CONTAINER_NAME -v ./dbpedia/index-encoded:/data ./nt -w /data qlever:tensors  bash -c "qlever-indexer -i $INDEX_NAME -p 1 -m 10g -f /data/dbpedia-encoded.nt"
+    docker run -it --rm -u $(id -u):$(id -g) --name $CONTAINER_NAME -v $INDEX_DIR:/data ./nt -w /data qlever:tensors  bash -c "qlever-indexer -i $INDEX_NAME -p 1 -m 10g -f /data/dbpedia-encoded.nt"
 }
 
 

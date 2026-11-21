@@ -69,28 +69,14 @@
       },
       "variants": [
         {
-          "name": "DBpedia Mistral",
-          "model_id": "bartowski/Mistral-Small-Instruct-2409-GGUF",
-          "model_quant": "*-Q6_K.gguf"
-        },
-        {
-          "name": "DBpedia Qwen2.5 Coder 32B",
-          "model_id": "bartowski/Qwen2.5-Coder-32B-Instruct-GGUF",
-          "model_quant": "*-Q4_K_L.gguf"
-        },
-        {
-          "name": "DBpedia Qwen2.5 Coder 32B",
-          "model_id": "bartowski/Qwen2.5-32B-Instruct-GGUF",
-          "model_quant": "*-Q4_K_L.gguf"
-        },
-        {
-          "name": "DBpedia large",
-          "model_id": "NousResearch/Hermes-3-Llama-3.1-8B-GGUF"
+          "name": "DBpedia LFM3 1.7B",
+          "model_id": "LiquidAI/LFM3-1.7B-GGUF",
+          "model_quant": "*-Q4_K_M.gguf"
         },
         {
           "name": "Dbpedia Qwen3.8 27B",
           "model_id": "unsloth/Qwen3.8-27B-GGUF",
-          "model_quant": "*-Q4_0.gguf"
+          "model_quant": "*-Q4_K_M.gguf"
         }
       ]
     },
@@ -102,28 +88,14 @@
       "selection_distribution": "uniform",
       "variants": [
         {
-          "name": "OMA Mistral",
-          "model_id": "bartowski/Mistral-Small-Instruct-2409-GGUF",
-          "model_quant": "*-Q6_K.gguf"
-        },
-        {
-          "name": "OMA Mistral",
-          "model_id": "bartowski/Qwen2.5-Coder-32B-Instruct-GGUF",
-          "model_quant": "*-Q4_K_L.gguf"
-        },
-        {
-          "name": "OMA Mistral",
-          "model_id": "bartowski/Qwen2.5-32B-Instruct-GGUF",
-          "model_quant": "*-Q4_K_L.gguf"
-        },
-        {
-          "name": "OMA large",
-          "model_id": "NousResearch/Hermes-3-Llama-3.1-8B-GGUF"
+          "name": "OMA LFM3 1.7B",
+          "model_id": "LiquidAI/LFM3-1.7B-GGUF",
+          "model_quant": "*-Q4_K_M.gguf"
         },
         {
           "name": "OMA Qwen3.8 27B",
           "model_id": "unsloth/Qwen3.8-27B-GGUF",
-          "model_quant": "*-Q4_0.gguf"
+          "model_quant": "*-Q4_K_M.gguf"
         }
       ]
     },
@@ -135,24 +107,14 @@
       "selection_distribution": "uniform",
       "variants": [
         {
-          "name": "UniProt Mistral",
-          "model_id": "bartowski/Mistral-Small-Instruct-2409-GGUF",
-          "model_quant": "*-Q6_K.gguf"
-        },
-        {
-          "name": "UniProt Mistral",
-          "model_id": "bartowski/Qwen2.5-Coder-32B-Instruct-GGUF",
-          "model_quant": "*-Q4_K_L.gguf"
-        },
-        {
-          "name": "UniProt Mistral",
-          "model_id": "bartowski/Qwen2.5-32B-Instruct-GGUF",
-          "model_quant": "*-Q4_K_L.gguf"
+          "name": "UniProt LFM3 1.7B",
+          "model_id": "LiquidAI/LFM3-1.7B-GGUF",
+          "model_quant": "*-Q4_K_M.gguf"
         },
         {
           "name": "UniProt Qwen3.8 27B",
           "model_id": "unsloth/Qwen3.8-27B-GGUF",
-          "model_quant": "*-Q4_0.gguf"
+          "model_quant": "*-Q4_K_M.gguf"
         }
       ]
     },
@@ -164,28 +126,14 @@
       "selection_distribution": "uniform",
       "variants": [
         {
-          "name": "DNB Mistral",
-          "model_id": "bartowski/Mistral-Small-Instruct-2409-GGUF",
-          "model_quant": "*-Q6_K.gguf"
-        },
-        {
-          "name": "DNB Mistral",
-          "model_id": "bartowski/Qwen2.5-Coder-32B-Instruct-GGUF",
-          "model_quant": "*-Q4_K_L.gguf"
-        },
-        {
-          "name": "DNB Mistral",
-          "model_id": "bartowski/Qwen2.5-32B-Instruct-GGUF",
-          "model_quant": "*-Q4_K_L.gguf"
-        },
-        {
-          "name": "DNB large",
-          "model_id": "NousResearch/Hermes-3-Llama-3.1-8B-GGUF"
+          "name": "DNB LFM3 1.7B",
+          "model_id": "LiquidAI/LFM3-1.7B-GGUF",
+          "model_quant": "*-Q4_K_M.gguf"
         },
         {
           "name": "DNB Qwen3.8 27B",
           "model_id": "unsloth/Qwen3.8-27B-GGUF",
-          "model_quant": "*-Q4_0.gguf"
+          "model_quant": "*-Q4_K_M.gguf"
         }
       ]
     },
@@ -196,28 +144,14 @@
       "sparql_endpoint": "${YAGO_SPARQL_ENDPOINT:-http://localhost:9024}",
       "variants": [
         {
-          "name": "Yago Mistral",
-          "model_id": "bartowski/Mistral-Small-Instruct-2409-GGUF",
-          "model_quant": "*-Q6_K.gguf"
-        },
-        {
-          "name": "Yago Mistral",
-          "model_id": "bartowski/Qwen2.5-Coder-32B-Instruct-GGUF",
-          "model_quant": "*-Q4_K_L.gguf"
-        },
-        {
-          "name": "Yago Mistral",
-          "model_id": "bartowski/Qwen2.5-32B-Instruct-GGUF",
-          "model_quant": "*-Q4_K_L.gguf"
-        },
-        {
-          "name": "Yago 8B",
-          "model_id": "NousResearch/Hermes-3-Llama-3.1-8B-GGUF"
+          "name": "Yago LFM3 1.7B",
+          "model_id": "LiquidAI/LFM3-1.7B-GGUF",
+          "model_quant": "*-Q4_K_M.gguf"
         },
         {
           "name": "Yago Qwen3.8 27B",
           "model_id": "unsloth/Qwen3.8-27B-GGUF",
-          "model_quant": "*-Q4_0.gguf"
+          "model_quant": "*-Q4_K_M.gguf"
         }
       ]
     },
@@ -229,28 +163,14 @@
       "selection_distribution": "uniform",
       "variants": [
         {
-          "name": "BTO  Mistral",
-          "model_id": "bartowski/Mistral-Small-Instruct-2409-GGUF",
-          "model_quant": "*-Q6_K.gguf"
-        },
-        {
-          "name": "BTO  Mistral",
-          "model_id": "bartowski/Qwen2.5-Coder-32B-Instruct-GGUF",
-          "model_quant": "*-Q4_K_L.gguf"
-        },
-        {
-          "name": "BTO  Mistral",
-          "model_id": "bartowski/Qwen2.5-32B-Instruct-GGUF",
-          "model_quant": "*-Q4_K_L.gguf"
-        },
-        {
-          "name": "BTO large",
-          "model_id": "NousResearch/Hermes-3-Llama-3.1-8B-GGUF"
+          "name": "BTO LFM3 1.7B",
+          "model_id": "LiquidAI/LFM3-1.7B-GGUF",
+          "model_quant": "*-Q4_K_M.gguf"
         },
         {
           "name": "BTO Qwen3.8 27B",
           "model_id": "unsloth/Qwen3.8-27B-GGUF",
-          "model_quant": "*-Q4_0.gguf"
+          "model_quant": "*-Q4_K_M.gguf"
         }
       ]
     },
@@ -262,18 +182,14 @@
       "selection_distribution": "uniform",
       "variants": [
         {
-          "name": "GutBrainIE 8B",
-          "model_id": "bartowski/Qwen2.5-Coder-32B-Instruct-GGUF",
-          "model_quant": "*-Q4_K_L.gguf"
-        },
-        {
-          "name": "GutBrainIE 8B",
-          "model_id": "NousResearch/Hermes-3-Llama-3.1-8B-GGUF"
+          "name": "GutBrainIE LFM3 1.7B",
+          "model_id": "LiquidAI/LFM3-1.7B-GGUF",
+          "model_quant": "*-Q4_K_M.gguf"
         },
         {
           "name": "GutBrainIE Qwen3.8 27B",
           "model_id": "unsloth/Qwen3.8-27B-GGUF",
-          "model_quant": "*-Q4_0.gguf"
+          "model_quant": "*-Q4_K_M.gguf"
         }
       ]
     },

@@ -2,7 +2,7 @@
 #SBATCH --job-name=onset_eval_qwen_coder
 #SBATCH -c 1
 #SBATCH --mem 22G
-#SBATCH -a 0-3%1
+#SBATCH -a 0-2%1
 #SBATCH --account=bkantz
 #SBATCH --output=logs/eval_%A_%a.out
 #SBATCH --error=logs/eval_%A_%a.err
@@ -10,10 +10,10 @@
 cd ..
 source ../../backend/.venv/bin/activate
 
-datasets=("dbpedia" "bto" "uniprot" "yago")
+datasets=("dbpedia" "bto" "uniprot")
 
-dataset_id=$(($SLURM_ARRAY_TASK_ID % 4))
-zeroshot=$(($SLURM_ARRAY_TASK_ID / 4))
+dataset_id=$(($SLURM_ARRAY_TASK_ID % 3))
+zeroshot=$(($SLURM_ARRAY_TASK_ID / 3))
 cfg_idx=1
 selected_dataset=${datasets[$dataset_id]}
 echo "dataset_id: $dataset_id"

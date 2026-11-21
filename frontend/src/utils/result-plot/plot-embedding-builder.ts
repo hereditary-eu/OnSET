@@ -29,10 +29,18 @@ export function buildEmbeddingPlotData(analyzed_props: AnalyzedProp[], result_se
             colors = color_values.map(v => cmap(scale(v)))
         } else if (color_prop.prop_type == PropType.CONTINOUS) {
             color_values = color_values.map(v => parseFloat(v))
-            let min = Math.min(...color_values)
-            let max = Math.max(...color_values)
+            const filtered_values = color_values.filter(v => !isNaN(v));
+            let min = Math.min(...filtered_values)
+            let max = Math.max(...filtered_values)
             let scale = d3.scaleLinear([min, max], [0, 1])
-            colors = color_values.map(v => cmap(scale(v)))
+            colors = color_values.map(v => {
+                try {
+                    return cmap(scale(v))
+                } catch (e) {
+                    console.error("Error in color mapping", e, "min, max", min, max, "value", v)
+                    return "gray"
+                }
+            })
         }
         console.log("Color values", color_values, "color prop", color_prop, "colors", colors)
     }
@@ -69,7 +77,7 @@ export function buildEmbeddingPlotData(analyzed_props: AnalyzedProp[], result_se
         mode: 'markers',
         type: 'scatter',
         marker: { size: 8, color: colors || "blue" },
-        
+
 
     } as ScatterData
     return {
