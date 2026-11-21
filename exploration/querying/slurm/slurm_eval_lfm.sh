@@ -1,8 +1,8 @@
 #!/bin/bash
 #SBATCH --job-name=onset_eval_small
-#SBATCH -c 1
-#SBATCH --mem 6000M
-#SBATCH -a 0-2%2
+#SBATCH -c 2
+#SBATCH --mem 4000M
+#SBATCH -a 0-2
 #SBATCH --account=bkantz
 #SBATCH --output=logs/eval_%A_%a.out
 #SBATCH --error=logs/eval_%A_%a.err
