@@ -47,7 +47,8 @@ store = SPARQLStore(
 )
 graph = Graph(store=store)
 
-config = OntologyConfig()
+# same prefixes/extension as the API: the stored schema ids use them (e.g. dbo:)
+config = OntologyConfig.from_eval_config(setup)
 
 ontology_manager = OntologyManager(config, graph)
 topic_man = GuidanceManager(

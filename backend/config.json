@@ -83,7 +83,7 @@
     "oma": {
       "name": "OMA",
       "description": "Orthologous MAtrix (OMA) browser data.",
-      "conn_str": "postgresql+psycopg://postgres:postgres@${ONSET_DB_ENDPOINT:-localhost:5434}/onset-uniprot",
+      "conn_str": "postgresql+psycopg://postgres:postgres@${ONSET_DB_ENDPOINT:-localhost:5434}/onset-oma",
       "sparql_endpoint": "${OMA_SPARQL_ENDPOINT:-http://localhost:7013}",
       "selection_distribution": "uniform",
       "variants": [

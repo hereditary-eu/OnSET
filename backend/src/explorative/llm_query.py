@@ -442,6 +442,8 @@ class LLMQuery(Initationatable):
                 None,
             )
 
+        # several ontologies can share one database, only look at this one's schema
+        onto_hash = self.guidance_man.identifier
         with read_only_session(self.guidance_man.engine) as session:
 
             def resolve_subject_id(type_) -> str | None:
@@ -458,7 +460,10 @@ class LLMQuery(Initationatable):
                     return found
                 row = session.execute(
                     select(SubjectInDB.subject_id)
-                    .where(func.lower(SubjectInDB.label) == type_.strip().lower())
+                    .where(
+                        SubjectInDB.onto_hash == onto_hash,
+                        func.lower(SubjectInDB.label) == type_.strip().lower(),
+                    )
                     .limit(1)
                 ).first()
                 return row[0] if row else None
@@ -478,7 +483,8 @@ class LLMQuery(Initationatable):
                 row = session.execute(
                     select(SubjectLinkDB)
                     .where(
-                        func.lower(SubjectLinkDB.label) == relation_.strip().lower()
+                        SubjectLinkDB.onto_hash == onto_hash,
+                        func.lower(SubjectLinkDB.label) == relation_.strip().lower(),
                     )
                     .limit(1)
                 ).first()
@@ -529,17 +535,21 @@ class LLMQuery(Initationatable):
                     None,
                 )
 
-            # swap links if the schema is the other way around - does not constrain llm
+            def fits(entity: EnrichedEntity | None, subject_id: str | None) -> int:
+                return int(
+                    entity is not None
+                    and subject_id is not None
+                    and entity.subject.is_of_type(subject_id)
+                )
+
+            # swap links if the schema fits the other way around - does not constrain llm
             for relation in erl_enriched.relations:
                 from_entity = get_entity_by_id(relation.entity)
                 to_entity = get_entity_by_id(relation.target)
-                if (
-                    from_entity is not None
-                    and from_entity.subject.is_of_type(relation.link.to_id)
-                ) or (
-                    to_entity is not None
-                    and to_entity.subject.is_of_type(relation.link.from_id)
-                ):
+                link = relation.link
+                as_is = fits(from_entity, link.from_id) + fits(to_entity, link.to_id)
+                swapped = fits(from_entity, link.to_id) + fits(to_entity, link.from_id)
+                if swapped > as_is:
                     print(
                         f"Swapping relation {relation.relation} from {relation.entity} to {relation.target}"
                     )
@@ -553,7 +563,10 @@ class LLMQuery(Initationatable):
                         continue
                     subject = session.execute(
                         select(SubjectInDB)
-                        .where(SubjectInDB.subject_id == subject_id)
+                        .where(
+                            SubjectInDB.onto_hash == onto_hash,
+                            SubjectInDB.subject_id == subject_id,
+                        )
                         .limit(1)
                     ).first()
                     if subject:

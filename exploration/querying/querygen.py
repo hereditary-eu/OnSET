@@ -132,7 +132,7 @@ if __name__ == "__main__":
     )
     graph = Graph(store=store)
 
-    config = OntologyConfig()
+    config = OntologyConfig.from_eval_config(setup)
 
     ontology_manager = OntologyManager(config, graph)
     topic_man = GuidanceManager(

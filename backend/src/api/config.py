@@ -12,7 +12,7 @@ from assistant.assistant_model import Operations
 from assistant.iterative_assistant import IterativeAssistant
 from assistant.progressive import ProgressiveResult, ProgressiveSampler
 from datasetmatcher import DatasetManager
-from eval_config import CONFIG_FILE, EvalConfig, MultimodalConfig
+from eval_config import CONFIG_FILE, EvalConfig
 from explorative.explorative_support import GuidanceManager
 from explorative.llm_query import LLMQuery
 from fastapi import Depends, HTTPException, WebSocketException, status
@@ -61,16 +61,7 @@ class ManMan:
         )
         self.graph = Graph(store=self.store)
 
-        self.config = OntologyConfig()
-        self.config.multimodal_config = (
-            db_config.multimodal_config
-            if db_config.multimodal_config
-            else MultimodalConfig()
-        )
-        self.config.ontology_extension = db_config.ontology_extension
-        self.config.save_named_individuals = db_config.save_named_individuals
-        if db_config.additional_namespaces:
-            self.config.additional_namespaces.update(db_config.additional_namespaces)
+        self.config = OntologyConfig.from_eval_config(db_config)
         self.ontology_manager = OntologyManager(self.config, self.graph)
         # initialised lazily by GET /classes/outlinks
         self.dataset_manager = DatasetManager(self.ontology_manager)

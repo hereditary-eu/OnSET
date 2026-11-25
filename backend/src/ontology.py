@@ -16,6 +16,7 @@ import pandas as pd
 from tqdm import tqdm
 import traceback
 from rdflib.plugins.parsers.notation3 import BadSyntax
+import sparql_parse_lock  # noqa: F401  rdflib's SPARQL parser is not thread-safe
 from eval_config import MultimodalConfig
 
 from utils import to_prefix
@@ -88,6 +89,21 @@ class OntologyConfig(BaseModel):
         title="Additional Namespaces",
         description="Additional namespaces to be used in the ontology",
     )
+
+    @classmethod
+    def from_eval_config(cls, cfg) -> "OntologyConfig":
+        """The ontology settings of an ``EvalConfig`` entry (namespaces, extension, multimodal).
+
+        The stored schema uses the config's prefixes (e.g. ``dbo:``), so every consumer of the
+        database (API, init, evaluation) has to build its OntologyManager from this.
+        """
+        config = cls()
+        config.multimodal_config = cfg.multimodal_config or MultimodalConfig()
+        config.ontology_extension = cfg.ontology_extension
+        config.save_named_individuals = cfg.save_named_individuals
+        if cfg.additional_namespaces:
+            config.additional_namespaces.update(cfg.additional_namespaces)
+        return config
 
 
 INT_COMPATIBLE_TYPES = [

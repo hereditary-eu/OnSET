@@ -23,6 +23,8 @@ from typing import Literal as TLiteral
 from pydantic import BaseModel
 from rdflib import DCTERMS, FOAF, RDF, RDFS, SKOS, Graph, Literal, URIRef
 
+import sparql_parse_lock  # noqa: F401  sessions query concurrently, rdflib's parser is not thread-safe
+
 from builder.corpus import Corpus
 from builder.disambiguate import Disambiguator, Judge, LlamaJudge, Merge
 from builder.extract import Extractor, LlamaExtractor

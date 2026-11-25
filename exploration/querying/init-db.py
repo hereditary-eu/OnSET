@@ -56,9 +56,7 @@ if __name__ == "__main__":
     )
     graph = Graph(store=store)
 
-    config = OntologyConfig()
-    config.ontology_extension = setup.ontology_extension
-    config.multimodal_config = setup.multimodal_config or MultimodalConfig()
+    config = OntologyConfig.from_eval_config(setup)
 
     ontology_manager = OntologyManager(config, graph)
     dataset_manager = DatasetManager(ontology_manager)
