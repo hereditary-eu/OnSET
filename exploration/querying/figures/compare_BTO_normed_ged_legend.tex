@@ -9,13 +9,10 @@ every axis/.style={
                 }
 ]
 
-\definecolor{lightblue161201244}{RGB}{161,201,244}
-\definecolor{lightgreen141229161}{RGB}{141,229,161}
 \definecolor{lightgrey203}{RGB}{203,203,203}
 \definecolor{lightgrey204}{RGB}{204,204,204}
-\definecolor{lightsalmon255159155}{RGB}{255,159,155}
-\definecolor{lightsalmon255180130}{RGB}{255,180,130}
-\definecolor{thistle208187255}{RGB}{208,187,255}
+\definecolor{lightgrey207}{RGB}{207,207,207}
+\definecolor{pink250176228}{RGB}{250,176,228}
 \definecolor{whitesmoke240}{RGB}{240,240,240}
 
 \begin{axis}[
@@ -27,8 +24,8 @@ legend style={
   fill opacity=0.8,
   draw opacity=1,
   text opacity=1,
-  at={(0.5,0.91)},
-  anchor=north,
+  at={(0.03,0.97)},
+  anchor=north west,
   draw=lightgrey204
 },
 tick align=outside,
@@ -65,84 +62,44 @@ yticklabels={
   \(\displaystyle {1.0}\)
 }
 ]
-\addplot [thick, lightblue161201244, mark=x, mark size=5, mark options={solid,fill opacity=0}]
+\addplot [thick, pink250176228, dashed, mark=x, mark size=5, mark options={solid,fill opacity=0}]
 table {%
-2 0.431985972683647
-3 0.585987696514012
-5 0.458801344184585
-7 0.576923076923077
+2 0.526767676767677
+3 0.602179176755448
+5 0.495019157088123
+7 0.653846153846154
 };
-\addlegendentry{Hermes 3 3B aligned}
-\addplot [thick, lightblue161201244, dashed, mark=x, mark size=5, mark options={solid,fill opacity=0}]
+\addlegendentry{Qwen3.8 27B aligned}
+\addplot [thick, pink250176228, dotted, mark=x, mark size=5, mark options={solid,fill opacity=0}]
 table {%
-2 0.271650055370986
-3 0.204868231184021
-5 0.228658943936722
-7 0.384615384615385
-};
-\addlegendentry{raw}
-\addplot [thick, lightsalmon255180130, mark=x, mark size=5, mark options={solid,fill opacity=0}]
-table {%
-2 0.348702600526979
-3 0.589603159189487
-5 0.54787296037296
-7 0.31486076647367
-};
-\addlegendentry{Hermes 3 8B aligned}
-\addplot [thick, lightsalmon255180130, dashed, mark=x, mark size=5, mark options={solid,fill opacity=0}]
-table {%
-2 0.0583979328165375
-3 0.0741854636591479
-5 0.181313131313131
-7 0.2
+2 0.173232323232323
+3 0.191195856873823
+5 0.142057491753232
+7 0.02
 };
 \addlegendentry{raw}
-\addplot [thick, lightgreen141229161, mark=x, mark size=5, mark options={solid,fill opacity=0}]
+\addplot [thick, pink250176228, mark=o, mark size=5, mark options={solid,fill opacity=0}]
 table {%
-2 0.48671977971876
-3 0.605111176702086
-5 0.552105248774043
-7 0.400234448382426
+2 0.982323232323232
+3 0.96195856873823
+5 0.91710205503309
+7 1
 };
-\addlegendentry{Hermes 3 70B aligned}
-\addplot [thick, lightgreen141229161, dashed, mark=x, mark size=5, mark options={solid,fill opacity=0}]
+\addlegendentry{agent}
+\addplot [thick, lightgrey207, dashed, mark=x, mark size=5, mark options={solid,fill opacity=0}]
 table {%
-2 0.233333333333333
-3 0.218903318903319
-5 0.26984126984127
-7 0.0242424242424242
-};
-\addlegendentry{raw}
-\addplot [thick, lightsalmon255159155, mark=x, mark size=5, mark options={solid,fill opacity=0}]
-table {%
-2 0.45905325443787
-3 0.626257734732311
-5 0.490532544378698
-7 0.769230769230769
-};
-\addlegendentry{Qwen2.5 Coder 32B aligned}
-\addplot [thick, lightsalmon255159155, dashed, mark=x, mark size=5, mark options={solid,fill opacity=0}]
-table {%
-2 0.0707692307692308
-3 0.088512241054614
-5 0.112820512820513
+2 0.357521645021645
+3 0.474145816518698
+5 0.502681992337165
 7 0.461538461538462
 };
-\addlegendentry{raw}
-\addplot [thick, thistle208187255, mark=x, mark size=5, mark options={solid,fill opacity=0}]
+\addlegendentry{LFM3 1.7B aligned}
+\addplot [thick, lightgrey207, dotted, mark=x, mark size=5, mark options={solid,fill opacity=0}]
 table {%
-2 0.385227272727273
-3 0.460640301318267
-5 0.426332288401254
-7 0.576923076923077
-};
-\addlegendentry{Qwen2.5 Instruct 32B aligned}
-\addplot [thick, thistle208187255, dashed, mark=x, mark size=5, mark options={solid,fill opacity=0}]
-table {%
-2 0.103535353535354
-3 0.139924670433145
-5 0.120689655172414
-7 0.230769230769231
+2 0.0686327561327561
+3 0.0505796463423582
+5 0.0780390107976315
+7 0.153846153846154
 };
 \addlegendentry{raw}
 \end{axis}
