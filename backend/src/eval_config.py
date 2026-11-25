@@ -183,16 +183,26 @@ class TextSetConfig(BaseModel):
     ``files``: every file matching ``glob`` below ``path`` is one document (e-mails are
     parsed: subject as title, plain text body). ``json``: ``path`` is a JSON object
     (or list) of records, or a directory whose files matching ``glob`` are each such
-    a JSON file; ``title_field`` and ``text_fields`` select the text.
+    a JSON file; ``jsonl``: the same with one JSON record per line; ``llms4ol``: an LLMs4OL
+    Text2Onto split, ``path`` its directory (``documents.jsonl`` and the gold annotation of
+    each document, ``gold.json`` or ``gold``) or documents file, ids from ``id_field`` "id".
+    ``title_field``, ``text_fields`` and ``id_field`` select the text and id, dotted paths
+    (``metadata.title``) reach into nested records.
     Relative paths are resolved against the config file's directory.
     """
 
-    format: Literal["files", "json"] = "files"
+    format: Literal["files", "json", "jsonl", "llms4ol"] = "files"
     path: str
-    # files below a directory ``path``; None: "**/*" (files) or "**/*.json" (json)
+    # files below a directory ``path``; None: "**/*" (files), "**/*.json" (json), "**/*.jsonl" (jsonl)
     glob: str | None = None
     title_field: str = "title"
     text_fields: list[str] = Field(default_factory=lambda: ["text"])
+    # record field holding the document id (used as is, also across files); None or a record
+    # without it: its key (json object), index (json list) or line number (jsonl), prefixed
+    # with its file below a directory ``path``
+    id_field: str | None = None
+    # llms4ol: the gold annotation file ``{doc_id: annotation}``, None for the split's gold.json
+    gold: str | None = None
     # documents loaded (in sorted path/key order), None (the default; an empty string,
     # e.g. an unset ``${VAR:-}``) for all
     max_documents: int | None = Field(None, ge=1)
@@ -249,6 +259,16 @@ class BuilderConfig(BaseModel):
     # where saved sessions (TTL) are kept
     save_dir: str = "builder-saves"
     agent: AgentConfig = Field(default_factory=AgentConfig)
+    # keep only extracted names that occur in their document (drops names a small extraction
+    # model copies from the prompt's descriptions or few-shot examples)
+    grounded_names: bool = True
+    # triple store of the sessions' KGs: Tentris where available ("auto"), or always Tentris /
+    # rdflib's memory store ("memory": slower on large KGs, but a malformed agent query cannot
+    # crash the process, as Tentris' native query can)
+    store: Literal["auto", "tentris", "memory"] = "auto"
+    # extract documents longer than this in pieces of whole sentences of at most this many
+    # characters (a small extraction model stops early on long texts), None: whole documents
+    extract_chunk_chars: int | None = Field(None, ge=100)
     # disambiguation settings of new sessions (each session keeps and saves its own)
     disambiguation: DisambiguationSettings = Field(default_factory=DisambiguationSettings)
     # yes/no "same entity?" judge of the llm_judge disambiguation, loaded on its first use
@@ -257,6 +277,8 @@ class BuilderConfig(BaseModel):
     judge_n_ctx: int = 2048
     # judge models in the pool shared by the extraction threads (1: one model behind a lock)
     judge_instances: int = Field(1, ge=1)
+    # annotated example documents (e.g. an llms4ol train split) for the agent's get_annotated_examples
+    examples: TextSetConfig | None = None
 
 
 CONFIG_PATH_ENV = "ONSET_CONFIG"
@@ -339,7 +361,10 @@ class OnsetConfigFile(BaseModel):
         """The ontology builder ``key`` (KeyError if unknown), paths made absolute."""
         raw = _merge({"agent": self.defaults.get("agent", {})}, self.builders[key])
         config = BuilderConfig(**raw)
-        config.text_set.path = str(Path(self.base_dir) / config.text_set.path)
+        for text_set in filter(None, [config.text_set, config.examples]):
+            text_set.path = str(Path(self.base_dir) / text_set.path)
+            if text_set.gold:
+                text_set.gold = str(Path(self.base_dir) / text_set.gold)
         config.save_dir = str(Path(self.base_dir) / config.save_dir)
         return config
 

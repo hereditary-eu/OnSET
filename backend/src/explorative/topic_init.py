@@ -388,6 +388,13 @@ class TopicInitator:
                     """
                 cls_descs[cls.subject_id] = desc_short
                 embedding = self.guidance_man.embedding_model.encode(desc_short)
+                existing_subject = (
+                    session.query(SubjectInDB)
+                    .filter(SubjectInDB.subject_id == cls.subject_id)
+                    .first()
+                )
+                if existing_subject is not None:
+                    continue  # Skip if the subject already exists in the database
                 session.add(
                     SubjectInDB(
                         subject_id=cls.subject_id,

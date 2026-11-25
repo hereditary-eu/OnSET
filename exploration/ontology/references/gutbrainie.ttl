@@ -1,0 +1,208 @@
+@prefix ref: <http://example.org/ref/gutbrainie/> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+
+ref: a owl:Ontology ;
+    rdfs:label "GutBrainIE 2026 reference ontology" ;
+    rdfs:comment "Entity labels and relation predicates of the GutBrainIE 2026 challenge (BioASQ Task 6 @ CLEF 2026). Source: https://hereditary.dei.unipd.it/challenges/gutbrainie/2026/ (Entity and Relation Labels section); annotation guidelines: https://hereditary.dei.unipd.it/challenges/gutbrainie/2026/files/GutBrainIE_2026_Annotation_Guidelines.pdf" ;
+    rdfs:seeAlso <https://hereditary.dei.unipd.it/challenges/gutbrainie/2026/> .
+
+# Entity types (13). The website lists them flat, with no higher-level categories.
+
+ref:AnatomicalLocation a owl:Class ;
+    rdfs:label "anatomical location" ;
+    rdfs:comment "Named locations of or within the body. [NCIT_C13717]" .
+
+ref:Animal a owl:Class ;
+    rdfs:label "animal" ;
+    rdfs:comment "A non-human living organism that has membranous cell walls, requires oxygen and organic foods, and is capable of voluntary movement, as distinguished from a plant or mineral. [NCIT_C14182]" .
+
+ref:BiomedicalTechnique a owl:Class ;
+    rdfs:label "biomedical technique" ;
+    rdfs:comment "Research concerned with the application of biological and physiological principles to clinical medicine. [NCIT_C15188]" .
+
+ref:Bacteria a owl:Class ;
+    rdfs:label "bacteria" ;
+    rdfs:comment "One of the three domains of life (the others being Eukarya and ARCHAEA), also called Eubacteria. They are unicellular prokaryotic microorganisms which generally possess rigid cell walls, multiply by cell division, and exhibit three principal forms: round or coccal, rodlike or bacillary, and spiral or spirochetal. [NCBITaxon_2]" .
+
+ref:Chemical a owl:Class ;
+    rdfs:label "chemical" ;
+    rdfs:comment "A chemical substance is a portion of matter of constant composition, composed of molecular entities of the same type or of different types. This category also includes metabolites, which in biochemistry are the intermediate or end product of metabolism, and neurotransmitters, which are endogenous compounds used to transmit information across the synapses. [CHEBI_59999]" .
+
+ref:DietarySupplement a owl:Class ;
+    rdfs:label "dietary supplement" ;
+    rdfs:comment "Products in capsule, tablet or liquid form that provide dietary ingredients, and that are intended to be taken by mouth to increase the intake of nutrients. Dietary supplements can include macronutrients, such as proteins, carbohydrates, and fats; and/or micronutrients, such as vitamins; minerals; and phytochemicals. [MESH_68019587]" .
+
+ref:DDF a owl:Class ;
+    rdfs:label "DDF" ;
+    skos:altLabel "Disease, Disorder, or Finding" ;
+    rdfs:comment "A condition that is relevant to human neoplasms and non-neoplastic disorders. This includes observations, test results, history and other concepts relevant to the characterization of human pathologic conditions. [NCIT_C7057]" .
+
+ref:Drug a owl:Class ;
+    rdfs:label "drug" ;
+    rdfs:comment "Any substance which when absorbed into a living organism may modify one or more of its functions. The term is generally accepted for a substance taken for a therapeutic purpose, but is also commonly used for abused substances. [CHEBI_23888]" .
+
+ref:Food a owl:Class ;
+    rdfs:label "food" ;
+    rdfs:comment "A substance consumed by humans and animals for nutritional purpose [NCIT_C1949]" .
+
+ref:Gene a owl:Class ;
+    rdfs:label "gene" ;
+    rdfs:comment "A functional unit of heredity which occupies a specific position on a particular chromosome and serves as the template for a product that contributes to a phenotype or a biological function. [SNOMEDCT_67261001]" .
+
+ref:Human a owl:Class ;
+    rdfs:label "human" ;
+    rdfs:comment "Members of the species Homo sapiens. [NCBITaxon_9606]" .
+
+ref:Microbiome a owl:Class ;
+    rdfs:label "microbiome" ;
+    rdfs:comment "This term refers to the entire habitat, including the microorganisms (bacteria, archaea, lower and higher eukaryotes, and viruses), their genomes (i.e., genes), and the surrounding environmental conditions. [OHMI_0000003]" .
+
+ref:StatisticalTechnique a owl:Class ;
+    rdfs:label "statistical technique" ;
+    rdfs:comment "A method of calculating, analyzing, or representing statistical data. [NCIT_C19044]" .
+
+# Relation predicates (17). Domain = head entity, range = tail entity, from the website relation table.
+# The website defines no predicates beyond their head/tail types.
+
+ref:locatedIn a owl:ObjectProperty ;
+    rdfs:label "located in" ;
+    rdfs:comment "GutBrainIE relation 'located in' (head -> tail): anatomical location -> human; anatomical location -> animal; bacteria -> human; bacteria -> animal; chemical -> anatomical location; chemical -> human; chemical -> animal; microbiome -> anatomical location; microbiome -> human; microbiome -> animal." ;
+    ref:signature [ rdfs:domain ref:AnatomicalLocation ; rdfs:range ref:Human ],
+        [ rdfs:domain ref:AnatomicalLocation ; rdfs:range ref:Animal ],
+        [ rdfs:domain ref:Bacteria ; rdfs:range ref:Human ],
+        [ rdfs:domain ref:Bacteria ; rdfs:range ref:Animal ],
+        [ rdfs:domain ref:Chemical ; rdfs:range ref:AnatomicalLocation ],
+        [ rdfs:domain ref:Chemical ; rdfs:range ref:Human ],
+        [ rdfs:domain ref:Chemical ; rdfs:range ref:Animal ],
+        [ rdfs:domain ref:Microbiome ; rdfs:range ref:AnatomicalLocation ],
+        [ rdfs:domain ref:Microbiome ; rdfs:range ref:Human ],
+        [ rdfs:domain ref:Microbiome ; rdfs:range ref:Animal ] .
+
+ref:interact a owl:ObjectProperty ;
+    rdfs:label "interact" ;
+    rdfs:comment "GutBrainIE relation 'interact' (head -> tail): bacteria -> bacteria; bacteria -> chemical; bacteria -> drug; chemical -> chemical; DDF -> chemical; drug -> chemical; drug -> drug." ;
+    ref:signature [ rdfs:domain ref:Bacteria ; rdfs:range ref:Bacteria ],
+        [ rdfs:domain ref:Bacteria ; rdfs:range ref:Chemical ],
+        [ rdfs:domain ref:Bacteria ; rdfs:range ref:Drug ],
+        [ rdfs:domain ref:Chemical ; rdfs:range ref:Chemical ],
+        [ rdfs:domain ref:DDF ; rdfs:range ref:Chemical ],
+        [ rdfs:domain ref:Drug ; rdfs:range ref:Chemical ],
+        [ rdfs:domain ref:Drug ; rdfs:range ref:Drug ] .
+
+ref:influence a owl:ObjectProperty ;
+    rdfs:label "influence" ;
+    rdfs:comment "GutBrainIE relation 'influence' (head -> tail): bacteria -> DDF; chemical -> DDF; dietary supplement -> DDF; food -> DDF." ;
+    ref:signature [ rdfs:domain ref:Bacteria ; rdfs:range ref:DDF ],
+        [ rdfs:domain ref:Chemical ; rdfs:range ref:DDF ],
+        [ rdfs:domain ref:DietarySupplement ; rdfs:range ref:DDF ],
+        [ rdfs:domain ref:Food ; rdfs:range ref:DDF ] .
+
+ref:changeExpression a owl:ObjectProperty ;
+    rdfs:label "change expression" ;
+    rdfs:comment "GutBrainIE relation 'change expression' (head -> tail): bacteria -> gene; chemical -> gene; dietary supplement -> gene; drug -> gene; food -> gene; microbiome -> gene." ;
+    ref:signature [ rdfs:domain ref:Bacteria ; rdfs:range ref:Gene ],
+        [ rdfs:domain ref:Chemical ; rdfs:range ref:Gene ],
+        [ rdfs:domain ref:DietarySupplement ; rdfs:range ref:Gene ],
+        [ rdfs:domain ref:Drug ; rdfs:range ref:Gene ],
+        [ rdfs:domain ref:Food ; rdfs:range ref:Gene ],
+        [ rdfs:domain ref:Microbiome ; rdfs:range ref:Gene ] .
+
+ref:partOf a owl:ObjectProperty ;
+    rdfs:label "part of" ;
+    rdfs:comment "GutBrainIE relation 'part of' (head -> tail): bacteria -> microbiome; chemical -> chemical." ;
+    ref:signature [ rdfs:domain ref:Bacteria ; rdfs:range ref:Microbiome ],
+        [ rdfs:domain ref:Chemical ; rdfs:range ref:Chemical ] .
+
+ref:impact a owl:ObjectProperty ;
+    rdfs:label "impact" ;
+    rdfs:comment "GutBrainIE relation 'impact' (head -> tail): chemical -> microbiome; chemical -> bacteria; dietary supplement -> bacteria; dietary supplement -> microbiome; drug -> bacteria; drug -> microbiome; food -> bacteria; food -> microbiome." ;
+    ref:signature [ rdfs:domain ref:Chemical ; rdfs:range ref:Microbiome ],
+        [ rdfs:domain ref:Chemical ; rdfs:range ref:Bacteria ],
+        [ rdfs:domain ref:DietarySupplement ; rdfs:range ref:Bacteria ],
+        [ rdfs:domain ref:DietarySupplement ; rdfs:range ref:Microbiome ],
+        [ rdfs:domain ref:Drug ; rdfs:range ref:Bacteria ],
+        [ rdfs:domain ref:Drug ; rdfs:range ref:Microbiome ],
+        [ rdfs:domain ref:Food ; rdfs:range ref:Bacteria ],
+        [ rdfs:domain ref:Food ; rdfs:range ref:Microbiome ] .
+
+ref:producedBy a owl:ObjectProperty ;
+    rdfs:label "produced by" ;
+    rdfs:comment "GutBrainIE relation 'produced by' (head -> tail): chemical -> microbiome." ;
+    rdfs:domain ref:Chemical ;
+    rdfs:range ref:Microbiome ;
+    ref:signature [ rdfs:domain ref:Chemical ; rdfs:range ref:Microbiome ] .
+
+ref:administered a owl:ObjectProperty ;
+    rdfs:label "administered" ;
+    rdfs:comment "GutBrainIE relation 'administered' (head -> tail): chemical -> human; chemical -> animal; dietary supplement -> human; dietary supplement -> animal; drug -> human; drug -> animal; food -> human; food -> animal." ;
+    ref:signature [ rdfs:domain ref:Chemical ; rdfs:range ref:Human ],
+        [ rdfs:domain ref:Chemical ; rdfs:range ref:Animal ],
+        [ rdfs:domain ref:DietarySupplement ; rdfs:range ref:Human ],
+        [ rdfs:domain ref:DietarySupplement ; rdfs:range ref:Animal ],
+        [ rdfs:domain ref:Drug ; rdfs:range ref:Human ],
+        [ rdfs:domain ref:Drug ; rdfs:range ref:Animal ],
+        [ rdfs:domain ref:Food ; rdfs:range ref:Human ],
+        [ rdfs:domain ref:Food ; rdfs:range ref:Animal ] .
+
+ref:strike a owl:ObjectProperty ;
+    rdfs:label "strike" ;
+    rdfs:comment "GutBrainIE relation 'strike' (head -> tail): DDF -> anatomical location." ;
+    rdfs:domain ref:DDF ;
+    rdfs:range ref:AnatomicalLocation ;
+    ref:signature [ rdfs:domain ref:DDF ; rdfs:range ref:AnatomicalLocation ] .
+
+ref:changeAbundance a owl:ObjectProperty ;
+    rdfs:label "change abundance" ;
+    rdfs:comment "GutBrainIE relation 'change abundance' (head -> tail): DDF -> bacteria; DDF -> microbiome." ;
+    ref:signature [ rdfs:domain ref:DDF ; rdfs:range ref:Bacteria ],
+        [ rdfs:domain ref:DDF ; rdfs:range ref:Microbiome ] .
+
+ref:affect a owl:ObjectProperty ;
+    rdfs:label "affect" ;
+    rdfs:comment "GutBrainIE relation 'affect' (head -> tail): DDF -> DDF." ;
+    rdfs:domain ref:DDF ;
+    rdfs:range ref:DDF ;
+    ref:signature [ rdfs:domain ref:DDF ; rdfs:range ref:DDF ] .
+
+ref:isA a owl:ObjectProperty ;
+    rdfs:label "is a" ;
+    rdfs:comment "GutBrainIE relation 'is a' (head -> tail): DDF -> DDF." ;
+    rdfs:domain ref:DDF ;
+    rdfs:range ref:DDF ;
+    ref:signature [ rdfs:domain ref:DDF ; rdfs:range ref:DDF ] .
+
+ref:target a owl:ObjectProperty ;
+    rdfs:label "target" ;
+    rdfs:comment "GutBrainIE relation 'target' (head -> tail): DDF -> human; DDF -> animal." ;
+    ref:signature [ rdfs:domain ref:DDF ; rdfs:range ref:Human ],
+        [ rdfs:domain ref:DDF ; rdfs:range ref:Animal ] .
+
+ref:changeEffect a owl:ObjectProperty ;
+    rdfs:label "change effect" ;
+    rdfs:comment "GutBrainIE relation 'change effect' (head -> tail): drug -> DDF." ;
+    rdfs:domain ref:Drug ;
+    rdfs:range ref:DDF ;
+    ref:signature [ rdfs:domain ref:Drug ; rdfs:range ref:DDF ] .
+
+ref:usedBy a owl:ObjectProperty ;
+    rdfs:label "used by" ;
+    rdfs:comment "GutBrainIE relation 'used by' (head -> tail): human -> biomedical technique; animal -> biomedical technique; microbiome -> biomedical technique." ;
+    ref:signature [ rdfs:domain ref:Human ; rdfs:range ref:BiomedicalTechnique ],
+        [ rdfs:domain ref:Animal ; rdfs:range ref:BiomedicalTechnique ],
+        [ rdfs:domain ref:Microbiome ; rdfs:range ref:BiomedicalTechnique ] .
+
+ref:isLinkedTo a owl:ObjectProperty ;
+    rdfs:label "is linked to" ;
+    rdfs:comment "GutBrainIE relation 'is linked to' (head -> tail): microbiome -> DDF." ;
+    rdfs:domain ref:Microbiome ;
+    rdfs:range ref:DDF ;
+    ref:signature [ rdfs:domain ref:Microbiome ; rdfs:range ref:DDF ] .
+
+ref:comparedTo a owl:ObjectProperty ;
+    rdfs:label "compared to" ;
+    rdfs:comment "GutBrainIE relation 'compared to' (head -> tail): microbiome -> microbiome." ;
+    rdfs:domain ref:Microbiome ;
+    rdfs:range ref:Microbiome ;
+    ref:signature [ rdfs:domain ref:Microbiome ; rdfs:range ref:Microbiome ] .

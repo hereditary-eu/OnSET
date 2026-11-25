@@ -39,7 +39,7 @@ from rapidfuzz.distance import Levenshtein
 from rdflib import URIRef
 
 from builder.extract import ModelPool
-from builder.ontology import OntoClass, Ontology
+from builder.ontology import OntoClass, Ontology, normalize
 from eval_config import BuilderConfig, DisambiguationSettings
 
 logger = logging.getLogger(__name__)
@@ -53,11 +53,6 @@ CONTEXT_CHARS = 160
 Resolver = Callable[[str, str], tuple[URIRef, str]]
 
 
-def normalize(name: str) -> str:
-    """``"Enron  Corp."`` -> ``"enron corp"``."""
-    text = unicodedata.normalize("NFKC", name).casefold()
-    text = re.sub(r"[\W_]+", " ", text)
-    return " ".join(text.split())
 
 
 def context(text: str, name: str, chars: int = CONTEXT_CHARS) -> str:

@@ -110,7 +110,8 @@ def score_erl(target_erl, erl, normalize: Normalize = _identity, ged_timeout=20)
         "ged": ged,
         "normed_ged": normed_ged,
         "matched_by": "id" if use_ids else "label",
-        "response": erl.model_dump_json(),
+        # not "response": run_evals merges the query row, whose "response" is the NL query
+        "predicted_erl": erl.model_dump_json(),
     }
 
 

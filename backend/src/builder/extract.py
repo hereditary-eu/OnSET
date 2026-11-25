@@ -5,7 +5,9 @@ ontology as a JSON schema in its system prompt and its output is constrained to
 that schema (llama.cpp turns ``response_format.schema`` into a grammar), so
 every answer parses and only uses the ontology's classes, fields and links. The
 grammar is checked lazily (builder/lazy_grammar.py), which makes extraction
-several times faster with the same output.
+several times faster with the same output. The ontology's extraction examples
+(up to ``MAX_EXAMPLES``, after the examples retrieved for the text, see
+``BuilderSession.extract_text``) precede the document as earlier user/assistant turns.
 """
 
 import datetime
@@ -16,12 +18,16 @@ import threading
 from contextlib import contextmanager
 from typing import Protocol
 
-from builder.ontology import Ontology, extraction_schema
+from builder.ontology import Ontology, example_output, extraction_schema
 from eval_config import BuilderConfig
 
 SYSTEM_PROMPT = """Return data as a JSON object with the following schema:
 {template}
 Extract every matching entity mentioned in the text, using its name as written in the text. Missing data should be omitted."""
+
+# few-shot examples given to the extraction model, and the characters of each example's text
+MAX_EXAMPLES = 3
+MAX_EXAMPLE_CHARS = 1500
 
 logger = logging.getLogger(__name__)
 # llama-cpp-python silences a model's loading by pointing the process's stdout/stderr at
@@ -45,7 +51,7 @@ def template(onto: Ontology) -> dict:
         for f in cls.fields:
             item[f.name] = f"{f.type}" + (
                 f": {f.description}" if f.description else f": {f.name}"
-            )
+            ) + (f" (one of: {', '.join(f.values)})" if f.type == "enum" and f.values else "")
         for link in onto.links:
             if link.source == cls.id:
                 item[link.id] = [
@@ -54,6 +60,18 @@ def template(onto: Ontology) -> dict:
                 ]
         out[cls.id] = [item]
     return out
+
+
+def extraction_messages(onto: Ontology, text: str) -> list[dict]:
+    """The chat of an extraction: the schema template, the ontology's examples as earlier
+    turns (their outputs fitted to the current ontology) and the document. Up to ``MAX_EXAMPLES``
+    plus ``retrieved_examples`` examples (the retrieved ones come first, ``BuilderSession.extract_text``)."""
+    messages = [{"role": "system", "content": SYSTEM_PROMPT.format(template=json.dumps(template(onto), indent=1))}]
+    for example in onto.examples[:MAX_EXAMPLES + onto.retrieved_examples]:
+        messages.append({"role": "user", "content": example.text[:MAX_EXAMPLE_CHARS]})
+        messages.append({"role": "assistant", "content": json.dumps(example_output(onto, example.output))})
+    messages.append({"role": "user", "content": text})
+    return messages
 
 
 class ModelPool:
@@ -104,15 +122,7 @@ class LlamaExtractor:
         with self.pool.instance() as llm:
             start_time = datetime.datetime.now()
             response = llm.create_chat_completion(
-                messages=[
-                    {
-                        "role": "system",
-                        "content": SYSTEM_PROMPT.format(
-                            template=json.dumps(template(onto), indent=1)
-                        ),
-                    },
-                    {"role": "user", "content": text},
-                ],
+                messages=extraction_messages(onto, text),
                 response_format={"type": "json_object", "schema": schema},
                 temperature=0.0,
                 max_tokens=1024,
@@ -127,3 +137,13 @@ class LlamaExtractor:
             from json_repair import repair_json
 
             return repair_json(content, return_objects=True) or {}
+
+
+def merge_extractions(outputs: list[dict]) -> dict:
+    """The outputs of several pieces of a document as one (each class' instances concatenated)."""
+    merged: dict = {}
+    for data in outputs:
+        for class_id, items in (data or {}).items():
+            if isinstance(items, list):
+                merged.setdefault(class_id, []).extend(items)
+    return merged

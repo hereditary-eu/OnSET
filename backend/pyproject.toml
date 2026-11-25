@@ -53,6 +53,7 @@ dependencies = [
     "tentris>=1.5.0",
     "python-dotenv>=1.2.4",
     "rapidfuzz>=3.14.6",
+    "inflection>=0.5.1",
 ]
 
 [project.optional-dependencies]

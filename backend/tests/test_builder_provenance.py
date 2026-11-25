@@ -60,6 +60,8 @@ def test_instances_derive_from_their_documents(tmp_path):
         "d3": {"title": "Lunch", "text": "Alice Smith met Bob Jones."},
         "d4": {"title": "Empty", "text": "Nobody here."},
     }, FakeExtractor()).session("p")
+    # the fake extractor names Acme in d3 too, which grounding would drop
+    session.builder.config.grounded_names = False
     onto = ontology()
     session.set_ontology(onto)
     wait_built(session)

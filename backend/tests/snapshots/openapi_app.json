@@ -273,6 +273,26 @@
     "title": "DocumentOut",
     "type": "object"
    },
+   "ExtractionExample": {
+    "description": "A text and the extraction output (``extraction_schema`` shaped) expected for it.",
+    "properties": {
+     "output": {
+      "additionalProperties": true,
+      "title": "Output",
+      "type": "object"
+     },
+     "text": {
+      "title": "Text",
+      "type": "string"
+     }
+    },
+    "required": [
+     "text",
+     "output"
+    ],
+    "title": "ExtractionExample",
+    "type": "object"
+   },
    "HTTPValidationError": {
     "properties": {
      "detail": {
@@ -541,6 +561,13 @@
       "title": "Label",
       "type": "string"
      },
+     "parents": {
+      "items": {
+       "type": "string"
+      },
+      "title": "Parents",
+      "type": "array"
+     },
      "x": {
       "anyOf": [
        {
@@ -589,10 +616,19 @@
        "float",
        "date",
        "boolean",
-       "vector"
+       "vector",
+       "enum"
       ],
       "title": "Type",
       "type": "string"
+     },
+     "values": {
+      "items": {
+       "type": "string"
+      },
+      "maxItems": 256,
+      "title": "Values",
+      "type": "array"
      }
     },
     "required": [
@@ -636,11 +672,37 @@
    },
    "Ontology": {
     "properties": {
+     "annotation_map": {
+      "additionalProperties": {
+       "type": "string"
+      },
+      "title": "Annotation Map",
+      "type": "object"
+     },
+     "chunk_chars": {
+      "anyOf": [
+       {
+        "minimum": 100.0,
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Chunk Chars"
+     },
      "classes": {
       "items": {
        "$ref": "#/components/schemas/OntoClass"
       },
       "title": "Classes",
+      "type": "array"
+     },
+     "examples": {
+      "items": {
+       "$ref": "#/components/schemas/ExtractionExample"
+      },
+      "title": "Examples",
       "type": "array"
      },
      "links": {
@@ -654,6 +716,20 @@
       "default": "http://example.org/onto/",
       "title": "Prefix",
       "type": "string"
+     },
+     "retrieved_examples": {
+      "default": 0,
+      "maximum": 5.0,
+      "minimum": 0.0,
+      "title": "Retrieved Examples",
+      "type": "integer"
+     },
+     "vocabulary_classes": {
+      "items": {
+       "type": "string"
+      },
+      "title": "Vocabulary Classes",
+      "type": "array"
      }
     },
     "title": "Ontology",
