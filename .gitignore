@@ -27,3 +27,4 @@ exploration/extraction-speed
 *.jsonl
 *.tsv
 als-gene-embeddings
+.uv-agent
