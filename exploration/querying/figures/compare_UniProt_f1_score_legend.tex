@@ -1,107 +1,119 @@
 % This file was created with tikzplotlib v0.10.1.post13.
-\begin{tikzpicture}[
-scale=0.5,
-every axis/.style={
-                    legend pos=south west, 
-                    legend style={
-                font=\small},
-                    legend columns=2, 
-                }
-]
+\begin{tikzpicture}
 
-\definecolor{lightgrey203}{RGB}{203,203,203}
-\definecolor{lightgrey204}{RGB}{204,204,204}
-\definecolor{lightgrey207}{RGB}{207,207,207}
-\definecolor{pink250176228}{RGB}{250,176,228}
-\definecolor{whitesmoke240}{RGB}{240,240,240}
+\definecolor{darkgrey176}{RGB}{176,176,176}
+\definecolor{darkslategrey51}{RGB}{51,51,51}
+\definecolor{gainsboro221}{RGB}{221,221,221}
+\definecolor{lightcoral238102119}{RGB}{238,102,119}
+\definecolor{silver187}{RGB}{187,187,187}
+\definecolor{steelblue31119180}{RGB}{31,119,180}
+\definecolor{steelblue68119170}{RGB}{68,119,170}
 
 \begin{axis}[
-axis line style={whitesmoke240},
-height=1.5\textwidth,
+height=0.55\linewidth,
 legend cell align={left},
-legend columns=2,
-legend style={
-  fill opacity=0.8,
-  draw opacity=1,
-  text opacity=1,
-  at={(0.97,0.03)},
-  anchor=south east,
-  draw=lightgrey204
-},
+legend columns=3,
+legend style={fill opacity=0.8, draw opacity=1, text opacity=1, at={(0.5,1)}, anchor=south, draw=none},
+legend style={font=\footnotesize, draw=none, fill=none, at={(0.5,1.02)}, anchor=south},
 tick align=outside,
 tick pos=left,
-width=2\textwidth,
-x grid style={lightgrey203},
-xlabel={\(\displaystyle k\)},
-xmajorgrids,
-xmin=1.75, xmax=7.25,
+width=\linewidth,
+x grid style={darkgrey176},
+xmin=-0.3282, xmax=1.4582,
 xtick style={color=black},
-xtick={1,2,3,4,5,6,7,8},
-xticklabels={
-  \(\displaystyle {1}\),
-  \(\displaystyle {2}\),
-  \(\displaystyle {3}\),
-  \(\displaystyle {4}\),
-  \(\displaystyle {5}\),
-  \(\displaystyle {6}\),
-  \(\displaystyle {7}\),
-  \(\displaystyle {8}\)
-},
-y grid style={lightgrey203},
+xtick={0,1},
+xticklabels={LFM3 1.7B,Qwen3.8 27B},
+y grid style={gainsboro221},
+ybar legend,
 ylabel={Mean \(\displaystyle F_{1,node}\)},
 ymajorgrids,
 ymin=0, ymax=1,
-ytick style={color=black},
-ytick={0,0.2,0.4,0.6,0.8,1},
-yticklabels={
-  \(\displaystyle {0.0}\),
-  \(\displaystyle {0.2}\),
-  \(\displaystyle {0.4}\),
-  \(\displaystyle {0.6}\),
-  \(\displaystyle {0.8}\),
-  \(\displaystyle {1.0}\)
-}
+ytick style={color=black}
 ]
-\addplot [thick, pink250176228, dashed, mark=x, mark size=5, mark options={solid,fill opacity=0}]
-table {%
-2 0.5325
-3 0.594938917975567
-5 0.656122448979592
-7 0.776190476190476
-};
-\addlegendentry{Qwen3.8 27B aligned}
-\addplot [thick, pink250176228, dotted, mark=x, mark size=5, mark options={solid,fill opacity=0}]
-table {%
-2 0.185833333333333
-3 0.254063824482673
-5 0.373810812203669
-7 0.5
-};
+\draw[draw=none,fill=silver187] (axis cs:-0.247,0) rectangle (axis cs:-0.013,0.0905136277863551);
+\addlegendimage{ybar,ybar legend,draw=none,fill=silver187}
 \addlegendentry{raw}
-\addplot [thick, pink250176228, mark=o, mark size=5, mark options={solid,fill opacity=0}]
+
+\draw[draw=none,fill=steelblue68119170] (axis cs:0.013,0) rectangle (axis cs:0.247,0.537686676959404);
+\addlegendimage{ybar,ybar legend,draw=none,fill=steelblue68119170}
+\addlegendentry{aligned}
+
+\draw[draw=none,fill=silver187] (axis cs:0.623,0) rectangle (axis cs:0.857,0.259433556342647);
+\draw[draw=none,fill=steelblue68119170] (axis cs:0.883,0) rectangle (axis cs:1.117,0.60367414403778);
+\draw[draw=none,fill=lightcoral238102119] (axis cs:1.143,0) rectangle (axis cs:1.377,0.939828353464717);
+\addlegendimage{ybar,ybar legend,draw=none,fill=lightcoral238102119}
+\addlegendentry{agent}
+
+\path [draw=darkslategrey51, semithick]
+(axis cs:-0.13,0.0696880499282398)
+--(axis cs:-0.13,0.11133920564447);
+
+\addplot [semithick, steelblue31119180, mark=-, mark size=2, mark options={solid,draw=darkslategrey51}, only marks]
 table {%
-2 0.927916666666667
-3 0.955622039391673
-5 0.934013605442177
-7 0.972261072261072
+-0.13 0.0696880499282398
 };
 \addlegendentry{agent}
-\addplot [thick, lightgrey207, dashed, mark=x, mark size=5, mark options={solid,fill opacity=0}]
+\addplot [semithick, steelblue31119180, mark=-, mark size=2, mark options={solid,draw=darkslategrey51}, only marks]
 table {%
-2 0.51125
-3 0.546023435552231
-5 0.503854875283447
-7 0.518870018870019
+-0.13 0.11133920564447
 };
-\addlegendentry{LFM3 1.7B aligned}
-\addplot [thick, lightgrey207, dotted, mark=x, mark size=5, mark options={solid,fill opacity=0}]
+\addlegendentry{agent}
+\path [draw=darkslategrey51, semithick]
+(axis cs:0.13,0.510360996305152)
+--(axis cs:0.13,0.565012357613656);
+
+\addplot [semithick, steelblue31119180, mark=-, mark size=2, mark options={solid,draw=darkslategrey51}, only marks]
 table {%
-2 0.0104166666666667
-3 0.0982049364248317
-5 0.16421485260771
-7 0.251676894534037
+0.13 0.510360996305152
 };
-\addlegendentry{raw}
+\addlegendentry{agent}
+\addplot [semithick, steelblue31119180, mark=-, mark size=2, mark options={solid,draw=darkslategrey51}, only marks]
+table {%
+0.13 0.565012357613656
+};
+\addlegendentry{agent}
+\path [draw=darkslategrey51, semithick]
+(axis cs:0.74,0.22467288602195)
+--(axis cs:0.74,0.294194226663345);
+
+\addplot [semithick, steelblue31119180, mark=-, mark size=2, mark options={solid,draw=darkslategrey51}, only marks]
+table {%
+0.74 0.22467288602195
+};
+\addlegendentry{agent}
+\addplot [semithick, steelblue31119180, mark=-, mark size=2, mark options={solid,draw=darkslategrey51}, only marks]
+table {%
+0.74 0.294194226663345
+};
+\addlegendentry{agent}
+\path [draw=darkslategrey51, semithick]
+(axis cs:1,0.572856731751679)
+--(axis cs:1,0.634491556323882);
+
+\addplot [semithick, steelblue31119180, mark=-, mark size=2, mark options={solid,draw=darkslategrey51}, only marks]
+table {%
+1 0.572856731751679
+};
+\addlegendentry{agent}
+\addplot [semithick, steelblue31119180, mark=-, mark size=2, mark options={solid,draw=darkslategrey51}, only marks]
+table {%
+1 0.634491556323882
+};
+\addlegendentry{agent}
+\path [draw=darkslategrey51, semithick]
+(axis cs:1.26,0.924230375813898)
+--(axis cs:1.26,0.955426331115536);
+
+\addplot [semithick, steelblue31119180, mark=-, mark size=2, mark options={solid,draw=darkslategrey51}, only marks]
+table {%
+1.26 0.924230375813898
+};
+\addlegendentry{agent}
+\addplot [semithick, steelblue31119180, mark=-, mark size=2, mark options={solid,draw=darkslategrey51}, only marks]
+table {%
+1.26 0.955426331115536
+};
+\addlegendentry{agent}
 \end{axis}
 
 \end{tikzpicture}
