@@ -240,6 +240,48 @@
         "max_documents": "${ONSET_BUILDER_MAX_DOCUMENTS:-}"
       },
       "extract_instances": "${ONSET_BUILDER_EXTRACT_INSTANCES:-4}"
+    },
+    "llms4ol-ecology": {
+      "name": "LLMs4OL 2025 Text2Onto: ecology",
+      "description": "Synthetic ecology documents of the LLMs4OL 2025 Task A (held-out test split of the official train documents); the train split is the annotated example set.",
+      "text_set": {
+        "format": "llms4ol",
+        "path": "${ONSET_TEXT_SETS:-../data/text-sets}/llms4ol-2025/ecology/test",
+        "max_documents": "${ONSET_BUILDER_MAX_DOCUMENTS:-}"
+      },
+      "examples": {
+        "format": "llms4ol",
+        "path": "${ONSET_TEXT_SETS:-../data/text-sets}/llms4ol-2025/ecology/train"
+      },
+      "extract_instances": "${ONSET_BUILDER_EXTRACT_INSTANCES:-4}"
+    },
+    "llms4ol-engineering": {
+      "name": "LLMs4OL 2025 Text2Onto: engineering",
+      "description": "Synthetic engineering documents (units, quantities) of the LLMs4OL 2025 Task A (held-out test split of the official train documents); the train split is the annotated example set.",
+      "text_set": {
+        "format": "llms4ol",
+        "path": "${ONSET_TEXT_SETS:-../data/text-sets}/llms4ol-2025/engineering/test",
+        "max_documents": "${ONSET_BUILDER_MAX_DOCUMENTS:-}"
+      },
+      "examples": {
+        "format": "llms4ol",
+        "path": "${ONSET_TEXT_SETS:-../data/text-sets}/llms4ol-2025/engineering/train"
+      },
+      "extract_instances": "${ONSET_BUILDER_EXTRACT_INSTANCES:-4}"
+    },
+    "llms4ol-scholarly": {
+      "name": "LLMs4OL 2025 Text2Onto: scholarly",
+      "description": "Synthetic scholarly/linguistics documents of the LLMs4OL 2025 Task A (held-out test split of the official train documents); the train split is the annotated example set.",
+      "text_set": {
+        "format": "llms4ol",
+        "path": "${ONSET_TEXT_SETS:-../data/text-sets}/llms4ol-2025/scholarly/test",
+        "max_documents": "${ONSET_BUILDER_MAX_DOCUMENTS:-}"
+      },
+      "examples": {
+        "format": "llms4ol",
+        "path": "${ONSET_TEXT_SETS:-../data/text-sets}/llms4ol-2025/scholarly/train"
+      },
+      "extract_instances": "${ONSET_BUILDER_EXTRACT_INSTANCES:-4}"
     }
   }
 }

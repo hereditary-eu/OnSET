@@ -1,0 +1,23 @@
+\begin{table}
+\caption{Agent runs, user sessions and the true (reference) ontology extracted by the same extractor: median and best per dataset.}
+\label{tab:onto_agent_vs_users}
+\begin{tabular}{llrrrrrrrrrrrrrrrrrrrrr}
+\toprule
+ &  & \multicolumn{2}{r}{$F_{1,schema}$} & \multicolumn{2}{r}{$F_{1,class}$} & \multicolumn{2}{r}{$R_{cov,class}$} & \multicolumn{2}{r}{$F_{1,rel.\,name}$} & \multicolumn{2}{r}{$F_{1,rel.}$} & \multicolumn{2}{r}{$F_{1,field}$} & \multicolumn{2}{r}{$F_{1,ent.}$} & \multicolumn{2}{r}{$F_{1,rel.\,inst.}$} & \multicolumn{2}{r}{$F_{1,A1\,terms}$} & \multicolumn{2}{r}{$F_{1,A2\,types}$} & $n$ \\
+ &  & median & best & median & best & median & best & median & best & median & best & median & best & median & best & median & best & median & best & median & best &  \\
+Dataset & Source &  &  &  &  &  &  &  &  &  &  &  &  &  &  &  &  &  &  &  &  &  \\
+\midrule
+Enron & user & 0.06 & 0.11 & 0.17 & 0.18 & 0.13 & 0.13 & 0.00 & 0.10 & 0.00 & 0.00 & 0.00 & 0.15 & -- & -- & -- & -- & -- & -- & -- & -- & 3 \\
+\cline{1-23}
+\multirow[t]{2}{*}{GutBrainIE} & agent & 0.20 & 0.20 & 0.40 & 0.40 & 0.46 & 0.46 & 0.08 & 0.18 & 0.00 & 0.00 & -- & -- & 0.14 & 0.15 & 0.00 & 0.00 & -- & -- & -- & -- & 3 \\
+ & user & 0.10 & 0.15 & 0.20 & 0.30 & 0.23 & 0.31 & 0.14 & 0.31 & 0.00 & 0.00 & -- & -- & -- & -- & -- & -- & -- & -- & -- & -- & 4 \\
+\cline{1-23}
+LLMs4OL Ecology & agent & -- & -- & -- & -- & -- & -- & -- & -- & -- & -- & -- & -- & -- & -- & -- & -- & 1.00 & 1.00 & 0.62 & 0.62 & 1 \\
+\cline{1-23}
+LLMs4OL Engineering & agent & -- & -- & -- & -- & -- & -- & -- & -- & -- & -- & -- & -- & -- & -- & -- & -- & 0.67 & 0.67 & 0.31 & 0.33 & 3 \\
+\cline{1-23}
+LLMs4OL Scholarly & agent & -- & -- & -- & -- & -- & -- & -- & -- & -- & -- & -- & -- & -- & -- & -- & -- & 0.71 & 0.76 & 0.34 & 0.35 & 3 \\
+\cline{1-23}
+\bottomrule
+\end{tabular}
+\end{table}

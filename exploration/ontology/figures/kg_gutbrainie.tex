@@ -1,0 +1,89 @@
+% This file was created with tikzplotlib v0.10.1.post13.
+\begin{tikzpicture}
+
+\definecolor{darkslategrey38}{RGB}{38,38,38}
+\definecolor{darkslategrey66}{RGB}{66,66,66}
+\definecolor{lightgrey204}{RGB}{204,204,204}
+\definecolor{peru20313699}{RGB}{203,136,99}
+\definecolor{steelblue88116163}{RGB}{88,116,163}
+
+\begin{axis}[
+axis line style={lightgrey204},
+height=.6\linewidth,
+tick align=outside,
+title={Source = agent},
+width=\linewidth,
+x grid style={lightgrey204},
+xlabel=\textcolor{darkslategrey38}{Element},
+xmajorticks=false,
+xmin=-0.5, xmax=3.5,
+xtick style={color=darkslategrey38},
+xtick={0,1,2,3},
+xticklabel style={rotate=30.0,anchor=east},
+xticklabels={Entities,Typed entities,Entity pairs,Typed relations},
+y grid style={lightgrey204},
+ylabel=\textcolor{darkslategrey38}{F1},
+ymajorgrids,
+ymajorticks=false,
+ymin=0, ymax=0.440500090138298,
+ytick style={color=darkslategrey38}
+]
+\draw[draw=white,fill=steelblue88116163] (axis cs:-0.4,0) rectangle (axis cs:0,0.207423771684587);
+\draw[draw=white,fill=steelblue88116163] (axis cs:0.6,0) rectangle (axis cs:1,0.100729178332917);
+\draw[draw=white,fill=steelblue88116163] (axis cs:1.6,0) rectangle (axis cs:2,0.0082753333736811);
+\draw[draw=white,fill=steelblue88116163] (axis cs:2.6,0) rectangle (axis cs:3,0);
+\draw[draw=white,fill=peru20313699] (axis cs:5.55111512312578e-17,0) rectangle (axis cs:0.4,0.294422415458754);
+\draw[draw=white,fill=peru20313699] (axis cs:1,0) rectangle (axis cs:1.4,0.122622990919682);
+\draw[draw=white,fill=peru20313699] (axis cs:2,0) rectangle (axis cs:2.4,0.0303719103527286);
+\draw[draw=white,fill=peru20313699] (axis cs:3,0) rectangle (axis cs:3.4,0);
+\draw[draw=white,fill=steelblue88116163] (axis cs:0,0) rectangle (axis cs:0,0);
+\addlegendimage{ybar,ybar legend,draw=white,fill=steelblue88116163}
+\addlegendentry{strict}
+
+\draw[draw=white,fill=peru20313699] (axis cs:0,0) rectangle (axis cs:0,0);
+\addlegendimage{ybar,ybar legend,draw=white,fill=peru20313699}
+\addlegendentry{lenient}
+
+\addplot [line width=0.9pt, darkslategrey66]
+table {%
+-0.2 0.128580488388698
+-0.2 0.286267054980476
+};
+\addplot [line width=0.9pt, darkslategrey66]
+table {%
+0.8 0.0656189783691847
+0.8 0.13583937829665
+};
+\addplot [line width=0.9pt, darkslategrey66]
+table {%
+1.8 0.000517024636039993
+1.8 0.0160336421113222
+};
+\addplot [line width=0.9pt, darkslategrey66]
+table {%
+2.8 0
+2.8 0
+};
+\addplot [line width=0.9pt, darkslategrey66]
+table {%
+0.2 0.1693209355477
+0.2 0.419523895369808
+};
+\addplot [line width=0.9pt, darkslategrey66]
+table {%
+1.2 0.078706511249442
+1.2 0.166539470589921
+};
+\addplot [line width=0.9pt, darkslategrey66]
+table {%
+2.2 0.00750962424806275
+2.2 0.0532341964573945
+};
+\addplot [line width=0.9pt, darkslategrey66]
+table {%
+3.2 0
+3.2 0
+};
+\end{axis}
+
+\end{tikzpicture}

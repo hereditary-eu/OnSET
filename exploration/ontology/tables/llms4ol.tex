@@ -1,0 +1,20 @@
+\begin{table}
+\caption{LLMs4OL 2025 Text2Onto on the held-out split (median over runs). $^*$Best challenge system on the official test set, for orientation only.}
+\label{tab:onto_llms4ol}
+\begin{tabular}{llrrrrr}
+\toprule
+ &  & $P$ & $R$ & $F_1$ & $F_1$ best run & $F_1$ challenge best$^*$ \\
+Domain & Task &  &  &  &  &  \\
+\midrule
+\multirow[t]{2}{*}{ecology} & A1 terms & 1.00 & 1.00 & 1.00 & 1.00 & -- \\
+ & A2 types & 0.76 & 0.53 & 0.62 & 0.62 & 0.66 \\
+\cline{1-7}
+\multirow[t]{2}{*}{engineering} & A1 terms & 0.80 & 0.57 & 0.67 & 0.67 & 0.67 \\
+ & A2 types & 0.30 & 0.37 & 0.31 & 0.33 & 0.68 \\
+\cline{1-7}
+\multirow[t]{2}{*}{scholarly} & A1 terms & 0.79 & 0.64 & 0.71 & 0.76 & 0.70 \\
+ & A2 types & 0.27 & 0.39 & 0.34 & 0.35 & 0.83 \\
+\cline{1-7}
+\bottomrule
+\end{tabular}
+\end{table}

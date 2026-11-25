@@ -1,0 +1,511 @@
+@prefix ref:  <http://example.org/ref/enron/> .
+@prefix owl:  <http://www.w3.org/2002/07/owl#> .
+@prefix rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+@prefix pimo: <http://www.semanticdesktop.org/ontologies/2007/11/01/pimo#> .
+@prefix nmo:  <http://www.semanticdesktop.org/ontologies/2007/03/22/nmo#> .
+@prefix nco:  <http://www.semanticdesktop.org/ontologies/2007/03/22/nco#> .
+@prefix nfo:  <http://www.semanticdesktop.org/ontologies/2007/03/22/nfo#> .
+@prefix nie:  <http://www.semanticdesktop.org/ontologies/2007/01/19/nie#> .
+
+# Reference ontology for the Enron sent-mail corpus, composed from the
+# NEPOMUK / OSCAF Semantic Desktop ontologies. Every term has an
+# rdfs:seeAlso to the original term; see enron.md for the adaptations.
+#   PIMO 1.0  - content entities (people, organisations, meetings, projects,
+#               tasks, contracts, locations, topics)
+#   NMO 0.9   - e-mail message metadata
+#   NCO 0.9   - contact data (names, e-mail/phone/postal, job affiliation)
+#   NFO / NIE 0.9 - attachment file name, document title
+
+ref: a owl:Ontology ;
+    rdfs:label "Enron e-mail reference ontology (NEPOMUK PIMO + NMO + NCO subset)" ;
+    rdfs:comment """Reference ontology for evaluating ontologies built from the Enron e-mail corpus (sent mail). No published ontology models the Enron corpus itself, so this is a subset of the NEPOMUK Semantic Desktop ontologies, which were designed to model e-mails and the personal-information entities they are about. Content entities come from PIMO: Sauermann, L., van Elst, L., Dengel, A. (2007). PIMO - a Framework for Representing Personal Information Models. Proc. I-MEDIA '07 / I-SEMANTICS '07, Graz, pp. 270-277 (http://www.semanticdesktop.org/ontologies/2007/11/01/pimo#). E-mail metadata comes from NMO (Nepomuk Message Ontology 0.9, Mylka, Sauermann, Sintek, van Elst, DFKI/OSCAF; http://www.semanticdesktop.org/ontologies/2007/03/22/nmo#). Contact data comes from NCO (Nepomuk Contact Ontology 0.9, same authors; http://www.semanticdesktop.org/ontologies/2007/03/22/nco#). The attachment file name comes from NFO 0.9, and the document title from NIE 0.9. Adaptations (merges, renames, dropped terms) are documented in enron.md.""" ;
+    rdfs:seeAlso <https://oscaf.sourceforge.net/pimo.html> , <https://oscaf.sourceforge.net/nmo.html> , <https://oscaf.sourceforge.net/nco.html> .
+
+#################################################################
+# Classes - PIMO upper/mid layer (content entities)
+#################################################################
+
+ref:Thing a owl:Class ;
+    rdfs:label "thing" ;
+    rdfs:comment "Abstract root (PIMO). Entities that are in the direct attention of the user when doing knowledge work." ;
+    rdfs:seeAlso pimo:Thing .
+
+ref:Agent a owl:Class ;
+    rdfs:subClassOf ref:Thing ;
+    rdfs:label "agent" ;
+    rdfs:comment "Abstract (PIMO). An agent, e.g. a person, group or organization, that can send or receive messages and act." ;
+    rdfs:seeAlso pimo:Agent .
+
+ref:Person a owl:Class ;
+    rdfs:subClassOf ref:Agent ;
+    rdfs:label "person" ;
+    rdfs:comment "Represents a person, either living, dead, real or imaginary (PIMO; merged with nco:PersonContact for name and contact attributes)." ;
+    rdfs:seeAlso pimo:Person , nco:PersonContact .
+
+ref:Organization a owl:Class ;
+    rdfs:subClassOf ref:Agent ;
+    rdfs:label "organization" ;
+    rdfs:comment "An administrative and functional structure, such as a business or a political party (PIMO; merged with nco:OrganizationContact)." ;
+    rdfs:seeAlso pimo:Organization , nco:OrganizationContact .
+
+ref:PersonGroup a owl:Class ;
+    rdfs:subClassOf ref:Agent ;
+    rdfs:label "person group" ;
+    rdfs:comment "A group of persons connected by a common attribute, such as working in the same organization or sharing an interest (PIMO), e.g. a team or desk." ;
+    rdfs:seeAlso pimo:PersonGroup .
+
+ref:Location a owl:Class ;
+    rdfs:subClassOf ref:Thing ;
+    rdfs:label "location" ;
+    rdfs:comment "A physical location (PIMO)." ;
+    rdfs:seeAlso pimo:Location .
+
+ref:Building a owl:Class ;
+    rdfs:subClassOf ref:Location ;
+    rdfs:label "building" ;
+    rdfs:comment "A structure that has a roof and walls and stands more or less permanently in one place (PIMO)." ;
+    rdfs:seeAlso pimo:Building .
+
+ref:Room a owl:Class ;
+    rdfs:subClassOf ref:Location ;
+    rdfs:label "room" ;
+    rdfs:comment "A proper part of a building that is separated from its exterior, e.g. a conference room (PIMO)." ;
+    rdfs:seeAlso pimo:Room .
+
+ref:City a owl:Class ;
+    rdfs:subClassOf ref:Location ;
+    rdfs:label "city" ;
+    rdfs:comment "A large and densely populated urban area; may include several independent administrative districts (PIMO)." ;
+    rdfs:seeAlso pimo:City .
+
+ref:State a owl:Class ;
+    rdfs:subClassOf ref:Location ;
+    rdfs:label "state" ;
+    rdfs:comment "An administrative subdivision of a nation that is broader than any other political subdivision (PIMO)." ;
+    rdfs:seeAlso pimo:State .
+
+ref:Country a owl:Class ;
+    rdfs:subClassOf ref:Location ;
+    rdfs:label "country" ;
+    rdfs:comment "The territory occupied by a nation (PIMO)." ;
+    rdfs:seeAlso pimo:Country .
+
+ref:ProcessConcept a owl:Class ;
+    rdfs:subClassOf ref:Thing ;
+    rdfs:label "process concept" ;
+    rdfs:comment "Abstract (PIMO). Concepts that relate to a series of actions or operations conducing to an end: events, projects and tasks." ;
+    rdfs:seeAlso pimo:ProcessConcept .
+
+ref:Event a owl:Class ;
+    rdfs:subClassOf ref:ProcessConcept ;
+    rdfs:label "event" ;
+    rdfs:comment "Something that happens; an event is conceived as compact in time (PIMO)." ;
+    rdfs:seeAlso pimo:Event .
+
+ref:SocialEvent a owl:Class ;
+    rdfs:subClassOf ref:Event ;
+    rdfs:label "social event" ;
+    rdfs:comment "A social occasion or activity that has attendees, e.g. a party, dinner or conference (PIMO)." ;
+    rdfs:seeAlso pimo:SocialEvent .
+
+ref:Meeting a owl:Class ;
+    rdfs:subClassOf ref:SocialEvent ;
+    rdfs:label "meeting" ;
+    rdfs:comment "The social act of assembling for some common purpose (PIMO), including conference calls." ;
+    rdfs:seeAlso pimo:Meeting .
+
+ref:Project a owl:Class ;
+    rdfs:subClassOf ref:ProcessConcept ;
+    rdfs:label "project" ;
+    rdfs:comment "Any piece of work that is undertaken or attempted; a carefully planned enterprise aimed at a particular goal (PIMO)." ;
+    rdfs:seeAlso pimo:Project .
+
+ref:Task a owl:Class ;
+    rdfs:subClassOf ref:ProcessConcept ;
+    rdfs:label "task" ;
+    rdfs:comment "A (usually assigned) piece of work, often to be finished within a certain time (PIMO)." ;
+    rdfs:seeAlso pimo:Task .
+
+ref:Document a owl:Class ;
+    rdfs:subClassOf ref:Thing ;
+    rdfs:label "document" ;
+    rdfs:comment "A generic document, e.g. a report, presentation, spreadsheet or draft referred to in a message (PIMO)." ;
+    rdfs:seeAlso pimo:Document .
+
+ref:Contract a owl:Class ;
+    rdfs:subClassOf ref:Document ;
+    rdfs:label "contract" ;
+    rdfs:comment "A binding agreement between two or more persons that is enforceable by law (PIMO, from SUMO). Closest published class for Enron deals, trades and agreements." ;
+    rdfs:seeAlso pimo:Contract .
+
+ref:Note a owl:Class ;
+    rdfs:subClassOf ref:Document ;
+    rdfs:label "note" ;
+    rdfs:comment "A short note or memo (PIMO)." ;
+    rdfs:seeAlso pimo:Note .
+
+ref:Topic a owl:Class ;
+    rdfs:subClassOf ref:Thing ;
+    rdfs:label "topic" ;
+    rdfs:comment "The subject of a discussion or document; topics are taxonomic and domain-specific, e.g. gas trading or regulatory affairs (PIMO)." ;
+    rdfs:seeAlso pimo:Topic .
+
+#################################################################
+# Classes - NMO / NFO (e-mail messages)
+#################################################################
+
+ref:Message a owl:Class ;
+    rdfs:label "message" ;
+    rdfs:comment "A message, such as an e-mail, instant message or SMS (NMO)." ;
+    rdfs:seeAlso nmo:Message .
+
+ref:Email a owl:Class ;
+    rdfs:subClassOf ref:Message ;
+    rdfs:label "email" ;
+    rdfs:comment "An e-mail message (NMO)." ;
+    rdfs:seeAlso nmo:Email .
+
+ref:Attachment a owl:Class ;
+    rdfs:label "attachment" ;
+    rdfs:comment "A file attached to another data object, such as an e-mail (NFO)." ;
+    rdfs:seeAlso nfo:Attachment .
+
+#################################################################
+# Classes - NCO (contact data)
+#################################################################
+
+ref:ContactMedium a owl:Class ;
+    rdfs:label "contact medium" ;
+    rdfs:comment "Abstract (NCO). Superclass for all the ways an entity can be contacted." ;
+    rdfs:seeAlso nco:ContactMedium .
+
+ref:EmailAddress a owl:Class ;
+    rdfs:subClassOf ref:ContactMedium ;
+    rdfs:label "email address" ;
+    rdfs:comment "An e-mail address (NCO)." ;
+    rdfs:seeAlso nco:EmailAddress .
+
+ref:PhoneNumber a owl:Class ;
+    rdfs:subClassOf ref:ContactMedium ;
+    rdfs:label "phone number" ;
+    rdfs:comment "A telephone number (NCO)." ;
+    rdfs:seeAlso nco:PhoneNumber .
+
+ref:CellPhoneNumber a owl:Class ;
+    rdfs:subClassOf ref:PhoneNumber ;
+    rdfs:label "cell phone number" ;
+    rdfs:comment "A cellular (mobile) phone number, usually capable of voice and text (NCO)." ;
+    rdfs:seeAlso nco:CellPhoneNumber .
+
+ref:FaxNumber a owl:Class ;
+    rdfs:subClassOf ref:PhoneNumber ;
+    rdfs:label "fax number" ;
+    rdfs:comment "A fax number (NCO)." ;
+    rdfs:seeAlso nco:FaxNumber .
+
+ref:PostalAddress a owl:Class ;
+    rdfs:subClassOf ref:ContactMedium ;
+    rdfs:label "postal address" ;
+    rdfs:comment "A postal address, split into structured parts such as street, locality, region and postal code (NCO)." ;
+    rdfs:seeAlso nco:PostalAddress .
+
+ref:Affiliation a owl:Class ;
+    rdfs:label "affiliation" ;
+    rdfs:comment "Links a person to an organization together with their job title, role and department; a person can have several affiliations (NCO)." ;
+    rdfs:seeAlso nco:Affiliation .
+
+#################################################################
+# Datatype properties
+#################################################################
+
+ref:messageSubject a owl:DatatypeProperty ;
+    rdfs:label "subject" ;
+    rdfs:comment "The subject line of a message (NMO)." ;
+    rdfs:domain ref:Message ;
+    rdfs:range xsd:string ;
+    rdfs:seeAlso nmo:messageSubject .
+
+ref:sentDate a owl:DatatypeProperty ;
+    rdfs:label "sent date" ;
+    rdfs:comment "Date on which the message was sent (NMO; xsd:dateTime in the source)." ;
+    rdfs:domain ref:Message ;
+    rdfs:range xsd:date ;
+    rdfs:seeAlso nmo:sentDate .
+
+ref:messageId a owl:DatatypeProperty ;
+    rdfs:label "message id" ;
+    rdfs:comment "The Message-ID header of a message (NMO)." ;
+    rdfs:domain ref:Message ;
+    rdfs:range xsd:string ;
+    rdfs:seeAlso nmo:messageId .
+
+ref:fileName a owl:DatatypeProperty ;
+    rdfs:label "file name" ;
+    rdfs:comment "Name of the file, including its extension (NFO)." ;
+    rdfs:domain ref:Attachment ;
+    rdfs:range xsd:string ;
+    rdfs:seeAlso nfo:fileName .
+
+ref:documentTitle a owl:DatatypeProperty ;
+    rdfs:label "title" ;
+    rdfs:comment "Name given to a document (NIE nie:title, restricted to documents)." ;
+    rdfs:domain ref:Document ;
+    rdfs:range xsd:string ;
+    rdfs:seeAlso nie:title .
+
+ref:fullname a owl:DatatypeProperty ;
+    rdfs:label "full name" ;
+    rdfs:comment "Full name of a person or organization (NCO)." ;
+    rdfs:domain ref:Agent ;
+    rdfs:range xsd:string ;
+    rdfs:seeAlso nco:fullname .
+
+ref:nameGiven a owl:DatatypeProperty ;
+    rdfs:label "given name" ;
+    rdfs:comment "A person's given (first) name (NCO)." ;
+    rdfs:domain ref:Person ;
+    rdfs:range xsd:string ;
+    rdfs:seeAlso nco:nameGiven .
+
+ref:nameFamily a owl:DatatypeProperty ;
+    rdfs:label "family name" ;
+    rdfs:comment "A person's family (last) name (NCO)." ;
+    rdfs:domain ref:Person ;
+    rdfs:range xsd:string ;
+    rdfs:seeAlso nco:nameFamily .
+
+ref:nickname a owl:DatatypeProperty ;
+    rdfs:label "nickname" ;
+    rdfs:comment "A nickname or short name, e.g. the first name used in a sign-off (NCO)." ;
+    rdfs:domain ref:Agent ;
+    rdfs:range xsd:string ;
+    rdfs:seeAlso nco:nickname .
+
+ref:emailAddress a owl:DatatypeProperty ;
+    rdfs:label "email address" ;
+    rdfs:comment "The e-mail address string (NCO)." ;
+    rdfs:domain ref:EmailAddress ;
+    rdfs:range xsd:string ;
+    rdfs:seeAlso nco:emailAddress .
+
+ref:phoneNumber a owl:DatatypeProperty ;
+    rdfs:label "phone number" ;
+    rdfs:comment "The phone number string (NCO)." ;
+    rdfs:domain ref:PhoneNumber ;
+    rdfs:range xsd:string ;
+    rdfs:seeAlso nco:phoneNumber .
+
+ref:streetAddress a owl:DatatypeProperty ;
+    rdfs:label "street address" ;
+    rdfs:domain ref:PostalAddress ;
+    rdfs:range xsd:string ;
+    rdfs:seeAlso nco:streetAddress .
+
+ref:locality a owl:DatatypeProperty ;
+    rdfs:label "locality" ;
+    rdfs:comment "Town or city part of a postal address (NCO)." ;
+    rdfs:domain ref:PostalAddress ;
+    rdfs:range xsd:string ;
+    rdfs:seeAlso nco:locality .
+
+ref:region a owl:DatatypeProperty ;
+    rdfs:label "region" ;
+    rdfs:comment "State or province part of a postal address (NCO)." ;
+    rdfs:domain ref:PostalAddress ;
+    rdfs:range xsd:string ;
+    rdfs:seeAlso nco:region .
+
+ref:postalcode a owl:DatatypeProperty ;
+    rdfs:label "postal code" ;
+    rdfs:domain ref:PostalAddress ;
+    rdfs:range xsd:string ;
+    rdfs:seeAlso nco:postalcode .
+
+ref:country a owl:DatatypeProperty ;
+    rdfs:label "country" ;
+    rdfs:comment "Country part of a postal address (NCO)." ;
+    rdfs:domain ref:PostalAddress ;
+    rdfs:range xsd:string ;
+    rdfs:seeAlso nco:country .
+
+ref:title a owl:DatatypeProperty ;
+    rdfs:label "job title" ;
+    rdfs:comment "Job title of the person within the affiliated organization, e.g. Vice President (NCO)." ;
+    rdfs:domain ref:Affiliation ;
+    rdfs:range xsd:string ;
+    rdfs:seeAlso nco:title .
+
+ref:role a owl:DatatypeProperty ;
+    rdfs:label "role" ;
+    rdfs:comment "Role of the person within the affiliated organization, e.g. trader or counsel (NCO)." ;
+    rdfs:domain ref:Affiliation ;
+    rdfs:range xsd:string ;
+    rdfs:seeAlso nco:role .
+
+ref:department a owl:DatatypeProperty ;
+    rdfs:label "department" ;
+    rdfs:comment "Department of the organization the person works in (NCO)." ;
+    rdfs:domain ref:Affiliation ;
+    rdfs:range xsd:string ;
+    rdfs:seeAlso nco:department .
+
+ref:dtstart a owl:DatatypeProperty ;
+    rdfs:label "start date" ;
+    rdfs:comment "When the process (event, meeting, project, task) begins (PIMO; xsd:dateTime in the source)." ;
+    rdfs:domain ref:ProcessConcept ;
+    rdfs:range xsd:date ;
+    rdfs:seeAlso pimo:dtstart .
+
+ref:dtend a owl:DatatypeProperty ;
+    rdfs:label "end date" ;
+    rdfs:comment "When the process (event, meeting, project, task) ends (PIMO; xsd:dateTime in the source)." ;
+    rdfs:domain ref:ProcessConcept ;
+    rdfs:range xsd:date ;
+    rdfs:seeAlso pimo:dtend .
+
+ref:taskDueTime a owl:DatatypeProperty ;
+    rdfs:label "due date" ;
+    rdfs:comment "When the task is due (PIMO; xsd:dateTime in the source)." ;
+    rdfs:domain ref:Task ;
+    rdfs:range xsd:date ;
+    rdfs:seeAlso pimo:taskDueTime .
+
+#################################################################
+# Object properties
+#################################################################
+
+ref:messageFrom a owl:ObjectProperty ;
+    rdfs:label "from" ;
+    rdfs:comment "The sender of the message (NMO nmo:from, range nco:Contact, mapped to agent)." ;
+    rdfs:domain ref:Message ;
+    rdfs:range ref:Agent ;
+    rdfs:seeAlso nmo:from , nmo:messageFrom .
+
+ref:emailTo a owl:ObjectProperty ;
+    rdfs:label "to" ;
+    rdfs:comment "The primary intended recipient of an e-mail (NMO nmo:to, range nco:Contact, mapped to agent)." ;
+    rdfs:domain ref:Email ;
+    rdfs:range ref:Agent ;
+    rdfs:seeAlso nmo:to , nmo:emailTo .
+
+ref:emailCc a owl:ObjectProperty ;
+    rdfs:label "cc" ;
+    rdfs:comment "A carbon-copy recipient of an e-mail (NMO nmo:cc, range nco:Contact, mapped to agent)." ;
+    rdfs:domain ref:Email ;
+    rdfs:range ref:Agent ;
+    rdfs:seeAlso nmo:cc , nmo:emailCc .
+
+ref:emailBcc a owl:ObjectProperty ;
+    rdfs:label "bcc" ;
+    rdfs:comment "A blind-carbon-copy recipient of an e-mail (NMO nmo:bcc, range nco:Contact, mapped to agent)." ;
+    rdfs:domain ref:Email ;
+    rdfs:range ref:Agent ;
+    rdfs:seeAlso nmo:bcc , nmo:emailBcc .
+
+ref:inReplyTo a owl:ObjectProperty ;
+    rdfs:label "in reply to" ;
+    rdfs:comment "Signifies that a message is a reply to another message (NMO)." ;
+    rdfs:domain ref:Message ;
+    rdfs:range ref:Message ;
+    rdfs:seeAlso nmo:inReplyTo .
+
+ref:hasAttachment a owl:ObjectProperty ;
+    rdfs:label "has attachment" ;
+    rdfs:comment "Links a message with files that were sent as attachments (NMO)." ;
+    rdfs:domain ref:Message ;
+    rdfs:range ref:Attachment ;
+    rdfs:seeAlso nmo:hasAttachment .
+
+ref:referencingOccurrence a owl:ObjectProperty ;
+    rdfs:label "mentioned in" ;
+    rdfs:comment "The subject thing (person, meeting, project, contract, ...) is described in the object message (PIMO pimo:referencingOccurrence; range nie:InformationElement narrowed to message)." ;
+    rdfs:domain ref:Thing ;
+    rdfs:range ref:Message ;
+    rdfs:seeAlso pimo:referencingOccurrence .
+
+ref:hasTopic a owl:ObjectProperty ;
+    rdfs:label "has topic" ;
+    rdfs:comment "The subject's content is about the object topic (PIMO pimo:hasTag with range narrowed to pimo:Topic; for messages, the object counterpart of nie:subject)." ;
+    ref:signature [ rdfs:domain ref:Thing ; rdfs:range ref:Topic ] ,
+                  [ rdfs:domain ref:Message ; rdfs:range ref:Topic ] ;
+    rdfs:seeAlso pimo:hasTag , nie:subject .
+
+ref:subTopic a owl:ObjectProperty ;
+    rdfs:label "sub topic" ;
+    rdfs:comment "The object topic is more specific than the subject topic (PIMO)." ;
+    rdfs:domain ref:Topic ;
+    rdfs:range ref:Topic ;
+    rdfs:seeAlso pimo:subTopic .
+
+ref:partOf a owl:ObjectProperty ;
+    rdfs:label "part of" ;
+    rdfs:comment "The subject is part of the object, e.g. a task is part of a project (PIMO)." ;
+    rdfs:domain ref:Thing ;
+    rdfs:range ref:Thing ;
+    rdfs:seeAlso pimo:partOf .
+
+ref:attendee a owl:ObjectProperty ;
+    rdfs:label "attendee" ;
+    rdfs:comment "A social event (e.g. a meeting) is attended by a person (PIMO; inverse pimo:attends)." ;
+    rdfs:domain ref:SocialEvent ;
+    rdfs:range ref:Person ;
+    rdfs:seeAlso pimo:attendee , pimo:attends .
+
+ref:hasLocation a owl:ObjectProperty ;
+    rdfs:label "has location" ;
+    rdfs:comment "The subject is located at the object location (PIMO; domain pimo:Locatable, which covers persons, organizations and social events)." ;
+    ref:signature [ rdfs:domain ref:Person ; rdfs:range ref:Location ] ,
+                  [ rdfs:domain ref:Organization ; rdfs:range ref:Location ] ,
+                  [ rdfs:domain ref:SocialEvent ; rdfs:range ref:Location ] ;
+    rdfs:seeAlso pimo:hasLocation .
+
+ref:locatedWithin a owl:ObjectProperty ;
+    rdfs:label "located within" ;
+    rdfs:comment "The subject location is contained within the object location, e.g. a room within a building or a city within a state (PIMO)." ;
+    rdfs:domain ref:Location ;
+    rdfs:range ref:Location ;
+    rdfs:seeAlso pimo:locatedWithin .
+
+ref:isOrganizationMemberOf a owl:ObjectProperty ;
+    rdfs:label "member of" ;
+    rdfs:comment "The subject person or organization is a member of the object organization (PIMO; inverse pimo:hasOrganizationMember)." ;
+    rdfs:domain ref:Agent ;
+    rdfs:range ref:Organization ;
+    rdfs:seeAlso pimo:isOrganizationMemberOf , pimo:hasOrganizationMember .
+
+ref:hasAffiliation a owl:ObjectProperty ;
+    rdfs:label "has affiliation" ;
+    rdfs:comment "Links a person to an affiliation (job title, role and department in an organization) (NCO)." ;
+    rdfs:domain ref:Person ;
+    rdfs:range ref:Affiliation ;
+    rdfs:seeAlso nco:hasAffiliation .
+
+ref:org a owl:ObjectProperty ;
+    rdfs:label "organization" ;
+    rdfs:comment "The organization the affiliation refers to, i.e. the employer (NCO nco:org, range nco:OrganizationContact merged into organization)." ;
+    rdfs:domain ref:Affiliation ;
+    rdfs:range ref:Organization ;
+    rdfs:seeAlso nco:org .
+
+ref:hasEmailAddress a owl:ObjectProperty ;
+    rdfs:label "has email address" ;
+    rdfs:comment "An e-mail address of the person or organization (NCO; domain nco:Role mapped to agent)." ;
+    rdfs:domain ref:Agent ;
+    rdfs:range ref:EmailAddress ;
+    rdfs:seeAlso nco:hasEmailAddress .
+
+ref:hasPhoneNumber a owl:ObjectProperty ;
+    rdfs:label "has phone number" ;
+    rdfs:comment "A phone number of the person or organization (NCO; domain nco:Role mapped to agent)." ;
+    rdfs:domain ref:Agent ;
+    rdfs:range ref:PhoneNumber ;
+    rdfs:seeAlso nco:hasPhoneNumber .
+
+ref:hasPostalAddress a owl:ObjectProperty ;
+    rdfs:label "has postal address" ;
+    rdfs:comment "A postal address of the person or organization (NCO; domain nco:Role mapped to agent)." ;
+    rdfs:domain ref:Agent ;
+    rdfs:range ref:PostalAddress ;
+    rdfs:seeAlso nco:hasPostalAddress .

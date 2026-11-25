@@ -5,6 +5,7 @@ It speaks the agent chat protocol (agent/protocol.py), except that the state
 message after a change is ``builder_state`` with the session's full state.
 """
 
+import json
 import threading
 from typing import Literal
 
@@ -14,7 +15,10 @@ from agent.agent import GraphAgent
 from agent.protocol import AssistantMessage, Done, ErrorMessage, Thinking, ToolCall
 from agent.session import AgentSession, SessionBusy
 from agent.tools import ToolCollection, ToolError, ToolResult, tool
-from builder.ontology import FieldType, OntoClass, OntoField, OntoLink, local_name
+from builder.ontology import (
+    MAX_VALUES, ExtractionExample, FieldType, OntoClass, OntoField, OntoLink, Ontology, annotation_values, local_name,
+    normalize, validate_example,
+)
 from builder.session import BuilderSession, ExportContent, SessionState, class_query
 
 SYSTEM_PROMPT = """You are an agent that helps the user build an ontology (classes with typed fields, and links between classes) for a collection of text documents.
@@ -22,11 +26,42 @@ After every change of the ontology, a small extraction model re-reads the docume
 
 - Use search_text to learn what the documents talk about before proposing classes, and to check whether a class or field actually occurs in them.
 - Keep classes concrete and extractable from single documents (e.g. Person, Organization, Meeting), give them short descriptions: the extraction model only sees the names and descriptions.
-- Fields hold literal values (string, integer, float, date, boolean, vector); relations between entities are links between classes.
+- Fields hold literal values (string, integer, float, date, boolean, vector, or enum: one of a fixed list of values); relations between entities are links between classes.
+- Organise classes in a hierarchy with set_superclasses. An instance is typed with its own class only, so query a class with its subclasses as ?x a/rdfs:subClassOf* onto:Class.
+- The extraction model is small: add_extraction_example with a short text and the exact output expected for it shows it what to extract (the examples precede every document).
+- get_kg_stats summarises the KG: instances per class with their most frequent names, triples per link.
 - Inspect the KG with set_query (SPARQL; the prefixes onto:, rdfs:, rdf:, xsd: and prov: are predefined, onto: is the ontology's namespace) or query_class, then get_results; GROUP BY with COUNT, SUM, AVG, MIN, MAX, SAMPLE or GROUP_CONCAT summarises it (e.g. instances per class or field value; every selected variable must be grouped or aggregated). The user sees the query and its results, which update live. The build takes minutes and restarts after every ontology change, so do not call get_results repeatedly to wait for it: report what is there and let the user come back to you.
 - To export, call prepare_download; the user gets a download link.
 Finish with a short answer summarising what you did.
 """
+
+EXAMPLES_PROMPT = """
+Example documents with gold annotations are available (get_annotated_examples): their annotations show what should be extracted from documents like these, so design the ontology to recover them. Copying a good example document with its annotation (rewritten as the extraction output of your ontology) into an extraction example can help the small extraction model, but it also tends to copy example outputs: check_extraction measures precision/recall on annotated documents, so compare variants (descriptions, examples, set_extraction_options) with it before relying on the build.
+- map_annotations ties a class to a path into the annotations (e.g. "types", "terms.term"), so the annotation's values are known as instances of that class. With mapped classes, set_extraction_options(retrieved_examples=k) gives the small model, for every text it reads, the k annotated example sentences most similar to it with their mapped values as output: examples close to each text, which usually help more than fixed ones (map every class that should be extracted, unmapped classes appear empty in these examples).
+- map_annotations(vocabulary=true) also adds every known value of that path (from all annotated documents) found in a document as an instance: high recall, but common words that are values somewhere may be added where they are not meant, so check precision.
+- check_extraction never uses the checked document itself for retrieved examples or the vocabulary: compare these variants with it (on the same documents, e.g. the same query and n=5) and keep the best. It reports precision/recall per mapped class: decide per class (e.g. vocabulary for one class but not for another), as what helps one class can hurt another.
+"""
+
+
+def has_annotated_examples(session: BuilderSession) -> bool:
+    """Whether the builder has example documents with annotations (loads them)."""
+    return session.builder.config.examples is not None and session.builder.examples.annotated
+
+
+def ontology_summary(onto: Ontology, text_chars: int = 300) -> dict:
+    """The ontology for the agent: without layout, example texts shortened."""
+    out = onto.model_dump(exclude={"classes": {"__all__": {"x", "y"}}, "examples": True})
+    out["examples"] = [
+        {"index": i, "text": e.text[:text_chars] + ("..." if len(e.text) > text_chars else ""), "output": e.output}
+        for i, e in enumerate(onto.examples)
+    ]
+    return out
+
+
+def build_progress(status) -> str:
+    return f"{status.processed}/{status.total} documents read, {status.triples} triples" + (
+        " (still building)" if status.running else ""
+    )
 
 
 class BuilderStateMessage(BaseModel):
@@ -38,6 +73,8 @@ class BuilderTools(ToolCollection):
     def __init__(self, session: BuilderSession, k: int = 8):
         self.session = session
         self.k = k
+        if not has_annotated_examples(session):
+            self.disabled_groups = frozenset({"examples"})
 
     def _edit(self):
         """A copy of the ontology to change and set again (which restarts the build)."""
@@ -51,8 +88,9 @@ class BuilderTools(ToolCollection):
 
     @tool()
     def get_ontology(self) -> dict:
-        """The current ontology: classes (with fields) and links."""
-        return self.session.ontology.model_dump(exclude={"classes": {"__all__": {"x", "y"}}})
+        """The current ontology: classes (with fields and superclasses), links, extraction examples and
+        extraction options (chunk_chars, annotation_map, retrieved_examples, vocabulary_classes)."""
+        return ontology_summary(self.session.ontology)
 
     @tool()
     def search_text(self, query: str) -> list:
@@ -88,13 +126,33 @@ class BuilderTools(ToolCollection):
             class_id: id of the class.
         """
         onto = self._edit()
-        onto.classes.remove(self._class(onto, class_id))
-        onto.links = [l for l in onto.links if class_id not in (l.source, l.target)]
+        self._class(onto, class_id)
+        onto.remove_class(class_id)
         self.session.set_ontology(onto)
         return f"Removed {class_id}."
 
     @tool()
-    def add_field(self, class_id: str, name: str, type: FieldType, description: str) -> OntoField:
+    def set_superclasses(self, class_id: str, parent_ids: list[str]) -> OntoClass:
+        """Set the superclasses of a class (rdfs:subClassOf), replacing its previous ones.
+
+        Args:
+            class_id: id of the class.
+            parent_ids: ids of its superclasses, [] for none.
+        """
+        onto = self._edit()
+        cls = self._class(onto, class_id)
+        for parent in parent_ids:
+            self._class(onto, parent)
+            if parent == class_id or class_id in onto.ancestors(parent):
+                raise ToolError(f"{parent} is {class_id} or one of its subclasses (cycle).")
+        cls.parents = list(dict.fromkeys(parent_ids))
+        self.session.set_ontology(onto)
+        return cls
+
+    @tool()
+    def add_field(
+        self, class_id: str, name: str, type: FieldType, description: str, values: list[str] | None = None,
+    ) -> OntoField:
         """Add a literal field to a class.
 
         Args:
@@ -102,10 +160,17 @@ class BuilderTools(ToolCollection):
             name: field name, e.g. "birth date" (becomes camelCase).
             type: value type.
             description: what the value is, for the extraction model.
+            values: the allowed values of an enum field (required for enum), null otherwise.
         """
         onto = self._edit()
         cls = self._class(onto, class_id)
-        field = OntoField(name=local_name(name), type=type, description=description)
+        values = list(dict.fromkeys(v.strip() for v in values or [] if v.strip()))
+        if type == "enum" and not values:
+            raise ToolError("An enum field needs its values.")
+        if len(values) > MAX_VALUES:
+            raise ToolError(f"At most {MAX_VALUES} values.")
+        field = OntoField(name=local_name(name), type=type, description=description,
+                          values=values if type == "enum" else [])
         if any(f.name == field.name for f in cls.fields):
             raise ToolError(f"{class_id} has a field '{field.name}' already.")
         cls.fields.append(field)
@@ -164,6 +229,154 @@ class BuilderTools(ToolCollection):
         return f"Removed {link_id}."
 
     @tool()
+    def add_extraction_example(self, text: str, output_json: str) -> dict:
+        """Add a few-shot example for the extraction model: a short text and the output it should
+        extract from it (the first 3 examples precede every document; the KG is rebuilt).
+
+        Args:
+            text: the example text (e.g. an annotated example document), shortened to 1500 characters.
+            output_json: the expected output as JSON: per class id a list of instances, each
+                {"name": ..., <field>: value, <link id>: [names of targets]}, e.g.
+                {"Person": [{"name": "Alice Smith", "worksFor": ["Acme"]}], "Company": [{"name": "Acme"}]}.
+        """
+        try:
+            output = json.loads(output_json)
+        except json.JSONDecodeError as e:
+            raise ToolError(f"output_json is not valid JSON: {e}")
+        onto = self._edit()
+        try:
+            output = validate_example(onto, output)
+        except ValueError as e:
+            raise ToolError(str(e))
+        onto.examples.append(ExtractionExample(text=text[:1500], output=output))
+        self.session.set_ontology(onto)
+        return {"index": len(onto.examples) - 1, "examples": len(onto.examples)}
+
+    @tool()
+    def remove_extraction_example(self, index: int) -> str:
+        """Remove an extraction example.
+
+        Args:
+            index: its index, as get_ontology lists it.
+        """
+        onto = self._edit()
+        if not 0 <= index < len(onto.examples):
+            raise ToolError(f"No example {index}, there are {len(onto.examples)}.")
+        onto.examples.pop(index)
+        self.session.set_ontology(onto)
+        return f"Removed example {index}."
+
+    @tool(group="examples")
+    def get_annotated_examples(self, n: int, query: str | None = None) -> list:
+        """Example documents with their gold annotation (what should be extracted from them).
+
+        Args:
+            n: documents to return, at most 5.
+            query: keywords to find relevant example documents, null for a fixed sample.
+        """
+        return self.session.builder.examples.annotated_examples(max(1, min(n, 5)), query)
+
+    @tool(group="examples")
+    def check_extraction(self, n: int, query: str | None = None) -> dict:
+        """Run the extraction model with the current ontology on annotated example documents and
+        compare with their annotation: per document what it extracted, missed and added, and the
+        overall precision/recall. Use it to test ontology changes before relying on the build.
+
+        Args:
+            n: documents to check, at most 5.
+            query: keywords to pick the documents, null for a fixed sample.
+        """
+        docs = self.session.builder.examples.annotated_examples(max(1, min(n, 5)), query, max_chars=4000)
+        return self.session.check_extraction(docs)
+
+    @tool(group="examples")
+    def map_annotations(self, class_id: str, path: str, vocabulary: bool) -> dict:
+        """Map a class to a path into the annotations of the example documents: its values are the
+        instances of that class (for retrieved examples, see set_extraction_options). Restarts the build.
+
+        Args:
+            class_id: id of the class.
+            path: dotted path into an annotation, lists are flattened: "types" (the strings of
+                annotation["types"]), "terms.term" (each term's name), "terms.types"; "" removes the mapping.
+            vocabulary: also add every value of this path (of all annotated documents) found in a
+                document as an instance of the class.
+        """
+        onto = self._edit()
+        self._class(onto, class_id)
+        path = path.strip().strip(".")
+        onto.vocabulary_classes = [c for c in onto.vocabulary_classes if c != class_id]
+        if not path:
+            onto.annotation_map.pop(class_id, None)
+            if not onto.annotation_map:
+                onto.retrieved_examples = 0
+            self.session.set_ontology(onto)
+            return {"class_id": class_id, "mapped": False, "retrieved_examples": onto.retrieved_examples}
+        examples = self.session.builder.examples
+        documents, values = 0, {}
+        for doc in examples.documents:
+            annotation = examples.annotation(doc.id)
+            found = annotation_values(annotation, path) if annotation is not None else []
+            documents += bool(found)
+            values.update((normalize(v), v) for v in found)
+        if not documents:
+            sample = next((a for d in examples.documents if (a := examples.annotation(d.id)) is not None), None)
+            raise ToolError(f"No annotation has values at '{path}'. An annotation: {json.dumps(sample)[:300]}")
+        onto.annotation_map[class_id] = path
+        if vocabulary:
+            onto.vocabulary_classes.append(class_id)
+        self.session.set_ontology(onto)
+        return {
+            "class_id": class_id, "path": path, "documents": documents, "distinct_values": len(values),
+            "sample": list(values.values())[:10], "vocabulary": vocabulary,
+            **({"vocabulary_entries": len(self.session.builder.vocabulary(path))} if vocabulary else {}),
+        }
+
+    @tool()
+    def set_extraction_options(self, chunk_chars: int | None, retrieved_examples: int | None = None) -> str:
+        """Set how documents are given to the extraction model: whole (null), or in pieces of whole
+        sentences of at most chunk_chars characters (e.g. 250), which helps the small model find
+        more mentions in long or dense texts; and how many few-shot examples are retrieved for
+        every piece (the most similar annotated example sentences, needs map_annotations).
+        Restarts the build.
+
+        Args:
+            chunk_chars: maximum piece length (at least 100), null for whole documents.
+            retrieved_examples: retrieved examples per piece, 0 to 5 (0: none), null to keep the current setting.
+        """
+        if chunk_chars is not None and chunk_chars < 100:
+            raise ToolError("chunk_chars must be at least 100 (or null).")
+        onto = self._edit()
+        if retrieved_examples is not None:
+            if not 0 <= retrieved_examples <= 5:
+                raise ToolError("retrieved_examples must be between 0 and 5.")
+            if retrieved_examples and not onto.mapped_classes():
+                raise ToolError("Map annotations to classes first (map_annotations).")
+            onto.retrieved_examples = retrieved_examples
+        onto.chunk_chars = chunk_chars
+        self.session.set_ontology(onto)
+        how = 'whole' if chunk_chars is None else f'in pieces of at most {chunk_chars} characters'
+        return f"Documents are extracted {how}, with {onto.retrieved_examples} retrieved examples each."
+
+    @tool()
+    def get_kg_stats(self, top: int) -> dict:
+        """Summary of the (partial) KG: per class its instance count and most frequent names
+        (by the documents they were found in), per link its triple count, and the build progress.
+
+        Args:
+            top: names per class, at most 20.
+        """
+        stats = self.session.kg_stats(max(0, min(top, 20)))
+        return {
+            "classes": {
+                c: {"instances": s.instances, **({"with_subclasses": s.with_subclasses} if s.with_subclasses is not None else {}),
+                    "top": {t.label: t.documents for t in s.top}}
+                for c, s in stats.classes.items()
+            },
+            "links": stats.links,
+            "build": build_progress(stats.status),
+        }
+
+    @tool()
     def set_query(self, sparql: str) -> dict:
         """Set the SPARQL SELECT query over the KG that the user sees, returns the first results.
 
@@ -199,12 +412,7 @@ class BuilderTools(ToolCollection):
             {c: (cell.label or cell.value) if cell else None for c, cell in zip(result.columns, row)}
             for row in result.rows
         ]
-        s = result.status
-        return {
-            "rows": rows,
-            "build": f"{s.processed}/{s.total} documents read, {s.triples} triples"
-            + (" (still building)" if s.running else ""),
-        }
+        return {"rows": rows, "build": build_progress(result.status)}
 
     @tool()
     def prepare_download(self, content: ExportContent, prefix: str | None) -> dict:
@@ -222,14 +430,15 @@ class BuilderAgent(GraphAgent):
 
     def __init__(self, llm, session: BuilderSession):
         self.session = session
+        config = session.builder.config
         super().__init__(
-            llm, BuilderTools(session, session.builder.config.search_k),
-            max_steps=session.builder.config.agent.max_steps, system_prompt=SYSTEM_PROMPT,
+            llm, BuilderTools(session, config.search_k), max_steps=config.agent.max_steps,
+            system_prompt=SYSTEM_PROMPT + (EXAMPLES_PROMPT if has_annotated_examples(session) else ""),
         )
 
     def describe_state(self) -> str:
         state = self.session.state()
-        return state.ontology.model_dump_json(exclude={"classes": {"__all__": {"x", "y"}}}) + (
+        return json.dumps(ontology_summary(state.ontology)) + (
             f"\nCurrent query:\n{state.query}" if state.query else ""
         )
 

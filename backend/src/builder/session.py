@@ -13,7 +13,7 @@ import random
 import threading
 import time
 import uuid
-from collections import OrderedDict
+from collections import Counter, OrderedDict
 from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
 from functools import cached_property, wraps
 from itertools import islice
@@ -22,18 +22,26 @@ from typing import Literal as TLiteral
 
 from pydantic import BaseModel
 from rdflib import DCTERMS, FOAF, RDF, RDFS, SKOS, Graph, Literal, URIRef
+from rdflib.plugins.sparql import prepareQuery
 
 import sparql_parse_lock  # noqa: F401  sessions query concurrently, rdflib's parser is not thread-safe
 
-from builder.corpus import Corpus
+from builder.corpus import Corpus, chunks
 from builder.disambiguate import Disambiguator, Judge, LlamaJudge, Merge
-from builder.extract import Extractor, LlamaExtractor
+from builder.extract import MAX_EXAMPLES, Extractor, LlamaExtractor, merge_extractions
 from builder.ontology import (
     PROV,
+    ExtractionExample,
     Ontology,
+    Vocabulary,
+    annotation_strings,
+    annotation_values,
     document_iri,
     document_triples,
+    extracted_names,
     extraction_triples,
+    grounded,
+    normalize,
     ontology_from_graph,
     ontology_graph,
     provenance_graph,
@@ -47,6 +55,9 @@ from session_history import (
 ExportContent = TLiteral["ontology", "kg", "all"]
 # builds of sessions nobody looked at for this long pause (they share the extraction model)
 IDLE_PAUSE_SECONDS = 60
+# characters of a retrieved example's text (its sentences of one annotated document)
+RETRIEVED_CHARS = 400
+
 def add_all(graph: Graph, triples, chunk: int = 10_000):
     """Add ``triples`` in a few batched updates: Tentris runs every ``Graph.add`` as an update
     of its own whose cost grows with the store (5 ms per triple at 160k triples, a batch of
@@ -61,12 +72,18 @@ def add_all(graph: Graph, triples, chunk: int = 10_000):
         graph.addN(batch)
 
 
-def new_store() -> Graph:
+def new_store(kind: str = "auto") -> Graph:
+    """A triple store: Tentris (``"tentris"``, or ``"auto"`` where its wheel exists) or rdflib's
+    in-memory store (``"memory"``, the ``"auto"`` fallback)."""
+    if kind == "memory":
+        return Graph()
     try:
         from tentris import TentrisStore
 
         return Graph(store=TentrisStore())
     except Exception:
+        if kind == "tentris":
+            raise
         # ponytail: native Tentris ships for x86_64 Linux only, rdflib's memory store elsewhere
         return Graph()
 
@@ -131,6 +148,27 @@ class InstanceProvenance(BaseModel):
     documents: list[SourceDocument] = []
 
 
+class LabelCount(BaseModel):
+    label: str
+    # documents the instance was extracted from
+    documents: int
+
+
+class ClassStats(BaseModel):
+    instances: int
+    # instances of the class and its (transitive) subclasses, if it has any
+    with_subclasses: int | None = None
+    top: list[LabelCount] = []
+
+
+class KGStats(BaseModel):
+    """What the (partial) KG holds per class of the ontology and per link."""
+    classes: dict[str, ClassStats] = {}
+    # triples per link id
+    links: dict[str, int] = {}
+    status: BuildStatus = BuildStatus()
+
+
 class SessionState(BaseModel):
     session_id: str
     version: int
@@ -175,7 +213,7 @@ class BuilderSession:
         self.version = 0
         # instance triples of an imported TTL, kept across rebuilds
         self.imported = Graph()
-        self.graph = new_store()
+        self.graph = new_store(builder.config.store)
         # the ontology's own triples (ontology_graph), kept in the store so queries can join
         # classes and properties with the instances; refreshed on every ontology change
         self.schema = Graph()
@@ -311,7 +349,7 @@ class BuilderSession:
     def rebuild(self):
         with self._lock:
             self._generation += 1
-            self.graph = new_store()
+            self.graph = new_store(self.builder.config.store)
             add_all(self.graph, self.imported)
             self.schema = Graph()
             self._write_schema()
@@ -381,14 +419,125 @@ class BuilderSession:
         doc_iri = document_iri(onto.prefix, doc.id)
         try:
             text = doc.text[: self.builder.config.text_set.max_chars]
-            data = self.builder.extractor.extract(onto, text)
+            data = self.extract_text(onto, text)
             resolve = dis.resolver(text) if dis is not None else None
-            triples = extraction_triples(onto, data, doc_iri, resolve)
+            triples = extraction_triples(
+                onto, data, doc_iri, resolve, text if self.builder.config.grounded_names else None,
+            )
             if triples:
                 triples = document_triples(onto.prefix, doc.id, doc.title) + triples
             return triples, None
         except Exception as e:
             return [], f"{type(e).__name__}: {e}"
+
+    def extract_text(self, onto: Ontology, text: str, exclude_doc: str | None = None) -> dict:
+        """The extraction output of a text: whole, or in pieces of whole sentences of at most
+        the ontology's ``chunk_chars`` (else the builder's ``extract_chunk_chars``) merged.
+
+        With ``retrieved_examples``, every extraction call is preceded by the annotated example
+        snippets most similar to its text (``retrieve_examples``); the ``vocabulary_classes``'
+        known names found in the text are added (``Vocabulary``). ``exclude_doc``: the annotated
+        example document that is not used for either (the text itself, when checking)."""
+        size = onto.chunk_chars or self.builder.config.extract_chunk_chars
+        pieces = chunks(text, size) if size and len(text) > size else [text]
+        retrieving = onto.retrieved_examples > 0 and bool(onto.mapped_classes()) and self._annotated()
+        outputs = []
+        for piece in pieces:
+            piece_onto = onto
+            if retrieving:
+                retrieved = self.retrieve_examples(onto, piece, exclude_doc)
+                piece_onto = onto.model_copy(update={"examples": retrieved + onto.examples[:MAX_EXAMPLES]})
+            outputs.append(self.builder.extractor.extract(piece_onto, piece))
+        data = merge_extractions(outputs) if len(outputs) > 1 else outputs[0]
+        return self.add_vocabulary(onto, data, text, exclude_doc)
+
+    def _annotated(self) -> bool:
+        return self.builder.config.examples is not None and self.builder.examples.annotated
+
+    def retrieve_examples(self, onto: Ontology, text: str, exclude_doc: str | None = None) -> list[ExtractionExample]:
+        """Up to ``retrieved_examples`` few-shot examples for ``text``: the sentences of the annotated
+        examples most similar to it (``Corpus.search``, the sentences of one document joined), each
+        with the values of the mapped classes' annotation paths that occur in it as output;
+        snippets without any are skipped."""
+        examples = self.builder.examples
+        mapped = onto.mapped_classes()
+        k = onto.retrieved_examples
+        groups: dict[str, str] = {}
+        for snippet in examples.search(text, 4 * k + 4):
+            if snippet.doc_id == exclude_doc or examples.annotation(snippet.doc_id) is None:
+                continue
+            joined = f"{groups[snippet.doc_id]} {snippet.text}" if snippet.doc_id in groups else snippet.text
+            if len(joined) <= RETRIEVED_CHARS or snippet.doc_id not in groups:
+                groups[snippet.doc_id] = joined[:RETRIEVED_CHARS]
+        out = []
+        for doc_id, snippet in groups.items():
+            annotation = examples.annotation(doc_id)
+            output = {}
+            for class_id, path in mapped.items():
+                values = {normalize(v): v for v in annotation_values(annotation, path) if grounded(v, snippet)}
+                if values:
+                    output[class_id] = [{"name": v} for v in values.values()]
+            if output:
+                out.append(ExtractionExample(text=snippet, output=output))
+                if len(out) >= k:
+                    break
+        return out
+
+    def add_vocabulary(self, onto: Ontology, data: dict, text: str, exclude_doc: str | None = None) -> dict:
+        """``data`` with the known names (``Builder.vocabulary``) of the ``vocabulary_classes`` found in
+        ``text`` added as instances (those not extracted already, by ``normalize``)."""
+        mapped = onto.mapped_classes()
+        classes = [c for c in onto.vocabulary_classes if c in mapped]
+        if not classes or not self._annotated():
+            return data
+        data = dict(data or {})
+        for class_id in classes:
+            items = data.get(class_id)
+            items = list(items) if isinstance(items, list) else []
+            seen = {normalize(str(i.get("name") or "")) for i in items if isinstance(i, dict)}
+            for name in self.builder.vocabulary(mapped[class_id]).matches(text, exclude_doc):
+                if normalize(name) not in seen:
+                    seen.add(normalize(name))
+                    items.append({"name": name})
+            data[class_id] = items
+        return data
+
+    def check_extraction(self, docs: list[dict]) -> dict:
+        """Extracts annotated documents (``Corpus.annotated_examples``) with the current
+        ontology (leaving each document's own annotation out of retrieval and vocabulary) and
+        compares the names with the annotation's strings that occur in the text: per document
+        the found, missed and extra names, the overall precision/recall and, for classes mapped
+        to annotations (``annotation_map``), each class' precision/recall against its values."""
+        onto = self.ontology.model_copy(deep=True)
+        grounding = self.builder.config.grounded_names
+        mapped = onto.mapped_classes()
+        out, total = [], Counter()
+        for doc in docs:
+            text = doc["text"]
+            data = self.extract_text(onto, text, exclude_doc=doc["id"])
+            names = extracted_names(onto, data, text if grounding else None)
+            gold = {normalize(g): g for g in annotation_strings(doc["annotation"]) if grounded(g, text)}
+            found = {normalize(n) for _, n in names}
+            total.update(tp=len(found & gold.keys()), pred=len(found), gold=len(gold))
+            for class_id, path in mapped.items():
+                class_gold = {normalize(g) for g in annotation_values(doc["annotation"], path) if grounded(g, text)}
+                class_found = {normalize(n) for c, n in names if c == class_id}
+                total.update({f"{class_id}.tp": len(class_found & class_gold), f"{class_id}.pred": len(class_found),
+                              f"{class_id}.gold": len(class_gold)})
+            out.append({
+                "id": doc["id"], "extracted": [f"{c}: {n}" for c, n in names],
+                "missed": sorted(gold[k] for k in gold.keys() - found),
+                "extra": sorted(n for _, n in names if normalize(n) not in gold),
+            })
+
+        def pr(prefix: str) -> dict:
+            tp, pred, gold = (total[f"{prefix}{k}"] for k in ("tp", "pred", "gold"))
+            return {"precision": round(tp / pred, 3) if pred else None, "recall": round(tp / gold, 3) if gold else None}
+
+        report = pr("")
+        if mapped:
+            report["classes"] = {c: pr(f"{c}.") for c in mapped}
+        return report | {"documents": out}
 
     def _add_extraction(self, generation: int, triples: list, error: str | None):
         with self._lock:
@@ -436,7 +585,12 @@ class BuilderSession:
             if not query.strip():
                 return QueryResult(status=status)
             try:
-                result = self.graph.query(self._prefixed(query))
+                prefixed = self._prefixed(query)
+                # Tentris parses natively and can crash the process on a malformed query (seen
+                # with invented functions while extraction threads ran): rdflib's parser rejects
+                # it first, as a normal error
+                prepareQuery(prefixed)
+                result = self.graph.query(prefixed)
                 columns = [str(v) for v in (result.vars or [])]
                 rows = []
                 for row in result:
@@ -490,6 +644,36 @@ class BuilderSession:
         with self._lock:
             self._link_counts = (key, counts)
         return counts
+
+    def kg_stats(self, top: int = 5) -> KGStats:
+        """Instances per class with the ``top`` labels found in the most documents, and the
+        triples per link: two aggregate queries under the session lock."""
+        self.last_access = time.monotonic()
+        instances = (
+            "SELECT ?c ?s (SAMPLE(?l) AS ?label) (COUNT(DISTINCT ?d) AS ?n) WHERE {"
+            f" ?s <{RDF.type}> ?c . OPTIONAL {{ ?s <{RDFS.label}> ?l }}"
+            f" OPTIONAL {{ ?s <{PROV.wasDerivedFrom}> ?d }} }} GROUP BY ?c ?s"
+        )
+        predicates = "SELECT ?p (COUNT(*) AS ?n) WHERE { ?s ?p ?o } GROUP BY ?p"
+        with self._lock:
+            onto, status = self.ontology, self.status.model_copy()
+            rows = list(self.graph.query(instances))
+            counts = {str(p): int(n) for p, n in self.graph.query(predicates)}
+        classes = {str(onto.term(c.id)): c.id for c in onto.classes}
+        members: dict[str, list[tuple]] = {c.id: [] for c in onto.classes}
+        for c, s, label, n in rows:
+            if str(c) in classes:
+                members[classes[str(c)]].append((str(s), str(label if label is not None else s), int(n)))
+        stats = {}
+        for cls in onto.classes:
+            found = sorted(members[cls.id], key=lambda m: (-m[2], m[1]))
+            subclasses = [c.id for c in onto.classes if cls.id in onto.ancestors(c.id)]
+            stats[cls.id] = ClassStats(
+                instances=len(found), top=[LabelCount(label=l, documents=n) for _, l, n in found[:top]],
+                with_subclasses=len({m[0] for c in [cls.id, *subclasses] for m in members[c]}) if subclasses else None,
+            )
+        links = {l.id: counts.get(str(onto.term(l.id)), 0) for l in onto.links}
+        return KGStats(classes=stats, links=links, status=status)
 
     def _editor_id(self, iri: str) -> str:
         """``<...onto/Person>`` -> ``onto:Person``, ``<...foaf/0.1/Document>`` -> ``foaf:Document``."""
@@ -664,10 +848,25 @@ class Builder:
         self._lock = threading.Lock()
         self._session_locks: dict[str, threading.Lock] = {}
         self._init_lock = threading.RLock()
+        self._vocabularies: dict[str, Vocabulary] = {}
 
     @_locked_cached_property
     def corpus(self) -> Corpus:
         return Corpus.load(self.config.text_set)
+
+    @_locked_cached_property
+    def examples(self) -> Corpus | None:
+        """The annotated example documents for the agent, None if the config has none."""
+        return Corpus.load(self.config.examples) if self.config.examples else None
+
+    def vocabulary(self, path: str) -> Vocabulary:
+        """The values at an annotation path of all annotated examples (built once per path)."""
+        with self._init_lock:
+            if path not in self._vocabularies:
+                examples = self.examples
+                annotations = ((d.id, examples.annotation(d.id)) for d in examples.documents) if examples else ()
+                self._vocabularies[path] = Vocabulary(annotations, path)
+            return self._vocabularies[path]
 
     @_locked_cached_property
     def extractor(self) -> Extractor:

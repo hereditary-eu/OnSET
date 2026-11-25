@@ -28,3 +28,6 @@ exploration/extraction-speed
 *.tsv
 als-gene-embeddings
 .uv-agent
+logs/
+results/
+*.md
