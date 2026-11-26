@@ -1,29 +1,20 @@
 \begin{table}
-\caption{Comparison of query generation methods for LLama 3.2 3B on DBpedia with one shot prompts.}
+\caption{Comparison of query generation methods for LFM3 1.7B on DBpedia with one shot prompts.}
 \label{tab:compare_gen_query}
-\begin{tabular}{lllrr}
+\begin{tabular}{llrr}
 \toprule
- &  &  & Mean $F_{1,node}$ & Mean $GED_{s}$ \\
-$k$ & Query Origin & Stage &  &  \\
+ &  & Mean f1_score & Mean normed_ged \\
+Query Origin & System &  &  \\
 \midrule
-\multirow[t]{6}{*}{3} & \multirow[t]{2}{*}{human} & aligned & 0.57 & 0.55 \\
- &  & raw & 0.43 & 0.25 \\
-\cline{2-5}
- & \multirow[t]{2}{*}{llama} & aligned & 0.48 & 0.37 \\
- &  & raw & 0.37 & 0.13 \\
-\cline{2-5}
- & \multirow[t]{2}{*}{templated} & aligned & 0.59 & 0.53 \\
- &  & raw & 0.52 & 0.30 \\
-\cline{1-5} \cline{2-5}
-\multirow[t]{6}{*}{5} & \multirow[t]{2}{*}{human} & aligned & 0.70 & 0.47 \\
- &  & raw & 0.51 & 0.12 \\
-\cline{2-5}
- & \multirow[t]{2}{*}{llama} & aligned & 0.47 & 0.26 \\
- &  & raw & 0.36 & 0.05 \\
-\cline{2-5}
- & \multirow[t]{2}{*}{templated} & aligned & 0.59 & 0.44 \\
- &  & raw & 0.54 & 0.33 \\
-\cline{1-5} \cline{2-5}
+\multirow[t]{2}{*}{human} & aligned & 0.63 & 0.47 \\
+ & raw & 0.45 & 0.16 \\
+\cline{1-4}
+\multirow[t]{2}{*}{llama} & aligned & 0.44 & 0.33 \\
+ & raw & 0.36 & 0.13 \\
+\cline{1-4}
+\multirow[t]{2}{*}{templated} & aligned & 0.56 & 0.48 \\
+ & raw & 0.51 & 0.32 \\
+\cline{1-4}
 \bottomrule
 \end{tabular}
 \end{table}

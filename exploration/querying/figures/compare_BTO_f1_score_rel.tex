@@ -1,90 +1,105 @@
 % This file was created with tikzplotlib v0.10.1.post13.
-\begin{tikzpicture}[
-scale=0.5,
-every axis/.style={
-                    legend pos=south west, 
-                    legend style={
-                font=\small},
-                    legend columns=2, 
-                }
-]
+\begin{tikzpicture}
 
-\definecolor{lightgrey203}{RGB}{203,203,203}
-\definecolor{lightgrey207}{RGB}{207,207,207}
-\definecolor{pink250176228}{RGB}{250,176,228}
-\definecolor{whitesmoke240}{RGB}{240,240,240}
+\definecolor{darkgrey176}{RGB}{176,176,176}
+\definecolor{darkslategrey51}{RGB}{51,51,51}
+\definecolor{gainsboro221}{RGB}{221,221,221}
+\definecolor{lightcoral238102119}{RGB}{238,102,119}
+\definecolor{silver187}{RGB}{187,187,187}
+\definecolor{steelblue31119180}{RGB}{31,119,180}
+\definecolor{steelblue68119170}{RGB}{68,119,170}
 
 \begin{axis}[
-axis line style={whitesmoke240},
-height=1.5\textwidth,
+height=0.55\linewidth,
+legend style={font=\footnotesize, draw=none, fill=none, at={(0.5,1.02)}, anchor=south},
 tick align=outside,
 tick pos=left,
-width=2\textwidth,
-x grid style={lightgrey203},
-xlabel={\(\displaystyle k\)},
-xmajorgrids,
-xmin=1.75, xmax=7.25,
+width=\linewidth,
+x grid style={darkgrey176},
+xmin=-0.3282, xmax=1.4582,
 xtick style={color=black},
-xtick={1,2,3,4,5,6,7,8},
-xticklabels={
-  \(\displaystyle {1}\),
-  \(\displaystyle {2}\),
-  \(\displaystyle {3}\),
-  \(\displaystyle {4}\),
-  \(\displaystyle {5}\),
-  \(\displaystyle {6}\),
-  \(\displaystyle {7}\),
-  \(\displaystyle {8}\)
-},
-y grid style={lightgrey203},
-ylabel={Mean \(\displaystyle F_{1,rel.}\) },
+xtick={0,1},
+xticklabels={LFM3 1.7B,Qwen3.8 27B},
+y grid style={gainsboro221},
+ybar legend,
+ylabel={Mean \(\displaystyle F_{1,rel.}\)},
 ymajorgrids,
 ymin=0, ymax=1,
-ytick style={color=black},
-ytick={0,0.2,0.4,0.6,0.8,1},
-yticklabels={
-  \(\displaystyle {0.0}\),
-  \(\displaystyle {0.2}\),
-  \(\displaystyle {0.4}\),
-  \(\displaystyle {0.6}\),
-  \(\displaystyle {0.8}\),
-  \(\displaystyle {1.0}\)
-}
+ytick style={color=black}
 ]
-\addplot [thick, pink250176228, dashed, mark=x, mark size=5, mark options={solid,fill opacity=0}]
+\draw[draw=none,fill=silver187] (axis cs:-0.247,0) rectangle (axis cs:-0.013,0.167408697896503);
+\addlegendimage{ybar,ybar legend,draw=none,fill=silver187}
+\addlegendentry{raw}
+
+\draw[draw=none,fill=steelblue68119170] (axis cs:0.013,0) rectangle (axis cs:0.247,0.770722908527787);
+\addlegendimage{ybar,ybar legend,draw=none,fill=steelblue68119170}
+\addlegendentry{aligned}
+
+\draw[draw=none,fill=silver187] (axis cs:0.623,0) rectangle (axis cs:0.857,0.177280939476061);
+\draw[draw=none,fill=steelblue68119170] (axis cs:0.883,0) rectangle (axis cs:1.117,0.781029810298103);
+\draw[draw=none,fill=lightcoral238102119] (axis cs:1.143,0) rectangle (axis cs:1.377,0.97469350883985);
+\addlegendimage{ybar,ybar legend,draw=none,fill=lightcoral238102119}
+\addlegendentry{agent}
+
+\path [draw=darkslategrey51, semithick]
+(axis cs:-0.13,0.124315305734459)
+--(axis cs:-0.13,0.210502090058547);
+
+\addplot [semithick, steelblue31119180, mark=-, mark size=2, mark options={solid,draw=darkslategrey51}, only marks]
 table {%
-2 0.795454545454545
-3 0.805084745762712
-5 0.759770114942529
-7 0.8
+-0.13 0.124315305734459
 };
-\addplot [thick, pink250176228, dotted, mark=x, mark size=5, mark options={solid,fill opacity=0}]
+\addplot [semithick, steelblue31119180, mark=-, mark size=2, mark options={solid,draw=darkslategrey51}, only marks]
 table {%
-2 0.179292929292929
-3 0.194915254237288
-5 0.187739463601533
-7 0
+-0.13 0.210502090058547
 };
-\addplot [thick, pink250176228, mark=o, mark size=5, mark options={solid,fill opacity=0}]
+\path [draw=darkslategrey51, semithick]
+(axis cs:0.13,0.728532801813593)
+--(axis cs:0.13,0.81291301524198);
+
+\addplot [semithick, steelblue31119180, mark=-, mark size=2, mark options={solid,draw=darkslategrey51}, only marks]
 table {%
-2 1
-3 0.970056497175141
-5 0.936234263820471
-7 1
+0.13 0.728532801813593
 };
-\addplot [thick, lightgrey207, dashed, mark=x, mark size=5, mark options={solid,fill opacity=0}]
+\addplot [semithick, steelblue31119180, mark=-, mark size=2, mark options={solid,draw=darkslategrey51}, only marks]
 table {%
-2 0.75
-3 0.786440677966102
-5 0.799507389162561
-7 0.772727272727273
+0.13 0.81291301524198
 };
-\addplot [thick, lightgrey207, dotted, mark=x, mark size=5, mark options={solid,fill opacity=0}]
+\path [draw=darkslategrey51, semithick]
+(axis cs:0.74,0.131402886684632)
+--(axis cs:0.74,0.223158992267491);
+
+\addplot [semithick, steelblue31119180, mark=-, mark size=2, mark options={solid,draw=darkslategrey51}, only marks]
 table {%
-2 0.164141414141414
-3 0.152542372881356
-5 0.214833059660646
-7 0.333333333333333
+0.74 0.131402886684632
+};
+\addplot [semithick, steelblue31119180, mark=-, mark size=2, mark options={solid,draw=darkslategrey51}, only marks]
+table {%
+0.74 0.223158992267491
+};
+\path [draw=darkslategrey51, semithick]
+(axis cs:1,0.734900916062385)
+--(axis cs:1,0.827158704533821);
+
+\addplot [semithick, steelblue31119180, mark=-, mark size=2, mark options={solid,draw=darkslategrey51}, only marks]
+table {%
+1 0.734900916062385
+};
+\addplot [semithick, steelblue31119180, mark=-, mark size=2, mark options={solid,draw=darkslategrey51}, only marks]
+table {%
+1 0.827158704533821
+};
+\path [draw=darkslategrey51, semithick]
+(axis cs:1.26,0.962322706582529)
+--(axis cs:1.26,0.987064311097171);
+
+\addplot [semithick, steelblue31119180, mark=-, mark size=2, mark options={solid,draw=darkslategrey51}, only marks]
+table {%
+1.26 0.962322706582529
+};
+\addplot [semithick, steelblue31119180, mark=-, mark size=2, mark options={solid,draw=darkslategrey51}, only marks]
+table {%
+1.26 0.987064311097171
 };
 \end{axis}
 
