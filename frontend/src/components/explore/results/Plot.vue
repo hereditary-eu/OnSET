@@ -15,14 +15,15 @@
 import { ref, onMounted, defineProps, watch, computed, reactive } from 'vue'
 import { Bar } from 'vue-chartjs'
 import type { NodeLinkRepository } from '@/utils/sparql/store';
-import { QueryProp, SubQueryType, VectorData } from '@/utils/sparql/representation';
+import { QueryProp, SubQueryType } from '@/utils/sparql/representation';
 import Loading from '../../ui/Loading.vue';
 
 import * as Plotly from "plotly.js-dist";
 import { VuePlotly } from '@clalarco/vue3-plotly';
 import type { NodeLinkRepositoryDiff } from '@/utils/sparql/diff';
 import { ChartMode, PropSpecificType, PropType } from '@/utils/result-plot/plot-types';
-import { bucketizeData, analyzeProps, buildChartTraces, combineTraces, downloadDataAsCSV, type TraceData } from '@/utils/result-plot/plot-builder';
+import { bucketizeData, analyzeProps, buildChartTraces, combineTraces, downloadDataAsCSV, propColumn, tensorProps, type TraceData } from '@/utils/result-plot/plot-builder';
+import { buildEmbeddingDiffTraces } from '@/utils/result-plot/plot-embedding-builder';
 import { PlotCache, PlotCacheEntry } from '@/utils/result-plot/plot-cache';
 import { jsonClone } from '@/utils/parsing';
 import OnsetBtn from '@/components/ui/OnsetBtn.vue';
@@ -79,31 +80,53 @@ const ui_data = reactive({
     message: null as string | null,
     buckets: 20
 })
+/**
+ * Rows of the current query and, in a difference view, of the previous one. With tensor
+ * properties both queries are reduced to 2D in one fit (dim-reduce with `compare`), so the
+ * previous points are recomputed together with the current ones and lie in the same space.
+ */
+const fetchRows = async (query_limitless: string) => {
+    const vector_props = tensorProps(store)
+    if (vector_props.length == 0) {
+        const data = await api.sparql.sparqlQuerySparqlPost({ query: query_limitless })
+        return { current: data.data as Record<string, any>[], previous: null as Record<string, any>[] | null }
+    }
+    const request = { query: query_limitless, target_properties: vector_props.map(propColumn) }
+    const previous_props = diff ? tensorProps(diff.left) : []
+    if (diff && previous_props.length > 0) {
+        try {
+            const data = await api.search.dimReduceSearchDimReducePost({
+                ...request,
+                compare: [{
+                    query: diff.left.generateQuery(null, null, false),
+                    target_properties: previous_props.map(propColumn),
+                }],
+            })
+            const rows = data.data as Record<string, any>[]
+            return {
+                current: rows.filter((r) => r.query_index == 0),
+                previous: rows.filter((r) => r.query_index == 1),
+            }
+        } catch (e) {
+            // e.g. tensors of different sizes: only the current query
+            console.error('Joint dimensionality reduction failed', e)
+        }
+    }
+    const data = await api.search.dimReduceSearchDimReducePost(request)
+    return { current: data.data as Record<string, any>[], previous: null as Record<string, any>[] | null }
+}
 const loadData = async () => {
     ui_data.loading = true
     let query_limitless = store.generateQuery(null, null, false);
-    let vector_props = store.nodes
-        .flatMap((node) => node.subqueries)
-        .filter((subquery) => subquery.constraint_type == SubQueryType.QUERY_PROP && subquery.link.to_proptype == VectorData.propType)
-    console.log('Vector props', vector_props)
     ui_data.message = "Loading data..."
-    let data = null
-    if (vector_props.length > 0) {
-        data = await api.search.dimReduceSearchDimReducePost({
-            query: query_limitless,
-            target_properties: vector_props.map((p) => /\?(.*)/.exec(p.propVar())[1])
-        })
-    } else {
-        data = await api.sparql.sparqlQuerySparqlPost({
-            query: query_limitless
-        })
-    }
-    result_set.value = data.data
+    const rows = await fetchRows(query_limitless)
+    const tensor_ids = new Set(tensorProps(store).map((p) => p.id))
+    result_set.value = rows.current
     let props_of_interest = store.nodes
         .map((node) => node.subqueries
             .filter((subquery) => subquery.constraint_type == SubQueryType.QUERY_PROP))
         .flat() as QueryProp[]
-    let analyzed_props = props_of_interest.map(p => analyzeProps(p, result_set.value))
+    let analyzed_props = props_of_interest.map(p => analyzeProps(p, result_set.value, tensor_ids.has(p.id)))
     console.log('Analyzed props', analyzed_props, result_set.value)
     try {
         let {
@@ -128,7 +151,7 @@ const loadData = async () => {
         ui_data.message = ""
         console.log("setting cache for", query_limitless)
         let new_cache_entry = {
-            results: data.data,
+            results: rows.current,
             chart_mode: mode,
             chart_options: options,
             traces: [trace],
@@ -136,7 +159,17 @@ const loadData = async () => {
             analyzed_props
         }
         diff_options.plot_cache.set(query_limitless, new_cache_entry)
-        if (diff) {
+        if (diff && mode == ChartMode.DIM_REDUCED) {
+            // the previous coordinates are only comparable from the joint reduction, not from the cache
+            if (rows.previous) {
+                const combined = buildEmbeddingDiffTraces(analyzed_props, rows.previous, rows.current, options as Plotly.Layout)
+                chart_data.value = combined.traces
+                chart_options.value = combined.chart_options
+                ui_data.message = null
+            } else {
+                ui_data.message = "The previous query has no comparable tensors, no diff added..."
+            }
+        } else if (diff) {
             let old_query = diff.left.generateQuery(null, null, false)
             console.log('Diff enabled, loading cache for', old_query)
             let cache_result = diff_options.plot_cache.get(old_query)
@@ -200,6 +233,15 @@ watch(() => [query_string, refresh], () => {
     })
 })
 watch(() => diff, () => {
+    if (!diff && ui_data.chart_mode == ChartMode.DIM_REDUCED && chart_data.value.length > 1) {
+        // back to the current query's trace, coloured by its property again
+        const entry = diff_options.plot_cache.get(store.generateQuery(null, null, false))
+        if (entry) {
+            chart_data.value = [...entry.traces]
+            chart_options.value = entry.chart_options
+            return
+        }
+    }
     if (!diff && chart_data.value.length > 1) {
         chart_data.value.splice(0, chart_data.value.length - 1)
         let current_trace = chart_data.value[0] as TraceData

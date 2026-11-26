@@ -1,6 +1,6 @@
 import type { Subject } from "@/api/client.ts/Api";
 import { getMax, getMin } from "../helpers";
-import { Link, SubjectNode, VectorData, type QueryProp } from "../sparql/representation";
+import { AggregateFunction, AggregateKind, aggregateKind, isTensorAggregate, Link, SubjectNode, SubQueryType, type QueryProp } from "../sparql/representation";
 import type { NodeLinkRepository } from "../sparql/store";
 import type { PlotCacheEntry } from "./plot-cache";
 import { buildEmbeddingPlotData as buildEmbeddingPlotTraces } from "./plot-embedding-builder";
@@ -100,12 +100,36 @@ export function bucketizeData(props: AnalyzedProp[], n_buckets: number | null = 
     return buckets
 }
 
-export function analyzeProps(prop: QueryProp, result_set: Record<string, any>[]) {
+/**
+ * Whether a property's values are tensors in the store's query: its type is a tensor and, in
+ * an aggregate query, it is grouped, sampled or aggregated elementwise (not counted).
+ */
+export function isTensorValued(prop: QueryProp, store: NodeLinkRepository): boolean {
+    if (aggregateKind(prop.link?.to_proptype) != AggregateKind.TENSOR) {
+        return false
+    }
+    if (prop.group_by || !store.hasAggregation()) {
+        return true
+    }
+    return prop.aggregate == null || prop.aggregate == AggregateFunction.SAMPLE || isTensorAggregate(prop.aggregate)
+}
+/** The properties of the store's query whose values are tensors (reduced to 2D for the plot). */
+export function tensorProps(store: NodeLinkRepository): QueryProp[] {
+    return store.nodes
+        .flatMap((node) => node.subqueries || [])
+        .filter((sq) => sq?.constraint_type == SubQueryType.QUERY_PROP && isTensorValued(sq as QueryProp, store)) as QueryProp[]
+}
+/** Result column (variable without ?) of a property. */
+export function propColumn(prop: QueryProp): string {
+    return prop.propVar().replace(/^\?/, '')
+}
+
+export function analyzeProps(prop: QueryProp, result_set: Record<string, any>[], tensor: boolean = false) {
     const query_id = prop.link.outputId().replace('?', '')
     let prop_data = result_set.map((row) => row[query_id])
     let prop_type = PropType.DISCRETE
     let prop_specific_type = PropSpecificType.STRING
-    if (prop.link.to_proptype == VectorData.propType) {
+    if (tensor) {
         prop_type = PropType.VECTOR
         prop_specific_type = PropSpecificType.VECTOR
     } else if (prop_data.length > 0) {

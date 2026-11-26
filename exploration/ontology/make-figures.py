@@ -1,22 +1,32 @@
 """Tables (LaTeX) and figures (PDF + tikzplotlib .tex) of the ontology builder evaluation.
 
-    ./py.sh make-figures.py [--sessions sessions_builder-saves]
+    ./py.sh make-figures.py [--tag guided_r1] [--sessions sessions_builder-saves]
 
 Reads ``results/ontology_eval_<dataset>_<tag>.csv`` (agent runs, ontology-eval-agent.py),
-``results/sessions_<name>.csv`` (user sessions, compare-sessions.py) and
-``results/reference_<dataset>.csv`` (the true ontologies, reference-baseline.py) and writes
-``tables/*.tex`` and ``figures/*.{pdf,tex}``:
+``results/sessions_<name>.csv`` (user sessions, compare-sessions.py),
+``results/reference_<dataset>.csv`` (the true ontologies, reference-baseline.py) and
+``results/aids_<dataset>.csv`` (extraction-aids.py).
 
-- ``tables/agent_vs_users.tex``: median and best of the main metrics per dataset, agent
-  runs against user sessions,
-- ``tables/schema_<tag>.tex``: schema metrics per dataset and strictness level (mean ± sd),
-- ``tables/kg_gutbrainie.tex``: instance metrics on the GutBrainIE gold,
-- ``tables/llms4ol.tex``: Text2Onto P/R/F1 per domain, with the challenge's best systems
-  (official test set, so only indicative: ours is a held-out part of the train documents),
-- ``tables/kg_yield.tex``: instances per document and documents covered (agent, users, reference),
-- ``tables/aids.tex``: the extraction-aid ablation (extraction-aids.py),
-- ``figures/schema_levels``, ``figures/agent_vs_users``, ``figures/kg_gutbrainie``,
-  ``figures/llms4ol``, ``figures/aids`` and ``figures/ablation`` (if several tags exist).
+Results are split by what they measure:
+- **ontology**: the schema the agent designed against the reference: classes, relations (link
+  types with their domain/range) and fields. For LLMs4OL, the extracted *types* (A2) are
+  ontology classes.
+- **KG**: the instances extracted with that schema: named entities (GutBrainIE mentions,
+  LLMs4OL *terms*, A1) and relation instances.
+
+Naming throughout: *class* for an ontology class (LLMs4OL type), *named entity* for an
+extracted instance (LLMs4OL term), *relation* for a link type (ontology) or link instance (KG).
+
+Writes:
+- ``tables/overview.tex``: median and best per dataset and source (agent, users, reference),
+- ``tables/ontology_<tag>.tex``: ontology alignment per strictness level (mean ± sd),
+- ``tables/kg_gutbrainie.tex``, ``tables/kg_yield.tex``, ``tables/llms4ol.tex`` (with the
+  challenge's best systems on the official test set, for orientation only), ``tables/aids.tex``,
+  ``tables/ablation.tex``,
+- ``figures/ontology``, ``figures/ontology_levels``, ``figures/kg_gutbrainie``,
+  ``figures/llms4ol``, ``figures/aids``, ``figures/ablation``.
+Bars are means over runs/sessions with ± one standard deviation, dots the single runs; every
+score axis spans [0, 1].
 """
 
 import env_setup  # noqa: F401
@@ -35,22 +45,32 @@ import seaborn as sns
 HERE = Path(__file__).resolve().parent
 RESULTS, TABLES, FIGURES = HERE / "results", HERE / "tables", HERE / "figures"
 
-DATASET_NAMES = {"enron": "Enron", "gutbrainie": "GutBrainIE", "llms4ol-ecology": "LLMs4OL Ecology",
-                 "llms4ol-engineering": "LLMs4OL Engineering", "llms4ol-scholarly": "LLMs4OL Scholarly"}
-LEVEL_NAMES = {"exact": "exact", "fuzzy": "fuzzy", "sem": "semantic"}
-METRIC_NAMES = {
-    "schema_sem_f1": r"$F_{1,schema}$", "class_sem_f1": r"$F_{1,class}$", "class_sem_cov_r": r"$R_{cov,class}$",
-    "rel_label_sem_f1": r"$F_{1,rel.\,name}$", "rel_triple_sem_f1": r"$F_{1,rel.}$", "field_sem_f1": r"$F_{1,field}$",
-    "kg_ent_typed_len_f1": r"$F_{1,ent.}$", "kg_rel_typed_len_f1": r"$F_{1,rel.\,inst.}$",
-    "a1_terms_f1": r"$F_{1,A1\,terms}$", "a2_types_f1": r"$F_{1,A2\,types}$",
-}
-MAIN = list(METRIC_NAMES)
+DATASET_NAMES = {"enron": "Enron", "gutbrainie": "GutBrainIE", "llms4ol-ecology": "Ecology",
+                 "llms4ol-engineering": "Engineering", "llms4ol-scholarly": "Scholarly"}
+SOURCE_NAMES = {"agent": "Agent", "user": "Users", "reference": "True ontology"}
+SOURCE_ORDER = list(SOURCE_NAMES.values())
+PALETTE = dict(zip(SOURCE_ORDER, sns.color_palette("colorblind", 3)))
+LEVEL_NAMES = {"exact": "Exact", "fuzzy": "Fuzzy", "sem": "Semantic"}
+F1 = r"$F_1$ score"
+
+# ontology-level metrics (semantic matching)
+ONTOLOGY = {"class_sem_f1": "Classes", "rel_triple_sem_f1": "Relations", "field_sem_f1": "Fields"}
+# KG-level metrics against the GutBrainIE gold (lenient names)
+KG = {"kg_ent_len_f1": "Named entities", "kg_ent_typed_len_f1": "Named entities + class",
+      "kg_rel_pair_len_f1": "Related pairs", "kg_rel_typed_len_f1": "Relations"}
+# LLMs4OL Text2Onto: A2 types are classes (ontology), A1 terms named entities (KG)
+TEXT2ONTO = {"a2_types": ("Ontology", "Classes (A2 types)"), "a1_terms": ("KG", "Named entities (A1 terms)")}
+OVERVIEW = {"schema_sem_f1": r"$F_{1}$ ontology", "class_sem_f1": r"$F_{1}$ classes",
+            "rel_triple_sem_f1": r"$F_{1}$ relations", "kg_ent_typed_len_f1": r"$F_{1}$ named entities",
+            "kg_rel_typed_len_f1": r"$F_{1}$ relation inst.", "a2_types_f1": r"$F_{1}$ classes (A2)",
+            "a1_terms_f1": r"$F_{1}$ named entities (A1)"}
 # LLMs4OL 2025 Task A, best F1 per subtask on the official test set (overview paper, Table 3)
 CHALLENGE_BEST = {
-    ("scholarly", "a1_terms_f1"): ("LABKAG", 0.7000), ("engineering", "a1_terms_f1"): ("LABKAG", 0.6661),
-    ("ecology", "a2_types_f1"): ("SBU-NLP", 0.6602), ("scholarly", "a2_types_f1"): ("LABKAG", 0.8308),
-    ("engineering", "a2_types_f1"): ("ELLMO", 0.6750),
+    ("Scholarly", "a1_terms"): ("LABKAG", 0.7000), ("Engineering", "a1_terms"): ("LABKAG", 0.6661),
+    ("Ecology", "a2_types"): ("SBU-NLP", 0.6602), ("Scholarly", "a2_types"): ("LABKAG", 0.8308),
+    ("Engineering", "a2_types"): ("ELLMO", 0.6750),
 }
+BAR = dict(errorbar="sd", capsize=0.15, err_kws={"linewidth": 1}, edgecolor="none")
 
 
 def load_results(sessions: list[str] | None) -> pd.DataFrame:
@@ -63,7 +83,7 @@ def load_results(sessions: list[str] | None) -> pd.DataFrame:
         frames.append(df)
     for csv in sorted(RESULTS.glob("reference_*.csv")):
         df = pd.read_csv(csv)
-        # the whole-document extraction is the reference row of the comparisons
+        # the whole-document extraction is the true ontology's row
         df = df[df["chunk_chars"].isna()] if "chunk_chars" in df else df
         df["tag"], df["source"] = "reference", "reference"
         frames.append(df)
@@ -75,14 +95,22 @@ def load_results(sessions: list[str] | None) -> pd.DataFrame:
         frames.append(df)
     if not frames:
         raise SystemExit(f"No results in {RESULTS}")
-    df = pd.concat(frames, ignore_index=True)
+    df = pd.concat(frames, ignore_index=True).copy()
     df["Dataset"] = df["dataset"].map(DATASET_NAMES).fillna(df["dataset"])
+    df["Source"] = df["source"].map(SOURCE_NAMES)
     return df
+
+
+def main_rows(df: pd.DataFrame, tag: str) -> pd.DataFrame:
+    """The agent runs of ``tag``, the user sessions and the true ontology."""
+    return df[((df["source"] == "agent") & (df["tag"] == tag)) | df["source"].isin(["user", "reference"])]
 
 
 def save_fig(fig, name: str):
     FIGURES.mkdir(exist_ok=True)
     fig.savefig(FIGURES / f"{name}.pdf", bbox_inches="tight")
+    # PNG for REPORT.md (PDFs are not tracked)
+    fig.savefig(FIGURES / f"{name}.png", bbox_inches="tight", dpi=150)
     try:
         import tikzplotlib
 
@@ -99,144 +127,196 @@ def save_table(df: pd.DataFrame, name: str, caption: str, **kwargs):
         multirow=True, **kwargs))
 
 
-def agent_vs_users(df: pd.DataFrame, agent_tag: str):
-    """Median and best per dataset of the agent runs (of ``agent_tag``) and the user sessions."""
-    sel = df[((df["source"] == "agent") & (df["tag"] == agent_tag)) | df["source"].isin(["user", "reference"])]
-    cols = [m for m in MAIN if m in sel and sel[m].notna().any()]
-    agg = sel.groupby(["Dataset", "source"])[cols].agg(["median", "max"])
-    agg.columns = pd.MultiIndex.from_tuples([(METRIC_NAMES[m], "best" if a == "max" else a) for m, a in agg.columns])
-    counts = sel.groupby(["Dataset", "source"]).size().rename("$n$")
-    out = agg.join(counts.to_frame().set_axis(pd.MultiIndex.from_tuples([("$n$", "")]), axis=1))
-    out.index = out.index.set_names(["Dataset", "Source"])
-    save_table(out, "agent_vs_users", "Agent runs, user sessions and the true (reference) ontology extracted by the "
-               "same extractor: median and best per dataset.")
-    long = sel.melt(id_vars=["Dataset", "source"], value_vars=[c for c in ["schema_sem_f1", "class_sem_f1",
-                                                                          "rel_triple_sem_f1"] if c in sel],
-                    var_name="metric", value_name="F1")
-    if len(long.dropna()):
-        long["metric"] = long["metric"].map(METRIC_NAMES)
-        g = sns.catplot(long, x="Dataset", y="F1", hue="source", col="metric", kind="box", height=3, aspect=1.2)
-        g.set_xticklabels(rotation=30, ha="right")
-        save_fig(g.figure, "agent_vs_users")
+def score_axes(g, xlabel: str = ""):
+    """[0, 1] score axes with an F1 label, readable x labels."""
+    for ax in g.axes.flat:
+        ax.set_ylim(0, 1)
+        ax.set_xlabel(xlabel)
+        ax.tick_params(axis="x", rotation=20)
+    g.set_ylabels(F1)
+    return g
 
 
-def schema_levels(df: pd.DataFrame, tag: str):
-    agent = df[(df["source"] == "agent") & (df["tag"] == tag)]
+def bars(long: pd.DataFrame, x: str, hue: str, col: str | None = None, palette=None, order=None,
+         hue_order=None, col_wrap=None, height=2.8, aspect=1.1):
+    """Mean bars ± sd with the single values as dots (both in the same x/hue order, so the dots
+    sit on their bars also where a panel lacks a hue)."""
+    order = order or list(dict.fromkeys(long[x]))
+    hue_order = hue_order or list(dict.fromkeys(long[hue]))
+    g = sns.catplot(long, x=x, y="F1", hue=hue, col=col, kind="bar", palette=palette, order=order,
+                    hue_order=hue_order, col_wrap=col_wrap, height=height, aspect=aspect, **BAR)
+    for ax in g.axes.flat:
+        title = ax.get_title().split(" = ")[-1]
+        data = long[long[col] == title] if col else long
+        sns.stripplot(data, x=x, y="F1", hue=hue, order=order, hue_order=hue_order, dodge=True, ax=ax,
+                      palette=["black"] * long[hue].nunique(), size=2.5, alpha=0.6, legend=False, jitter=0.1)
+        ax.set_title(title)
+        # categories without any value (e.g. no gold) are marked instead of looking like a zero
+        labels = [t.get_text() for t in ax.get_xticklabels()]
+        for i, label in enumerate(labels):
+            if data[data[x] == label]["F1"].dropna().empty:
+                ax.text(i, 0.03, "n/a", ha="center", va="bottom", fontsize=8, color="grey")
+    return g
+
+
+def overview(df: pd.DataFrame, tag: str):
+    sel = main_rows(df, tag)
+    cols = [m for m in OVERVIEW if m in sel and sel[m].notna().any()]
+    agg = sel.groupby(["Dataset", "Source"])[cols].agg(["median", "max"])
+    agg.columns = pd.MultiIndex.from_tuples([(OVERVIEW[m], "best" if a == "max" else a) for m, a in agg.columns])
+    agg[("$n$", "")] = sel.groupby(["Dataset", "Source"]).size()
+    save_table(agg, "overview", "Agent runs, user sessions and the true ontology (extracted by the same "
+               "extractor): median and best per dataset.")
+
+
+def ontology(df: pd.DataFrame, tag: str):
+    """Ontology level: the designed schema against the reference (Enron, GutBrainIE)."""
+    sel = main_rows(df, tag)
+    sel = sel[sel["source"] != "reference"]  # the reference scores 1 against itself
+    long = sel.melt(id_vars=["Dataset", "Source"], value_vars=[c for c in ONTOLOGY if c in sel],
+                    var_name="metric", value_name="F1").dropna()
+    if long.empty:
+        return
+    long["Element"] = long["metric"].map(ONTOLOGY)
+    order = [v for v in ONTOLOGY.values() if v in set(long["Element"])]
+    g = bars(long, x="Element", hue="Source", col="Dataset", order=order,
+             hue_order=[s for s in SOURCE_ORDER if s in set(long["Source"])], palette=PALETTE)
+    save_fig(score_axes(g).figure, "ontology")
+
+
+def ontology_levels(df: pd.DataFrame, tag: str):
+    agent = df[(df["source"] == "agent") & (df["tag"] == tag) & df["dataset"].isin(["enron", "gutbrainie"])]
     rows = []
     for _, r in agent.iterrows():
-        for level in LEVEL_NAMES:
+        for level, level_name in LEVEL_NAMES.items():
             for kind, name in (("class", "Classes"), ("rel_label", "Relation names"), ("rel_triple", "Relations"),
                                ("field", "Fields")):
-                if f"{kind}_{level}_f1" in r and pd.notna(r[f"{kind}_{level}_f1"]):
-                    rows.append({"Dataset": r["Dataset"], "Level": LEVEL_NAMES[level], "Element": name,
+                if pd.notna(r.get(f"{kind}_{level}_f1")):
+                    rows.append({"Dataset": r["Dataset"], "Matching": level_name, "Element": name,
                                  "P": r[f"{kind}_{level}_p"], "R": r[f"{kind}_{level}_r"], "F1": r[f"{kind}_{level}_f1"]})
     if not rows:
         return
     long = pd.DataFrame(rows)
-    table = long.groupby(["Dataset", "Element", "Level"])[["P", "R", "F1"]].agg(
-        lambda s: f"{s.mean():.2f} $\\pm$ {s.std():.2f}" if len(s) > 1 else f"{s.mean():.2f}").unstack("Level")
-    save_table(table, f"schema_{tag}", f"Schema alignment of the agent's ontologies ({tag}), mean $\\pm$ sd over runs.")
-    g = sns.catplot(long, x="Element", y="F1", hue="Level", col="Dataset", kind="bar", height=3, aspect=1,
-                    errorbar="sd", col_wrap=3)
-    g.set_xticklabels(rotation=30, ha="right")
-    save_fig(g.figure, f"schema_levels_{tag}")
+    fmt = lambda s: f"{s.mean():.2f} $\\pm$ {s.std():.2f}" if len(s) > 1 else f"{s.mean():.2f}"
+    table = long.groupby(["Dataset", "Element", "Matching"])[["P", "R", "F1"]].agg(fmt).unstack("Matching")
+    save_table(table, f"ontology_{tag}", f"Ontology alignment of the agent's ontologies ({tag}) by name "
+               "matching strictness, mean $\\pm$ sd over runs.")
+    g = bars(long, x="Element", hue="Matching", col="Dataset", hue_order=list(LEVEL_NAMES.values()),
+             palette="Blues")
+    save_fig(score_axes(g).figure, "ontology_levels")
 
 
 def kg_gutbrainie(df: pd.DataFrame, tag: str):
-    sel = df[(df["dataset"] == "gutbrainie") & (((df["source"] == "agent") & (df["tag"] == tag))
-                                                | df["source"].isin(["user", "reference"]))]
+    sel = main_rows(df, tag)
+    sel = sel[sel["dataset"] == "gutbrainie"]
     rows = []
     for _, r in sel.iterrows():
-        for kind, name in (("ent", "Entities"), ("ent_typed", "Typed entities"), ("rel_pair", "Entity pairs"),
-                           ("rel_typed", "Typed relations")):
-            for match in ("strict", "len"):
-                col = f"kg_{kind}_{match}"
-                if f"{col}_f1" in r and pd.notna(r[f"{col}_f1"]):
-                    rows.append({"Source": r["source"], "Element": name, "Names": "lenient" if match == "len" else match,
-                                 "P": r[f"{col}_p"], "R": r[f"{col}_r"], "F1": r[f"{col}_f1"]})
+        for col, name in KG.items():
+            for match, match_name in (("len", "Lenient names"), ("strict", "Strict names")):
+                c = col.replace("_len_", f"_{match}_")
+                if pd.notna(r.get(c)):
+                    rows.append({"Source": r["Source"], "Element": name, "Names": match_name,
+                                 "P": r[c[:-3] + "_p"], "R": r[c[:-3] + "_r"], "F1": r[c]})
     if not rows:
         return
     long = pd.DataFrame(rows)
     table = long.groupby(["Source", "Element", "Names"])[["P", "R", "F1"]].median().unstack("Names")
-    save_table(table, "kg_gutbrainie", "Extracted instances against the GutBrainIE dev annotations (median over runs/sessions).")
-    g = sns.catplot(long, x="Element", y="F1", hue="Names", col="Source", kind="bar", height=3, aspect=1.2, errorbar="sd")
-    g.set_xticklabels(rotation=30, ha="right")
-    save_fig(g.figure, "kg_gutbrainie")
+    save_table(table, "kg_gutbrainie", "KG level: extracted instances against the GutBrainIE dev annotations "
+               "(median over runs/sessions; lenient: containment or fuzzy name match).")
+    g = bars(long, x="Element", hue="Source", col="Names", order=list(KG.values()),
+             hue_order=[s for s in SOURCE_ORDER if s in set(long["Source"])], palette=PALETTE, aspect=1.4)
+    save_fig(score_axes(g).figure, "kg_gutbrainie")
+
+
+def text2onto_long(df: pd.DataFrame, key: str = "Domain") -> pd.DataFrame:
+    rows = []
+    for _, r in df.iterrows():
+        for prefix, (level, name) in TEXT2ONTO.items():
+            if pd.notna(r.get(f"{prefix}_f1")) and r.get(f"{prefix}_n_gold", 1) > 1:
+                rows.append({**{k: r[k] for k in r.index if k in ("Domain", "variant")}, "prefix": prefix,
+                             "Level": level, "Element": name, "P": r[f"{prefix}_p"], "R": r[f"{prefix}_r"],
+                             "F1": r[f"{prefix}_f1"]})
+    return pd.DataFrame(rows)
 
 
 def llms4ol(df: pd.DataFrame, tag: str):
-    sel = df[(df["dataset"].str.startswith("llms4ol")) & (df["source"] == "agent") & (df["tag"] == tag)]
+    sel = df[df["dataset"].str.startswith("llms4ol") & (df["source"] == "agent") & (df["tag"] == tag)].copy()
     if sel.empty:
         return
-    rows = []
-    for _, r in sel.iterrows():
-        domain = r["dataset"].split("-", 1)[1]
-        for task, prefix in (("A1 terms", "a1_terms"), ("A2 types", "a2_types")):
-            if f"{prefix}_f1" in r and pd.notna(r[f"{prefix}_f1"]):
-                rows.append({"Domain": domain, "Task": task, "P": r[f"{prefix}_p"], "R": r[f"{prefix}_r"],
-                             "F1": r[f"{prefix}_f1"], "best": CHALLENGE_BEST.get((domain, f"{prefix}_f1"), (None, None))[1]})
-    long = pd.DataFrame(rows)
-    table = long.groupby(["Domain", "Task"]).agg(P=("P", "median"), R=("R", "median"), F1=("F1", "median"),
-                                                 F1_best=("F1", "max"), challenge=("best", "first"))
-    table.columns = ["$P$", "$R$", "$F_1$", "$F_1$ best run", "$F_1$ challenge best$^*$"]
-    save_table(table, "llms4ol", "LLMs4OL 2025 Text2Onto on the held-out split (median over runs). $^*$Best "
-               "challenge system on the official test set, for orientation only.")
-    fig, ax = plt.subplots(figsize=(5, 3))
-    long["Subtask"] = long["Domain"] + "\n" + long["Task"]
-    sns.barplot(long, x="Subtask", y="F1", errorbar="sd", ax=ax, color="tab:blue", label="OnSET agent")
-    best = long.groupby("Subtask")["best"].first().dropna()
-    order = [t.get_text() for t in ax.get_xticklabels()]
-    ax.scatter([order.index(s) for s in best.index], best.values, marker="*", color="tab:red", s=80,
-               label="challenge best", zorder=3)
-    ax.set_ylim(0, 1)
-    ax.legend(fontsize=8)
-    ax.tick_params(axis="x", labelsize=7)
-    save_fig(fig, "llms4ol")
+    sel["Domain"] = sel["Dataset"]
+    long = text2onto_long(sel)
+    table = long.groupby(["Element", "Domain"]).agg(P=("P", "mean"), R=("R", "mean"), F1=("F1", "mean"),
+                                                    F1_sd=("F1", "std"), F1_best=("F1", "max"))
+    table["challenge"] = [CHALLENGE_BEST.get((d, p), (None, None))[1] for d, p in
+                          zip(table.index.get_level_values("Domain"),
+                              ["a2_types" if e.startswith("Classes") else "a1_terms" for e in table.index.get_level_values("Element")])]
+    table.columns = ["$P$", "$R$", "$F_1$", "sd", "$F_1$ best run", "$F_1$ challenge best$^*$"]
+    save_table(table, "llms4ol", "LLMs4OL 2025 Text2Onto on the held-out split (mean over runs). Classes are the "
+               "A2 types (ontology level), named entities the A1 terms (KG level). $^*$Best challenge system on the "
+               "official test set, which has no released gold: for orientation only.")
+    g = bars(long, x="Domain", hue="Element", col="Level", order=["Ecology", "Engineering", "Scholarly"],
+             palette="colorblind", aspect=1.2)
+    g.legend.set_title("")
+    save_fig(score_axes(g).figure, "llms4ol")
 
 
 def kg_yield(df: pd.DataFrame, tag: str):
-    """KG yield per dataset and source (the only instance-level view for Enron, which has no gold)."""
-    sel = df[((df["source"] == "agent") & (df["tag"] == tag)) | df["source"].isin(["user", "reference"])]
-    cols = {"kg_instances_per_doc": "instances/doc", "kg_doc_coverage": "docs covered", "kg_instances": "instances",
-            "n_classes": "classes", "n_links": "links", "n_fields": "fields"}
+    """KG yield per dataset and source (the only KG-level view for Enron, which has no gold)."""
+    sel = main_rows(df, tag)
+    cols = {"kg_instances_per_doc": "named entities/doc", "kg_doc_coverage": "docs covered",
+            "kg_instances": "named entities", "n_classes": "classes", "n_links": "relations", "n_fields": "fields"}
     cols = {k: v for k, v in cols.items() if k in sel and sel[k].notna().any()}
     if "kg_instances" not in cols:
         return
-    table = sel[sel["kg_instances"].notna()].groupby(["Dataset", "source"])[list(cols)].median().rename(columns=cols)
-    save_table(table, "kg_yield", "KG yield: median per dataset and source (reference: the true ontology).")
+    table = sel[sel["kg_instances"].notna()].groupby(["Dataset", "Source"])[list(cols)].median().rename(columns=cols)
+    save_table(table, "kg_yield", "KG yield, median per dataset and source (true ontology: the reference "
+               "extracted by the same extractor).")
 
 
 def aids():
-    """The extraction-aid ablation (extraction-aids.py): Text2Onto F1 per domain and variant."""
+    """The extraction-aid ablation (extraction-aids.py), split into ontology and KG level."""
     frames = [pd.read_csv(p) for p in sorted(RESULTS.glob("aids_*.csv"))]
     if not frames:
         return
     df = pd.concat(frames, ignore_index=True)
-    df["Domain"] = df["dataset"].str.replace("llms4ol-", "")
-    cols = {"a1_terms_f1": r"$F_{1,A1\,terms}$", "a2_types_f1": r"$F_{1,A2\,types}$", "doc_ent_strict_f1": r"$F_{1,doc}$"}
-    table = df.set_index(["Domain", "variant"])[[c for c in cols if c in df]].rename(columns=cols)
-    save_table(table, "aids", "Extraction aids with a fixed Type/Term ontology (no agent): retrieved examples "
-               "and vocabulary matching from the annotated train split.")
-    long = df.melt(id_vars=["Domain", "variant"], value_vars=[c for c in ("a1_terms_f1", "a2_types_f1") if c in df],
-                   var_name="metric", value_name="F1").dropna()
-    long["metric"] = long["metric"].map(cols)
-    g = sns.catplot(long, x="variant", y="F1", hue="Domain", col="metric", kind="bar", height=3, aspect=1.3)
-    g.set_xticklabels(rotation=30, ha="right")
-    save_fig(g.figure, "aids")
+    df["Domain"] = df["dataset"].map(DATASET_NAMES)
+    names = {"none": "none", "retrieved": "retrieved ex.", "vocab_terms": "vocab. entities",
+             "vocab_types": "vocab. classes", "vocab_both": "vocab. both", "retrieved_vocab_terms": "retr. + vocab. ent."}
+    df["variant"] = df["variant"].map(names).fillna(df["variant"])
+    long = text2onto_long(df)
+    table = long.pivot_table(index=["Domain", "variant"], columns="Element", values="F1")
+    save_table(table, "aids", "Extraction aids with a fixed Type/Term ontology (no agent): retrieved examples and "
+               "vocabulary matching from the annotated train split, $F_1$.")
+    g = bars(long, x="variant", hue="Domain", col="Element", order=[v for v in names.values() if v in set(long["variant"])],
+             palette="colorblind", aspect=1.4)
+    g.legend.set_title("")
+    save_fig(score_axes(g).figure, "aids")
 
 
 def ablation(df: pd.DataFrame):
     agent = df[df["source"] == "agent"]
     if agent["tag"].nunique() < 2:
         return
-    cols = [m for m in ["schema_sem_f1", "kg_ent_typed_len_f1", "a2_types_f1", "a1_terms_f1"] if m in agent]
-    table = agent.groupby(["Dataset", "tag"])[cols].median().rename(columns=METRIC_NAMES)
-    save_table(table, "ablation", "Prompt (guided/blind) and refinement turns: median per dataset.")
-    long = agent.melt(id_vars=["Dataset", "tag"], value_vars=cols, var_name="metric", value_name="F1").dropna()
-    long["metric"] = long["metric"].map(METRIC_NAMES)
-    g = sns.catplot(long, x="Dataset", y="F1", hue="tag", col="metric", kind="bar", height=3, aspect=1.2, errorbar="sd")
-    g.set_xticklabels(rotation=30, ha="right")
-    save_fig(g.figure, "ablation")
+    tags = {"guided_r1": "task + refine", "blind_r1": "no task + refine", "guided_r0": "task, no refine"}
+    agent = agent[agent["tag"].isin(tags)].copy()
+    # only the datasets that were run in more than one setting
+    ablated = agent.groupby("dataset")["tag"].nunique()
+    agent = agent[agent["dataset"].isin(ablated[ablated > 1].index)]
+    agent["Setting"] = agent["tag"].map(tags)
+    cols = {"class_sem_f1": ("Ontology", "Classes"), "a2_types_f1": ("Ontology", "Classes"),
+            "kg_ent_typed_len_f1": ("KG", "Named entities"), "a1_terms_f1": ("KG", "Named entities")}
+    rows = []
+    for _, r in agent.iterrows():
+        for col, (level, name) in cols.items():
+            if pd.notna(r.get(col)) and not (col == "a1_terms_f1" and r.get("a1_terms_n_gold", 0) <= 1):
+                rows.append({"Dataset": r["Dataset"], "Setting": r["Setting"], "Level": level, "F1": r[col]})
+    long = pd.DataFrame(rows)
+    table = long.groupby(["Level", "Dataset", "Setting"])["F1"].agg(["mean", "std", "count"]).unstack("Setting")
+    save_table(table, "ablation", "Scripted user: task description and refinement turn ($F_1$, mean, sd, runs).")
+    g = bars(long, x="Dataset", hue="Setting", col="Level", hue_order=[t for t in tags.values() if t in set(long["Setting"])],
+             palette="Greens_r", aspect=1.5)
+    g.legend.set_title("")
+    save_fig(score_axes(g).figure, "ablation")
 
 
 def main():
@@ -246,12 +326,13 @@ def main():
     args = parser.parse_args()
     sns.set_theme(style="whitegrid", font_scale=0.8)
     df = load_results(args.sessions)
-    agent_vs_users(df, args.tag)
-    schema_levels(df, args.tag)
+    overview(df, args.tag)
+    ontology(df, args.tag)
+    ontology_levels(df, args.tag)
     kg_gutbrainie(df, args.tag)
     llms4ol(df, args.tag)
-    ablation(df)
     kg_yield(df, args.tag)
+    ablation(df)
     aids()
     print("Tables:", sorted(p.name for p in TABLES.glob("*.tex")))
     print("Figures:", sorted(p.name for p in FIGURES.glob("*.pdf")))

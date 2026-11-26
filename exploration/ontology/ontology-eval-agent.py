@@ -21,6 +21,7 @@ import traceback
 from pathlib import Path
 
 import pandas as pd
+from rdflib import Graph
 
 from builder.corpus import Corpus
 from builder_eval import RunConfig, make_builder, run_agent, score_session, text2onto_lists, wait_for_build
@@ -44,6 +45,26 @@ def blind_submission(cfg: RunConfig, onto, out: Path) -> dict:
     return {"blind_complete": complete, "blind_terms": len(lists["terms"]), "blind_types": len(lists["types"])}
 
 
+def rescore(csv: Path, runs: Path, dataset, ref, gold):
+    """Recompute the metrics of the finished runs in ``csv`` from ``runs/<run_id>.{json,ttl}``."""
+    if not csv.exists():
+        return
+    df = pd.read_csv(csv)
+    rows = []
+    for row in df.to_dict("records"):
+        saved = runs / f"{row['run_id']}.json"
+        if pd.isna(row.get("error", float("nan"))) and saved.exists():
+            run = json.loads(saved.read_text())
+            graph = Graph().parse(runs / f"{row['run_id']}.ttl", format="turtle")
+            metrics, details = score_session(dataset, run["ontology"], graph, ref, gold, run["stats"]["documents"])
+            (runs / f"{row['run_id']}.scores.json").write_text(json.dumps({"metrics": metrics, "details": details},
+                                                                          indent=1, default=str))
+            row |= metrics
+        rows.append(row)
+    pd.DataFrame(rows).to_csv(csv, index=False)
+    print(f"Rescored {len(rows)} runs in {csv}")
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     parser.add_argument("--dataset", nargs="+", default=["gutbrainie"], help=f"{list(DATASETS)} or all")
@@ -63,6 +84,8 @@ def main():
     parser.add_argument("--final_build_timeout", type=float, default=1800)
     parser.add_argument("--blind", action="store_true", help="LLMs4OL: also write blind test submissions")
     parser.add_argument("--tag", default=None, help="results name (default: <prompt>_r<refine_turns>)")
+    parser.add_argument("--rescore", action="store_true",
+                        help="recompute the metrics of finished runs from their saved ontology and KG (no LLM)")
     args = parser.parse_args()
 
     registry = datasets(args.gutbrainie_split)
@@ -76,6 +99,9 @@ def main():
         dataset = registry[name]
         ref = dataset.reference_schema()
         gold = dataset.gold(ref) if dataset.gold else None
+        if args.rescore:
+            rescore(RESULTS / f"ontology_eval_{name}_{tag}.csv", out_dir / "runs", dataset, ref, gold)
+            continue
         model = overrides.get("model") or dataset.builder_config().agent.model or "default"
         csv = RESULTS / f"ontology_eval_{name}_{tag}.csv"
         rows = pd.read_csv(csv).to_dict("records") if csv.exists() else []
@@ -95,6 +121,10 @@ def main():
             start = time.monotonic()
             try:
                 session, stats = run_agent(cfg)
+                if any(t.get("done_error") for t in stats["turns"]):
+                    # the agent LLM failed (e.g. the endpoint is down): an error row, retried next time
+                    session.stop()
+                    raise RuntimeError("agent LLM request failed, see the run's chat")
                 metrics, details = score_session(dataset, session.ontology, session.graph, ref, gold,
                                                   stats["documents"])
                 (out_dir / "runs" / f"{run_id}.scores.json").write_text(json.dumps(

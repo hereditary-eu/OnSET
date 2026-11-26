@@ -1,0 +1,21 @@
+\begin{table}
+\caption{Ontology alignment of the agent's ontologies (guided_r1) by name matching strictness, mean $\pm$ sd over runs.}
+\label{tab:onto_ontology_guided_r1}
+\begin{tabular}{lllllllllll}
+\toprule
+ &  & \multicolumn{3}{r}{P} & \multicolumn{3}{r}{R} & \multicolumn{3}{r}{F1} \\
+ & Matching & Exact & Fuzzy & Semantic & Exact & Fuzzy & Semantic & Exact & Fuzzy & Semantic \\
+Dataset & Element &  &  &  &  &  &  &  &  &  \\
+\midrule
+\multirow[t]{4}{*}{Enron} & Classes & 0.81 $\pm$ 0.17 & 0.81 $\pm$ 0.17 & 0.81 $\pm$ 0.17 & 0.10 $\pm$ 0.03 & 0.10 $\pm$ 0.03 & 0.10 $\pm$ 0.03 & 0.17 $\pm$ 0.06 & 0.17 $\pm$ 0.06 & 0.17 $\pm$ 0.06 \\
+ & Fields & 0.00 $\pm$ 0.00 & 0.00 $\pm$ 0.00 & 0.00 $\pm$ 0.00 & 0.00 $\pm$ 0.00 & 0.00 $\pm$ 0.00 & 0.00 $\pm$ 0.00 & 0.00 $\pm$ 0.00 & 0.00 $\pm$ 0.00 & 0.00 $\pm$ 0.00 \\
+ & Relation names & 0.00 $\pm$ 0.00 & 0.00 $\pm$ 0.00 & 0.11 $\pm$ 0.19 & 0.00 $\pm$ 0.00 & 0.00 $\pm$ 0.00 & 0.02 $\pm$ 0.03 & 0.00 $\pm$ 0.00 & 0.00 $\pm$ 0.00 & 0.03 $\pm$ 0.05 \\
+ & Relations & 0.00 $\pm$ 0.00 & 0.00 $\pm$ 0.00 & 0.00 $\pm$ 0.00 & 0.00 $\pm$ 0.00 & 0.00 $\pm$ 0.00 & 0.00 $\pm$ 0.00 & 0.00 $\pm$ 0.00 & 0.00 $\pm$ 0.00 & 0.00 $\pm$ 0.00 \\
+\cline{1-11}
+\multirow[t]{3}{*}{GutBrainIE} & Classes & 0.13 $\pm$ 0.02 & 0.13 $\pm$ 0.02 & 0.53 $\pm$ 0.07 & 0.08 $\pm$ 0.00 & 0.08 $\pm$ 0.00 & 0.31 $\pm$ 0.00 & 0.10 $\pm$ 0.01 & 0.10 $\pm$ 0.01 & 0.39 $\pm$ 0.02 \\
+ & Relation names & 0.09 $\pm$ 0.08 & 0.09 $\pm$ 0.08 & 0.11 $\pm$ 0.09 & 0.06 $\pm$ 0.06 & 0.06 $\pm$ 0.06 & 0.08 $\pm$ 0.09 & 0.07 $\pm$ 0.06 & 0.07 $\pm$ 0.06 & 0.09 $\pm$ 0.09 \\
+ & Relations & 0.00 $\pm$ 0.00 & 0.00 $\pm$ 0.00 & 0.00 $\pm$ 0.00 & 0.00 $\pm$ 0.00 & 0.00 $\pm$ 0.00 & 0.00 $\pm$ 0.00 & 0.00 $\pm$ 0.00 & 0.00 $\pm$ 0.00 & 0.00 $\pm$ 0.00 \\
+\cline{1-11}
+\bottomrule
+\end{tabular}
+\end{table}

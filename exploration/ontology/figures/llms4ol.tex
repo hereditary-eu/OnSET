@@ -1,110 +1,280 @@
 % This file was created with tikzplotlib v0.10.1.post13.
 \begin{tikzpicture}
 
-\definecolor{crimson2143940}{RGB}{214,39,40}
+\definecolor{darkgoldenrod19413532}{RGB}{194,135,32}
 \definecolor{darkslategrey38}{RGB}{38,38,38}
 \definecolor{darkslategrey66}{RGB}{66,66,66}
+\definecolor{grey}{RGB}{128,128,128}
 \definecolor{lightgrey204}{RGB}{204,204,204}
-\definecolor{steelblue49115161}{RGB}{49,115,161}
+\definecolor{teal23108155}{RGB}{23,108,155}
 
-\begin{axis}[
+\begin{groupplot}[group style={group size=2 by 1}]
+\nextgroupplot[
 axis line style={lightgrey204},
 height=.6\linewidth,
-legend cell align={left},
-legend style={
-  fill opacity=0.8,
-  draw opacity=1,
-  text opacity=1,
-  at={(0.5,0.91)},
-  anchor=north,
-  draw=lightgrey204,
-  mark options={mark size=4.47213595499958}
-},
 tick align=outside,
+title={Ontology},
 unbounded coords=jump,
 width=\linewidth,
 x grid style={lightgrey204},
-xlabel=\textcolor{darkslategrey38}{Subtask},
 xmajorticks=false,
-xmin=-0.69, xmax=5.69,
+xmin=-0.5, xmax=2.5,
 xtick style={color=darkslategrey38},
-xtick={0,1,2,3,4,5},
-xticklabels={
-  ecology
-A1 terms,
-  ecology
-A2 types,
-  engineering
-A1 terms,
-  engineering
-A2 types,
-  scholarly
-A1 terms,
-  scholarly
-A2 types
-},
+xtick={0,1,2},
+xticklabel style={rotate=20.0},
+xticklabels={Ecology,Engineering,Scholarly},
 y grid style={lightgrey204},
-ylabel=\textcolor{darkslategrey38}{F1},
+ylabel=\textcolor{darkslategrey38}{\(\displaystyle F_1\) score},
 ymajorgrids,
 ymajorticks=false,
 ymin=0, ymax=1,
 ytick style={color=darkslategrey38}
 ]
-\draw[draw=white,fill=steelblue49115161] (axis cs:-0.4,0) rectangle (axis cs:0.4,1);
-\addlegendimage{ybar,ybar legend,draw=white,fill=steelblue49115161}
-\addlegendentry{OnSET agent}
-
-\draw[draw=white,fill=steelblue49115161] (axis cs:0.6,0) rectangle (axis cs:1.4,0.624360286591607);
-\draw[draw=white,fill=steelblue49115161] (axis cs:1.6,0) rectangle (axis cs:2.4,0.662114150624789);
-\draw[draw=white,fill=steelblue49115161] (axis cs:2.6,0) rectangle (axis cs:3.4,0.270378054507604);
-\draw[draw=white,fill=steelblue49115161] (axis cs:3.6,0) rectangle (axis cs:4.4,0.623427411916621);
-\draw[draw=white,fill=steelblue49115161] (axis cs:4.6,0) rectangle (axis cs:5.4,0.327324142806645);
-\addplot [line width=0.9pt, darkslategrey66, forget plot]
+\draw[draw=none,fill=teal23108155] (axis cs:-0.4,0) rectangle (axis cs:0.4,0.408184424896891);
+\draw[draw=none,fill=teal23108155] (axis cs:0.6,0) rectangle (axis cs:1.4,0.270378054507604);
+\draw[draw=none,fill=teal23108155] (axis cs:1.6,0) rectangle (axis cs:2.4,0.327324142806645);
+\addplot [darkslategrey66]
 table {%
-0 nan
-0 nan
+-0.075 0.0544798756959922
+0.075 0.0544798756959922
+nan nan
+0 0.0544798756959922
+0 0.761888974097791
+nan nan
+-0.075 0.761888974097791
+0.075 0.761888974097791
 };
-\addplot [line width=0.9pt, darkslategrey66, forget plot]
+\addplot [darkslategrey66]
 table {%
-1 nan
-1 nan
+0.925 0.185892112082075
+1.075 0.185892112082075
+nan nan
+1 0.185892112082075
+1 0.354863996933133
+nan nan
+0.925 0.354863996933133
+1.075 0.354863996933133
 };
-\addplot [line width=0.9pt, darkslategrey66, forget plot]
+\addplot [darkslategrey66]
 table {%
-2 0.647138049560606
-2 0.677090251688972
-};
-\addplot [line width=0.9pt, darkslategrey66, forget plot]
-table {%
-3 0.185892112082075
-3 0.354863996933133
-};
-\addplot [line width=0.9pt, darkslategrey66, forget plot]
-table {%
-4 0.427996366590498
-4 0.818858457242743
-};
-\addplot [line width=0.9pt, darkslategrey66, forget plot]
-table {%
-5 0.297155760631528
-5 0.357492524981763
+1.925 0.297155760631528
+2.075 0.297155760631528
+nan nan
+2 0.297155760631528
+2 0.357492524981763
+nan nan
+1.925 0.357492524981763
+2.075 0.357492524981763
 };
 \addplot [
-  draw=crimson2143940,
-  fill=crimson2143940,
-  mark size=4.47213595499958pt,
-  mark=asterisk,
-  only marks
+  draw opacity=0.6,
+  draw=black,
+  mark size=1.25pt,
+  mark=*,
+  only marks,
+  scatter,
+  scatter/@post marker code/.code={%
+  \endscope
+},
+  scatter/@pre marker code/.code={%
+  \expanded{%
+  \noexpand\definecolor{thispointfillcolor}{RGB}{\fillcolor}%
+  }%
+  \scope[fill=thispointfillcolor]%
+},
+  visualization depends on={value \thisrow{fill} \as \fillcolor}
 ]
 table{%
-x  y
-1 0.6602
-2 0.6661
-3 0.675
-4 0.7
-5 0.8308
+x  y  fill
+-0.191633605727131 0.624360286591607 0,0,0
+-0.175476167731079 0 0,0,0
+-0.216348965111925 0.600192988099067 0,0,0
 };
-\addlegendentry{challenge best}
-\end{axis}
+\addplot [draw opacity=0.6, draw=black, mark size=1.25pt, mark=o, only marks]
+table{%
+x  y
+};
+\addplot [
+  draw opacity=0.6,
+  draw=black,
+  mark size=1.25pt,
+  mark=*,
+  only marks,
+  scatter,
+  scatter/@post marker code/.code={%
+  \endscope
+},
+  scatter/@pre marker code/.code={%
+  \expanded{%
+  \noexpand\definecolor{thispointfillcolor}{RGB}{\fillcolor}%
+  }%
+  \scope[fill=thispointfillcolor]%
+},
+  visualization depends on={value \thisrow{fill} \as \fillcolor}
+]
+table{%
+x  y  fill
+0.771006036406167 0.173913043478261 0,0,0
+0.76070540799511 0.306010928961749 0,0,0
+0.760810160061864 0.331210191082802 0,0,0
+};
+\addplot [draw opacity=0.6, draw=black, mark size=1.25pt, mark=o, only marks]
+table{%
+x  y
+};
+\addplot [
+  draw opacity=0.6,
+  draw=black,
+  mark size=1.25pt,
+  mark=*,
+  only marks,
+  scatter,
+  scatter/@post marker code/.code={%
+  \endscope
+},
+  scatter/@pre marker code/.code={%
+  \expanded{%
+  \noexpand\definecolor{thispointfillcolor}{RGB}{\fillcolor}%
+  }%
+  \scope[fill=thispointfillcolor]%
+},
+  visualization depends on={value \thisrow{fill} \as \fillcolor}
+]
+table{%
+x  y  fill
+1.80658631729732 0.292682926829268 0,0,0
+1.79906000946701 0.347826086956522 0,0,0
+1.83553252593099 0.341463414634146 0,0,0
+};
+\addplot [draw opacity=0.6, draw=black, mark size=1.25pt, mark=o, only marks]
+table{%
+x  y
+};
+
+\nextgroupplot[
+axis line style={lightgrey204},
+height=.6\linewidth,
+scaled y ticks=manual:{}{\pgfmathparse{#1}},
+tick align=outside,
+title={KG},
+unbounded coords=jump,
+width=\linewidth,
+x grid style={lightgrey204},
+xmajorticks=false,
+xmin=-0.5, xmax=2.5,
+xtick style={color=darkslategrey38},
+xtick={0,1,2},
+xticklabel style={rotate=20.0},
+xticklabels={Ecology,Engineering,Scholarly},
+y grid style={lightgrey204},
+ymajorgrids,
+ymajorticks=false,
+ymin=0, ymax=1,
+ytick style={color=darkslategrey38},
+yticklabels={}
+]
+\draw[draw=none,fill=darkgoldenrod19413532] (axis cs:0.6,0) rectangle (axis cs:1.4,0.662114150624789);
+\draw[draw=none,fill=darkgoldenrod19413532] (axis cs:1.6,0) rectangle (axis cs:2.4,0.623427411916621);
+\draw[draw=none,fill=teal23108155] (axis cs:0,0) rectangle (axis cs:0,0);
+\addlegendimage{ybar,ybar legend,draw=none,fill=teal23108155}
+\addlegendentry{Classes (A2 types)}
+
+\draw[draw=none,fill=darkgoldenrod19413532] (axis cs:0,0) rectangle (axis cs:0,0);
+\addlegendimage{ybar,ybar legend,draw=none,fill=darkgoldenrod19413532}
+\addlegendentry{Named entities (A1 terms)}
+
+\addplot [darkslategrey66]
+table {%
+0.925 0.647138049560606
+1.075 0.647138049560606
+nan nan
+1 0.647138049560606
+1 0.677090251688972
+nan nan
+0.925 0.677090251688972
+1.075 0.677090251688972
+};
+\addplot [darkslategrey66]
+table {%
+1.925 0.427996366590498
+2.075 0.427996366590498
+nan nan
+2 0.427996366590498
+2 0.818858457242743
+nan nan
+1.925 0.818858457242743
+2.075 0.818858457242743
+};
+\addplot [draw opacity=0.6, draw=black, mark size=1.25pt, mark=o, only marks]
+table{%
+x  y
+};
+\addplot [draw opacity=0.6, draw=black, mark size=1.25pt, mark=o, only marks]
+table{%
+x  y
+};
+\addplot [draw opacity=0.6, draw=black, mark size=1.25pt, mark=o, only marks]
+table{%
+x  y
+};
+\addplot [
+  draw opacity=0.6,
+  draw=black,
+  mark size=1.25pt,
+  mark=*,
+  only marks,
+  scatter,
+  scatter/@post marker code/.code={%
+  \endscope
+},
+  scatter/@pre marker code/.code={%
+  \expanded{%
+  \noexpand\definecolor{thispointfillcolor}{RGB}{\fillcolor}%
+  }%
+  \scope[fill=thispointfillcolor]%
+},
+  visualization depends on={value \thisrow{fill} \as \fillcolor}
+]
+table{%
+x  y  fill
+1.17177922181481 0.674285714285714 0,0,0
+1.23457211813651 0.645390070921986 0,0,0
+1.2248263617368 0.666666666666667 0,0,0
+};
+\addplot [draw opacity=0.6, draw=black, mark size=1.25pt, mark=o, only marks]
+table{%
+x  y
+};
+\addplot [
+  draw opacity=0.6,
+  draw=black,
+  mark size=1.25pt,
+  mark=*,
+  only marks,
+  scatter,
+  scatter/@post marker code/.code={%
+  \endscope
+},
+  scatter/@pre marker code/.code={%
+  \expanded{%
+  \noexpand\definecolor{thispointfillcolor}{RGB}{\fillcolor}%
+  }%
+  \scope[fill=thispointfillcolor]%
+},
+  visualization depends on={value \thisrow{fill} \as \fillcolor}
+]
+table{%
+x  y  fill
+2.22533769546072 0.762589928057554 0,0,0
+2.16907597885406 0.4 0,0,0
+2.22033100015102 0.707692307692308 0,0,0
+};
+\draw (axis cs:0,0.03) node[
+  scale=0.4,
+  anchor=south,
+  text=grey,
+  rotate=0.0
+]{n/a};
+\end{groupplot}
 
 \end{tikzpicture}

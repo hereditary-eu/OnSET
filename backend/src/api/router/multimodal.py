@@ -14,6 +14,7 @@ from PIL import Image
 from base64 import b64decode
 import re
 from fastapi.responses import Response
+from pydantic import BaseModel
 
 from explorative.dim_reduction import DimensionalityReducer
 
@@ -42,6 +43,11 @@ def encode_image(manman: ManManDep, image: str = Body(...)) -> DataTensorResp:
     return manman.guidance_man.encode(image=image_pil).to_resp()
 
 
+class DimReduceQuery(BaseModel):
+    query: str
+    target_properties: list[str]
+
+
 @multimodal_router.post("/dim-reduce")
 def dim_reduce(
     manman: ManManDep,
@@ -49,17 +55,22 @@ def dim_reduce(
     target_properties: list[str] = Body(...),
     algorithm: str = Body("umap"),
     remove_vectors: bool = Body(True),
+    compare: list[DimReduceQuery] = Body([]),
 ) -> list[dict[str, Any]]:
+    """
+    2D coordinates (`dim_reduced`) of the target tensors of the query's results. The results
+    of the `compare` queries are reduced in the same fit (records tagged by `query_index`, 0
+    for `query`, i + 1 for compare[i]), e.g. for the previous query of a difference view.
+    """
     dim_reducer = DimensionalityReducer(oman=manman.ontology_manager, method=algorithm)
-
-    result = dim_reducer.fit_transform_from_query(
-        query=query, target_properties=target_properties
-    )
+    queries = [(query, target_properties)] + [
+        (c.query, c.target_properties) for c in compare
+    ]
+    result = dim_reducer.fit_transform_from_queries(queries)
     if remove_vectors:
         for record in result:
-            for prop in target_properties:
-                if prop in record:
-                    del record[prop]
+            for prop in queries[record["query_index"]][1]:
+                record.pop(prop, None)
     return result
 
 

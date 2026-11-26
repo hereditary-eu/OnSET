@@ -1,20 +1,18 @@
 \begin{table}
-\caption{LLMs4OL 2025 Text2Onto on the held-out split (median over runs). $^*$Best challenge system on the official test set, for orientation only.}
+\caption{LLMs4OL 2025 Text2Onto on the held-out split (mean over runs). Classes are the A2 types (ontology level), named entities the A1 terms (KG level). $^*$Best challenge system on the official test set, which has no released gold: for orientation only.}
 \label{tab:onto_llms4ol}
-\begin{tabular}{llrrrrr}
+\begin{tabular}{llrrrrrr}
 \toprule
- &  & $P$ & $R$ & $F_1$ & $F_1$ best run & $F_1$ challenge best$^*$ \\
-Domain & Task &  &  &  &  &  \\
+ &  & $P$ & $R$ & $F_1$ & sd & $F_1$ best run & $F_1$ challenge best$^*$ \\
+Element & Domain &  &  &  &  &  &  \\
 \midrule
-\multirow[t]{2}{*}{ecology} & A1 terms & 1.00 & 1.00 & 1.00 & 1.00 & -- \\
- & A2 types & 0.76 & 0.53 & 0.62 & 0.62 & 0.66 \\
-\cline{1-7}
-\multirow[t]{2}{*}{engineering} & A1 terms & 0.80 & 0.57 & 0.67 & 0.67 & 0.67 \\
- & A2 types & 0.30 & 0.37 & 0.31 & 0.33 & 0.68 \\
-\cline{1-7}
-\multirow[t]{2}{*}{scholarly} & A1 terms & 0.79 & 0.64 & 0.71 & 0.76 & 0.70 \\
- & A2 types & 0.27 & 0.39 & 0.34 & 0.35 & 0.83 \\
-\cline{1-7}
+\multirow[t]{3}{*}{Classes (A2 types)} & Ecology & 0.72 & 0.36 & 0.41 & 0.35 & 0.62 & 0.66 \\
+ & Engineering & 0.31 & 0.29 & 0.27 & 0.08 & 0.33 & 0.68 \\
+ & Scholarly & 0.28 & 0.40 & 0.33 & 0.03 & 0.35 & 0.83 \\
+\cline{1-8}
+\multirow[t]{2}{*}{Named entities (A1 terms)} & Engineering & 0.84 & 0.56 & 0.66 & 0.01 & 0.67 & 0.67 \\
+ & Scholarly & 0.74 & 0.56 & 0.62 & 0.20 & 0.76 & 0.70 \\
+\cline{1-8}
 \bottomrule
 \end{tabular}
 \end{table}

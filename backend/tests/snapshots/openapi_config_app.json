@@ -285,6 +285,14 @@
       "title": "Algorithm",
       "type": "string"
      },
+     "compare": {
+      "default": [],
+      "items": {
+       "$ref": "#/components/schemas/DimReduceQuery"
+      },
+      "title": "Compare",
+      "type": "array"
+     },
      "query": {
       "title": "Query",
       "type": "string"
@@ -777,6 +785,27 @@
      "value"
     ],
     "title": "DateSubQuery",
+    "type": "object"
+   },
+   "DimReduceQuery": {
+    "properties": {
+     "query": {
+      "title": "Query",
+      "type": "string"
+     },
+     "target_properties": {
+      "items": {
+       "type": "string"
+      },
+      "title": "Target Properties",
+      "type": "array"
+     }
+    },
+    "required": [
+     "query",
+     "target_properties"
+    ],
+    "title": "DimReduceQuery",
     "type": "object"
    },
    "EnrichedEntitiesRelations": {
@@ -4754,6 +4783,7 @@
   },
   "/search/dim-reduce": {
    "post": {
+    "description": "2D coordinates (`dim_reduced`) of the target tensors of the query's results. The results\nof the `compare` queries are reduced in the same fit (records tagged by `query_index`, 0\nfor `query`, i + 1 for compare[i]), e.g. for the previous query of a difference view.",
     "operationId": "dim_reduce_search_dim_reduce_post",
     "requestBody": {
      "content": {

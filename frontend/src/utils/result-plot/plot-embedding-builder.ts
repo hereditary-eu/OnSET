@@ -9,6 +9,10 @@ import type { NodeLinkRepository } from "../sparql/store";
 import { api } from "@/utils/api"
 import type { ScatterData } from "plotly.js-dist";
 import * as Plotly from "plotly.js-dist";
+const hasCoordinates = (row: Record<string, any>) => Array.isArray(row["dim_reduced"])
+const hoverText = (row: Record<string, any>, props: AnalyzedProp[]) =>
+    props.map(p => `${p.prop.link.label}: ${row[p.query_id]}\n`).join("<br>")
+
 export function buildEmbeddingPlotData(analyzed_props: AnalyzedProp[], result_set: Record<string, any>[], query_limitless: string, store: NodeLinkRepository<SubjectNode, Link<Subject>>): BuildTrace {
     let vector_props = analyzed_props.filter(p => p.prop_type == PropType.VECTOR)
     if (vector_props.length == 0) {
@@ -19,6 +23,8 @@ export function buildEmbeddingPlotData(analyzed_props: AnalyzedProp[], result_se
     let description = vector_props.map(p => p.prop.link.label).join(" and ")
     let cmap = colormaps_d3["Roma"]
 
+    // rows without all their tensors have no coordinates
+    result_set = result_set.filter(hasCoordinates)
     let color_prop = analyzed_props.find(p => p.prop_type == PropType.DISCRETE || p.prop_type == PropType.CONTINOUS)
     let colors: string[] = null
     if (color_prop) {
@@ -70,10 +76,7 @@ export function buildEmbeddingPlotData(analyzed_props: AnalyzedProp[], result_se
     let trace = {
         x: result_set.map(r => r["dim_reduced"][0]),
         y: result_set.map(r => r["dim_reduced"][1]),
-        text: result_set.map(r => {
-            let label = non_vector_props.map(p => `${p.prop.link.label}: ${r[p.query_id]}\n`).join("<br>")
-            return label
-        }),
+        text: result_set.map(r => hoverText(r, non_vector_props)),
         mode: 'markers',
         type: 'scatter',
         marker: { size: 8, color: colors || "blue" },
@@ -86,4 +89,30 @@ export function buildEmbeddingPlotData(analyzed_props: AnalyzedProp[], result_se
         chart_options
     }
 
+}
+
+/**
+ * Difference view of the embedding plot: the previous and the current results as two traces,
+ * both with coordinates of one dimensionality reduction (dim-reduce with `compare`), so that
+ * they are comparable. The rows are coloured by their query, not by a property.
+ */
+export function buildEmbeddingDiffTraces(analyzed_props: AnalyzedProp[], previous_rows: Record<string, any>[],
+    current_rows: Record<string, any>[], chart_options: Plotly.Layout): { traces: ScatterData[], chart_options: Plotly.Layout } {
+    const non_vector_props = analyzed_props.filter(p => p.prop_type != PropType.VECTOR)
+    const trace = (rows: Record<string, any>[], name: string, color: string) => {
+        rows = rows.filter(hasCoordinates)
+        return {
+            x: rows.map(r => r["dim_reduced"][0]),
+            y: rows.map(r => r["dim_reduced"][1]),
+            text: rows.map(r => hoverText(r, non_vector_props)),
+            name,
+            mode: 'markers',
+            type: 'scatter',
+            marker: { size: 8, color, opacity: 0.5 },
+        } as ScatterData
+    }
+    return {
+        traces: [trace(previous_rows, "Previous", "red"), trace(current_rows, "Current", "#8fa88f")],
+        chart_options: { ...chart_options, showlegend: true, legend: { title: { text: "" } } } as Plotly.Layout,
+    }
 }

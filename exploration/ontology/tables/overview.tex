@@ -1,0 +1,26 @@
+\begin{table}
+\caption{Agent runs, user sessions and the true ontology (extracted by the same extractor): median and best per dataset.}
+\label{tab:onto_overview}
+\begin{tabular}{llrrrrrrrrrrrrrrr}
+\toprule
+ &  & \multicolumn{2}{r}{$F_{1}$ ontology} & \multicolumn{2}{r}{$F_{1}$ classes} & \multicolumn{2}{r}{$F_{1}$ relations} & \multicolumn{2}{r}{$F_{1}$ named entities} & \multicolumn{2}{r}{$F_{1}$ relation inst.} & \multicolumn{2}{r}{$F_{1}$ classes (A2)} & \multicolumn{2}{r}{$F_{1}$ named entities (A1)} & $n$ \\
+ &  & median & best & median & best & median & best & median & best & median & best & median & best & median & best &  \\
+Dataset & Source &  &  &  &  &  &  &  &  &  &  &  &  &  &  &  \\
+\midrule
+Ecology & Agent & -- & -- & -- & -- & -- & -- & -- & -- & -- & -- & 0.60 & 0.62 & 1.00 & 1.00 & 3 \\
+\cline{1-17}
+Engineering & Agent & -- & -- & -- & -- & -- & -- & -- & -- & -- & -- & 0.31 & 0.33 & 0.67 & 0.67 & 3 \\
+\cline{1-17}
+\multirow[t]{3}{*}{Enron} & Agent & 0.06 & 0.08 & 0.17 & 0.23 & 0.00 & 0.00 & -- & -- & -- & -- & -- & -- & -- & -- & 3 \\
+ & True ontology & 1.00 & 1.00 & 1.00 & 1.00 & 1.00 & 1.00 & -- & -- & -- & -- & -- & -- & -- & -- & 1 \\
+ & Users & 0.06 & 0.11 & 0.17 & 0.18 & 0.00 & 0.00 & -- & -- & -- & -- & -- & -- & -- & -- & 3 \\
+\cline{1-17}
+\multirow[t]{3}{*}{GutBrainIE} & Agent & 0.20 & 0.20 & 0.40 & 0.40 & 0.00 & 0.00 & 0.14 & 0.15 & 0.00 & 0.00 & -- & -- & -- & -- & 3 \\
+ & True ontology & 1.00 & 1.00 & 1.00 & 1.00 & 1.00 & 1.00 & 0.09 & 0.09 & 0.00 & 0.00 & -- & -- & -- & -- & 1 \\
+ & Users & 0.10 & 0.15 & 0.20 & 0.30 & 0.00 & 0.00 & 0.09 & 0.10 & 0.00 & 0.00 & -- & -- & -- & -- & 4 \\
+\cline{1-17}
+Scholarly & Agent & -- & -- & -- & -- & -- & -- & -- & -- & -- & -- & 0.34 & 0.35 & 0.71 & 0.76 & 3 \\
+\cline{1-17}
+\bottomrule
+\end{tabular}
+\end{table}

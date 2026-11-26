@@ -227,6 +227,11 @@ export interface BodyDimReduceSearchDimReducePost {
    * @default true
    */
   remove_vectors?: boolean;
+  /**
+   * Compare
+   * @default []
+   */
+  compare?: DimReduceQuery[];
 }
 
 /** Body_load_ontology_management_ontology_post */
@@ -388,6 +393,14 @@ export interface DateSubQuery {
   value: string;
   /** @default "greater" */
   operator?: AssistantNumberConstraintType;
+}
+
+/** DimReduceQuery */
+export interface DimReduceQuery {
+  /** Query */
+  query: string;
+  /** Target Properties */
+  target_properties: string[];
 }
 
 /** EnrichedEntitiesRelations */
@@ -2183,7 +2196,7 @@ export class Api<
       }),
 
     /**
-     * No description
+     * @description 2D coordinates (`dim_reduced`) of the target tensors of the query's results. The results of the `compare` queries are reduced in the same fit (records tagged by `query_index`, 0 for `query`, i + 1 for compare[i]), e.g. for the previous query of a difference view.
      *
      * @name DimReduceSearchDimReducePost
      * @summary Dim Reduce

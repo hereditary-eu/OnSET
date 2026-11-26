@@ -1,0 +1,20 @@
+\begin{table}
+\caption{Scripted user: task description and refinement turn ($F_1$, mean, sd, runs).}
+\label{tab:onto_ablation}
+\begin{tabular}{llrrrrrrrrr}
+\toprule
+ &  & \multicolumn{3}{r}{mean} & \multicolumn{3}{r}{std} & \multicolumn{3}{r}{count} \\
+ & Setting & no task + refine & task + refine & task, no refine & no task + refine & task + refine & task, no refine & no task + refine & task + refine & task, no refine \\
+Level & Dataset &  &  &  &  &  &  &  &  &  \\
+\midrule
+\multirow[t]{3}{*}{KG} & Engineering & 0.72 & 0.66 & 0.66 & 0.05 & 0.01 & 0.02 & 2 & 3 & 2 \\
+ & GutBrainIE & 0.10 & 0.12 & 0.16 & 0.06 & 0.04 & 0.04 & 2 & 3 & 2 \\
+ & Scholarly & 0.68 & 0.62 & 0.70 & 0.03 & 0.20 & 0.00 & 2 & 3 & 2 \\
+\cline{1-11}
+\multirow[t]{3}{*}{Ontology} & Engineering & 0.29 & 0.27 & 0.33 & 0.03 & 0.08 & 0.07 & 2 & 3 & 2 \\
+ & GutBrainIE & 0.33 & 0.39 & 0.41 & 0.03 & 0.02 & 0.01 & 2 & 3 & 2 \\
+ & Scholarly & 0.42 & 0.33 & 0.31 & 0.10 & 0.03 & 0.01 & 2 & 3 & 2 \\
+\cline{1-11}
+\bottomrule
+\end{tabular}
+\end{table}
