@@ -34,6 +34,7 @@ from sqlalchemy.orm import Session
 from utils import get_best_device, wrap_iri
 
 log = getLogger(__name__)
+log.setLevel(logging.DEBUG)
 
 
 @contextmanager
@@ -136,7 +137,8 @@ class GuidanceManager:
                 "unpad_inputs": False,
             },
             revision="eb1ce34a33908596b61c83a88903b5f5f30beaa9",  # problematic merge, wrong dimensionality,
-        ).to(self.device)
+            device=self.device,
+        )
         # self.embedding_model = SentenceTransformer(
         #     "paraphrase-MiniLM-L6-v2",
         # ).to(device)
@@ -430,7 +432,8 @@ class GuidanceManager:
     def encoding_model(self):
         if self._encoding_model is None:
             self._encoding_model = SentenceTransformer(
-                self.oman.config.multimodal_config.encoding_model
+                self.oman.config.multimodal_config.encoding_model,
+                device=self.device,
             )
         return self._encoding_model
 

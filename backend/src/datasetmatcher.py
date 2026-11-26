@@ -209,7 +209,7 @@ class DatasetManager:
                     print("--> No data found, building from scratch")
                     self.vectorizer = TfidfVectorizer()
                     self.model = SentenceTransformer(
-                        "sentence-transformers/all-MiniLM-L6-v2"
+                        "sentence-transformers/all-MiniLM-L6-v2",
                     )
                     for rep in self.representations_merged:
                         rep.embed_cols()
