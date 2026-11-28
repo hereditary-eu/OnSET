@@ -21,11 +21,13 @@
                         title="Revert to the state the tracking started from" @click="clearDiff()">Discard</OnsetBtn>
                     <span class="toolbar_spacer"></span>
                     <OnsetBtn @click="saveState()" size="small" :toggleable="false" icon="mdi-content-save"
-                        title="Save query and history in the browser">Save</OnsetBtn>
-                    <OnsetBtn @click="loadState()" size="small" :toggleable="false" icon="mdi-folder-open"
-                        title="Load the saved query and history">Load</OnsetBtn>
+                        :title="`Save the query and its history in session ${session.id} now (they are also saved after every change)`">Save</OnsetBtn>
+                    <OnsetBtn v-model="session.open" size="small" icon="mdi-identifier"
+                        :title="`Query session ${session.id}: copy its id or open another session`">Session</OnsetBtn>
+                    <OnsetBtn size="small" :toggleable="false" icon="mdi-plus-box-outline"
+                        :title="`Start a new, empty query session (current: ${session.id})`" @click="newSession" />
                     <OnsetBtn @click="clearState()" size="small" :toggleable="false" icon="mdi-delete-outline"
-                        title="Clear the query and history">Clear</OnsetBtn>
+                        title="Clear the query and history of this session">Clear</OnsetBtn>
                     <span class="vsep"></span>
                     <OnsetBtn @click="downloadState()" size="small" :toggleable="false" icon="mdi-download"
                         title="Download the query history as JSON" />
@@ -41,14 +43,48 @@
                     </QueryBuilder>
                     <div class="explore_overlay explore_history" v-show="ui_state.show_history">
                         <HistoryView :history='(ui_state.history as QueryHistory)' @compare="compareToCurrent"
-                            @revert="revertToEntry" @show-tooltip="showTooltip"></HistoryView>
+                            @revert="revertToEntry" @show-tooltip="showTooltip" @show-in-chat="showInChat"></HistoryView>
                         <div v-if="ui_state.history_interactive.tooltip.visible" class="history_tooltip"
                             @mouseleave="ui_state.history_interactive.tooltip.visible = false"
                             :style="`top: ${ui_state.history_interactive.tooltip.position.y}px; left: ${ui_state.history_interactive.tooltip.position.x}px;`">
                             <HistoryElement :entry='(ui_state.history_interactive.tooltip.entry as HistoryEntry)'
-                                @compare="compareToCurrent" @revert="revertToEntry">
+                                @compare="compareToCurrent" @revert="revertToEntry" @show-in-chat="showInChat">
                             </HistoryElement>
                         </div>
+                    </div>
+                    <div v-if="session.open" class="explore_overlay explore_session">
+                        <div class="toolbar"><b>Query session</b><span class="toolbar_spacer"></span>
+                            <OnsetBtn size="small" :toggleable="false" icon="mdi-close" @click="session.open = false" />
+                        </div>
+                        <label>Current session (the query and its history are saved on the server)
+                            <span class="toolbar">
+                                <input :value="session.id" class="text_input explore_session_id" readonly
+                                    @focus="($event.target as HTMLInputElement).select()" />
+                                <OnsetBtn size="small" :toggleable="false" icon="mdi-content-copy" title="Copy the session id"
+                                    @click="copySessionId" />
+                            </span>
+                        </label>
+                        <label>Open a session by its id
+                            <span class="toolbar">
+                                <input v-model="session.input" class="text_input explore_session_id" placeholder="Paste a session id…"
+                                    spellcheck="false" @keydown.enter="openInput" />
+                                <OnsetBtn size="small" :toggleable="false" icon="mdi-folder-open-outline"
+                                    :active="!!session.input.trim() && !session.busy" @click="openInput">Open</OnsetBtn>
+                            </span>
+                        </label>
+                        <p v-if="session.message" class="message" :class="{ explore_error: session.failed }">{{ session.message }}</p>
+                        <template v-if="session.list.length">
+                            <b>Recent sessions</b>
+                            <ul class="explore_session_list">
+                                <li v-for="s in session.list" :key="s.session_id">
+                                    <button class="explore_session_item" :class="{ explore_session_current: s.session_id == session.id }"
+                                        :title="s.query" @click="openById(s.session_id)">
+                                        <span class="explore_session_id">{{ s.session_id }}</span>
+                                        <span>{{ new Date(s.updated_at).toLocaleString() }} · {{ s.history_entries }} history entries</span>
+                                    </button>
+                                </li>
+                            </ul>
+                        </template>
                     </div>
                     <pre v-if="ui_state.show_query" class="explore_overlay explore_sparql"
                         v-html="query_string_html" />
@@ -67,7 +103,8 @@
                     <AgentChat :session="agent"></AgentChat>
                 </template>
                 <template #progressive>
-                    <ProgressivePanel :store="store" @apply="applyEditorChange"></ProgressivePanel>
+                    <ProgressivePanel :store="store"
+                        @apply="(change, details) => applyEditorChange(change, details, progressiveProvenance(change))"></ProgressivePanel>
                 </template>
                 <template #topics>
                     <div class="explore_topics">
@@ -86,7 +123,7 @@
 <script setup lang="ts">
 import Prism from 'prismjs';
 import 'prismjs/themes/prism.css';
-import { ref, watch, reactive, computed, onMounted } from 'vue'
+import { ref, watch, reactive, computed, nextTick, onBeforeUnmount } from 'vue'
 import TopicSelector from '@/components/explore/TopicSelector.vue';
 import NodeLinkSelector from '@/components/explore/NodeLinkSelector.vue';
 import QueryBuilder from '@/components/explore/QueryBuilder.vue';
@@ -103,10 +140,13 @@ import HistoryView from '@/components/explore/history/HistoryView.vue';
 import { HistoryEntry, QueryHistory } from '@/utils/sparql/history';
 import type { HistoryTooltipEvent } from '@/utils/sparql/helpers';
 import HistoryElement from '@/components/explore/history/HistoryElement.vue';
-import { activeConfigId, configStorageKey } from '@/utils/api'
+import { activeConfigId } from '@/utils/api'
+import { HistorySync } from '@/utils/historySync'
+import { newQuerySessionId, QUERY_SESSION_ID_PATTERN, querySessions, type QuerySessionSummary } from '@/utils/sparql/querySession'
 import { useAgentSession } from '@/utils/agent/agentSession'
 import { applyGraphChange, toAgentGraph } from '@/utils/agent/graph_sync'
 import type { GraphChange, GraphDetails } from '@/utils/agent/protocol'
+import { agentProvenance, flashChatEntries, progressiveProvenance, type EditProvenance } from '@/utils/sparql/provenance'
 
 
 const graph_view = ref<HTMLElement | null>(null)
@@ -145,6 +185,19 @@ const ui_state = reactive({
 const store = ref(null as NodeLinkRepository | null)
 const old_store = ref(null as NodeLinkRepository | null)
 
+// provenance of the next store change (agent, progressive panel, revert), consumed by the
+// first store watcher run after it, i.e. the one caused by that change; others are the user's
+const PROVENANCE_MAX_AGE_MS = 2000
+let pending_provenance: { provenance: EditProvenance, at: number } | null = null
+const setPendingProvenance = (provenance: EditProvenance) => {
+    pending_provenance = { provenance, at: Date.now() }
+}
+const takePendingProvenance = (): EditProvenance | null => {
+    const pending = pending_provenance
+    pending_provenance = null
+    return pending && Date.now() - pending.at < PROVENANCE_MAX_AGE_MS ? pending.provenance : null
+}
+
 watch(() => selected_topic_ids, () => {
     console.log('selected_topic_ids changed!', selected_topic_ids.value)
 }, { deep: true })
@@ -173,11 +226,17 @@ watch(() => store, () => {
     if (!store.value || store.value.state != RepositoryState.STABLE) {
         return
     }
+    const provenance = takePendingProvenance()
     let new_query_string = store.value.generateQuery()
+    // every change (also of the layout) is saved in the session, a session's own store is not a change
+    if (!loading_session) {
+        scheduleQuerySave()
+    }
     if (query_string.value != new_query_string) {
-        if (ui_state.history && store.value) {
+        if (ui_state.history && store.value && !loading_session) {
             console.log('Adding history entry', ui_state.history, store.value)
-            ui_state.history.tryAddEntry(store.value)
+            ui_state.history.tryAddEntry(store.value, provenance)
+            history_sync?.schedule()
         }
         updateDiff()
         query_string.value = new_query_string
@@ -237,6 +296,10 @@ const revertToEntry = (entry: HistoryEntry) => {
     }
     ui_state.diff_active = false
     ui_state.simulate = false
+    setPendingProvenance({
+        source: 'revert', ops: [], reverted_to: entry.timestamp,
+        reverted_from: entry.provenance ? jsonClone(entry.provenance) : undefined,
+    })
     store.value = jsonClone(entry.query)
     old_store.value = null
     ui_state.diff = null
@@ -250,7 +313,8 @@ const selected_example = (example: MixedResponse) => {
 
 // agent chat and progressive panel: they edit the editor graph like any other edit, i.e. the
 // change shows up in the change tracking diff and as a history entry (store watcher above)
-const applyEditorChange = (change: GraphChange, details: GraphDetails) => {
+const applyEditorChange = (change: GraphChange, details: GraphDetails, provenance: EditProvenance) => {
+    setPendingProvenance(provenance)
     if (!store.value) {
         store.value = new NodeLinkRepository()
     }
@@ -264,43 +328,215 @@ const applyEditorChange = (change: GraphChange, details: GraphDetails) => {
 }
 const agent = useAgentSession(activeConfigId, {
     read: () => toAgentGraph(store.value),
-    apply: (change, _graph, details) => applyEditorChange(change, details),
+    apply: (change, _graph, details, calls) => applyEditorChange(change, details, agentProvenance(change, calls)),
 }, () => store.value)
 
-const saveState = () => {
-    if (!store.value) {
+// --- query session (backend query_session.py): the query and its history are saved on the server
+// after every change, so the session can be reopened by its id (also in another browser); the last
+// session id is kept per configuration in the browser. The history entries get the server's timestamps.
+const QUERY_SAVE_DEBOUNCE_MS = 1000
+const session = reactive({
+    id: '', config: '', open: false, input: '', message: '', failed: false, busy: false,
+    list: [] as QuerySessionSummary[],
+})
+const sessionKey = (config: string) => `onset:${config}:query-session`
+// where the browser kept the query and history before the sessions (moved into a new session)
+const legacyKey = (config: string, key: 'store' | 'history') => `onset:${config}:${key}`
+let history_sync: HistorySync | null = null
+let query_timer: ReturnType<typeof setTimeout> | null = null
+// while a session's state is put into the editor (no change to record or save)
+let loading_session = false
+
+const scheduleQuerySave = () => {
+    if (query_timer) {
+        clearTimeout(query_timer)
+    }
+    query_timer = setTimeout(() => saveQueryNow().catch(() => { }), QUERY_SAVE_DEBOUNCE_MS)
+}
+/** PUTs the editor's query to the current session (and cancels a scheduled save). */
+const saveQueryNow = async () => {
+    if (query_timer) {
+        clearTimeout(query_timer)
+        query_timer = null
+    }
+    // read now: the session may change while the request runs
+    const { id, config } = session
+    if (!id || !config) {
         return
     }
-    const store_json = stringifyJSON(store.value)
-    localStorage.setItem(configStorageKey('store'), store_json)
-    localStorage.setItem(configStorageKey('history'), stringifyJSON(ui_state.history))
-    console.log('Saved store and history to localStorage', store_json, ui_state.history)
-}
-const loadState = () => {
-    const store_json = localStorage.getItem(configStorageKey('store'))
-    const history_json = localStorage.getItem(configStorageKey('history'))
-    if (history_json) {
-        const history_obj = parseJSON<QueryHistory>(history_json)
-        console.log('Loaded history', history_obj)
-        ui_state.history = history_obj
+    const visual_query = store.value ? stringifyJSON(store.value) : null
+    const query = store.value ? store.value.generateQuery() : ''
+    try {
+        await querySessions(config).setQuery(id, query, visual_query)
+    } catch (e) {
+        console.warn('Saving the query in the session failed', e)
+        throw e
     }
-    if (store_json) {
-        const store_obj = parseJSON<NodeLinkRepository>(store_json)
-        store.value = store_obj
-        console.log('Loaded store', store.value)
-    } else if (ui_state.history?.entries.length > 0) {
-        console.log('No store found in localStorage, but history exists.')
-        store.value = jsonClone(ui_state.history.entries[ui_state.history.entries.length - 1].query)
+}
+/** Saves everything of the current session that is not saved yet. */
+const flushSession = () => Promise.all([saveQueryNow(), history_sync?.flush()])
+
+const describe = (e: unknown) => (e as { response?: { data?: { detail?: unknown } } }).response?.data?.detail?.toString() ?? `${e}`
+const statusCode = (e: unknown) => (e as { response?: { status?: number } }).response?.status
+
+/**
+ * Opens the session ``sid`` of ``config`` (``create``: also an unknown one) in the editor, after
+ * saving the current one; keeps the current session if that fails. ``migrate``: an empty session
+ * takes over the query and history the browser kept before the sessions.
+ */
+const openSession = async (config: string, sid: string, { create = true, migrate = false } = {}): Promise<boolean> => {
+    const sessions = querySessions(config)
+    let state, stored
+    try {
+        state = await sessions.state(sid, create)
+        stored = await sessions.history(sid)
+    } catch (e) {
+        const message = statusCode(e) == 404 ? `No session '${sid}' found.` : `Opening the session '${sid}' failed: ${describe(e)}`
+        Object.assign(session, { message, failed: true })
+        return false
+    }
+    try {
+        await flushSession()
+    } catch {
+        // the query of the left session stays unsaved, as it would on a backend error anyway
+    }
+    let history = QueryHistory.fromStored(stored)
+    let restored = state.visual_query ? parseJSON<NodeLinkRepository>(state.visual_query) : null
+    const legacy_store = localStorage.getItem(legacyKey(config, 'store'))
+    const legacy_history = localStorage.getItem(legacyKey(config, 'history'))
+    const migrated = migrate && !restored && !history.length && !!(legacy_store || legacy_history)
+    if (migrated) {
+        history = legacy_history ? parseJSON<QueryHistory>(legacy_history) : history
+        restored = legacy_store ? parseJSON<NodeLinkRepository>(legacy_store) : null
+    }
+    if (!restored && history.length) {
+        restored = jsonClone(history.entries[history.entries.length - 1].query)
+    }
+
+    loading_session = true
+    Object.assign(session, { id: sid, config, input: '' })
+    localStorage.setItem(sessionKey(config), sid)
+    history_sync = new HistorySync(
+        // only while it is the editor's session (a late sync of a left session does nothing)
+        () => session.id == sid && session.config == config ? ui_state.history.toStored() : null,
+        (update) => sessions.patchHistory(sid, update),
+    )
+    history_sync.reset(stored)
+    ui_state.diff_active = false
+    ui_state.diff = null
+    old_store.value = null
+    ui_state.history = history
+    store.value = restored
+    if (!restored) {
+        query_string.value = ''
+        query_string_html.value = ''
+    }
+    // the store watcher runs before the next tick
+    await nextTick()
+    loading_session = false
+    if (migrated) {
+        try {
+            await flushSession()
+            if (!history_sync.failed) {
+                localStorage.removeItem(legacyKey(config, 'store'))
+                localStorage.removeItem(legacyKey(config, 'history'))
+            }
+        } catch {
+            // kept in the browser, moved on the next try
+        }
+    }
+    return true
+}
+/** Reopens the last session of ``config``, or starts a new one if the backend no longer has it. */
+const initSession = async (config: string) => {
+    const stored = localStorage.getItem(sessionKey(config))
+    if (stored && QUERY_SESSION_ID_PATTERN.test(stored)) {
+        if (await openSession(config, stored, { create: false })) {
+            return
+        }
+        Object.assign(session, { message: `Session ${stored} could not be opened, started a new one.`, failed: true })
+    }
+    await openSession(config, newQuerySessionId(), { migrate: true })
+}
+const newSession = async () => {
+    if (await openSession(session.config, newQuerySessionId())) {
+        Object.assign(session, { message: 'Started a new session.', failed: false })
+    }
+}
+const openById = async (sid: string) => {
+    if (!QUERY_SESSION_ID_PATTERN.test(sid)) {
+        Object.assign(session, { message: `'${sid}' is no session id (letters, digits, - and _).`, failed: true })
+        return
+    }
+    if (sid == session.id) {
+        return
+    }
+    session.busy = true
+    try {
+        if (await openSession(session.config, sid, { create: false })) {
+            Object.assign(session, { message: `Opened session ${sid}.`, failed: false })
+        }
+    } finally {
+        session.busy = false
+    }
+}
+const openInput = () => {
+    const sid = session.input.trim()
+    if (sid && !session.busy) {
+        openById(sid)
+    }
+}
+const copySessionId = async () => {
+    try {
+        await navigator.clipboard.writeText(session.id)
+        Object.assign(session, { message: 'Copied the session id.', failed: false })
+    } catch {
+        Object.assign(session, { message: 'Copying failed: select the id and copy it.', failed: true })
+    }
+}
+const loadSessionList = async () => {
+    if (!session.config) {
+        return
+    }
+    try {
+        session.list = await querySessions(session.config).list()
+    } catch (e) {
+        Object.assign(session, { message: `Listing the sessions failed: ${describe(e)}`, failed: true })
+    }
+}
+watch(() => session.open, (open) => open && loadSessionList())
+// a session per configuration: switching it saves the current one and opens the configuration's last
+watch(activeConfigId, (config) => {
+    if (config && config != session.config) {
+        initSession(config)
+    }
+}, { immediate: true })
+onBeforeUnmount(() => {
+    flushSession().catch(() => { })
+})
+
+const saveState = async () => {
+    try {
+        await flushSession()
+        Object.assign(session, {
+            message: history_sync?.failed ? 'Saving the history failed.' : `Saved session ${session.id}.`,
+            failed: !!history_sync?.failed,
+        })
+    } catch (e) {
+        Object.assign(session, { message: `Saving failed: ${describe(e)}`, failed: true })
     }
 }
 const clearState = () => {
-    localStorage.removeItem(configStorageKey('store'))
     store.value = null
     old_store.value = null
     ui_state.diff = null
     ui_state.diff_active = false
     ui_state.history = new QueryHistory()
-
+    query_string.value = ''
+    query_string_html.value = ''
+    // the store watcher does not run for an empty store
+    scheduleQuerySave()
+    history_sync?.schedule()
     console.log('Cleared store')
 }
 
@@ -331,6 +567,7 @@ const loadStateFromFile = () => {
             const hist_obj = parseJSON<QueryHistory>(content)
             ui_state.history = hist_obj
             store.value = jsonClone(ui_state.history.entries[ui_state.history.entries.length - 1].query)
+            history_sync?.schedule()
             console.log('Loaded history from file', ui_state.history)
         }
     }
@@ -355,6 +592,13 @@ const colour_vars = computed(() => {
     }
 })
 
+// history entry -> the agent's tool calls in the chat (entry ids are only valid in this session)
+function showInChat(chat_entry_ids: string[]) {
+    ui_state.side_tab = 'chat'
+    ui_state.side_collapsed = false
+    nextTick(() => flashChatEntries(chat_entry_ids))
+}
+
 function showTooltip(evt: HistoryTooltipEvent) {
     console.log("Showing History tooltip", evt)
     ui_state.history_interactive.tooltip.visible = true
@@ -363,9 +607,6 @@ function showTooltip(evt: HistoryTooltipEvent) {
     ui_state.history_interactive.tooltip.entry = evt.entry
 }
 
-onMounted(() => {
-    loadState()
-})
 </script>
 <style scoped>
 .explore {
@@ -431,6 +672,67 @@ onMounted(() => {
     max-width: min(40rem, 80%);
     padding: var(--space-2);
     border: 1px solid var(--c-border);
+}
+
+.explore_session {
+    top: var(--space-1);
+    right: var(--space-1);
+    width: min(26rem, 80%);
+    max-height: calc(100% - 2 * var(--space-1));
+    overflow: auto;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    padding: var(--space-2);
+    font-size: var(--fs-xs);
+    border: 1px solid var(--c-border);
+}
+
+.explore_session label {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.explore_session_id {
+    flex: 1 1 auto;
+    min-width: 0;
+    font-family: monospace;
+}
+
+.explore_session_list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.explore_session_item {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1px;
+    padding: var(--space-1);
+    font: inherit;
+    text-align: left;
+    background: none;
+    border: 1px solid transparent;
+    cursor: pointer;
+}
+
+.explore_session_item:hover {
+    border-color: var(--c-border);
+}
+
+.explore_session_current {
+    border-color: var(--c-accent);
+}
+
+.explore_error {
+    color: #b3261e;
 }
 
 .explore_topics {

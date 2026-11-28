@@ -187,7 +187,10 @@ class LLMQuery(Initationatable):
 
         constrained_erl = self.query_constrained(query, candidates)
         constrained_erl.message = "Constraints applied"
-        progress.relations_steps.append(constrained_erl)
+        # store a plain copy, the dynamic Enum model neither serialises nor compares by string
+        progress.relations_steps.append(
+            EntitiesRelations.model_validate(constrained_erl.model_dump(mode="json"))
+        )
         advance(4, "Enriching results")
 
         enriched_erl = self.enrich_entities_relations(constrained_erl, candidates)
@@ -234,9 +237,7 @@ class LLMQuery(Initationatable):
         fixed_response = fix_json(response_msg, item_keys=["entities", "relations"])
         return EntitiesRelations.model_validate(fixed_response)
 
-    def query_constrained(
-        self, query: str, candidates: Candidates
-    ) -> EntitiesRelations:
+    def query_constrained(self, query: str, candidates: Candidates) -> BaseModel:
         ConstrainedEntitiesRelations = self.build_constrained_classes(candidates)
         grammar_constrained = grammar_for(
             ConstrainedEntitiesRelations, "ConstrainedEntitiesRelations"
@@ -344,12 +345,15 @@ class LLMQuery(Initationatable):
         return candidates
 
     def build_constrained_classes(self, candidates: Candidates) -> BaseModel:
-        ALLOWED_ENTITY_TYPES = Enum(
-            "ALLOWED_ENTITY_TYPES",
-            {e.subject.subject_id: e.type for e in candidates.entities},
+        # member name = ontology id, value = label (what the grammar lets the model pick)
+        entity_types = {
+            e.subject.subject_id: e.type
+            for e in candidates.entities
+            if e.subject is not None
+        }
+        ALLOWED_ENTITY_TYPES = (
+            Enum("ALLOWED_ENTITY_TYPES", entity_types) if entity_types else str
         )
-        if len(candidates.entities) == 0:
-            ALLOWED_ENTITY_TYPES = str
 
         # constrained_classes = []
         # ALLOWED_CONSTRAINT_TYPES = Enum(
@@ -359,12 +363,14 @@ class LLMQuery(Initationatable):
         # if len(candidates.constraints) == 0:
         #     ALLOWED_CONSTRAINT_TYPES = str
 
-        ALLOWED_RELATION_TYPES = Enum(
-            "ALLOWED_RELATION_TYPES",
-            {r.link.property_id: r.relation for r in candidates.relations},
+        relation_types = {
+            r.link.property_id: r.relation
+            for r in candidates.relations
+            if r.link is not None
+        }
+        ALLOWED_RELATION_TYPES = (
+            Enum("ALLOWED_RELATION_TYPES", relation_types) if relation_types else str
         )
-        if len(candidates.relations) == 0:
-            ALLOWED_RELATION_TYPES = str
 
         ConstrainedRelation = create_model(
             "ConstrainedRelation",
@@ -406,94 +412,125 @@ class LLMQuery(Initationatable):
         return ConstrainedEntitiesRelations
 
     def enrich_entities_relations(
-        self, erl: EntitiesRelations, candidates: Candidates
+        self, erl: BaseModel, candidates: Candidates
     ) -> EnrichedEntitiesRelations:
+        """Aligns the (constrained) ERL with the ontology.
+
+        Constrained types are Enum members whose name is the candidate's subject/property id,
+        so they resolve directly. Plain strings fall back to a label match against the
+        candidates and then the database. Entities/relations that cannot be resolved are dropped.
+        """
+        subject_candidates = {
+            c.subject.subject_id: c.subject
+            for c in candidates.entities
+            if c.subject is not None
+        }
+        link_candidates = {
+            c.link.property_id: c.link
+            for c in candidates.relations
+            if c.link is not None
+        }
+
+        def match_label(value: str, items: dict, label_of) -> str | None:
+            value = value.strip().casefold()
+            return next(
+                (
+                    key
+                    for key, item in items.items()
+                    if (label_of(item) or "").strip().casefold() == value
+                ),
+                None,
+            )
+
         with read_only_session(self.guidance_man.engine) as session:
 
-            def enrich_relation(relation: Relation) -> EnrichedRelation:
-                value = (
-                    relation.relation.value
-                    if isinstance(relation.relation, Enum)
-                    else relation.relation
-                )
-                link_db = session.execute(
+            def resolve_subject_id(type_) -> str | None:
+                if isinstance(type_, Enum):
+                    if type_.name in subject_candidates:
+                        return type_.name
+                    type_ = type_.value
+                if not isinstance(type_, str) or not type_:
+                    return None
+                if type_ in subject_candidates:
+                    return type_
+                found = match_label(type_, subject_candidates, lambda s: s.label)
+                if found is not None:
+                    return found
+                row = session.execute(
+                    select(SubjectInDB.subject_id)
+                    .where(func.lower(SubjectInDB.label) == type_.strip().lower())
+                    .limit(1)
+                ).first()
+                return row[0] if row else None
+
+            def resolve_link(relation_) -> SubjectLink | None:
+                if isinstance(relation_, Enum):
+                    if relation_.name in link_candidates:
+                        return link_candidates[relation_.name]
+                    relation_ = relation_.value
+                if not isinstance(relation_, str) or not relation_:
+                    return None
+                if relation_ in link_candidates:
+                    return link_candidates[relation_]
+                found = match_label(relation_, link_candidates, lambda l: l.label)
+                if found is not None:
+                    return link_candidates[found]
+                row = session.execute(
                     select(SubjectLinkDB)
                     .where(
-                        and_(
-                            SubjectLinkDB.label == value,
-                            SubjectLinkDB.property_id.in_(
-                                [rel.link.property_id for rel in candidates.relations]
-                            ),
-                        )
+                        func.lower(SubjectLinkDB.label) == relation_.strip().lower()
                     )
                     .limit(1)
                 ).first()
-                return EnrichedRelation(
-                    link=link_db[0].from_db(self.guidance_man.oman),
-                    **relation.model_dump(),
-                )
+                return row[0].from_db(self.guidance_man.oman) if row else None
 
-            # def enrich_constraint(constraint: Constraint) -> EnrichedConstraint:
-            #     value = (
-            #         constraint.property.value
-            #         if isinstance(constraint.property, Enum)
-            #         else constraint.property
-            #     )
-            #     link_db = session.execute(
-            #         select(SubjectLinkDB)
-            #         .where(
-            #             SubjectLinkDB.label == value,
-            #             SubjectLinkDB.property_id.in_(
-            #                 [rel.link.property_id for rel in candidates.constraints]
-            #             ),
-            #         )
-            #         .limit(1)
-            #     ).first()
-            #     return EnrichedConstraint(
-            #         constraint=link_db[0].from_db(self.guidance_man.oman),
-            #         **constraint.model_dump(),
-            #     )
+            def as_str(value) -> str:
+                return value.value if isinstance(value, Enum) else str(value)
 
-            def enrich_entity(entity: Entity) -> EnrichedEntity:
-                value = (
-                    entity.type.value if isinstance(entity.type, Enum) else entity.type
+            entities: list[EnrichedEntity] = []
+            for entity in erl.entities:
+                subject_id = resolve_subject_id(entity.type)
+                subject = (
+                    self.guidance_man.oman.enrich_subject(subject_id)
+                    if subject_id is not None
+                    else None
                 )
-                subject_db = session.execute(
-                    select(SubjectInDB)
-                    .where(
-                        SubjectInDB.label == value,
-                        SubjectInDB.subject_id.in_(
-                            [ent.subject.subject_id for ent in candidates.entities]
-                        ),
+                if subject is None:
+                    print(f"Dropping unresolved entity {entity.identifier}: {entity.type}")
+                    continue
+                entities.append(
+                    EnrichedEntity(
+                        identifier=entity.identifier,
+                        type=as_str(entity.type),
+                        subject=subject,
                     )
-                    .limit(1)
-                ).first()
-                return EnrichedEntity(
-                    subject=self.guidance_man.oman.enrich_subject(
-                        subject_db[0].subject_id
-                    ),
-                    # constraints=[enrich_constraint(c) for c in entity.constraints],
-                    **entity.model_dump(exclude=["constraints"]),
                 )
-
+            relations: list[EnrichedRelation] = []
+            for relation in erl.relations:
+                link = resolve_link(relation.relation)
+                if link is None:
+                    print(f"Dropping unresolved relation {relation.relation}")
+                    continue
+                relations.append(
+                    EnrichedRelation(
+                        link=link,
+                        relation=as_str(relation.relation),
+                        entity=relation.entity,
+                        target=relation.target,
+                    )
+                )
             erl_enriched = EnrichedEntitiesRelations(
-                relations=[enrich_relation(r) for r in erl.relations],
-                entities=[enrich_entity(e) for e in erl.entities],
+                relations=relations, entities=entities
             )
+
+            def get_entity_by_id(identifier: str):
+                return next(
+                    (e for e in erl_enriched.entities if e.identifier == identifier),
+                    None,
+                )
+
             # swap links if the schema is the other way around - does not constrain llm
-            # TODO: how could we constrain LLM?
             for relation in erl_enriched.relations:
-
-                def get_entity_by_id(identifier: str):
-                    return next(
-                        (
-                            e
-                            for e in erl_enriched.entities
-                            if e.identifier == identifier
-                        ),
-                        None,
-                    )
-
                 from_entity = get_entity_by_id(relation.entity)
                 to_entity = get_entity_by_id(relation.target)
                 if (
@@ -506,48 +543,45 @@ class LLMQuery(Initationatable):
                     print(
                         f"Swapping relation {relation.relation} from {relation.entity} to {relation.target}"
                     )
-                    # switch if either entity is not set and the relation is the other way around
-                    relation.entity, relation.target = (
-                        relation.target,
-                        relation.entity,
-                    )
-                # add missing entities from the relation
-                entities = [
+                    relation.entity, relation.target = relation.target, relation.entity
+                # add missing entities from the relation's schema
+                for identifier, subject_id in (
                     (relation.entity, relation.link.from_id),
                     (relation.target, relation.link.to_id),
-                ]
-                for id, subject_id in entities:
-                    entity = get_entity_by_id(id)
-                    if entity is None:
-                        # if we do not have the target entity, we create a the one from the relation
-                        subject = session.execute(
-                            select(SubjectInDB)
-                            .where(
-                                SubjectInDB.subject_id == subject_id,
-                            )
-                            .limit(1)
-                        ).first()
-                        if subject:
-                            subject_parsed: Subject = subject[0].from_db(
-                                self.guidance_man.oman
-                            )
-                            entity = EnrichedEntity(
-                                identifier=id,
-                                type=subject_parsed.label,
+                ):
+                    if not subject_id or get_entity_by_id(identifier) is not None:
+                        continue
+                    subject = session.execute(
+                        select(SubjectInDB)
+                        .where(SubjectInDB.subject_id == subject_id)
+                        .limit(1)
+                    ).first()
+                    if subject:
+                        subject_parsed: Subject = subject[0].from_db(
+                            self.guidance_man.oman
+                        )
+                        erl_enriched.entities.append(
+                            EnrichedEntity(
+                                identifier=identifier,
+                                type=subject_parsed.label or subject_id,
                                 subject=subject_parsed,
                             )
-                            erl_enriched.entities.append(entity)
-            to_remove = []
-            for entity in erl_enriched.entities:
-                # remove orphan entities that are not in any relation
-                relations_for_entity = [
-                    e for e in erl_enriched.relations if e.entity == entity.identifier
-                ] + [e for e in erl_enriched.relations if e.target == entity.identifier]
-                if not len(relations_for_entity) > 0:
-                    to_remove.append(entity)
-            for entity in to_remove:
-                erl_enriched.entities.remove(entity)
-            # remove entities that are not
+                        )
+            # drop relations whose endpoints could not be resolved
+            erl_enriched.relations = [
+                r
+                for r in erl_enriched.relations
+                if get_entity_by_id(r.entity) is not None
+                and get_entity_by_id(r.target) is not None
+            ]
+            # remove orphan entities that are not in any relation
+            linked = {r.entity for r in erl_enriched.relations} | {
+                r.target for r in erl_enriched.relations
+            }
+            if linked:
+                erl_enriched.entities = [
+                    e for e in erl_enriched.entities if e.identifier in linked
+                ]
             return erl_enriched
 
     def initiate(self, force=False, n_queries=10, k_min=2, k_max=4, seed=42):

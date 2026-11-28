@@ -120,9 +120,12 @@ def ontology_selector(ontology_manager: "OntologyManager", lock=None) -> SelectR
 
 
 def counted_graph(graph: QueryGraph) -> QueryGraph:
-    """The graph without similarity links and vector sorts, which are not counted."""
+    """The graph without similarity links and vector sorts, which are not counted, and without
+    grouping/aggregates (the solutions are counted and sampled, not the groups)."""
     graph = graph.model_copy(deep=True)
     graph.links = [l for l in graph.links if l.semantic_link_type != LinkSemanticType.SIMILARITY]
     for subject in graph.subjects:
         subject.subqueries = [sq for sq in subject.subqueries if sq.type != AssistantSubQueryType.VECTOR_SORT]
+        for element in [subject, *subject.subqueries]:
+            element.group_by = element.aggregate = None
     return graph

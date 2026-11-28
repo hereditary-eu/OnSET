@@ -12,6 +12,24 @@ from llama_cpp_agent.gbnf_grammar_generator.gbnf_grammar_from_pydantic_models im
 )
 
 
+def get_best_device(dev: str) -> str:
+    """Return the best device for LLM inference, based on the environment variable
+    ``ONSET_LLM_DEVICE`` (if set) or the availability of CUDA or MPS.
+    """
+    if dev and dev != "auto":
+        return dev
+    try:
+        import torch
+
+        if torch.cuda.is_available():
+            return "cuda"
+        if torch.backends.mps.is_available():
+            return "mps"
+    except ImportError:
+        pass
+    return "cpu"
+
+
 def grammar_for(model: type[BaseModel], root_name: str) -> LlamaGrammar:
     """GBNF grammar restricting llama.cpp output to the JSON of ``model``."""
     return LlamaGrammar.from_string(

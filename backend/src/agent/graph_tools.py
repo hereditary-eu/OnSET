@@ -17,6 +17,7 @@ from pydantic import BaseModel
 from agent.protocol import GraphDetails
 from agent.tools import ToolCollection, ToolError, tool
 from assistant.assistant_model import (
+    AggregateFunction,
     AnyAssistantSubQuery,
     AssistantLink,
     AssistantNumberConstraintType,
@@ -26,9 +27,11 @@ from assistant.assistant_model import (
     DateSubQuery,
     NumberSubQuery,
     QueryGraph,
+    QueryPropSubQuery,
     StringSubQuery,
     SubjectSubQuery,
 )
+from assistant.sparql_gen import AGGREGATES_OF, aggregate_kind
 from assistant.progressive import literal_value_kind, slug
 from explorative.exp_model import (
     RELATION_TYPE,
@@ -117,6 +120,11 @@ OPERATORS_OF: dict[str, list[str]] = {
     "string": [o.value for o in AssistantStringConstraintType],
     "boolean": ["equals", "!="],
 }
+# set_aggregation: group by, an aggregate (AggregateFunction) or reset
+AggregationChoice = Literal[
+    "group", "none", "count", "count_distinct", "sum", "avg", "min", "max", "sample", "group_concat",
+    "tensor_sum", "tensor_avg", "tensor_var", "tensor_std",
+]
 TRUE_VALUES = {"true", "yes", "1"}
 FALSE_VALUES = {"false", "no", "0"}
 
@@ -734,6 +742,88 @@ class GraphEditorTools(ToolCollection):
         )
         subject.subqueries.append(subquery)
         return subquery
+
+    @tool(group=CONSTRAINT_TOOLS)
+    def add_property(self, subject_id: str, property_uri: str) -> QueryPropSubQuery:
+        """Return the values of a datatype property of a subject as a result column (without filtering them), e.g. to group by or aggregate it with set_aggregation.
+
+        Args:
+            subject_id: id of the subject in the query graph.
+            property_uri: URI of the property, as returned by search_properties (or "rdfs:label" for the name).
+
+        Returns:
+            The added property; reference it by its "id" in set_aggregation and remove_constraint.
+        """
+        subject = self._typed_subject(subject_id)
+        prop = self._property_for(subject, property_uri)
+        if prop is None:
+            raise ToolError(
+                f"{property_uri} is no datatype property of {subject.label} ({subject.uri}); "
+                f"find one with search_properties(subject_id={subject_id!r})."
+            )
+        for existing in subject.subqueries:
+            if isinstance(existing, QueryPropSubQuery) and same_uri(self._key(existing.property_id), self._key(prop.uri)):
+                raise ToolError(f"Subject {subject_id} already returns {prop.label} (id {existing.id}).")
+        subquery = QueryPropSubQuery(
+            id=self._new_subquery_id(prop.label),
+            property_id=prop.uri,
+            property_label=prop.label,
+            property_type=prop.range,
+        )
+        subject.subqueries.append(subquery)
+        return subquery
+
+    @tool(strict=False, group=CONSTRAINT_TOOLS)
+    def set_aggregation(
+        self, subject_id: str, aggregation: AggregationChoice, constraint_id: str | None = None
+    ) -> dict:
+        """Group the results by a subject or one of its properties, or aggregate them (SPARQL GROUP BY), e.g. ships per port: "group" on the port subject and "count" on the ship subject; the average length of ships per country: "group" on the country and "avg" on the ships' length property. Everything neither grouped nor aggregated is sampled (one value per group).
+
+        Args:
+            subject_id: id of the subject in the query graph.
+            aggregation: "group" to group by the values; an aggregate: "count", "count_distinct", "sample", "group_concat" for any values, "min"/"max" for numbers, dates and texts, "sum"/"avg" for numbers, "tensor_sum"/"tensor_avg"/"tensor_var"/"tensor_std" for tensors (embeddings); or "none" to reset it.
+            constraint_id: id of a property or constraint of the subject (listed in its "subqueries", e.g. added with add_property) to group by or aggregate; omit it for the subject (its instances) itself.
+
+        Returns:
+            The subject or property with its grouping ("group_by") or "aggregate".
+        """
+        subject = self._subject(subject_id)
+        target = subject
+        kind = "node"
+        if constraint_id not in (None, ""):
+            matches = [sq for sq in subject.subqueries if str(sq.id) == str(constraint_id)]
+            if not matches:
+                raise ToolError(
+                    f"Subject {subject_id} has no property or constraint {constraint_id}, its subqueries: "
+                    f"{[str(sq.id) for sq in subject.subqueries]}"
+                )
+            target = matches[0]
+            if isinstance(target, SubjectSubQuery):
+                raise ToolError(
+                    f"{constraint_id} restricts the subject to an instance and has no values; "
+                    f"group or aggregate the subject itself (omit constraint_id)."
+                )
+            kind = aggregate_kind(target.property_type)
+        choice = str(aggregation).strip().lower()
+        if choice == "group":
+            target.group_by, target.aggregate = True, None
+        elif choice == "none":
+            target.group_by, target.aggregate = None, None
+        else:
+            try:
+                function = AggregateFunction(choice)
+            except ValueError:
+                raise ToolError(f"Unknown aggregation {aggregation!r}.")
+            allowed = [f.value for f in AGGREGATES_OF[kind]]
+            if function.value not in allowed:
+                what = "the subject's instances" if kind == "node" else f"{kind} values"
+                raise ToolError(f"{function.value} does not apply to {what}; use one of {['group', 'none', *allowed]}.")
+            target.group_by, target.aggregate = None, function
+        fields = {"uri", "label"} if target is subject else {"id", "type", "property_id"}
+        return {
+            "subject_id": subject_id,
+            **target.model_dump(mode="json", exclude_none=True, include=fields | {"group_by", "aggregate"}),
+        }
 
     @tool(group=CONSTRAINT_TOOLS)
     def remove_constraint(self, subject_id: str, constraint_id: str) -> dict:

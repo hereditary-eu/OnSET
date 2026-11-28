@@ -41,6 +41,8 @@ export interface GraphChange {
     context: AgentSubject[]
     /** subquery changes of existing subjects (the agent's constraint tools, progressive constraints) */
     subqueries?: SubQueryChange[]
+    /** existing subjects whose grouping/aggregate (group_by, aggregate) changed, as they are after */
+    updated?: AgentSubject[]
 }
 
 // --- client -> server ---

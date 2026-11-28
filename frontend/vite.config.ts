@@ -33,6 +33,6 @@ export default defineConfig({
   // base: "/demo",
   envPrefix: 'ONSET_',
   server: {
-    port: 5173,
+    port: 5174,
   }
 })

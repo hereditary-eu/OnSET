@@ -15,6 +15,8 @@
                     </span>
                     <OnsetBtn size="small" :toggleable="false" icon="mdi-refresh" title="Extract the knowledge graph again"
                         :active="!!state" @click="rebuild">Rebuild</OnsetBtn>
+                    <OnsetBtn v-model="hist.open" size="small" icon="mdi-history" :active="!!state"
+                        title="Edit history of the ontology: your edits and the agent's">History</OnsetBtn>
                     <span class="toolbar_spacer"></span>
                     <OnsetBtn v-model="dis.open" size="small" icon="mdi-merge" :active="!!state"
                         title="How extracted names of the same entity are merged (disambiguation)">Merging</OnsetBtn>
@@ -29,6 +31,26 @@
                     <p v-if="error" class="message builder_error builder_banner">{{ error }}</p>
                     <OntologyEditor v-if="state" v-model="state.ontology" @query="cardQuery" />
                     <p v-else-if="!error" class="message">Loading the session…</p>
+
+                    <!-- edit history: the time embedding curve or the list of ontology states -->
+                    <div v-if="hist.open && state" class="builder_history">
+                        <HistoryView :history="history" @revert="restoreEntry" @show-tooltip="showTooltip"
+                            @show-in-chat="showInChat">
+                            <template #actions>
+                                <OnsetBtn size="small" :toggleable="false" icon="mdi-delete-sweep-outline"
+                                    title="Clear the history (keeps the ontology)" @click="clearHistory" />
+                                <OnsetBtn size="small" :toggleable="false" icon="mdi-close" @click="hist.open = false" />
+                            </template>
+                            <template #entry="{ entry }">
+                                <OntologyHistoryElement :entry="entry" @revert="restoreEntry" @show-in-chat="showInChat" />
+                            </template>
+                        </HistoryView>
+                        <div v-if="hist.tooltip" class="history_tooltip" @mouseleave="hist.tooltip = null"
+                            :style="`top: ${hist.tooltip.y}px; left: ${hist.tooltip.x}px;`">
+                            <OntologyHistoryElement :entry="hist.tooltip.entry" @revert="restoreEntry"
+                                @show-in-chat="showInChat" />
+                        </div>
+                    </div>
 
                     <div v-if="sess.open" class="builder_io">
                         <div class="toolbar"><b>Session</b><span class="toolbar_spacer"></span>
@@ -134,7 +156,7 @@
     </div>
 </template>
 <script setup lang="ts">
-import { computed, onBeforeUnmount, provide, reactive, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, provide, reactive, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import OnsetBtn from '@/components/ui/OnsetBtn.vue'
 import OnsetIcon from '@/components/ui/OnsetIcon.vue'
@@ -145,10 +167,15 @@ import OntologyEditor from '@/components/builder/OntologyEditor.vue'
 import BuilderResults from '@/components/builder/BuilderResults.vue'
 import TextSearch from '@/components/builder/TextSearch.vue'
 import InstanceSources from '@/components/builder/InstanceSources.vue'
+import OntologyHistoryElement from '@/components/builder/OntologyHistoryElement.vue'
+import HistoryView from '@/components/explore/history/HistoryView.vue'
 import { AgentSession } from '@/utils/agent/agentSession'
 import { setActiveConfig } from '@/utils/api'
 import { OntoConfig } from '@/utils/sparql/ontoconfig'
 import { LINK_COUNTS_KEY, linkCountLookup, type LinkCountLookup } from '@/utils/sparql/link-strength'
+import { flashChatEntries, type EditProvenance } from '@/utils/sparql/provenance'
+import { OntologyHistory, type AgentToolCall, type OntologyHistoryEntry } from '@/utils/builder/history'
+import { HistorySync, type StoredHistoryEntry } from '@/utils/historySync'
 import {
     builderSession, DISAMBIGUATION_MODES, INSPECT_INSTANCE, listBuilders, SESSION_ID_PATTERN,
     type BuilderSummary, type DisambiguationMode, type DisambiguationSettings, type DisambiguationState,
@@ -199,6 +226,54 @@ const status = computed(() => result.value?.status ?? state.value?.status)
 
 const describe = (e: unknown) => (e as { response?: { data?: { detail?: unknown } } }).response?.data?.detail?.toString() ?? `${e}`
 
+// --- edit history of the ontology (saved with the session on the server, which adds its own
+// timestamps; utils/historySync.ts): an entry per change, tagged
+// with its source. Local edits are the user's (recorded when they are PUT, so typing coalesces);
+// server states that replace the local ontology are the agent's while it runs a turn (or come
+// as its builder_state), the user's otherwise (e.g. another tab); a restore is a revert.
+type EditSource = Omit<EditProvenance, 'ops'>
+// where the browser kept the history before the session saved it (moved into the session on load)
+const legacy_history_key = (sid: string) => `onset:builder:${builderId}:history:${sid}`
+const history = ref(new OntologyHistory())
+// saves the history of the current session (bound to that session and its history object)
+let history_sync: HistorySync | null = null
+const hist = reactive({ open: false, tooltip: null as { x: number, y: number, entry: OntologyHistoryEntry } | null })
+// the source of the next PUT (a restore), else the user's
+let pending_source: EditSource | null = null
+// the agent's finished tool calls not yet in an entry, to link its entries to the chat
+let agent_calls: { call_id: string, name: string }[] = []
+
+const saveHistory = () => history_sync?.schedule()
+/** The saved history of session ``sid`` and its sync; a history of the browser is moved into the session. */
+const loadHistory = async (sid: string) => {
+    const session = builderSession(builderId, sid)
+    let stored: StoredHistoryEntry[] = []
+    try {
+        stored = await session.history()
+    } catch (e) {
+        console.warn('Loading the ontology history failed', e)
+    }
+    const legacy = stored.length ? null : OntologyHistory.parseLegacy(localStorage.getItem(legacy_history_key(sid)))
+    const loaded = legacy ?? OntologyHistory.fromStored(stored)
+    const sync = new HistorySync(() => loaded.toStored(), session.patchHistory)
+    sync.reset(stored)
+    if (legacy) {
+        sync.flush().then(() => !sync.failed && localStorage.removeItem(legacy_history_key(sid)))
+    }
+    return { loaded, sync }
+}
+const recordHistory = (ontology: Ontology, source: EditSource) => {
+    const by_agent = source.source == 'agent'
+    const calls: AgentToolCall[] = by_agent ? agent_calls.map((c) => ({
+        ...c, entry_id: agent.state.entries.find((e) => e.kind == 'tool' && e.call.call_id == c.call_id)?.id,
+    })) : []
+    if (history.value.record(ontology, source, calls) && by_agent) {
+        agent_calls = []
+    }
+    saveHistory()
+}
+const remoteSource = (): EditSource => ({ source: agent.state.busy ? 'agent' : 'user' })
+
 // --- ontology sync: local edits are PUT (debounced); server states are adopted unless there are unsent edits ---
 const ontoKey = (o: Ontology) => JSON.stringify(o)
 let sent_key = ''
@@ -207,10 +282,12 @@ let pending = 0
 
 // keeps the local ontology object when the server's is identical: replacing it on every poll
 // re-renders the editor and resets inputs that are being typed into
-const adopt = (s: SessionState) => {
+// ``source``: who changed the ontology if it replaces the local one (default: see remoteSource)
+const adopt = (s: SessionState, source?: EditSource) => {
     if (!state.value) {
         state.value = s
         sent_key = ontoKey(s.ontology)
+        recordHistory(s.ontology, { source: 'import' })
         return
     }
     const { ontology, ...rest } = s
@@ -219,6 +296,7 @@ const adopt = (s: SessionState) => {
         const remote = ontoKey(ontology)
         if (remote != local) {
             state.value.ontology = ontology
+            recordHistory(ontology, source ?? remoteSource())
         }
         sent_key = remote
     }
@@ -234,9 +312,11 @@ const putOntology = async () => {
         return
     }
     sent_key = ontoKey(state.value.ontology)
+    recordHistory(state.value.ontology, pending_source ?? { source: 'user' })
+    pending_source = null
     pending++
     try {
-        adopt(await api.value.setOntology(state.value.ontology))
+        adopt(await api.value.setOntology(state.value.ontology), { source: 'user' })
         error.value = ''
     } catch (e) {
         error.value = `Saving the ontology failed: ${describe(e)}`
@@ -352,7 +432,14 @@ const switchSession = async (sid: string) => {
     if (put_timer && sessionId.value) {
         await putOntology()
     }
+    await history_sync?.flush()
+    const { loaded, sync } = await loadHistory(sid)
     localStorage.setItem(storage_key, sid)
+    history.value = loaded
+    history_sync = sync
+    hist.tooltip = null
+    pending_source = null
+    agent_calls = []
     sessionId.value = sid
     state.value = null
     result.value = null
@@ -515,18 +602,52 @@ const agent = new AgentSession({
     session_id: (sid) => sid,
     onMessage: (m) => {
         if (m.type == 'builder_state') {
-            adopt(m.state)
+            adopt(m.state, { source: 'agent' })
             loadResults()
         } else if (m.type == 'tool_call' && m.status == 'success') {
+            agent_calls.push({ call_id: m.call_id, name: m.name })
             poll()
+        } else if (m.type == 'done') {
+            agent_calls = []
         }
     },
 })
 watch(sessionId, (sid) => sid && agent.connect(sid), { immediate: true })
+// --- history actions ---
+/** Restores the ontology of an entry like an edit (PUT, which restarts the build). */
+const restoreEntry = (entry: OntologyHistoryEntry) => {
+    if (!state.value) {
+        return
+    }
+    hist.tooltip = null
+    pending_source = {
+        source: 'revert', reverted_to: entry.timestamp,
+        reverted_from: JSON.parse(JSON.stringify(entry.provenance)),
+    }
+    state.value.ontology = JSON.parse(JSON.stringify(entry.ontology))
+    putOntology()
+}
+const clearHistory = () => {
+    // the same history object: its sync is bound to it
+    history.value.entries = []
+    if (state.value) {
+        recordHistory(state.value.ontology, { source: 'import' })
+    }
+}
+const showTooltip = (evt: { position: { x: number, y: number }, entry: OntologyHistoryEntry }) =>
+    hist.tooltip = { x: evt.position.x, y: evt.position.y, entry: evt.entry }
+// history entry -> the agent's tool calls in the chat (entry ids are only valid in this browser session)
+const showInChat = (chat_entry_ids: string[]) => {
+    side_tab.value = 'chat'
+    side_collapsed.value = false
+    nextTick(() => flashChatEntries(chat_entry_ids))
+}
+
 provide('builderExportUrl', (content: ExportContent, prefix: string) => api.value.exportUrl(content, prefix))
 
 onBeforeUnmount(() => {
     clearInterval(poll_timer)
+    history_sync?.flush()
     agent.disconnect()
     setActiveConfig(null)
 })
@@ -578,6 +699,17 @@ onBeforeUnmount(() => {
     left: 0;
     z-index: 10;
     background: var(--c-surface);
+}
+
+.builder_history {
+    position: absolute;
+    z-index: 15;
+    top: var(--space-1);
+    left: var(--space-1);
+    bottom: var(--space-1);
+    width: min(32rem, 70%);
+    background: var(--c-surface);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
 }
 
 .builder_io {

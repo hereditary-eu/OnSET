@@ -1,11 +1,55 @@
 import type { FuzzyQueryResult, Subject } from "@/api/client.ts/Api";
 import { jsonClone, registerClass } from "../parsing";
 import { OpenEventType } from "./helpers";
-import { Link, LinkTriplet, LinkType, QueryProp, QuerySet, SubjectConstraint, SubjectNode, SubQuery, type QuerySetGenerator } from "./representation";
+import { aggregateExpression, AggregateFunction, isAggregated, isTensorAggregate, Link, LinkTriplet, LinkType, QueryProp, QuerySet, SubjectConstraint, SubjectNode, SubQuery, TENSOR_AGGREGATES_NS, VectorSort, VectorSortDirection, type QuerySetGenerator } from "./representation";
+import { toVar } from "./helpers";
 import type { Diffable } from "./diff";
 import { linkGeometry, parallelIndex, type Box, type LinkGeometry } from "../graph-layout";
 import { el } from "vuetify/locale";
 
+
+/**
+ * The projection of an aggregate query (see AggregateFunction). Every projected variable is
+ * either grouped or aggregated; an aggregated variable keeps its name as the alias of its
+ * aggregate, `(AVG(?p_3__agg) AS ?p_3)`, and is renamed in the WHERE clause (SPARQL forbids
+ * an alias that is bound in the pattern), so results have the same columns as without
+ * aggregation and map onto the query graph unchanged.
+ *
+ * Labels are OPTIONAL joins that would multiply the solutions (one per label/language) and
+ * so change the aggregates: only grouped nodes have one, looked up after the grouping in an
+ * outer query, `SELECT ... (SAMPLE(?lbl__agg) AS ?lbl) WHERE { { SELECT ... GROUP BY ... }
+ * OPTIONAL { ?n rdfs:label ?lbl__agg } } GROUP BY <the inner columns>`.
+ */
+export interface AggregationPlan {
+    // projected terms (of the inner query if there are labels) in the order of the plain query
+    select: string[]
+    // GROUP BY variables (of the inner query)
+    group_by: string[]
+    // variables of the WHERE clause that are aggregated -> their name in it
+    renames: Record<string, string>
+    // projected variables (the aliases of aggregates and the labels included)
+    projected: Set<string>
+    // a dta: (tensor) aggregate is used
+    tensor: boolean
+    // labels of the grouped nodes (outer query): node variable, label variable
+    labels: { node: string, label: string }[]
+    // projection of the outer query (if there are labels)
+    outer_select: string[]
+}
+export const AGGREGATE_VAR_SUFFIX = "__agg"
+// string literals and IRIs, in which variables are not renamed
+const LITERAL_OR_IRI = /"(?:[^"\\]|\\.)*"|<[^<>\s"]*>/g
+/** Renames variables (with their ?) outside of string literals and IRIs. */
+export function renameVariables(text: string, renames: Record<string, string>): string {
+    const rename = (part: string) => part.replace(/\?[A-Za-z_][A-Za-z0-9_]*/g, (v) => renames[v] ?? v)
+    let out = ""
+    let last = 0
+    for (const match of text.matchAll(LITERAL_OR_IRI)) {
+        out += rename(text.slice(last, match.index)) + match[0]
+        last = match.index! + match[0].length
+    }
+    return out + rename(text.slice(last))
+}
 
 // the box of a query node that its links attach to (without its constraints)
 export const nodeBox = (node: SubjectNode): Box => ({ x: node.x, y: node.y, w: node.width, h: node.height })
@@ -211,13 +255,100 @@ export class NodeLinkRepository<N extends SubjectNode = SubjectNode, L extends L
         return geometry.label
     }
 
+    /** Whether a node or a property is grouped or aggregated (generateQuery then aggregates). */
+    hasAggregation(): boolean {
+        return this.nodes.some((node) => isAggregated(node) ||
+            (node.subqueries || []).some((sq) => sq != null && sq.aggregatable && isAggregated(sq)))
+    }
+    /**
+     * Aggregate of a node's variable in an aggregate query (null if grouped). A node that is
+     * neither grouped nor aggregated is counted (COUNT DISTINCT, e.g. the ships per homeport),
+     * unless one of its properties is grouped: then the group (nearly) determines it and it is
+     * sampled (e.g. the place of a grouped place label).
+     */
+    nodeAggregate(node: SubjectNode): AggregateFunction | null {
+        if (node.group_by) {
+            return null
+        }
+        if (node.aggregate) {
+            return node.aggregate
+        }
+        const grouped_property = (node.subqueries || []).some((sq) => sq != null && sq.aggregatable && sq.group_by)
+        return grouped_property ? AggregateFunction.SAMPLE : AggregateFunction.COUNT_DISTINCT
+    }
+    /**
+     * Projection of the aggregate query of a query set: grouped nodes/properties as they are,
+     * everything not grouped through its aggregate (properties: SAMPLE by default, nodes: see
+     * nodeAggregate); labels only for grouped
+     * nodes (see AggregationPlan). Vector sorts order the groups by their best similarity (MAX,
+     * MIN if ascending).
+     */
+    aggregationPlan(set: QuerySet = this.querySet()): AggregationPlan {
+        type Mode = "group" | "label" | "drop" | AggregateFunction
+        const modes = new Map<string, Mode>()
+        const nodes = Object.values(set.nodes)
+        const label_of = new Map<string, string>()
+        for (const node of nodes) {
+            modes.set(node.outputId(), this.nodeAggregate(node) ?? "group")
+            modes.set(node.labelId(), node.group_by ? "label" : "drop")
+            label_of.set(node.labelId(), node.outputId())
+        }
+        const extra: string[] = []
+        for (const constraint of set.filter) {
+            const variable = constraint.link.outputId()
+            if (!constraint.aggregatable) {
+                modes.set(variable, "drop")
+            } else if (!modes.has(variable)) {
+                modes.set(variable, constraint.group_by ? "group" : (constraint.aggregate ?? AggregateFunction.SAMPLE))
+            }
+            if (constraint instanceof VectorSort && constraint.postQueryExpression(constraint.propVar()).length > 0) {
+                const sim = `?sim_${toVar(constraint.id)}`
+                modes.set(sim, constraint.direction == VectorSortDirection.ASCENDING ? AggregateFunction.MIN : AggregateFunction.MAX)
+                extra.push(sim)
+            }
+        }
+        const plan: AggregationPlan = {
+            select: [], group_by: [], renames: {}, projected: new Set(), tensor: false, labels: [], outer_select: [],
+        }
+        for (const variable of [...nodes.map((nd) => nd.outputId()), ...set.output_ids, ...extra]) {
+            const mode = modes.get(variable) ?? AggregateFunction.SAMPLE
+            if (mode == "drop" || plan.projected.has(variable)) {
+                continue
+            }
+            plan.projected.add(variable)
+            if (mode == "label") {
+                plan.labels.push({ node: label_of.get(variable)!, label: variable })
+                plan.outer_select.push(`(SAMPLE(${variable}${AGGREGATE_VAR_SUFFIX}) AS ${variable})`)
+                continue
+            }
+            plan.outer_select.push(variable)
+            if (mode == "group") {
+                plan.group_by.push(variable)
+                plan.select.push(variable)
+                continue
+            }
+            const inner = `${variable}${AGGREGATE_VAR_SUFFIX}`
+            plan.renames[variable] = inner
+            plan.select.push(`(${aggregateExpression(mode, inner)} AS ${variable})`)
+            plan.tensor = plan.tensor || isTensorAggregate(mode)
+        }
+        return plan
+    }
+
     generateQuery(limit: number | null = 100, skip: number | null = null, distinct: boolean = true): string {
         let set = this.querySet()
         let output_names = Object.values(set.nodes).map(nd => nd.outputId())
+        // without any group by/aggregate the query is the plain one
+        const plan = this.hasAggregation() ? this.aggregationPlan(set) : null
         let query = `
         PREFIX tensorIndex: <https://qlever.cs.uni-freiburg.de/tensorIndex/>
-        PREFIX dtf: <https://w3id.org/rdf-tensor/functions#>
-        SELECT ${distinct ? "DISTINCT" : ""} ${output_names.join(" ")} ${set.output_ids.join(" ")} WHERE {`
+        PREFIX dtf: <https://w3id.org/rdf-tensor/functions#>${plan?.tensor ? `
+        PREFIX dta: <${TENSOR_AGGREGATES_NS}>` : ""}
+        SELECT ${distinct && !plan ? "DISTINCT" : ""} ${plan ? (plan.labels.length ? plan.outer_select : plan.select).join(" ") : `${output_names.join(" ")} ${set.output_ids.join(" ")}`} WHERE {`
+        if (plan && plan.labels.length) {
+            query += `\n{ SELECT ${plan.select.join(" ")} WHERE {`
+        }
+        const body_start = query.length
 
         for (let link of set.link_triplets) {
             if (link.semantic_link_type === LinkType.STRUCTURAL) {
@@ -245,6 +376,11 @@ export class NodeLinkRepository<N extends SubjectNode = SubjectNode, L extends L
         for (let node of Object.values(set.nodes)) {
             if (set.nodes.hasOwnProperty(node.internal_id)) {
                 // console.log(internal_id, set.internal_ids[internal_id])
+                if (plan) {
+                    // labels would multiply the solutions, see AggregationPlan
+                    query += `\n${node.outputId()} a ${node.subject_id}.`
+                    continue
+                }
                 query += `\n${node.outputId()} a ${node.subject_id}.
     OPTIONAL {${node.outputId()} rdfs:label ${node.labelId()}.}`
                 query += `\nOPTIONAL {${node.outputId()} foaf:name ${node.labelId()}.}`
@@ -266,12 +402,33 @@ export class NodeLinkRepository<N extends SubjectNode = SubjectNode, L extends L
                 ${constraint.expression(constrained_id)}`
             }
         }
+        if (plan) {
+            query = query.slice(0, body_start) + renameVariables(query.slice(body_start), plan.renames)
+        }
         query += "\n}"
+        if (plan && plan.group_by.length > 0) {
+            query += "\nGROUP BY " + plan.group_by.join(" ")
+        }
+        if (plan && plan.labels.length) {
+            // the labels of the groups (grouped nodes)
+            query += "\n}"
+            for (const { node, label } of plan.labels) {
+                query += `\nOPTIONAL {${node} rdfs:label ${label}${AGGREGATE_VAR_SUFFIX}.}`
+                query += `\nOPTIONAL {${node} foaf:name ${label}${AGGREGATE_VAR_SUFFIX}.}`
+            }
+            query += "\n}\nGROUP BY " + plan.outer_select.filter((term) => !term.startsWith("(")).join(" ")
+        }
         const post_query_expressions = set.filter.map((constraint) => constraint.postQueryExpression(constraint.propVar())).filter(expr => expr.length > 0)
         if (post_query_expressions.length > 0) {
             query += "\n" + post_query_expressions.join("\n")
-        } else {
+        } else if (!plan) {
             query += "\nORDER BY " + set.output_ids.join(" ")
+        } else {
+            // by the projected variables only (only grouped nodes have labels)
+            const order_ids = set.output_ids.filter((id) => plan.projected.has(id))
+            if (order_ids.length > 0) {
+                query += "\nORDER BY " + order_ids.join(" ")
+            }
         }
         if (limit) {
             query += `\nLIMIT ${limit}`

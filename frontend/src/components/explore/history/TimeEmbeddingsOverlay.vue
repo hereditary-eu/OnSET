@@ -5,40 +5,35 @@
         </svg>
     </div>
 </template>
-<script setup lang="ts">
-import { watch, reactive, defineProps, onMounted, ref } from 'vue'
-import { HistoryEntry, QueryHistory } from '@/utils/sparql/history';
-import HistoryElement from './HistoryElement.vue';
+<script setup lang="ts" generic="E extends TimelineEntry">
+// The time embedding curve of a history (the query builder's or the ontology builder's): its
+// entries in a 2D manifold of their embeddings, connected in time order, with provenance glyphs.
+import { watch, onMounted, ref } from 'vue'
 import * as d3 from 'd3'
-import { Vector2 } from 'three';
+import { Vector2, type Vector2Like } from 'three';
 import { CatmullRomSplits } from '@/utils/d3-man/CatmullRomSplits';
 import { ManifoldAlg } from '@/api/client.ts/Api';
-import type { HistoryTooltipEvent } from '@/utils/sparql/helpers';
+import type { TimelineEntry, TimelineHistory } from '@/utils/sparql/timeline';
+import {
+    groupedOps, mdiGlyph, MDI_FONT_FAMILY, provenanceSummary, SOURCE_STYLES,
+} from '@/utils/sparql/provenance';
 const svg_ref = ref(null as SVGSVGElement | null)
 const tooltip_div = ref(null as HTMLDivElement | null)
 const history_overview_box = ref(null as SVGGElement | null)
-enum HistoryMode {
-    OVERVIEW = 'Overview',
-    DETAILED = 'Detailed',
-}
-const { history } = defineProps({
-    history: {
-        type: Object as () => QueryHistory,
-        required: true
-    },
-})
-const ui_state = reactive({
-    history_mode: HistoryMode.DETAILED,
-    tooltip: {
-        visible: false,
-        position: { x: 0, y: 0 },
-        entry: null as HistoryEntry | null,
-    }
-})
+const { history } = defineProps<{ history: TimelineHistory<E> }>()
 
 const emit = defineEmits<{
-    showTooltip: [HistoryTooltipEvent],
+    showTooltip: [{ position: Vector2Like, entry: E, event: MouseEvent }],
+    showInChat: [string[]],
 }>()
+
+// colours of the op glyphs by direction (the colour-blind mode overrides the variables)
+const OP_COLOURS = {
+    add: 'var(--c-link-added)',
+    remove: 'var(--c-link-removed)',
+    change: 'var(--c-constraint)',
+}
+const MAX_OP_GLYPHS = 4
 
 function updateSvgSize() {
     const rect = history_overview_box.value?.getBoundingClientRect();
@@ -54,13 +49,12 @@ function recomputeEmbeddings() {
     (async () => {
         const embeddings = await history.dimReduceEmbeddings(2, ManifoldAlg.Smacof)
 
-        const embeddings_mapped = embeddings.map((emb, idx) => {
+        const embeddings_mapped = embeddings.map((emb) => {
             return {
                 ...emb,
-                r: 5 + Math.log(history.entries[idx].query.nodes.length || 0 + 1) * 3 || 5,
+                r: 5 + Math.log(history.entrySize(emb.entry) + 1) * 3,
             }
         })
-        type embeddings_rval = typeof embeddings[0]
         //normalize embeddings to [0,1] and scale to fit in svg
         const xExtent = d3.extent(embeddings, (d) => d.v.x);
         const yExtent = d3.extent(embeddings, (d) => d.v.y);
@@ -86,16 +80,14 @@ function recomputeEmbeddings() {
                 let entry = embeddings[segment.idx + 1].entry;
                 let segment_color = "darkorange"
                 let change_size = 0
-                if (entry.previous_diff) {
-                    const diff = entry.previous_diff
-                    change_size = Object.keys(diff.change_set).length || 1
-                    if (diff.diff_nodes.added.length > 0 || diff.diff_links.added.length > 0) {
+                const change = history.entryChange(entry)
+                if (change) {
+                    change_size = change.size
+                    if (change.added) {
                         segment_color = "darkgreen"
-
-                    } else if (diff.diff_nodes.changed.length > 0 || diff.diff_links.changed.length > 0) {
+                    } else if (change.changed) {
                         segment_color = "darkred"
                     }
-
                 }
                 const segment_path = root_g.append("path")
                     .attr("d", segment.path.toString() || "")
@@ -140,6 +132,82 @@ function recomputeEmbeddings() {
                     // ui_state.tooltip.visible = false
                     // ui_state.tooltip.entry = null
                 });
+            circles.append("title").text((d) => provenanceSummary(d.entry.provenance))
+
+            // provenance glyphs (mdi webfont as SVG text): a source badge at the upper right of
+            // non-user entries (robot for the agent) and the op icons of the edit to the right
+            const marked = embeddings_mapped.filter((d) => d.entry.provenance && d.entry.provenance.source != 'user')
+            const glyphs = root_g.selectAll<SVGGElement, typeof marked[0]>("g.history_glyphs")
+                .data(marked)
+                .join("g")
+                .attr("class", (d) => `history_glyphs history_glyphs_${d.entry.provenance.source}`)
+                .attr("transform", (d) => `translate(${xScale(d.v.x)},${yScale(d.v.y)})`)
+            glyphs.append("title").text((d) => provenanceSummary(d.entry.provenance))
+            const BADGE_R = 6
+            const badge = glyphs.append("g")
+                .attr("class", "history_glyph_badge")
+                .attr("transform", (d) => `translate(${d.r * 0.75},${-d.r * 0.75})`)
+                .style("cursor", (d) => d.entry.provenance.chat_entry_ids?.length ? "pointer" : "default")
+                .on("click", (event: MouseEvent, d) => {
+                    const ids = d.entry.provenance.chat_entry_ids
+                    if (ids?.length) {
+                        event.stopPropagation()
+                        emit("showInChat", ids)
+                    }
+                })
+            badge.append("circle")
+                .attr("r", BADGE_R)
+                .attr("stroke", "white")
+                .style("fill", (d) => d.entry.provenance.source == 'agent' ? "var(--c-accent)" : "var(--c-link-normal)")
+            badge.append("text")
+                .attr("text-anchor", "middle")
+                .attr("dominant-baseline", "central")
+                .attr("font-family", MDI_FONT_FAMILY)
+                .attr("font-size", BADGE_R * 1.6)
+                .attr("fill", "white")
+                .text((d) => mdiGlyph((SOURCE_STYLES[d.entry.provenance.source] ?? SOURCE_STYLES.user).icon))
+            // op icons, grouped by kind; a revert shows those of the entry it went back to
+            glyphs.each(function (d) {
+                const prov = d.entry.provenance
+                const groups = groupedOps(prov.source == 'revert' ? prov.reverted_from : prov)
+                const shown = groups.slice(0, MAX_OP_GLYPHS)
+                const row = d3.select(this).append("g")
+                    .attr("class", "history_glyph_ops")
+                    .attr("transform", `translate(${d.r * 0.75 + BADGE_R + 2},${-d.r * 0.75})`)
+                    .attr("opacity", prov.source == 'revert' ? 0.6 : 1)
+                // light backdrop so the icons stay readable over curves
+                row.append("rect")
+                    .attr("x", -1).attr("y", -7)
+                    .attr("width", shown.length * 12 + (groups.length > shown.length ? 12 : 0) + 2)
+                    .attr("height", 14).attr("rx", 3)
+                    .attr("fill", "white").attr("opacity", shown.length ? 0.8 : 0)
+                shown.forEach((group, i) => {
+                    const text = row.append("text")
+                        .attr("x", i * 12)
+                        .attr("dominant-baseline", "central")
+                        .attr("font-family", MDI_FONT_FAMILY)
+                        .attr("font-size", 12)
+                        .style("fill", OP_COLOURS[group.style.direction])
+                        .text(mdiGlyph(group.style.icon))
+                    text.append("title").text(group.ops
+                        .map((op) => `${group.style.label}${op.label ? `: ${op.label}` : ''}`).join("\n"))
+                    if (group.ops.length > 1) {
+                        row.append("text")
+                            .attr("x", i * 12 + 9).attr("y", 6)
+                            .attr("font-size", 7)
+                            .style("fill", OP_COLOURS[group.style.direction])
+                            .text(group.ops.length)
+                    }
+                })
+                if (groups.length > shown.length) {
+                    row.append("text")
+                        .attr("x", shown.length * 12)
+                        .attr("dominant-baseline", "central")
+                        .attr("font-size", 9)
+                        .attr("fill", "dimgrey")
+                        .text(`+${groups.length - shown.length}`)
+                }
+            })
         }
 
 

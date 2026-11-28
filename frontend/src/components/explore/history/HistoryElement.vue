@@ -6,6 +6,8 @@
             <OnsetBtn @click="emit('compare', entry)" size="small" :toggleable="false" icon="mdi-compare">Compare
             </OnsetBtn>
         </div>
+        <HistoryProvenance class="history_prov_corner" :provenance="entry.provenance"
+            @show-in-chat="emit('showInChat', $event)"></HistoryProvenance>
         <svg class="fill_svg" ref="svg_ref">
             <g :transform="`translate(${entry.offset.x},${entry.offset.y}) scale(${entry.scale})`">
                 <GraphView :store="entry.query" :display-mode="DisplayMode.SELECT" :diff="entry.previous_diff">
@@ -20,6 +22,7 @@ import { DisplayMode } from '@/utils/sparql/helpers';
 import GraphView from '../elements/GraphView.vue';
 import type { HistoryEntry } from '@/utils/sparql/history';
 import OnsetBtn from '@/components/ui/OnsetBtn.vue';
+import HistoryProvenance from './HistoryProvenance.vue';
 const svg_ref = ref('') as unknown as Ref<HTMLElement>
 
 const { entry } = defineProps({
@@ -35,7 +38,8 @@ const ui_state = ref({
 
 const emit = defineEmits<{
     revert: [HistoryEntry],
-    compare: [HistoryEntry]
+    compare: [HistoryEntry],
+    showInChat: [string[]],
 }>()
 
 function rescaleToFit() {
@@ -70,6 +74,13 @@ onMounted(() => {
     padding: var(--space-1);
     border-bottom: 1px solid var(--c-border);
     cursor: pointer;
+}
+
+.history_prov_corner {
+    position: absolute;
+    top: var(--space-1);
+    left: var(--space-1);
+    z-index: 1;
 }
 
 .history_edit_btns {

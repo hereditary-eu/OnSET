@@ -8,12 +8,15 @@
 // options, untouched subqueries) are kept. Changes may also carry subquery
 // additions/removals of single subjects (GraphChange.subqueries: the constraints the agent
 // adds with its constraint tools, or those of the progressive panel), which are applied to
-// those subjects' nodes the same way.
+// those subjects' nodes the same way. Grouping/aggregates (group_by, aggregate) of subjects
+// and subqueries that are in both graphs are updated in place (GraphChange.updated, and
+// subquery changes that add an already present subquery).
 import { NodeLinkRepository } from '@/utils/sparql/store'
 import { type Link, type SubjectNode } from '@/utils/sparql/representation'
 import {
-    fromGraphSubQuery, linkFor, linkGraphId, placeNodes, subjectNodeFor, toGraphSubject, toQueryGraph,
+    applyAggregation, fromGraphSubQuery, linkFor, linkGraphId, placeNodes, subjectNodeFor, toGraphSubject, toQueryGraph,
 } from '@/utils/sparql/querygraph'
+import { aggregationChanged } from '@/utils/sparql/representation'
 import type {
     AgentLink, AgentQueryGraph, AgentSubject, AgentSubQuery, GraphChange, GraphDetails, SubQueryChange,
 } from './protocol'
@@ -41,7 +44,7 @@ function canonicalSubQuery(subquery: AgentSubQuery) {
 export function graphKey(graph: AgentQueryGraph): string {
     const subjects = [...graph.subjects]
         .sort((a, b) => a.id.localeCompare(b.id))
-        .map((s) => [s.id, s.uri, s.label, (s.subqueries || []).map(canonicalSubQuery)])
+        .map((s) => [s.id, s.uri, s.label, (s.subqueries || []).map(canonicalSubQuery), !!s.group_by, s.aggregate ?? null])
     const links = [...graph.links]
         .sort((a, b) => a.id.localeCompare(b.id))
         .map((l) => [l.id, l.uri, l.from_subject_id, l.to_subject_id,
@@ -58,7 +61,11 @@ export function graphKey(graph: AgentQueryGraph): string {
 function diffSubQueries(before: AgentSubject | undefined, after: AgentSubject): SubQueryChange[] {
     const old = new Set((before?.subqueries || []).map((sq) => String(sq.id)))
     const now = new Set((after.subqueries || []).map((sq) => String(sq.id)))
+    // same id, other grouping/aggregate: an add of the present subquery updates it
+    const regrouped = (after.subqueries || []).filter((sq) => old.has(String(sq.id)) &&
+        aggregationChanged(before!.subqueries!.find((b) => String(b.id) == String(sq.id)), sq))
     return [
+        ...regrouped.map((subquery) => ({ operation: 'add' as const, subject_id: after.id, subquery })),
         ...(before?.subqueries || []).filter((sq) => !now.has(String(sq.id)))
             .map((subquery) => ({ operation: 'remove' as const, subject_id: after.id, subquery })),
         ...(after.subqueries || []).filter((sq) => !old.has(String(sq.id)))
@@ -87,23 +94,29 @@ export function diffAgentGraphs(before: AgentQueryGraph, after: AgentQueryGraph)
         },
         context: [],
         subqueries: after.subjects.flatMap((s) => diffSubQueries(before_by_id.get(s.id), s)),
+        updated: after.subjects.filter((s) => before_by_id.has(s.id) && aggregationChanged(before_by_id.get(s.id), s)),
     }
 }
 
 export function isEmptyChange(change: GraphChange): boolean {
     return change.added.subjects.length == 0 && change.added.links.length == 0
         && change.removed.subjects.length == 0 && change.removed.links.length == 0
-        && !change.subqueries?.length
+        && !change.subqueries?.length && !change.updated?.length
 }
 
-/** Applies subquery changes to a node in place; already present (added) or gone (removed) ones are skipped. */
+/**
+ * Applies subquery changes to a node in place; gone (removed) ones are skipped, already present
+ * (added) ones only take the grouping/aggregate of the change if it carries one.
+ */
 function applySubQueryChanges(node: SubjectNode, changes: SubQueryChange[]) {
     for (const { operation, subquery } of changes) {
-        const present = (node.subqueries || []).some((sq) => subquery.id != null && String(sq.id) == String(subquery.id))
+        const present = (node.subqueries || []).find((sq) => subquery.id != null && String(sq.id) == String(subquery.id))
         if (operation == 'remove') {
             node.subqueries = (node.subqueries || []).filter((sq) => String(sq.id) != String(subquery.id))
         } else if (!present) {
             node.subqueries = [...(node.subqueries || []), fromGraphSubQuery(subquery, node)]
+        } else if ('group_by' in subquery || 'aggregate' in subquery) {
+            applyAggregation(present, subquery)
         }
     }
 }
@@ -153,6 +166,13 @@ export function applyGraphChange(store: NodeLinkRepository, change: GraphChange,
             continue
         }
         applySubQueryChanges(node, [subquery])
+    }
+
+    for (const subject of change.updated ?? []) {
+        const node = store.nodes.find((n) => n.internal_id == subject.id)
+        if (node) {
+            applyAggregation(node, subject)
+        }
     }
 }
 

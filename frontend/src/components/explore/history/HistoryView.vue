@@ -15,21 +15,31 @@
                 <OnsetBtn @click="submit_query" :toggleable="false" size="small">Search</OnsetBtn>
             </div>
             <Loading v-if="ui_state.similar_entries.loading"></Loading>
-            <HistoryElement v-for="(entry, index) of history_filtered" :key="index" :entry="(entry as HistoryEntry)"
-                @revert="emit('revert', $event)" @compare="emit('compare', $event)">
-            </HistoryElement>
+            <template v-for="(entry, index) of history_filtered" :key="index">
+                <!-- the element of an entry; the query history's by default -->
+                <slot name="entry" :entry="(entry as E)">
+                    <HistoryElement :entry="(entry as unknown as HistoryEntry)"
+                        @revert="emit('revert', $event as unknown as E)" @compare="emit('compare', $event as unknown as E)"
+                        @show-in-chat="emit('showInChat', $event)">
+                    </HistoryElement>
+                </slot>
+            </template>
         </div>
         <div v-else class="panel_body">
-            <TimeEmbeddingsOverlay :history="(history as QueryHistory)" @show-tooltip='emit("showTooltip", $event)'>
+            <TimeEmbeddingsOverlay :history="history" @show-tooltip='emit("showTooltip", $event)'
+                @show-in-chat="emit('showInChat', $event)">
             </TimeEmbeddingsOverlay>
         </div>
     </section>
 </template>
-<script setup lang="ts">
-import { reactive, computed } from 'vue'
+<script setup lang="ts" generic="E extends TimelineEntry">
+// History panel of the query builder (QueryHistory, default) or the ontology builder (its own
+// entry elements in the `entry` slot): the time embedding curve or the list of entries.
+import { reactive, computed, shallowRef } from 'vue'
+import type { Vector2Like } from 'three';
 import SelectorGroup from '@/components/ui/SelectorGroup.vue';
-import { HistoryEntry, QueryHistory } from '@/utils/sparql/history';
-import { HistoryTooltipEvent } from '@/utils/sparql/helpers';
+import type { HistoryEntry } from '@/utils/sparql/history';
+import type { SearchableHistory, TimelineEntry } from '@/utils/sparql/timeline';
 import HistoryElement from './HistoryElement.vue';
 import TimeEmbeddingsOverlay from './TimeEmbeddingsOverlay.vue';
 import OnsetBtn from '@/components/ui/OnsetBtn.vue';
@@ -38,25 +48,22 @@ enum HistoryMode {
     OVERVIEW = 'Overview',
     DETAILED = 'Detailed',
 }
-const { history } = defineProps({
-    history: {
-        type: Object as () => QueryHistory,
-        required: true
-    },
-})
+const { history } = defineProps<{ history: SearchableHistory<E> }>()
+defineSlots<{ actions?(): unknown, entry?(props: { entry: E }): unknown }>()
 const ui_state = reactive({
     history_mode: HistoryMode.OVERVIEW,
     query_string: '',
     similar_entries: {
         loading: false,
-        entries: [] as HistoryEntry[],
     }
 })
+const similar_entries = shallowRef<E[]>([])
 
 const emit = defineEmits<{
-    revert: [HistoryEntry],
-    compare: [HistoryEntry],
-    showTooltip: [HistoryTooltipEvent],
+    revert: [E],
+    compare: [E],
+    showTooltip: [{ position: Vector2Like, entry: E, event: MouseEvent }],
+    showInChat: [string[]],
 }>()
 
 const history_filtered = computed(() => {
@@ -66,7 +73,7 @@ const history_filtered = computed(() => {
     if (ui_state.query_string.trim() === '') {
         return history.reverse_entries
     }
-    return ui_state.similar_entries.entries
+    return similar_entries.value
 })
 
 function submit_query(event: KeyboardEvent | MouseEvent) {
@@ -79,7 +86,7 @@ function submit_query(event: KeyboardEvent | MouseEvent) {
     history.searchSimilarEntries(ui_state.query_string).then((entries) => {
         console.log("Similar entries searched")
 
-        ui_state.similar_entries.entries = entries.map(e => e.entry)
+        similar_entries.value = entries.map(e => e.entry)
 
     }).finally(() => {
         ui_state.similar_entries.loading = false

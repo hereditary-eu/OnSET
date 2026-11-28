@@ -31,7 +31,8 @@
                                 </svg>
                             </div>
                             <OnsetBtn v-if="selection_event.side == OpenEventType.PROP" size="small"
-                                :toggleable="false" icon="mdi-tag" title="Show as property"
+                                :toggleable="false" :icon="isGeoProperty(subq.option.link?.property_id, subq.option.link?.to_proptype) ? 'mdi-map-marker-outline' : 'mdi-tag'"
+                                :title="isGeoProperty(subq.option.link?.property_id, subq.option.link?.to_proptype) ? 'Show as property (coordinates, shown on the results map)' : 'Show as property'"
                                 @click="selectProp(subq.option, $event)" :active="subq.validProp" />
                         </div>
                         <Loading v-if="editor_data.loading"></Loading>
@@ -48,6 +49,7 @@
     </g>
 </template>
 <script setup lang="ts">
+import { isGeoProperty } from '@/utils/geo'
 import { ref, watch, reactive, computed } from 'vue'
 import { SubQuery, Link, SubjectNode, SubjectConstraint, QueryProp } from '@/utils/sparql/representation';
 import { RELATION_TYPE, RETURN_TYPE } from '@/api/client.ts/Api';

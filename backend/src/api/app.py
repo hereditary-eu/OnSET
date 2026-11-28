@@ -15,6 +15,7 @@ from api.router.classes import classes_router
 from api.router.multimodal import multimodal_router
 from api.router.nlp_helper import nlp_router
 from api.router.progressive import progressive_router
+from api.router.query_session import query_session_router
 from eval_config import CONFIG_FILE, MultimodalConfig, ProgressiveConfig
 
 logger = Logger(__name__)
@@ -157,6 +158,7 @@ config_app.include_router(nlp_router)
 config_app.include_router(multimodal_router)
 config_app.include_router(agent_router)
 config_app.include_router(progressive_router)
+config_app.include_router(query_session_router)
 
 # before the config mount, which would match /onto-builder as a config id
 app.include_router(builder_router)

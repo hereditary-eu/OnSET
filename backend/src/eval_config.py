@@ -301,6 +301,8 @@ class OnsetConfigFile(BaseModel):
     configs: dict[str, dict[str, Any]]
     # ontology builders (builder/), they share the ``agent`` of the defaults
     builders: dict[str, dict[str, Any]] = {}
+    # where the query sessions of the explore view are saved (query_session.py), relative to base_dir
+    query_session_dir: str = "query-sessions"
     # directory of the config file, relative builder paths resolve against it
     base_dir: str = "."
 
@@ -329,6 +331,9 @@ class OnsetConfigFile(BaseModel):
 
     def base(self, key: str) -> EvalConfig:
         return self.resolve(key)[-1]
+
+    def query_session_path(self) -> Path:
+        return Path(self.base_dir) / self.query_session_dir
 
     def builder(self, key: str) -> BuilderConfig:
         """The ontology builder ``key`` (KeyError if unknown), paths made absolute."""

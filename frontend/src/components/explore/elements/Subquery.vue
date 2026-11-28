@@ -24,6 +24,8 @@
                     :query="(subquery as InstanceQueryProp)" />
                 <VectorSubquery v-else-if="(subquery.constraint_type == SubQueryType.VECTOR_SORT)"
                     :constraint="(subquery as VectorSort)" />
+                <AggregateControls v-if="show_aggregation" :target="subquery" :kind="subquery.aggregateKind()"
+                    :readonly="!editable" />
             </div>
         </foreignObject>
     </g>
@@ -41,11 +43,13 @@ import VectorSubquery from './subqueries/VectorSubquery.vue';
 import Property from './subqueries/Property.vue';
 import type { NodeDiff } from '@/utils/sparql/diff';
 import InstanceProperty from './subqueries/InstanceProperty.vue';
+import AggregateControls from './subqueries/AggregateControls.vue';
+import { isAggregated } from '@/utils/sparql/representation';
 const emit = defineEmits<{
     delete: [value: SubQuery]
     instanceSearchClicked: [value: InstanceSelectorOpenEvent]
 }>()
-const { extend_path, subquery: subquery, diff } = defineProps({
+const { extend_path, subquery: subquery, diff, mode, show_editpoints } = defineProps({
     extend_path: {
         type: Number,
         required: true
@@ -71,6 +75,11 @@ const { extend_path, subquery: subquery, diff } = defineProps({
         default: DisplayMode.SELECT
     },
 })
+// group by/aggregate of the property: editable in the editor, shown (if set) in previews;
+// result props show their aggregate themselves (InstanceProperty)
+const editable = computed(() => mode == DisplayMode.EDIT || mode == DisplayMode.EDIT_NO_ADD)
+const show_aggregation = computed(() => subquery.aggregatable && subquery.constraint_type != SubQueryType.INSTANCE_PROP &&
+    (editable.value || isAggregated(subquery)))
 const editor_data = reactive({
     state: null as NodeState | null
 })

@@ -8,7 +8,8 @@ changes with every ontology/query change, ``status`` reports the build), and
 the agent chat runs over the WebSocket ``/{builder_id}/agent/ws`` with the
 protocol of agent/protocol.py plus ``builder_state`` messages. The chat history is part
 of the session (saved with it): a connection gets it as ``history`` after ``session``,
-and only ``clear`` deletes it.
+and only ``clear`` deletes it. So is the frontend's edit history of the ontology
+(``/{builder_id}/sessions/{session_id}/history``, session_history.py), with server timestamps.
 """
 
 import asyncio
@@ -30,6 +31,7 @@ from builder.session import (
     SessionState, class_query,
 )
 from eval_config import CONFIG_FILE, DisambiguationSettings
+from session_history import HistoryInfo, HistoryRecord, HistoryUpdate
 
 builder_router = APIRouter(prefix="/onto-builder", tags=["onto-builder"])
 
@@ -121,6 +123,18 @@ def put_query(builder_id: str, session_id: str, body: QueryIn = Body(...)) -> Se
     session = get_session(builder_id, session_id)
     session.set_query(body.query, body.visual_query)
     return session.state()
+
+
+@builder_router.get("/{builder_id}/sessions/{session_id}/history")
+def get_history(builder_id: str, session_id: str) -> list[HistoryRecord]:
+    """The edit history of the ontology, oldest first, with the server's timestamps."""
+    return get_session(builder_id, session_id).history_records()
+
+
+@builder_router.patch("/{builder_id}/sessions/{session_id}/history")
+def patch_history(builder_id: str, session_id: str, update: HistoryUpdate = Body(...)) -> HistoryInfo:
+    """Add, replace (same ``timestamp``) or remove entries of the edit history (saved with the session)."""
+    return get_session(builder_id, session_id).update_history(update)
 
 
 @builder_router.get("/{builder_id}/sessions/{session_id}/class-query/{class_id}")

@@ -16,6 +16,8 @@
 //             property_id/property_label/property_type <-> Link.property_id/label/to_proptype.
 //             QueryProp is always sent as query_prop (also for image ranges); image_prop is
 //             accepted and restored as a QueryProp.
+// - group_by/aggregate of subjects and subqueries <-> SubjectNode/SubQuery.group_by/aggregate,
+//             left out (None) when not grouped/aggregated
 import type {
     AssistantLink, AssistantSubject, Instance, QueryGraph, Subject, SubjectLink, VectorSortSubQuery,
 } from '@/api/client.ts/Api'
@@ -25,7 +27,7 @@ import {
     InstanceQueryProp, Link, LinkQuantifier, LinkQuantifierType, LinkType, reserveInternalIds, SubjectNode,
 } from './representation/graph'
 import {
-    BooleanConstraint, DateConstraint, NumberConstraint, NumberConstraintType, QueryProp, StringConstraint,
+    AggregateFunction, BooleanConstraint, DateConstraint, NumberConstraint, NumberConstraintType, QueryProp, StringConstraint,
     StringConstraintType, SubjectConstraint, SubQuery, SubQueryType, VectorSort, VectorSortDirection,
     VectorSortDistance, VectorSortModality,
 } from './representation/subqueries'
@@ -60,8 +62,28 @@ export function linkGraphId(link: Link): string {
     return link.agent_id ?? `link_${link.link_id}`
 }
 
+/** group_by/aggregate of a node or subquery, only the fields that are set (editor defaults are left out). */
+export function aggregationFields(element: { group_by?: boolean, aggregate?: AggregateFunction | null }): { group_by?: true, aggregate?: any } {
+    if (element.group_by) {
+        return { group_by: true }
+    }
+    return element.aggregate ? { aggregate: element.aggregate } : {}
+}
+
+/** Sets the group_by/aggregate of a node or subquery from the backend's fields. */
+export function applyAggregation(element: { group_by: boolean, aggregate: AggregateFunction | null },
+    fields: { group_by?: boolean | null, aggregate?: string | null }) {
+    element.group_by = !!fields.group_by
+    element.aggregate = !element.group_by && fields.aggregate ? fields.aggregate as AggregateFunction : null
+}
+
 /** Subquery as the backend models it, null for kinds it has no model for (or invalid dates). */
 export function toGraphSubQuery(subquery: SubQuery, options: QueryGraphOptions = {}): GraphSubQuery | null {
+    const converted = toGraphSubQueryFields(subquery, options)
+    return converted && subquery.aggregatable ? { ...converted, ...aggregationFields(subquery) } : converted
+}
+
+function toGraphSubQueryFields(subquery: SubQuery, options: QueryGraphOptions = {}): GraphSubQuery | null {
     const link = subquery.link
     const base = {
         id: subquery.id != null ? String(subquery.id) : null,
@@ -125,6 +147,7 @@ export function toGraphSubject(node: SubjectNode, options: QueryGraphOptions = {
             .filter((sq) => sq != null)
             .map((sq) => toGraphSubQuery(sq, options))
             .filter((sq): sq is GraphSubQuery => sq !== null),
+        ...aggregationFields(node),
     }
 }
 
@@ -254,6 +277,7 @@ export function fromGraphSubQuery(subquery: GraphSubQuery, node: SubjectNode): S
         }
     }
     converted.link = subQueryLink(subquery, node)
+    applyAggregation(converted, subquery)
     return converted
 }
 
@@ -266,6 +290,7 @@ export function subjectNodeFor(subject: AssistantSubject & { id: string }, detai
     if (with_subqueries) {
         node.subqueries = (subject.subqueries || []).map((sq) => fromGraphSubQuery(sq, node))
     }
+    applyAggregation(node, subject)
     fitNode(node)
     return node
 }

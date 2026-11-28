@@ -3,6 +3,7 @@
 import axios from 'axios'
 import type { InjectionKey } from 'vue'
 import { BACKEND_URL } from '@/utils/config'
+import type { HistoryUpdate, StoredHistoryEntry } from '@/utils/historySync'
 
 export const FIELD_TYPES = ['string', 'integer', 'float', 'date', 'boolean', 'vector'] as const
 export type FieldType = typeof FIELD_TYPES[number]
@@ -73,6 +74,10 @@ export function builderSession(bid: string, sid: string) {
         /** cached on the server until the KG changes: refetch when ``status.triples`` changes */
         linkCounts: () => get<LinkCounts>(`${base}/link-counts`),
         provenance: (iri: string) => get<InstanceProvenance>(`${base}/provenance`, { iri }),
+        /** the ontology's edit history saved with the session, oldest first (utils/historySync.ts) */
+        history: () => get<StoredHistoryEntry[]>(`${base}/history`),
+        patchHistory: (update: HistoryUpdate) =>
+            axios.patch(`${BUILDER_URL}${base}/history`, update).then((r) => r.data),
         rebuild: () => post<SessionState>('/rebuild'),
         disambiguation: () => get<DisambiguationState>(`${base}/disambiguation`),
         /** a change rebuilds the KG from scratch */

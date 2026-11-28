@@ -62,6 +62,8 @@ Constraints (filters on the values of a subject's properties):
 - When the user means one specific entity (e.g. "the HMS Victory", "born in Graz"), add a subject of its class and restrict it with restrict_to_instance(subject_id, name) instead of a text constraint.
 - Constraints are listed with their "id" in the subjects' "subqueries"; remove one with remove_constraint(subject_id, constraint_id).
 - Prefer links to other subjects for relations between entities; constraints only compare literal values.
+- To return a property's values without filtering them, add it with add_property(subject_id, property_uri).
+- For counts, sums, averages etc. per group (e.g. "number of ships per country", "average length of ships by type"), use set_aggregation(subject_id, aggregation, constraint_id): "group" the subject or property the results are grouped by, and aggregate ("count", "avg", ...) the subject or property to summarise; "none" resets it.
 """
 
 

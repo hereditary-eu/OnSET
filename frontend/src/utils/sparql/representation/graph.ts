@@ -6,7 +6,7 @@ import { ReconstructableClass, registerClass } from "@/utils/parsing";
 import { NODE_HEIGHT, NODE_WIDTH, toVar, OpenEventType, CONSTRAINT_HEIGHT, CONSTRAINT_WIDTH } from "../helpers";
 import { NodeLinkRepository } from "../store";
 import { readableName } from "../querymapper";
-import { ALLOWED_IMAGE_PROP_TYPES, QueryProp, SubQueryType, type SubQuery } from "./subqueries";
+import { AGGREGATE_LABELS, AggregateFunction, aggregationChanged, ALLOWED_IMAGE_PROP_TYPES, QueryProp, SubQueryType, type Aggregatable, type SubQuery } from "./subqueries";
 import { DiffList, SubQueryDiff, type Diffable } from "../diff";
 
 
@@ -85,7 +85,7 @@ export function reserveInternalIds(internal_ids: string[]) {
     }
 }
 @registerClass
-export class SubjectNode implements Subject, Diffable, ReconstructableClass {
+export class SubjectNode implements Subject, Diffable, ReconstructableClass, Aggregatable {
     subject_id: string;
     label: string;
     spos?: Record<string, Property>;
@@ -109,6 +109,10 @@ export class SubjectNode implements Subject, Diffable, ReconstructableClass {
     internal_id_cnt: number;
     unknown: boolean;
     state: NodeState = NodeState.NORMAL
+    // GROUP BY the node's variable (and SAMPLE its label), see AggregateFunction
+    group_by: boolean = false
+    // aggregate of the node's variable if it is not grouped (null: SAMPLE in aggregate queries)
+    aggregate: AggregateFunction | null = null
 
     constructor(node?: SubjectNode | Subject) {
         if (!(node instanceof SubjectNode)) {
@@ -168,6 +172,9 @@ export class SubjectNode implements Subject, Diffable, ReconstructableClass {
     }
 
     changed(other: this): boolean {
+        if (aggregationChanged(this, other)) {
+            return true
+        }
         let subquery_diff = new DiffList(this.subqueries || [], other.subqueries || [], SubQueryDiff)
         if (subquery_diff.added.length > 0 || subquery_diff.removed.length > 0 || subquery_diff.changed.length > 0) {
             return true
@@ -353,7 +360,14 @@ export class InstanceQueryProp extends QueryProp {
         this.value = null;
         this.constraint_type = SubQueryType.INSTANCE_PROP;
     }
+    /** The value is an aggregate (e.g. a count) instead of a value of the property. */
+    get is_aggregate_value(): boolean {
+        return !!this.aggregate && !this.group_by && this.aggregate != AggregateFunction.SAMPLE
+    }
     get is_image_prop(): boolean {
+        if (this.is_aggregate_value) {
+            return false
+        }
         if (this.link.to_proptype && ALLOWED_IMAGE_PROP_TYPES.includes(this.link.to_proptype)) {
             return true
         }
@@ -413,6 +427,10 @@ export class InstanceNode extends SubjectNode {
         this.instance_id = this.instance_data[this.outputId().replace('?', '')]
         this.instance_label = this.instance_data[this.labelId().replace('?', '')]
         this.instance_label = readableName(this.instance_id, this.instance_label)
+        if (this.aggregate && !this.group_by && this.aggregate != AggregateFunction.SAMPLE) {
+            // the node's variable holds its aggregate (e.g. a count), it has no label
+            this.instance_label = `${AGGREGATE_LABELS[this.aggregate]}: ${this.instance_id ?? '-'}`
+        }
     }
     postConstruct(): void {
         console.log("Post construct for instance node", this)

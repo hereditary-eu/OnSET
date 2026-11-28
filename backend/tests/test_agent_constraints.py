@@ -14,7 +14,9 @@ from explorative.exp_model import RELATION_TYPE, RETURN_TYPE
 
 from fakes import ONTOLOGY_TTL, ScriptedLLM, StubGuidance, dbo, final_answer, function_call, make_ontology
 
-CONSTRAINT_TOOL_NAMES = {"search_properties", "add_constraint", "restrict_to_instance", "remove_constraint"}
+CONSTRAINT_TOOL_NAMES = {
+    "search_properties", "add_constraint", "restrict_to_instance", "remove_constraint", "add_property", "set_aggregation",
+}
 
 EXTRA_TTL = """
 dbo:launchDate a owl:DatatypeProperty ; rdfs:label "launch date"@en ;

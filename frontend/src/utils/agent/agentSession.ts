@@ -20,6 +20,7 @@
 import { reactive, watch, onBeforeUnmount, type Ref } from 'vue'
 import { configWebSocketUrl } from '@/utils/api'
 import { diffAgentGraphs, graphKey, isEmptyChange } from './graph_sync'
+import type { AgentCallRef } from '@/utils/sparql/provenance'
 import {
     emptyGraph,
     type AgentQueryGraph, type ChatHistoryEntry, type ClientMessage, type GraphChange, type GraphDetails,
@@ -39,8 +40,9 @@ export type ConnectionStatus = 'idle' | 'connecting' | 'open' | 'reconnecting'
 export interface GraphBinding {
     /** current editor graph */
     read(): AgentQueryGraph
-    /** apply the agent's change (diff against the previous server graph) to the editor */
-    apply(change: GraphChange, graph: AgentQueryGraph, details: GraphDetails): void
+    /** apply the agent's change (diff against the previous server graph) to the editor;
+     * `calls` are the finished tool calls with graph changes since the last graph_state */
+    apply(change: GraphChange, graph: AgentQueryGraph, details: GraphDetails, calls: AgentCallRef[]): void
 }
 
 /** Where a chat connects to; `key` is what connect() was called with. */
@@ -92,6 +94,8 @@ export class AgentSession {
     private clearing = false
     // whether the server picked up an existing session on (re)connecting
     private resumed = false
+    // finished tool calls with graph changes not yet followed by a graph_state (history provenance)
+    private pending_calls: AgentCallRef[] = []
     // chats of other configurations, restored when switching back
     private config_sessions = new Map<string, ConfigSession>()
 
@@ -359,10 +363,16 @@ export class AgentSession {
                 const entries = this.state.entries
                 const turn_start = entries.map((e) => e.kind).lastIndexOf('user')
                 const entry = entries.slice(turn_start + 1).find((e) => e.kind == 'tool' && e.call.call_id == message.call_id)
+                let entry_id: string
                 if (entry && entry.kind == 'tool') {
                     entry.call = message
+                    entry_id = entry.id
                 } else {
-                    entries.push({ kind: 'tool', id: nextEntryId('tool'), call: message })
+                    entry_id = nextEntryId('tool')
+                    entries.push({ kind: 'tool', id: entry_id, call: message })
+                }
+                if (message.status != 'running' && message.changes) {
+                    this.pending_calls.push({ call: message, entry_id })
                 }
                 break
             }
@@ -370,8 +380,10 @@ export class AgentSession {
                 const change = diffAgentGraphs(this.server_graph, message.graph)
                 this.server_graph = message.graph
                 this.server_key = graphKey(message.graph)
+                const calls = this.pending_calls
+                this.pending_calls = []
                 if (this.binding && !isEmptyChange(change)) {
-                    this.binding.apply(change, message.graph, message.details)
+                    this.binding.apply(change, message.graph, message.details, calls)
                 }
                 break
             }
@@ -388,6 +400,7 @@ export class AgentSession {
                     break
                 }
                 this.state.busy = false
+                this.pending_calls = []
                 for (const entry of this.state.entries) {
                     if ((entry.kind == 'assistant' || entry.kind == 'thinking') && entry.streaming) {
                         entry.streaming = false

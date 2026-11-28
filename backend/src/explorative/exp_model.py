@@ -172,7 +172,7 @@ class SubjectLinkDB(BasePostgres):
     __tablename__ = "subject_links"
     link_id: Mapped[int] = mapped_column(primary_key=True)
     property_id: Mapped[str | None] = mapped_column(
-        unique=True
+        # unique=True
     )  # property_id can be None for instance links
     # do not enforce foreign key constraints
 
